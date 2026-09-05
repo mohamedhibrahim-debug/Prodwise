@@ -1,0 +1,113 @@
+.row {
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+/* subject · attribute reads as a knowledge address, not a document title. */
+.subject {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+}
+
+.attribute {
+  font-size: var(--t-sm);
+  color: var(--ink-400);
+}
+
+.spacer {
+  margin-left: auto;
+}
+
+.value {
+  margin-top: var(--s-2);
+  font-size: var(--t-body);
+  color: var(--ink-900);
+  line-height: 1.5;
+  max-width: 82ch;
+}
+
+.facts {
+  margin-top: var(--s-3);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2) var(--s-4);
+  flex-wrap: wrap;
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+}
+
+.fact b {
+  color: var(--ink-700);
+  font-weight: var(--fw-medium);
+}
+
+.relationship {
+  margin-top: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+}
+
+.flag {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--state-blocked-fg);
+  background: var(--state-blocked-bg);
+  border: 1px solid var(--state-blocked-edge);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+}
+
+/* Claim status chips. Neutral by default; superseded is visibly retired but
+   never deleted — history stays available. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+  border: 1px solid var(--rule-strong);
+  color: var(--ink-500);
+  background: var(--canvas);
+}
+
+.statusACTIVE {
+  color: var(--state-ready-fg);
+  background: var(--state-ready-bg);
+  border-color: var(--state-ready-edge);
+}
+
+.statusSUPERSEDED {
+  color: var(--ink-400);
+  background: var(--surface-sunken);
+  border-color: var(--rule-strong);
+}
+
+.statusUNVERIFIED,
+.statusDRAFT,
+.statusUNKNOWN {
+  color: var(--state-unknown-fg);
+  background: var(--state-unknown-bg);
+  border-color: var(--state-unknown-edge);
+}
+
+.supersededValue {
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-300);
+  color: var(--ink-500);
+}

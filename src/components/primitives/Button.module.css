@@ -1,0 +1,59 @@
+.base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  height: 34px;
+  padding: 0 var(--s-4);
+  border-radius: var(--r-sm);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.005em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+
+.base:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Primary — the cyan identity accent, used sparingly for the single main
+   action on a screen. */
+.primary {
+  background: var(--accent-600);
+  color: #fff;
+}
+.primary:hover:not(:disabled) {
+  background: var(--accent-700);
+}
+
+.secondary {
+  background: var(--canvas);
+  color: var(--ink-700);
+  border-color: var(--rule-strong);
+}
+.secondary:hover:not(:disabled) {
+  background: var(--surface-subtle);
+  border-color: var(--ink-300);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--ink-500);
+  padding: 0 var(--s-2);
+}
+.ghost:hover:not(:disabled) {
+  color: var(--ink-900);
+}
+
+.lg {
+  height: 38px;
+  padding: 0 var(--s-5);
+  font-size: var(--t-body);
+}

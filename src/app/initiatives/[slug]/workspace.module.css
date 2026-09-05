@@ -1,0 +1,159 @@
+/* Shared layout for every workspace tab. Sections are separated by hairline
+   rules, never wrapped in cards — this is what keeps the workspace free of
+   nested card stacks. */
+
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--gutter) var(--s-16);
+}
+
+/* ── Current state summary — the first thing read on Overview ────────────- */
+.summary {
+  padding: var(--s-8) 0 var(--s-6);
+  border-bottom: 1px solid var(--rule);
+}
+
+.summaryText {
+  font-size: 1.125rem;
+  line-height: 1.5;
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+  max-width: 74ch;
+  font-weight: var(--fw-medium);
+}
+
+.summaryMeta {
+  margin-top: var(--s-4);
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.description {
+  margin-top: var(--s-3);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+  max-width: 74ch;
+  line-height: var(--lh-body);
+}
+
+/* ── Generic structured rows ─────────────────────────────────────────────- */
+.rows {
+  border-top: 1px solid var(--rule);
+}
+
+.row {
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.rowFlush {
+  padding: var(--s-3) 0;
+}
+
+/* ── Two-column detail grid used inside expanded rows ────────────────────- */
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--s-4) var(--s-6);
+  margin-top: var(--s-4);
+}
+
+.detailTerm {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.detailValue {
+  margin-top: var(--s-1);
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+  line-height: 1.5;
+}
+
+/* ── Tab intro line ──────────────────────────────────────────────────────- */
+.tabIntro {
+  padding: var(--s-8) 0 0;
+}
+
+.tabIntroText {
+  color: var(--ink-500);
+  font-size: var(--t-sm);
+  max-width: 74ch;
+  line-height: var(--lh-body);
+}
+
+/* ── Filter strip ────────────────────────────────────────────────────────- */
+.filters {
+  display: flex;
+  gap: var(--s-1);
+  margin-top: var(--s-5);
+  border-bottom: 1px solid var(--rule);
+}
+
+.filter {
+  padding: var(--s-2) var(--s-3) var(--s-3);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  color: var(--ink-500);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.filter:hover {
+  color: var(--ink-900);
+}
+
+.filterActive {
+  color: var(--ink-900);
+  font-weight: var(--fw-semibold);
+  border-bottom-color: var(--accent-500);
+}
+
+.filterCount {
+  color: var(--ink-300);
+  margin-left: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.filterActive .filterCount {
+  color: var(--ink-400);
+}
+
+/* ── Group heading used on Evidence / Memory ─────────────────────────────- */
+.group {
+  padding-top: var(--s-8);
+}
+
+.groupHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.groupTitle {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+}
+
+.groupCount {
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+  font-variant-numeric: tabular-nums;
+}
+
+.groupNote {
+  margin-top: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+  max-width: 74ch;
+}

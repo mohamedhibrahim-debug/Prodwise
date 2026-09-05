@@ -1,0 +1,48 @@
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+/* A short vertical bar rather than a dot: it reads as a severity gauge and
+   keeps the finding rows scannable down a single vertical edge. */
+.bar {
+  width: 3px;
+  height: 12px;
+  border-radius: 1px;
+  flex: none;
+}
+
+.CRITICAL {
+  color: var(--sev-critical);
+}
+.CRITICAL .bar {
+  background: var(--sev-critical);
+}
+
+.HIGH {
+  color: var(--sev-high);
+}
+.HIGH .bar {
+  background: var(--sev-high);
+}
+
+.MEDIUM {
+  color: var(--sev-medium);
+}
+.MEDIUM .bar {
+  background: var(--sev-medium);
+}
+
+.LOW {
+  color: var(--sev-low);
+}
+.LOW .bar {
+  background: var(--sev-low);
+}

@@ -1,0 +1,30 @@
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--s-16) var(--gutter);
+}
+
+.label {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.title {
+  margin-top: var(--s-3);
+  font-size: var(--t-h1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-display);
+}
+
+.body {
+  margin-top: var(--s-3);
+  color: var(--ink-500);
+  line-height: var(--lh-body);
+}
+
+.actions {
+  margin-top: var(--s-6);
+}

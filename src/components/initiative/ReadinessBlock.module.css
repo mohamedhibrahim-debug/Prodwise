@@ -1,0 +1,97 @@
+.block {
+  padding: var(--s-6) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.domain {
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--s-5) var(--s-6);
+  margin-top: var(--s-5);
+}
+
+.colLabel {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--rule);
+}
+
+.list {
+  margin-top: var(--s-3);
+}
+
+.item {
+  display: flex;
+  gap: var(--s-2);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  padding: 3px 0;
+  color: var(--ink-700);
+}
+
+.glyph {
+  flex: none;
+  width: 12px;
+  text-align: center;
+  font-weight: var(--fw-semibold);
+}
+
+.satisfied .glyph {
+  color: var(--state-ready-mark);
+}
+
+.issue .glyph {
+  color: var(--state-blocked-mark);
+}
+
+.unknown .glyph {
+  color: var(--state-unknown-mark);
+}
+
+.none {
+  font-size: var(--t-sm);
+  color: var(--ink-300);
+  padding: 3px 0;
+}
+
+/* "What would make this ready" — the actionable half of readiness, and the
+   reason this is not a checkbox list. */
+.resolution {
+  margin-top: var(--s-5);
+  padding-top: var(--s-4);
+  border-top: 1px dashed var(--rule-strong);
+}
+
+.resolutionLabel {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.resolutionText {
+  margin-top: var(--s-2);
+  font-size: var(--t-body);
+  color: var(--ink-900);
+  line-height: var(--lh-body);
+  max-width: 82ch;
+}

@@ -1,0 +1,20 @@
+.canvas {
+  margin-inline-start: var(--rail-w);
+  min-height: 100vh;
+  background: var(--canvas);
+}
+
+.main {
+  min-height: 100vh;
+}
+
+@media (max-width: 780px) {
+  .canvas {
+    margin-inline-start: 0;
+    min-height: auto;
+  }
+  .main {
+    min-height: auto;
+    padding-bottom: var(--s-16);
+  }
+}

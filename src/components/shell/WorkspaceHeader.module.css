@@ -1,0 +1,136 @@
+.header {
+  border-bottom: 1px solid var(--rule);
+  background: var(--canvas);
+}
+
+.inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--s-6) var(--gutter) 0;
+}
+
+.breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--ink-400);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.breadcrumb:hover {
+  color: var(--accent-600);
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-6);
+  margin-top: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.arc {
+  flex: none;
+  margin-top: 2px;
+}
+
+.name {
+  font-size: var(--t-display);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  color: var(--ink-900);
+}
+
+.stageLine {
+  margin-top: var(--s-2);
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.stage {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.stageDivider {
+  width: 1px;
+  height: 11px;
+  background: var(--rule-strong);
+}
+
+.statusGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  padding-top: var(--s-2);
+}
+
+/* ── Tabs — text with a cyan underline. Not pills, not boxes. ────────────- */
+.tabs {
+  display: flex;
+  gap: var(--s-6);
+  margin-top: var(--s-6);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  position: relative;
+  padding-bottom: var(--s-3);
+  font-size: var(--t-body);
+  font-weight: var(--fw-medium);
+  color: var(--ink-500);
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  color: var(--ink-900);
+}
+
+.tabActive {
+  color: var(--ink-900);
+  font-weight: var(--fw-semibold);
+  border-bottom-color: var(--accent-500);
+}
+
+@media (max-width: 780px) {
+  .inner {
+    padding-top: var(--s-5);
+  }
+  .titleRow {
+    gap: var(--s-3);
+  }
+  .identity {
+    gap: var(--s-3);
+  }
+  .tabs {
+    gap: var(--s-5);
+    margin-top: var(--s-5);
+  }
+}

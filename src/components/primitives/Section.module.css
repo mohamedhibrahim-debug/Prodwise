@@ -1,0 +1,55 @@
+.section {
+  padding-block: var(--s-8);
+  border-top: 1px solid var(--rule);
+}
+
+.section:first-child {
+  border-top: 0;
+  padding-top: var(--s-6);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin-bottom: var(--s-5);
+}
+
+.titleGroup {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+/* The numeric section marker borrowed from the reference deck's section
+   numbering — the one place the secondary brand orange appears. */
+.numeral {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  color: var(--brand-orange);
+  flex: none;
+  padding-top: 2px;
+}
+
+.title {
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+}
+
+.aside {
+  flex: none;
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+}
+
+.description {
+  margin-top: var(--s-1);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+  max-width: 68ch;
+}

@@ -1,0 +1,144 @@
+/* The AI Consultant is a SECONDARY affordance. It is collapsed by default,
+   occupies the screen edge, and never becomes the main experience. There is
+   no chat homepage anywhere in this product. */
+
+.trigger {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  writing-mode: vertical-rl;
+  padding: var(--s-4) 7px;
+  background: var(--canvas);
+  border: 1px solid var(--rule);
+  border-right: 0;
+  border-radius: var(--r-md) 0 0 var(--r-md);
+  color: var(--ink-500);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.trigger:hover {
+  color: var(--ink-900);
+  border-color: var(--rule-strong);
+}
+
+.panel {
+  position: fixed;
+  inset-block: 0;
+  right: 0;
+  width: min(360px, 92vw);
+  background: var(--canvas);
+  border-left: 1px solid var(--rule);
+  box-shadow: var(--shadow-panel);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+}
+
+.panelHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  border-bottom: 1px solid var(--rule);
+}
+
+.panelTitle {
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+}
+
+.panelSub {
+  margin-top: var(--s-1);
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+}
+
+.close {
+  flex: none;
+  background: transparent;
+  border: 0;
+  color: var(--ink-400);
+  cursor: pointer;
+  padding: var(--s-1);
+  border-radius: var(--r-sm);
+  line-height: 0;
+}
+
+.close:hover {
+  color: var(--ink-900);
+}
+
+.panelBody {
+  padding: var(--s-5);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.notice {
+  font-size: var(--t-body);
+  color: var(--ink-700);
+  line-height: var(--lh-body);
+}
+
+.detail {
+  margin-top: var(--s-4);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+  line-height: var(--lh-body);
+}
+
+.list {
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--rule);
+}
+
+.listItem {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-2) 0;
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+
+.bullet {
+  color: var(--ink-300);
+  flex: none;
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(16 24 32 / 28%);
+  z-index: 29;
+  border: 0;
+  padding: 0;
+  cursor: default;
+}
+
+@media (max-width: 780px) {
+  .trigger {
+    top: auto;
+    bottom: var(--s-4);
+    right: var(--s-4);
+    writing-mode: horizontal-tb;
+    border-radius: var(--r-pill);
+    border-right: 1px solid var(--rule);
+    padding: var(--s-2) var(--s-4);
+  }
+}

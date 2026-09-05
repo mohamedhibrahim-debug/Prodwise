@@ -1,0 +1,228 @@
+.rail {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: var(--rail-w);
+  background: var(--navy-900);
+  border-right: 1px solid var(--navy-rule);
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+  overflow: hidden;
+}
+
+/* ── Brand ───────────────────────────────────────────────────────────────- */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  border-bottom: 1px solid var(--navy-rule);
+  min-height: var(--header-h);
+}
+
+.mark {
+  flex: none;
+}
+
+.wordmarkGroup {
+  min-width: 0;
+}
+
+.wordmark {
+  font-size: 0.9375rem;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  color: var(--navy-ink);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.tagline {
+  font-size: var(--t-micro);
+  color: var(--navy-ink-faint);
+  line-height: 1.35;
+  margin-top: 3px;
+  letter-spacing: 0.01em;
+}
+
+/* ── Navigation ──────────────────────────────────────────────────────────- */
+.nav {
+  padding: var(--s-5) var(--s-3) var(--s-4);
+  flex: 1;
+  min-height: 0;
+}
+
+.navLabel {
+  padding-inline: var(--s-2);
+  margin-bottom: var(--s-3);
+  color: var(--navy-ink-faint);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  color: var(--navy-ink-dim);
+  font-size: var(--t-body);
+  font-weight: var(--fw-medium);
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+  position: relative;
+}
+
+.navItem:hover {
+  background: var(--navy-800);
+  color: var(--navy-ink);
+}
+
+.navItemActive {
+  background: var(--navy-800);
+  color: var(--navy-ink);
+}
+
+/* A 2px cyan spine marks the active destination. */
+.navItemActive::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -var(--s-3);
+  inset-block: 6px;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent-500);
+}
+
+.navIcon {
+  flex: none;
+  color: currentColor;
+}
+
+.navText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────- */
+.footer {
+  position: relative;
+  padding: var(--s-4) var(--s-5) var(--s-5);
+  border-top: 1px solid var(--navy-rule);
+}
+
+.envLabel {
+  color: var(--navy-ink-faint);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+}
+
+.envValue {
+  margin-top: var(--s-2);
+  color: var(--navy-ink-dim);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+}
+
+.envValue b {
+  color: var(--navy-ink);
+  font-weight: var(--fw-medium);
+}
+
+/* The recurring arc geometry, bled off the corner as a quiet watermark.
+   Decorative only, and deliberately faint. */
+.arcBleed {
+  position: absolute;
+  right: -66px;
+  bottom: -70px;
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+/* ── Compact rail ────────────────────────────────────────────────────────- */
+@media (max-width: 1100px) {
+  .brand {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .wordmarkGroup,
+  .navText,
+  .navLabel,
+  .envValue,
+  .arcBleed {
+    display: none;
+  }
+  .nav {
+    padding-inline: var(--s-2);
+  }
+  .navItem {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .navItemActive::before {
+    inset-inline-start: -8px;
+  }
+  .footer {
+    padding-inline: var(--s-2);
+    text-align: center;
+  }
+  .envLabel {
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+}
+
+/* ── Mobile: the rail becomes a top bar ──────────────────────────────────- */
+@media (max-width: 780px) {
+  .rail {
+    position: sticky;
+    top: 0;
+    inset-inline: 0;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-right: 0;
+    border-bottom: 1px solid var(--navy-rule);
+  }
+  .brand {
+    border-bottom: 0;
+    padding: var(--s-3) var(--s-4);
+    justify-content: flex-start;
+    min-height: 0;
+  }
+  .wordmarkGroup {
+    display: block;
+  }
+  .tagline {
+    display: none;
+  }
+  .nav {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--s-2);
+    flex: none;
+  }
+  .navText {
+    display: block;
+  }
+  .navItem {
+    padding: var(--s-2) var(--s-3);
+  }
+  .navItemActive::before {
+    display: none;
+  }
+  .footer {
+    display: none;
+  }
+}

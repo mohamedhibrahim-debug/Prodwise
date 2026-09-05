@@ -1,0 +1,98 @@
+.row {
+  padding: var(--s-5) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+  margin-right: auto;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.explanation {
+  margin-top: var(--s-2);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+  line-height: var(--lh-body);
+  max-width: 82ch;
+}
+
+/* Claim comparison — the visual core of a conflict. Two aligned columns so the
+   incompatible values sit directly beside each other. */
+.claims {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--s-4);
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px dashed var(--rule-strong);
+}
+
+.claim {
+  min-width: 0;
+}
+
+.claimLabel {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.claimValue {
+  margin-top: var(--s-2);
+  font-size: var(--t-body);
+  color: var(--ink-900);
+  font-weight: var(--fw-medium);
+  line-height: 1.45;
+}
+
+.claimSource {
+  margin-top: var(--s-2);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+}
+
+.resolution {
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--rule);
+  font-size: var(--t-sm);
+  color: var(--state-ready-fg);
+  line-height: var(--lh-body);
+}
+
+.resolvedTag {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--state-ready-fg);
+  background: var(--state-ready-bg);
+  border: 1px solid var(--state-ready-edge);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+}

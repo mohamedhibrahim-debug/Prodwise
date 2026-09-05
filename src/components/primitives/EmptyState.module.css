@@ -1,0 +1,20 @@
+.empty {
+  padding: var(--s-8) 0;
+  max-width: 52ch;
+}
+
+.inset {
+  padding: var(--s-6) 0;
+}
+
+.message {
+  color: var(--ink-500);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+}
+
+.hint {
+  margin-top: var(--s-2);
+  color: var(--ink-400);
+  font-size: var(--t-sm);
+}

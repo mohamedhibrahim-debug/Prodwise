@@ -1,0 +1,160 @@
+/* ── Needs your attention ────────────────────────────────────────────────- */
+.attentionList {
+  border-top: 1px solid var(--rule);
+}
+
+.attentionItem {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: var(--s-4);
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--rule);
+  align-items: baseline;
+}
+
+.attentionTitle {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-semibold);
+  color: var(--ink-900);
+  letter-spacing: var(--ls-tight);
+}
+
+.attentionDetail {
+  margin-top: var(--s-1);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+  line-height: 1.5;
+  max-width: 76ch;
+}
+
+/* ── Current state by domain ─────────────────────────────────────────────- */
+.domainList {
+  border-top: 1px solid var(--rule);
+}
+
+.domainRow {
+  display: grid;
+  grid-template-columns: 150px 104px minmax(0, 1fr);
+  gap: var(--s-4);
+  align-items: baseline;
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.domainName {
+  font-size: var(--t-body);
+  font-weight: var(--fw-medium);
+  color: var(--ink-900);
+}
+
+.domainNote {
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+  line-height: 1.5;
+}
+
+/* ── Next best action ────────────────────────────────────────────────────-
+   The one recommendation. Given a single tinted surface so it reads as the
+   conclusion of the page — the only place a panel treatment is used. */
+.nba {
+  border: 1px solid var(--rule-strong);
+  border-left: 2px solid var(--accent-500);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  background: var(--surface-subtle);
+  padding: var(--s-5) var(--s-6);
+}
+
+.nbaAction {
+  font-size: 1.0625rem;
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+  line-height: 1.35;
+}
+
+.nbaWhy {
+  margin-top: var(--s-3);
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+  line-height: var(--lh-body);
+  max-width: 78ch;
+}
+
+.nbaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--s-5);
+  margin-top: var(--s-5);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--rule-strong);
+}
+
+.nbaTerm {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.nbaValue {
+  margin-top: var(--s-2);
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+  line-height: 1.5;
+}
+
+.evidenceList {
+  margin-top: var(--s-2);
+}
+
+.evidenceItem {
+  display: flex;
+  gap: var(--s-2);
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+  line-height: 1.5;
+  padding: 2px 0;
+}
+
+.evidenceDash {
+  color: var(--ink-300);
+  flex: none;
+}
+
+/* ── Recent changes ──────────────────────────────────────────────────────- */
+.changeList {
+  border-top: 1px solid var(--rule);
+}
+
+.changeRow {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: var(--s-4);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--rule);
+  align-items: baseline;
+}
+
+.changeSummary {
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+}
+
+@media (max-width: 720px) {
+  .attentionItem,
+  .domainRow,
+  .changeRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-2);
+    /* Keep pills and severity marks at their intrinsic width once the grid
+       collapses to one column, instead of stretching across it. */
+    justify-items: start;
+  }
+  .domainRow {
+    padding: var(--s-4) 0;
+  }
+  .nba {
+    padding: var(--s-4) var(--s-4);
+  }
+}
