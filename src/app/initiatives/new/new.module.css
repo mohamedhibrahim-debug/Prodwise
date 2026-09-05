@@ -56,7 +56,7 @@
 }
 
 .optional {
-  color: var(--ink-300);
+  color: var(--ink-400);
   font-weight: var(--fw-medium);
 }
 
@@ -72,9 +72,10 @@
   transition: border-color var(--dur-fast) var(--ease);
 }
 
+/* Placeholders carry real guidance here, so they meet AA like any other text. */
 .input::placeholder,
 .textarea::placeholder {
-  color: var(--ink-300);
+  color: var(--ink-400);
 }
 
 .input:hover,

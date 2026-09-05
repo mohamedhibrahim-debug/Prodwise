@@ -131,14 +131,15 @@
   cursor: default;
 }
 
+/* Below 780px the affordance is removed entirely. The capability is not
+   implemented in Phase 1, and a fixed element must never obstruct primary
+   product information on a small screen. The panel and scrim are hidden too,
+   so a session that opened it on a wider viewport cannot leave it stranded
+   over the content after a resize. */
 @media (max-width: 780px) {
-  .trigger {
-    top: auto;
-    bottom: var(--s-4);
-    right: var(--s-4);
-    writing-mode: horizontal-tb;
-    border-radius: var(--r-pill);
-    border-right: 1px solid var(--rule);
-    padding: var(--s-2) var(--s-4);
+  .trigger,
+  .panel,
+  .scrim {
+    display: none;
   }
 }

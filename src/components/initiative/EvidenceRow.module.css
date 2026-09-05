@@ -19,7 +19,7 @@
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-micro);
   text-transform: uppercase;
-  color: var(--ink-300);
+  color: var(--ink-400);
 }
 
 .title {
@@ -48,7 +48,7 @@
 
 .reason::before {
   content: "Classified because ";
-  color: var(--ink-300);
+  color: var(--ink-400);
 }
 
 .freshness {

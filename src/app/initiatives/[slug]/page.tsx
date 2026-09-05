@@ -64,16 +64,19 @@ export default async function OverviewPage({
         />
       </Section>
 
+      {/* Next Best Action sits directly under Needs Your Attention so the
+          first viewport answers all three questions: where are we, what needs
+          attention, what should I do next. Current State follows as detail. */}
+      <Section title="Next Best Action" numeral="02">
+        <NextBestActionBlock action={intelligence?.nextBestAction ?? null} />
+      </Section>
+
       <Section
         title="Current State"
-        numeral="02"
+        numeral="03"
         description="Only domains relevant to this initiative are shown."
       >
         <DomainStateList domains={intelligence?.domains ?? []} />
-      </Section>
-
-      <Section title="Next Best Action" numeral="03">
-        <NextBestActionBlock action={intelligence?.nextBestAction ?? null} />
       </Section>
 
       <Section title="Recent Changes" numeral="04">

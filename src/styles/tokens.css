@@ -21,13 +21,16 @@
   --navy-500: #2a5878;
   --navy-ink: #e8eef4;
   --navy-ink-dim: #9fb2c4;
-  --navy-ink-faint: #64798d;
+  /* Lightened from #64798d (4.13:1 on --navy-900) to clear WCAG AA. */
+  --navy-ink-faint: #6e8398;
   --navy-rule: #1b3145;
 
   /* ── Identity accent · cyan / teal ─────────────────────────────────────
      The primary brand accent. Carries identity and interaction, never state. */
   --accent-700: #006579;
-  --accent-600: #00849a;
+  /* Darkened from #00849a (4.41:1 with white text) to clear WCAG AA on the
+     primary button. The shift is imperceptible; the hue is unchanged. */
+  --accent-600: #007d91;
   --accent-500: #00a5be;
   --accent-400: #22c0d6;
   --accent-200: #9fdce7;
@@ -37,7 +40,9 @@
   /* ── Secondary brand accent · warm orange ──────────────────────────────
      DECORATION ONLY. Restricted to the arc motif and section numerals.
      It must never carry status meaning — see the semantic scale below. */
-  --brand-orange: #d2662b;
+  /* Darkened from #d2662b (3.70:1) to 4.67:1 on white. It is rendered as text
+     in the section numerals, so it has to clear AA. Same hue, same role. */
+  --brand-orange: #bb5720;
   --brand-orange-soft: #f2ddd0;
 
   /* ── Neutral working surfaces ──────────────────────────────────────────- */
@@ -49,7 +54,14 @@
   --ink-900: #101820;
   --ink-700: #35424f;
   --ink-500: #5e6c7a;
-  --ink-400: #8493a2;
+  /* Darkened from #8493a2 (3.15:1). This token carries the micro labels,
+     timestamps and meta text, so it has to clear WCAG AA for normal text -
+     including on --surface-subtle, which is where the Next Best Action labels
+     sit. 4.85:1 on white, 4.57:1 on --surface-subtle. Kept as light as those
+     two thresholds allow, to preserve the hierarchy. */
+  --ink-400: #67737e;
+  /* Decorative only - dashes, separators, disclosure glyphs. Never text that
+     has to be read; anything meaningful uses --ink-400 or darker. */
   --ink-300: #a9b4bf;
 
   --rule: #e4e8ec;
@@ -85,7 +97,8 @@
   --sev-critical: #a81e16;
   --sev-high: #a06600;
   --sev-medium: #4a6b86;
-  --sev-low: #8493a2;
+  /* Darkened alongside --ink-400 for the same AA reason. */
+  --sev-low: #67737e;
 
   /* ── Typography ────────────────────────────────────────────────────────
      Inter is the reference deck's own typeface: it honours the visual DNA

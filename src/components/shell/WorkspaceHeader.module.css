@@ -84,13 +84,42 @@
   padding-top: var(--s-2);
 }
 
-/* ── Tabs — text with a cyan underline. Not pills, not boxes. ────────────- */
+/* ── Tabs — text with a cyan underline. Not pills, not boxes. ────────────-
+   The strip scrolls horizontally when it does not fit. A soft edge fade marks
+   that there is more to reach; it is applied by mask, so no overlay element
+   sits on top of the tabs and nothing can intercept a tap. The fade is toggled
+   from measured scroll position, so it never appears on a strip that already
+   fits. */
+.tabsViewport {
+  position: relative;
+  margin-top: var(--s-6);
+}
+
+.tabsViewport[data-fade-end] {
+  mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+}
+
+.tabsViewport[data-fade-start] {
+  mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent);
+}
+
+.tabsViewport[data-fade-start][data-fade-end] {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 40px,
+    #000 calc(100% - 40px),
+    transparent
+  );
+}
+
 .tabs {
   display: flex;
   gap: var(--s-6);
-  margin-top: var(--s-6);
   overflow-x: auto;
   scrollbar-width: none;
+  /* Keeps the 2px active underline from being clipped by the scroll box. */
+  padding-bottom: 1px;
 }
 
 .tabs::-webkit-scrollbar {
@@ -129,8 +158,10 @@
   .identity {
     gap: var(--s-3);
   }
+  .tabsViewport {
+    margin-top: var(--s-5);
+  }
   .tabs {
     gap: var(--s-5);
-    margin-top: var(--s-5);
   }
 }

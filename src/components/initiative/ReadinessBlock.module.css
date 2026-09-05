@@ -1,13 +1,46 @@
+/* One readiness domain, as a collapsible <details>. Kept rule-based: a thin
+   separator per domain, no card, no shadow, no accordion chrome. */
+
 .block {
-  padding: var(--s-6) 0;
   border-bottom: 1px solid var(--rule);
 }
 
-.head {
+.summary {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--s-3);
   flex-wrap: wrap;
+  padding: var(--s-5) 0;
+  cursor: pointer;
+  list-style: none;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+/* Remove the native disclosure triangle in both engines. */
+.summary::-webkit-details-marker {
+  display: none;
+}
+.summary::marker {
+  content: "";
+}
+
+.summary:hover .domain {
+  color: var(--accent-700);
+}
+
+.summary:focus-visible {
+  box-shadow: var(--focus-ring);
+  border-radius: var(--r-sm);
+}
+
+.chevron {
+  flex: none;
+  color: var(--ink-400);
+  transition: transform var(--dur) var(--ease);
+}
+
+.block[open] > .summary .chevron {
+  transform: rotate(90deg);
 }
 
 .domain {
@@ -15,13 +48,30 @@
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-tight);
   color: var(--ink-900);
+  transition: color var(--dur-fast) var(--ease);
+}
+
+/* Collapsed-state summary detail: how much is outstanding in this domain. */
+.counts {
+  margin-inline-start: auto;
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+  white-space: nowrap;
+}
+
+.countSep {
+  padding: 0 var(--s-2);
+  color: var(--ink-300);
+}
+
+.body {
+  padding-bottom: var(--s-6);
 }
 
 .columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: var(--s-5) var(--s-6);
-  margin-top: var(--s-5);
 }
 
 .colLabel {
@@ -68,11 +118,11 @@
 
 .none {
   font-size: var(--t-sm);
-  color: var(--ink-300);
+  color: var(--ink-400);
   padding: 3px 0;
 }
 
-/* "What would make this ready" — the actionable half of readiness, and the
+/* "What would make this ready" - the actionable half of readiness, and the
    reason this is not a checkbox list. */
 .resolution {
   margin-top: var(--s-5);
@@ -94,4 +144,11 @@
   color: var(--ink-900);
   line-height: var(--lh-body);
   max-width: 82ch;
+}
+
+@media (max-width: 640px) {
+  .counts {
+    margin-inline-start: 0;
+    flex-basis: 100%;
+  }
 }
