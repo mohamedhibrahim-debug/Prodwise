@@ -1,0 +1,193 @@
+/* Executive snapshot. A scannable list on desktop, stacked rows on mobile.
+   Deliberately no charts, tiles, scores or percentages. */
+
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--s-10) var(--gutter) var(--s-16);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-6);
+  padding-bottom: var(--s-5);
+  border-bottom: 1px solid var(--rule);
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: var(--t-h1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-display);
+}
+
+.subtitle {
+  margin-top: var(--s-2);
+  color: var(--ink-500);
+  font-size: var(--t-sm);
+  max-width: 62ch;
+}
+
+/* Shared column geometry between the header and the rows. */
+.columnHead,
+.row {
+  display: grid;
+  grid-template-columns:
+    minmax(190px, 1.1fr) 108px minmax(160px, 1.2fr)
+    minmax(180px, 1.4fr) 104px;
+  gap: var(--s-5);
+  align-items: baseline;
+}
+
+.columnHead {
+  padding: var(--s-4) var(--s-3) var(--s-3) var(--s-4);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.updatedCol {
+  text-align: right;
+}
+
+.list {
+  border-bottom: 1px solid var(--rule);
+}
+
+.row {
+  position: relative;
+  padding: var(--s-4) var(--s-3) var(--s-4) var(--s-4);
+  border-bottom: 1px solid var(--rule);
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.list .row:last-child {
+  border-bottom: 0;
+}
+
+.row:hover {
+  background: var(--surface-subtle);
+}
+
+/* 2px status spine — the fastest scan cue on the page. */
+.row::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 2px;
+  background: transparent;
+}
+
+.rowBLOCKED::before {
+  background: var(--state-blocked-mark);
+}
+.rowAT_RISK::before {
+  background: var(--state-at-risk-mark);
+}
+.rowUNKNOWN::before {
+  background: var(--state-unknown-mark);
+}
+.rowREADY::before {
+  background: var(--state-ready-mark);
+}
+
+.cellInitiative {
+  min-width: 0;
+}
+
+.name {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+}
+
+/* Whole row is the click target for the initiative. */
+.name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.name:hover {
+  color: var(--accent-700);
+}
+
+.stage {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.issue,
+.action {
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+  line-height: 1.45;
+}
+
+.muted {
+  font-size: var(--t-sm);
+  color: var(--ink-400);
+}
+
+.cellUpdated {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Column labels, shown only once the grid collapses. */
+.mobileLabel {
+  display: none;
+}
+
+@media (max-width: 1000px) {
+  .columnHead {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--s-2) var(--s-4);
+    padding: var(--s-5) var(--s-3) var(--s-5) var(--s-4);
+  }
+
+  .cellInitiative {
+    grid-column: 1;
+  }
+
+  .cellState {
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .cellIssue,
+  .cellAction,
+  .cellUpdated {
+    grid-column: 1 / -1;
+  }
+
+  .cellUpdated {
+    text-align: left;
+  }
+
+  .mobileLabel {
+    display: block;
+    margin-bottom: 2px;
+    font-size: var(--t-micro);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-micro);
+    text-transform: uppercase;
+    color: var(--ink-400);
+  }
+}

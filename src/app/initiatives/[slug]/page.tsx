@@ -25,7 +25,10 @@ export default async function OverviewPage({
   if (!initiative) notFound();
 
   const intelligence = getIntelligence(slug);
-  const activity = await repo.listActivity(initiative.id, 6);
+  const [activity, evidence] = await Promise.all([
+    repo.listActivity(initiative.id, 6),
+    repo.listEvidence(initiative.id),
+  ]);
 
   return (
     <div className={styles.page}>
@@ -65,9 +68,11 @@ export default async function OverviewPage({
               : undefined
           }
         >
+          {/* "Nothing was detected" is a claim about a review that happened.
+              It is now answered by real connected evidence, not by fixtures. */}
           <AttentionList
             items={intelligence?.attention ?? []}
-            hasEvidence={(intelligence?.evidence.length ?? 0) > 0}
+            hasEvidence={evidence.length > 0}
           />
         </Section>
 

@@ -1,17 +1,73 @@
 .row {
-  display: grid;
-  grid-template-columns: 132px minmax(0, 1fr) auto;
-  gap: var(--s-4);
-  align-items: baseline;
-  padding: var(--s-3) 0;
   border-bottom: 1px solid var(--rule);
 }
 
-.refCell {
+/* Disclosure on the left, classification controls on the right. The controls
+   sit outside the <summary> so clicking a select never toggles the row. */
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-4);
+  padding: var(--s-3) 0;
+}
+
+.disclosure {
+  flex: 1;
+  min-width: 0;
+}
+
+.summary {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  cursor: pointer;
+  list-style: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+.summary::marker {
+  content: "";
+}
+
+.summary:focus-visible {
+  box-shadow: var(--focus-ring);
+  border-radius: var(--r-sm);
+}
+
+.chevron {
+  flex: none;
+  margin-top: 5px;
+  color: var(--ink-400);
+  transition: transform var(--dur) var(--ease);
+}
+
+.disclosure[open] > .summary .chevron {
+  transform: rotate(90deg);
+}
+
+.main {
+  min-width: 0;
+  display: block;
+}
+
+.titleLine {
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: var(--t-body);
+  font-weight: var(--fw-medium);
+  color: var(--ink-900);
+  line-height: 1.4;
+}
+
+.summary:hover .title {
+  color: var(--accent-700);
 }
 
 .kind {
@@ -22,47 +78,167 @@
   color: var(--ink-400);
 }
 
-.title {
-  font-size: var(--t-body);
-  font-weight: var(--fw-medium);
-  color: var(--ink-900);
-  line-height: 1.4;
+.metaLine {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  flex-wrap: wrap;
+  margin-top: 3px;
+  font-size: var(--t-xs);
+  color: var(--ink-400);
 }
 
-.summary {
-  margin-top: 2px;
+.metaSep {
+  padding: 0 var(--s-1);
+  color: var(--ink-300);
+}
+
+/* ── Expanded detail ─────────────────────────────────────────────────────- */
+.detail {
+  padding: var(--s-3) 0 var(--s-2) calc(10px + var(--s-3));
+}
+
+.summaryText {
   font-size: var(--t-sm);
-  color: var(--ink-500);
-  line-height: 1.5;
+  color: var(--ink-700);
+  line-height: var(--lh-body);
   max-width: 78ch;
 }
 
-/* Why the system put this item in this bucket — the boundary decision must
-   always be inspectable, and eventually correctable by the user. */
-.reason {
+.summaryMuted {
+  font-size: var(--t-sm);
+  color: var(--ink-400);
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--s-3) var(--s-5);
+  margin: var(--s-4) 0 0;
+  padding-top: var(--s-3);
+  border-top: 1px dashed var(--rule-strong);
+}
+
+.factTerm {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.factValue {
+  margin: var(--s-1) 0 0;
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+  overflow-wrap: anywhere;
+}
+
+.link {
+  color: var(--accent-700);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.editLink {
+  display: inline-block;
+  margin-top: var(--s-4);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  color: var(--accent-700);
+}
+
+.editLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ── Classification controls ─────────────────────────────────────────────- */
+.controls {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding-top: 2px;
+}
+
+.selectLabel {
+  display: block;
+}
+
+.select {
+  appearance: none;
+  background: var(--canvas);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  padding: 5px 26px 5px 9px;
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  color: var(--ink-700);
+  cursor: pointer;
+  /* Chevron drawn inline so no image request and no extra element. */
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-400) 50%),
+    linear-gradient(135deg, var(--ink-400) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) calc(50% + 1px),
+    calc(100% - 9px) calc(50% + 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.select:hover:not(:disabled) {
+  border-color: var(--ink-300);
+}
+
+.select:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.exclude {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  padding: 5px 8px;
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  color: var(--ink-500);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.exclude:hover:not(:disabled) {
+  color: var(--state-blocked-fg);
+  border-color: var(--state-blocked-edge);
+}
+
+.exclude:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.controlError {
+  flex-basis: 100%;
   margin-top: var(--s-2);
   font-size: var(--t-xs);
-  color: var(--ink-400);
-  line-height: 1.5;
-}
-
-.reason::before {
-  content: "Classified because ";
-  color: var(--ink-400);
-}
-
-.freshness {
-  text-align: right;
-  white-space: nowrap;
+  color: var(--state-blocked-fg);
 }
 
 @media (max-width: 780px) {
-  .row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--s-2);
+  .head {
+    flex-direction: column;
+    gap: var(--s-3);
     padding: var(--s-4) 0;
   }
-  .freshness {
-    text-align: left;
+  .controls {
+    padding-left: calc(10px + var(--s-3));
+    flex-wrap: wrap;
+  }
+  .detail {
+    padding-left: calc(10px + var(--s-3));
   }
 }

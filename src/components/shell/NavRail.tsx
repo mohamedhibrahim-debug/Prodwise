@@ -31,9 +31,37 @@ function InitiativesIcon() {
   );
 }
 
+function ReportingIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+      className={styles.navIcon}
+    >
+      <path
+        d="M2.75 2.5v11h10.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.5 10.5h6M5.5 7.5h3.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
   const pathname = usePathname();
   const onInitiatives = pathname === "/" || pathname.startsWith("/initiatives");
+  const onReporting = pathname.startsWith("/reporting");
 
   return (
     <aside className={styles.rail}>
@@ -60,12 +88,24 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
               <span className={styles.navText}>Initiatives</span>
             </Link>
           </li>
+          <li>
+            {/* Secondary executive view. Initiatives stays the PM home and the
+                default landing destination. */}
+            <Link
+              href="/reporting"
+              className={`${styles.navItem} ${onReporting ? styles.navItemActive : ""}`}
+              aria-current={onReporting ? "page" : undefined}
+            >
+              <ReportingIcon />
+              <span className={styles.navText}>Reporting</span>
+            </Link>
+          </li>
         </ul>
       </nav>
 
       <div className={styles.footer}>
         <InitiativeArc mark size={150} className={styles.arcBleed} />
-        <div className={styles.envLabel}>Phase 1</div>
+        <div className={styles.envLabel}>Phase 2</div>
         <p className={styles.envValue}>
           Source: <b>{dataSource}</b>
           <br />

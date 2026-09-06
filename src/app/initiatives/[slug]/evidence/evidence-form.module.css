@@ -1,0 +1,156 @@
+/* Shared by the add and edit evidence routes. Deliberately local rather than a
+   shared primitive: Phase 1's Create Initiative form is approved and untouched,
+   and there is no third caller that would justify generalising yet. */
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--s-8) var(--gutter) var(--s-16);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--ink-400);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.back:hover {
+  color: var(--accent-600);
+}
+
+.title {
+  margin-top: var(--s-3);
+  font-size: var(--t-h1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-display);
+}
+
+.intro {
+  margin-top: var(--s-3);
+  color: var(--ink-500);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  max-width: 64ch;
+}
+
+.form {
+  margin-top: var(--s-8);
+  border-top: 1px solid var(--rule);
+  padding-top: var(--s-6);
+}
+
+.field {
+  margin-bottom: var(--s-5);
+  min-width: 0;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0 var(--s-5);
+}
+
+.label {
+  display: block;
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-500);
+  margin-bottom: var(--s-2);
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  background: var(--canvas);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  padding: var(--s-3);
+  font-size: var(--t-body);
+  color: var(--ink-900);
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--ink-400);
+}
+
+.input:hover,
+.textarea:hover,
+.select:hover {
+  border-color: var(--ink-300);
+}
+
+.input:focus-visible,
+.textarea:focus-visible,
+.select:focus-visible {
+  border-color: var(--accent-500);
+}
+
+.select {
+  cursor: pointer;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 84px;
+  line-height: var(--lh-body);
+}
+
+.hint {
+  margin-top: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+  line-height: 1.5;
+}
+
+.optionalHead {
+  margin: var(--s-2) 0 var(--s-5);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--rule);
+}
+
+.optionalLabel {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--rule);
+}
+
+.error {
+  margin-bottom: var(--s-5);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--state-blocked-edge);
+  background: var(--state-blocked-bg);
+  border-radius: var(--r-sm);
+  color: var(--state-blocked-fg);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+}
+
+.notice {
+  margin-top: var(--s-6);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--rule);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+  line-height: var(--lh-body);
+}

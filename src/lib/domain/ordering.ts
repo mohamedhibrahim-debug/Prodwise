@@ -64,3 +64,23 @@ export function attentionRank(
 export function stageIndex(stage: Stage): number {
   return STAGES.indexOf(stage);
 }
+
+/**
+ * Strict state order for the executive reporting view:
+ * BLOCKED -> AT_RISK -> UNKNOWN -> READY.
+ *
+ * Deliberately different from attentionRank. The PM list promotes a critical
+ * finding across state boundaries, which is right when you are working the
+ * queue. Management reads by state first - "what is blocked" - so state must
+ * lead, and criticality only breaks ties within a state.
+ */
+const REPORTING_STATE_ORDER: Record<AssessmentState, number> = {
+  BLOCKED: 0,
+  AT_RISK: 1,
+  UNKNOWN: 2,
+  READY: 3,
+};
+
+export function reportingStateRank(state: AssessmentState): number {
+  return REPORTING_STATE_ORDER[state];
+}

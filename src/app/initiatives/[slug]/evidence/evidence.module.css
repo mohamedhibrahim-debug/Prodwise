@@ -1,0 +1,59 @@
+.introRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+}
+
+/* Where evidence can conceptually come from. Every source reads MANUAL in
+   Phase 2 — there are no connectors, and a fabricated state would be a lie. */
+.sources {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+  flex-wrap: wrap;
+  margin-top: var(--s-5);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--rule);
+}
+
+.sourcesLabel {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.source {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-700);
+}
+
+.sourceState {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  padding: 1px 5px;
+}
+
+.groupEmpty {
+  padding: var(--s-4) 0;
+  font-size: var(--t-sm);
+  color: var(--ink-400);
+  border-bottom: 1px solid var(--rule);
+}
+
+@media (max-width: 780px) {
+  .introRow {
+    gap: var(--s-4);
+  }
+}

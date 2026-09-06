@@ -7,6 +7,7 @@ import {
 } from "./supporting";
 
 export { DEMO_SLUG, SEED_ACTIVITY, SEED_INITIATIVES } from "./initiatives";
+export { SEED_EVIDENCE, SEED_SOURCES } from "./evidence";
 
 /**
  * Synthetic intelligence, keyed by initiative **slug** — never by a generated

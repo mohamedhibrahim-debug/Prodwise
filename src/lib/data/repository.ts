@@ -1,6 +1,10 @@
 import type {
   ActivityEntry,
+  EvidencePatch,
+  EvidenceRecord,
   Initiative,
+  InitiativeSource,
+  NewEvidenceInput,
   NewInitiativeInput,
 } from "@/lib/domain/types";
 
@@ -19,6 +23,20 @@ export interface Repository {
   getInitiativeBySlug(slug: string): Promise<Initiative | null>;
   listActivity(initiativeId: string, limit?: number): Promise<ActivityEntry[]>;
   createInitiative(input: NewInitiativeInput): Promise<Initiative>;
+
+  /* ── Evidence ────────────────────────────────────────────────────────────
+     Evidence is real, persisted and human-owned from Phase 2 onward. */
+  listEvidence(initiativeId: string): Promise<EvidenceRecord[]>;
+  getEvidence(id: string): Promise<EvidenceRecord | null>;
+  createEvidence(input: NewEvidenceInput): Promise<EvidenceRecord>;
+  /**
+   * Applies an edit. When the patch changes the boundary, the implementation
+   * also writes the corresponding activity entry — one method rather than a
+   * near-duplicate `reclassify`, so the two can never drift apart.
+   */
+  updateEvidence(id: string, patch: EvidencePatch): Promise<EvidenceRecord>;
+
+  listSources(initiativeId: string): Promise<InitiativeSource[]>;
 }
 
 /** Derives a stable, URL-safe slug. Collisions are resolved by the caller. */

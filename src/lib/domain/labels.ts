@@ -2,9 +2,10 @@ import type {
   AssessmentState,
   ClaimStatus,
   ClaimType,
+  ConnectionState,
   Domain,
   EvidenceRelation,
-  EvidenceSourceKind,
+  EvidenceSourceType,
   FindingType,
   Severity,
   Stage,
@@ -85,11 +86,33 @@ export const EVIDENCE_RELATION_LABEL: Record<EvidenceRelation, string> = {
   EXCLUDED: "Excluded",
 };
 
-export const EVIDENCE_KIND_LABEL: Record<EvidenceSourceKind, string> = {
-  JIRA: "Jira",
+export const EVIDENCE_SOURCE_TYPE_LABEL: Record<EvidenceSourceType, string> = {
   DOCUMENT: "Document",
-  MEETING_NOTE: "Meeting Note",
-  DECISION_RECORD: "Decision",
+  MEETING: "Meeting",
+  EMAIL: "Email",
+  JIRA: "Jira",
+  DECISION_NOTE: "Decision Note",
+  OTHER: "Other",
+};
+
+export const CONNECTION_STATE_LABEL: Record<ConnectionState, string> = {
+  MANUAL: "Manual",
+  CONNECTED: "Connected",
+  ERROR: "Error",
+  DISCONNECTED: "Disconnected",
+};
+
+/** What each boundary bucket means, so the classification decision is legible. */
+export const EVIDENCE_RELATION_NOTE: Record<EvidenceRelation, string> = {
+  CURRENT_SCOPE:
+    "Evidence directly relevant to the initiative being assessed now.",
+  FUTURE_PHASE:
+    "Belongs to a later phase or release, but is still related to the initiative.",
+  HISTORICAL:
+    "Old evidence, useful for context and history but not current truth.",
+  RELATED:
+    "Connected context, but not part of the initiative's current scope.",
+  EXCLUDED: "Explicitly excluded by a user.",
 };
 
 /** Formats a timestamp for display. Deterministic, so SSR and client agree. */
@@ -102,6 +125,30 @@ export function formatDate(iso: string): string {
     year: "numeric",
     timeZone: "UTC",
   }).format(d);
+}
+
+/**
+ * Freshness, stated factually.
+ *
+ * Reports elapsed time and nothing more. It never calls evidence "outdated" or
+ * "stale" - Prodwise has no basis for that claim, only for how long it has been
+ * since a human last verified the record. A null date is "unknown", which is a
+ * valid answer and not a failure (truth rules 3 and 4).
+ *
+ * Server-rendered only, so "now" is evaluated once and cannot desync a client.
+ */
+export function formatVerified(iso: string | null): string {
+  if (!iso) return "Verification date unknown";
+
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return "Verification date unknown";
+
+  const days = Math.floor((Date.now() - then.getTime()) / 86_400_000);
+  if (days < 0) return `Last verified ${formatDate(iso)}`;
+  if (days === 0) return "Last verified today";
+  if (days === 1) return "Last verified yesterday";
+  if (days < 30) return `Last verified ${days} days ago`;
+  return `Last verified ${formatDate(iso)}`;
 }
 
 export function formatDateTime(iso: string): string {

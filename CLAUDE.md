@@ -383,7 +383,7 @@ Phase 1 intentionally has **no authentication**. That must not create an unrestr
 
 The future logical model stays simple. Expected entities may eventually include: `users` · `initiatives` · `initiative_sources` · `evidence` · `claims` · `relationships` · `review_issues` · `assessments` · `actions` · `activity_log`.
 
-**Create only what the current phase requires.** Phase 1 created exactly: `users`, `initiatives`, `activity_log`.
+**Create only what the current phase requires.** Phase 1 created exactly: `users`, `initiatives`, `activity_log`. Phase 2 added exactly: `initiative_sources`, `evidence`. No `evidence_history` table — `activity_log` records boundary changes cleanly, and a second history mechanism would be schema for its own sake.
 
 ---
 
@@ -413,9 +413,23 @@ Delivered: design token system and shared primitives · application shell (navy 
 
 **Deliberately synthetic:** everything on Review, Product Memory, Evidence and Readiness, plus domain states and Next Best Action — static typed fixtures keyed to the demo initiative's slug. Consequently **an initiative you create yourself correctly shows honest empty states**, while the seeded demo shows the full narrative. This is intentional: it satisfies Rule 4 and proves the empty-state paths in real code.
 
-### Not built in Phase 1, and not to be added without explicit approval
+### Phase 2 — Evidence + Initiative Boundary — **COMPLETE**
 
-Real Jira integration · Google Drive integration · claim extraction · semantic search · AI conflict detection · readiness AI · Next Best Action generation · real domain activation logic · autonomous agents · authentication.
+Prodwise now answers *"what evidence belongs to this initiative?"* before attempting *"what does this evidence mean?"*.
+
+Delivered: persisted `EvidenceRecord` and `InitiativeSource` entities · five-value boundary classification on every record · manual add / edit / reclassify / exclude, all human-driven · boundary changes recorded in `activity_log` · evidence metadata and factual freshness · the `/reporting` executive view · file-backed local persistence behind the repository abstraction.
+
+**Real and functional:** evidence is created, edited, reclassified and persisted; classification survives reload and server restart; activity records every boundary move.
+
+**Still synthetic:** Review findings, Product Memory claims, Readiness, domain states and Next Best Action. **Evidence does not produce them.** Nothing is derived from evidence in Phase 2 — it is the source layer, not the reasoning layer.
+
+**Boundary rules that hold going forward:** exactly one boundary per record; no auto-classification; the user can always change it; `EXCLUDED` is one click but returning from it is never assumed — the target boundary must be chosen explicitly.
+
+**Persistence:** `.data/prodwise.json` via `src/lib/data/store.ts` is **local demo persistence only** — not distributed, serverless or multi-instance safe. Nothing outside the repository layer may import it. Supabase migrations for the same schema are committed and swap in automatically once env vars exist.
+
+### Not built in Phase 1 or 2, and not to be added without explicit approval
+
+Real Jira integration · Google Drive integration · claim extraction · semantic search · AI conflict detection · readiness AI · Next Best Action generation · real domain activation logic · autonomous agents · authentication · file/binary upload · portfolio analytics.
 
 ### Rule
 

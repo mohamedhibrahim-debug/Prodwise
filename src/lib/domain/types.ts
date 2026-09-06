@@ -102,13 +102,43 @@ export const EVIDENCE_RELATIONS = [
   "EXCLUDED",
 ] as const;
 
+/**
+ * The initiative boundary. Getting this wrong poisons every later intelligence
+ * layer, so it is always explicit and always human-correctable. Phase 2 has no
+ * auto-classification: a person decides, and can change the decision.
+ */
 export type EvidenceRelation = (typeof EVIDENCE_RELATIONS)[number];
 
-export type EvidenceSourceKind =
-  | "JIRA"
-  | "DOCUMENT"
-  | "MEETING_NOTE"
-  | "DECISION_RECORD";
+/**
+ * Where a piece of evidence came from. Deliberately small.
+ *
+ * JIRA is a source *type* only. It implies no integration: a record may carry a
+ * reference like "MFF-118" without Prodwise ever contacting Jira.
+ */
+export const EVIDENCE_SOURCE_TYPES = [
+  "DOCUMENT",
+  "MEETING",
+  "EMAIL",
+  "JIRA",
+  "DECISION_NOTE",
+  "OTHER",
+] as const;
+
+export type EvidenceSourceType = (typeof EVIDENCE_SOURCE_TYPES)[number];
+
+/**
+ * How a source is wired up. Phase 2 has no connectors, so every seeded source
+ * is MANUAL. The other states exist so the model does not need reshaping when
+ * real connectors arrive - they are never fabricated for demo purposes.
+ */
+export const CONNECTION_STATES = [
+  "MANUAL",
+  "CONNECTED",
+  "ERROR",
+  "DISCONNECTED",
+] as const;
+
+export type ConnectionState = (typeof CONNECTION_STATES)[number];
 
 export type Confidence = "HIGH" | "MEDIUM" | "LOW";
 
@@ -143,6 +173,78 @@ export interface NewInitiativeInput {
   name: string;
   description?: string | null;
   knownReferences?: string | null;
+}
+
+/**
+ * A source of evidence, distinct from the individual records that come from it.
+ *
+ * It exists so an initiative can say where its evidence conceptually comes from
+ * before any integration exists - "Merchant Flex Finance BRD", "Lending Weekly
+ * Meeting". In Phase 2 every source is MANUAL.
+ */
+export interface InitiativeSource {
+  id: string;
+  initiativeId: string;
+  name: string;
+  sourceType: EvidenceSourceType;
+  connectionState: ConnectionState;
+  lastSyncedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * A piece of source material attached to an initiative.
+ *
+ * Evidence is raw input, never a conclusion: it holds no claims, findings,
+ * scores or AI output. Interpretation belongs to later phases and to other
+ * entities. Every record carries exactly one boundary classification, set by a
+ * human and changeable by a human.
+ */
+export interface EvidenceRecord {
+  id: string;
+  initiativeId: string;
+  /** Optional link to an InitiativeSource. */
+  sourceId: string | null;
+  title: string;
+  sourceType: EvidenceSourceType;
+  /** e.g. "MFF-118", "PR v2.3". Free text; no system dereferences it. */
+  sourceReference: string | null;
+  sourceUrl: string | null;
+  contentSummary: string | null;
+  boundary: EvidenceRelation;
+  /** When the underlying artifact happened, if known. */
+  occurredAt: string | null;
+  /** When it was recorded in Prodwise. Always known. */
+  capturedAt: string;
+  /** When a human last confirmed it still holds. Null means unknown, not stale. */
+  lastVerifiedAt: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NewEvidenceInput {
+  initiativeId: string;
+  title: string;
+  sourceType: EvidenceSourceType;
+  boundary: EvidenceRelation;
+  sourceReference?: string | null;
+  sourceUrl?: string | null;
+  contentSummary?: string | null;
+  occurredAt?: string | null;
+}
+
+/** Fields an editor may change. Identity and capture time are not editable. */
+export interface EvidencePatch {
+  title?: string;
+  sourceType?: EvidenceSourceType;
+  boundary?: EvidenceRelation;
+  sourceReference?: string | null;
+  sourceUrl?: string | null;
+  contentSummary?: string | null;
+  occurredAt?: string | null;
+  lastVerifiedAt?: string | null;
 }
 
 /* ── Synthetic intelligence shapes ──────────────────────────────────────────
@@ -212,18 +314,6 @@ export interface MemoryClaim {
   flag?: string;
 }
 
-export interface EvidenceItem {
-  id: string;
-  relation: EvidenceRelation;
-  kind: EvidenceSourceKind;
-  reference: string;
-  title: string;
-  summary: string;
-  lastSeenAt: string;
-  /** Why the system placed this item in this relation bucket. */
-  classificationReason: string;
-}
-
 export interface ReadinessAssessment {
   domain: Domain;
   state: AssessmentState;
@@ -235,9 +325,13 @@ export interface ReadinessAssessment {
 }
 
 /**
- * The complete synthetic picture for one initiative. Absent for any initiative
- * without fixtures — which is every initiative a user creates, and which is
- * why the empty states are exercised by real code paths rather than mocked.
+ * The synthetic *interpretation* of an initiative. Absent for any initiative
+ * without fixtures — which is every initiative a user creates, and which is why
+ * the empty states are exercised by real code paths rather than mocked.
+ *
+ * Evidence is deliberately NOT part of this. From Phase 2 evidence is real,
+ * persisted and human-owned, and it is read through the repository. Keeping it
+ * here would imply the findings below were derived from it; they were not.
  */
 export interface InitiativeIntelligence {
   attention: AttentionItem[];
@@ -245,7 +339,6 @@ export interface InitiativeIntelligence {
   nextBestAction: NextBestAction | null;
   findings: ReviewFinding[];
   claims: MemoryClaim[];
-  evidence: EvidenceItem[];
   readiness: ReadinessAssessment[];
   lastEvaluatedAt: string;
 }

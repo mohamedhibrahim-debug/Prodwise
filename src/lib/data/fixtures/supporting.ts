@@ -149,39 +149,7 @@ export const instantSettlementPayout: InitiativeIntelligence = {
       sourceDate: "2026-02-10T00:00:00.000Z",
       confidence: "HIGH",
     },
-  ],
-  evidence: [
-    {
-      id: "isp-e-1",
-      relation: "CURRENT_SCOPE",
-      kind: "JIRA",
-      reference: "ISP-42",
-      title: "Instant Settlement Payout Core Epic",
-      summary: "Parent epic for same-day payout across eligible merchant segments.",
-      lastSeenAt: "2026-09-04T07:00:00.000Z",
-      classificationReason: "Directly referenced by the initiative boundary.",
-    },
-    {
-      id: "isp-e-2",
-      relation: "CURRENT_SCOPE",
-      kind: "JIRA",
-      reference: "ISP-77",
-      title: "Payout Window Implementation",
-      summary: "Implements the intraday payout window and submission schedule.",
-      lastSeenAt: "2026-09-04T07:00:00.000Z",
-      classificationReason: "Child of the core epic in the active release scope.",
-    },
-    {
-      id: "isp-e-3",
-      relation: "FUTURE_PHASE",
-      kind: "JIRA",
-      reference: "ISP-120",
-      title: "Weekend Payout Coverage",
-      summary: "Extends same-day payout to weekends and public holidays.",
-      lastSeenAt: "2026-08-14T09:30:00.000Z",
-      classificationReason: "Marked as a later phase.",
-    },
-  ],
+  ],
   readiness: [
     {
       domain: "TECHNICAL",
@@ -302,20 +270,7 @@ export const merchantKycRefresh: InitiativeIntelligence = {
       sourceDate: "2026-07-22T00:00:00.000Z",
       confidence: "LOW",
     },
-  ],
-  evidence: [
-    {
-      id: "kyc-e-1",
-      relation: "CURRENT_SCOPE",
-      kind: "DOCUMENT",
-      reference: "KYC-11",
-      title: "Merchant KYC Refresh Scoping Note",
-      summary:
-        "Early scoping note describing the intent to re-verify merchant identity records.",
-      lastSeenAt: "2026-08-28T16:12:00.000Z",
-      classificationReason: "The only artifact referencing this initiative.",
-    },
-  ],
+  ],
   readiness: [
     {
       domain: "PRODUCT",
@@ -405,39 +360,7 @@ export const collectionsReportingRebuild: InitiativeIntelligence = {
       sourceDate: "2026-08-25T00:00:00.000Z",
       confidence: "HIGH",
     },
-  ],
-  evidence: [
-    {
-      id: "crr-e-1",
-      relation: "CURRENT_SCOPE",
-      kind: "JIRA",
-      reference: "CRR-9",
-      title: "Collections Reporting Rebuild",
-      summary: "Parent item for the reporting rebuild and its agreed scope.",
-      lastSeenAt: "2026-09-01T09:02:00.000Z",
-      classificationReason: "Directly referenced by the initiative boundary.",
-    },
-    {
-      id: "crr-e-2",
-      relation: "CURRENT_SCOPE",
-      kind: "DOCUMENT",
-      reference: "CRR-15",
-      title: "Source Table Mapping",
-      summary: "Mapping of report fields to source tables and refresh cadence.",
-      lastSeenAt: "2026-09-01T09:02:00.000Z",
-      classificationReason: "Active requirement for the current scope.",
-    },
-    {
-      id: "crr-e-3",
-      relation: "HISTORICAL",
-      kind: "DOCUMENT",
-      reference: "LEG-PACK",
-      title: "Legacy Collections Pack Specification",
-      summary: "Specification for the pack being replaced.",
-      lastSeenAt: "2026-08-11T11:15:00.000Z",
-      classificationReason: "Describes the superseded reporting pack.",
-    },
-  ],
+  ],
   readiness: [
     {
       domain: "PRODUCT",

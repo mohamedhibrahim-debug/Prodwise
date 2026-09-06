@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { FindingRow } from "@/components/initiative/FindingRow";
+import { getRepository } from "@/lib/data";
 import { getIntelligence } from "@/lib/data/fixtures";
 import { isActionable, severityRank } from "@/lib/domain/ordering";
 import type { ReviewFinding } from "@/lib/domain/types";
@@ -43,6 +44,14 @@ export default async function ReviewPage({
 
   const intelligence = getIntelligence(slug);
   const all = intelligence?.findings ?? [];
+
+  // Whether any evidence is connected is now a fact from the repository, not a
+  // fixture — so the empty state can distinguish "reviewed, nothing found" from
+  // "nothing to review" truthfully.
+  const initiative = await getRepository().getInitiativeBySlug(slug);
+  const evidenceCount = initiative
+    ? (await getRepository().listEvidence(initiative.id)).length
+    : 0;
 
   const counts: Record<Filter, number> = {
     open: all.filter((f) => matches("open", f)).length,
@@ -88,16 +97,16 @@ export default async function ReviewPage({
           message={
             // "Nothing was detected" is a claim about a review that happened.
             // With no connected evidence there was no review to report on.
-            !intelligence || intelligence.evidence.length === 0
+            evidenceCount === 0
               ? EMPTY.evidence
               : filter === "resolved"
                 ? "No findings have been resolved yet."
                 : EMPTY.findings
           }
           hint={
-            intelligence
-              ? undefined
-              : "Findings are detected from connected evidence. Jira and Google Drive discovery arrive in a later phase."
+            evidenceCount === 0
+              ? "Findings are detected from connected evidence. Add evidence on the Evidence tab to build this initiative's boundary."
+              : undefined
           }
         />
       ) : (
