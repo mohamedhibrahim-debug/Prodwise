@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { getRepository } from "@/lib/data";
+import {
+  EvidenceAccessError,
+  resolveOwnedEvidence,
+} from "@/lib/data/evidence-access";
 import { WriteDisabledError } from "@/lib/env";
 import {
   EVIDENCE_RELATIONS,
@@ -21,6 +25,7 @@ function isBoundary(value: unknown): value is EvidenceRelation {
 }
 
 function toMessage(error: unknown): string {
+  if (error instanceof EvidenceAccessError) return error.message;
   if (error instanceof WriteDisabledError) return error.message;
   return error instanceof Error ? error.message : "Could not update evidence.";
 }
@@ -30,6 +35,11 @@ function toMessage(error: unknown): string {
  *
  * The target boundary is always explicit — there is no inferred destination.
  * The repository records the change in the activity log.
+ *
+ * `evidenceId` and `slug` both arrive from client-controlled input, so
+ * ownership is proven here rather than trusted from the page that rendered the
+ * control. Nothing is written and no activity is logged if the pair does not
+ * match.
  */
 export async function reclassifyEvidenceAction(
   evidenceId: string,
@@ -41,6 +51,7 @@ export async function reclassifyEvidenceAction(
   }
 
   try {
+    await resolveOwnedEvidence(slug, evidenceId);
     await getRepository().updateEvidence(evidenceId, { boundary });
   } catch (error) {
     return { error: toMessage(error) };

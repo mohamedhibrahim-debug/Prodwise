@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { getRepository } from "@/lib/data";
+import {
+  EvidenceAccessError,
+  resolveOwnedEvidence,
+} from "@/lib/data/evidence-access";
 import { WriteDisabledError } from "@/lib/env";
 import {
   EVIDENCE_RELATIONS,
@@ -55,6 +59,11 @@ export async function updateEvidenceAction(
   if (!boundary) return { error: "Select a boundary classification." };
 
   try {
+    // `evidenceId` and `slug` are client-controlled hidden fields, so ownership
+    // is proven at this mutation boundary rather than trusted from the page
+    // guard. Nothing is written and no activity is logged if they do not match.
+    await resolveOwnedEvidence(slug, evidenceId);
+
     // The repository writes an activity entry itself when the boundary moves,
     // so a reclassification made here is audited exactly like one made inline.
     await getRepository().updateEvidence(evidenceId, {
@@ -67,6 +76,7 @@ export async function updateEvidenceAction(
       occurredAt: readDate(formData.get("occurredAt")),
     });
   } catch (error) {
+    if (error instanceof EvidenceAccessError) return { error: error.message };
     if (error instanceof WriteDisabledError) return { error: error.message };
     return {
       error:
