@@ -1,11 +1,9 @@
+/* Every section carries its own top rule, including the first. That keeps the
+   separators correct no matter which section is rendered first, which matters
+   because Overview reorders two of them below 780px. */
 .section {
   padding-block: var(--s-8);
   border-top: 1px solid var(--rule);
-}
-
-.section:first-child {
-  border-top: 0;
-  padding-top: var(--s-6);
 }
 
 .head {
@@ -32,6 +30,21 @@
   color: var(--brand-orange);
   flex: none;
   padding-top: 2px;
+}
+
+/* Swapped when a section changes position at the mobile breakpoint, so the
+   numerals still read in order down the page. */
+.numMobile {
+  display: none;
+}
+
+@media (max-width: 780px) {
+  .numDesktop {
+    display: none;
+  }
+  .numMobile {
+    display: inline;
+  }
 }
 
 .title {

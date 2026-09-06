@@ -1,5 +1,28 @@
-import type { AssessmentState, Severity, Stage } from "./types";
+import type {
+  AssessmentState,
+  ReviewFinding,
+  Severity,
+  Stage,
+} from "./types";
 import { STAGES } from "./types";
+
+/**
+ * Whether a finding belongs in Review's "Open" list.
+ *
+ * Open means *actionable*: something a Product Manager still has to resolve.
+ *
+ * A SUPERSEDED finding is a record that product truth moved on - the earlier
+ * claim was replaced and is retained as history (truth rule 5). That is not a
+ * task, so it does not belong in an actionable queue. Listing it there dilutes
+ * the list and makes Review look busier than the initiative actually is.
+ *
+ * It is never deleted or reclassified: it stays visible under "All", keeps its
+ * evidence, and continues to explain itself as a supersession rather than a
+ * conflict (truth rule 7).
+ */
+export function isActionable(finding: ReviewFinding): boolean {
+  return finding.type !== "SUPERSEDED";
+}
 
 /**
  * Default priority for the Initiatives list. It answers one question:

@@ -49,39 +49,54 @@ export default async function OverviewPage({
         ) : null}
       </div>
 
-      <Section
-        title="Needs Your Attention"
-        numeral="01"
-        aside={
-          intelligence && intelligence.attention.length > 3
-            ? `Showing 3 of ${intelligence.attention.length}`
-            : undefined
-        }
-      >
-        <AttentionList
-          items={intelligence?.attention ?? []}
-          hasEvidence={(intelligence?.evidence.length ?? 0) > 0}
-        />
-      </Section>
+      {/* Order is set in CSS, not markup. Desktop reads Attention -> Next Best
+          Action; below 780px the recommendation is lifted first, so the primary
+          action arrives immediately after orientation rather than after a long
+          finding list. The numerals swap with it. */}
+      <div className={styles.sectionFlow}>
+        <Section
+          title="Needs Your Attention"
+          numeral="01"
+          mobileNumeral="02"
+          className={styles.orderAttention}
+          aside={
+            intelligence && intelligence.attention.length > 3
+              ? `Showing 3 of ${intelligence.attention.length}`
+              : undefined
+          }
+        >
+          <AttentionList
+            items={intelligence?.attention ?? []}
+            hasEvidence={(intelligence?.evidence.length ?? 0) > 0}
+          />
+        </Section>
 
-      {/* Next Best Action sits directly under Needs Your Attention so the
-          first viewport answers all three questions: where are we, what needs
-          attention, what should I do next. Current State follows as detail. */}
-      <Section title="Next Best Action" numeral="02">
-        <NextBestActionBlock action={intelligence?.nextBestAction ?? null} />
-      </Section>
+        <Section
+          title="Next Best Action"
+          numeral="02"
+          mobileNumeral="01"
+          className={styles.orderAction}
+        >
+          <NextBestActionBlock action={intelligence?.nextBestAction ?? null} />
+        </Section>
 
-      <Section
-        title="Current State"
-        numeral="03"
-        description="Only domains relevant to this initiative are shown."
-      >
-        <DomainStateList domains={intelligence?.domains ?? []} />
-      </Section>
+        <Section
+          title="Current State"
+          numeral="03"
+          className={styles.orderState}
+          description="Only domains relevant to this initiative are shown."
+        >
+          <DomainStateList domains={intelligence?.domains ?? []} />
+        </Section>
 
-      <Section title="Recent Changes" numeral="04">
-        <RecentChanges entries={activity} />
-      </Section>
+        <Section
+          title="Recent Changes"
+          numeral="04"
+          className={styles.orderChanges}
+        >
+          <RecentChanges entries={activity} />
+        </Section>
+      </div>
     </div>
   );
 }

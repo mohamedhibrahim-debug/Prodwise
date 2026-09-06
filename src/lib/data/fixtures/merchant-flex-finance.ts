@@ -75,6 +75,14 @@ export const merchantFlexFinance: InitiativeIntelligence = {
       note: "No Compliance approval evidence was found in the connected sources.",
     },
     {
+      // Operations belongs to the Lending activation set and is AT_RISK in
+      // Readiness, so Overview must not omit it. State and substance mirror the
+      // Operations readiness entry below - nothing new is asserted here.
+      domain: "OPERATIONS",
+      state: "AT_RISK",
+      note: "Merchant support model is described, but repayment failure handling is not defined.",
+    },
+    {
       domain: "RELEASE",
       state: "BLOCKED",
       note: "Release cannot proceed while the repayment calculation remains unresolved.",

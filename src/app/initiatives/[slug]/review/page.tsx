@@ -4,8 +4,8 @@ import type { Metadata } from "next";
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { FindingRow } from "@/components/initiative/FindingRow";
 import { getIntelligence } from "@/lib/data/fixtures";
-import { severityRank } from "@/lib/domain/ordering";
-import type { FindingStatus } from "@/lib/domain/types";
+import { isActionable, severityRank } from "@/lib/domain/ordering";
+import type { ReviewFinding } from "@/lib/domain/types";
 import styles from "../workspace.module.css";
 
 export const metadata: Metadata = { title: "Review" };
@@ -18,9 +18,14 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "all", label: "All" },
 ];
 
-function matches(filter: Filter, status: FindingStatus): boolean {
+/**
+ * "Open" is the actionable queue, not simply everything unresolved: a
+ * superseded claim is history, not a task. It stays fully visible under "All".
+ */
+function matches(filter: Filter, finding: ReviewFinding): boolean {
   if (filter === "all") return true;
-  return filter === "open" ? status === "OPEN" : status === "RESOLVED";
+  if (filter === "resolved") return finding.status === "RESOLVED";
+  return finding.status === "OPEN" && isActionable(finding);
 }
 
 export default async function ReviewPage({
@@ -40,13 +45,13 @@ export default async function ReviewPage({
   const all = intelligence?.findings ?? [];
 
   const counts: Record<Filter, number> = {
-    open: all.filter((f) => f.status === "OPEN").length,
-    resolved: all.filter((f) => f.status === "RESOLVED").length,
+    open: all.filter((f) => matches("open", f)).length,
+    resolved: all.filter((f) => matches("resolved", f)).length,
     all: all.length,
   };
 
   const visible = all
-    .filter((f) => matches(filter, f.status))
+    .filter((f) => matches(filter, f))
     .sort((a, b) => {
       const bySeverity = severityRank(a.severity) - severityRank(b.severity);
       if (bySeverity !== 0) return bySeverity;

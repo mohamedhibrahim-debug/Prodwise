@@ -8,10 +8,46 @@
   padding: 0 var(--gutter) var(--s-16);
 }
 
-/* ── Current state summary — the first thing read on Overview ────────────- */
+/* ── Current state summary — the first thing read on Overview ────────────-
+   No bottom rule: the first section supplies the separator via its own top
+   rule, which keeps the seam correct when sections are reordered on mobile. */
 .summary {
   padding: var(--s-8) 0 var(--s-6);
-  border-bottom: 1px solid var(--rule);
+}
+
+/* ── Overview section flow ───────────────────────────────────────────────-
+   Desktop: Attention -> Next Best Action -> Current State -> Recent Changes.
+   Below 780px the recommendation is lifted above the attention list, so the
+   primary action is reachable without scrolling past a long finding list.
+   Done with flex `order` - one DOM, no duplicated markup, no layout change. */
+.sectionFlow {
+  display: flex;
+  flex-direction: column;
+}
+
+.orderAttention {
+  order: 1;
+}
+
+.orderAction {
+  order: 2;
+}
+
+.orderState {
+  order: 3;
+}
+
+.orderChanges {
+  order: 4;
+}
+
+@media (max-width: 780px) {
+  .orderAction {
+    order: 1;
+  }
+  .orderAttention {
+    order: 2;
+  }
 }
 
 .summaryText {
@@ -88,12 +124,24 @@
   line-height: var(--lh-body);
 }
 
-/* ── Filter strip ────────────────────────────────────────────────────────- */
+/* ── Filter strip ────────────────────────────────────────────────────────-
+   Scrolls inside itself when it does not fit (Product Memory has five views
+   and overflows a 375px viewport). Overflow is contained here so the strip
+   never widens the document or drags the page header out of view. */
 .filters {
   display: flex;
   gap: var(--s-1);
   margin-top: var(--s-5);
   border-bottom: 1px solid var(--rule);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  /* Holds the 2px active underline inside the scroll box. */
+  padding-bottom: 1px;
+}
+
+.filters::-webkit-scrollbar {
+  display: none;
 }
 
 .filter {
@@ -104,6 +152,8 @@
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   transition: color var(--dur-fast) var(--ease);
+  flex: none;
+  white-space: nowrap;
 }
 
 .filter:hover {
