@@ -132,3 +132,50 @@ insert into public.evidence (id, initiative_id, source_id, title, source_type, s
 ('bbbb0004-0000-4000-8000-000000000002','44444444-4444-4444-8444-444444444444',null,'Source Table Mapping','DOCUMENT','CRR-15','Mapping of report fields to source tables and refresh cadence.','CURRENT_SCOPE','2026-08-25T00:00:00Z','2026-08-25T09:00:00Z','2026-09-01T09:02:00Z','00000000-0000-4000-8000-000000000001'),
 ('bbbb0004-0000-4000-8000-000000000003','44444444-4444-4444-8444-444444444444',null,'Legacy Collections Pack Specification','DOCUMENT','LEG-PACK','Specification for the pack being replaced.','HISTORICAL','2026-08-11T00:00:00Z','2026-08-11T11:15:00Z',null,'00000000-0000-4000-8000-000000000001')
 on conflict (id) do nothing;
+
+-- ============================================================================
+-- PHASE 3 — Product Memory
+--
+-- Curated demo knowledge migrated from the Phase 1 synthetic fixture. Phase 3
+-- performs no inference and no extraction: nothing here was produced from the
+-- evidence it links to. The links record what a human would cite.
+--
+-- Claims c-1b, c-1c and c-8 are deliberately left unlinked - no seeded evidence
+-- genuinely corresponds to them, and inventing provenance would be dishonest.
+-- ============================================================================
+
+insert into public.claims (id, initiative_id, type, status, subject, attribute, value, domain, phase, confidence, superseded_by_claim_id, created_by, created_at, updated_at) values
+('cccc0001-0000-4000-8000-000000000001','11111111-1111-4111-8111-111111111111','DECISION','ACTIVE','Financing Model','Offered Products','Islamic Financing Only','PRODUCT','Phase 1','HIGH',null,'00000000-0000-4000-8000-000000000001','2026-08-18T10:05:00Z','2026-08-18T10:05:00Z'),
+('cccc0001-0000-4000-8000-00000000001b','11111111-1111-4111-8111-111111111111','DECISION','ACTIVE','Repayment Collection','Collection Frequency','Repayment is deducted daily from settlement activity rather than invoiced monthly','FINANCE','Phase 1','HIGH',null,'00000000-0000-4000-8000-000000000001','2026-05-11T00:00:00Z','2026-05-11T00:00:00Z'),
+('cccc0001-0000-4000-8000-00000000001c','11111111-1111-4111-8111-111111111111','DECISION','ACTIVE','Disbursement','Phase 1 Approach','Financing is disbursed manually in Phase 1; automation is deferred to a later phase','OPERATIONS','Phase 1','HIGH',null,'00000000-0000-4000-8000-000000000001','2026-08-05T00:00:00Z','2026-08-05T00:00:00Z'),
+('cccc0001-0000-4000-8000-000000000003','11111111-1111-4111-8111-111111111111','REQUIREMENT','ACTIVE','Daily Repayment','Calculation Divisor','27','FINANCE','Phase 1','HIGH',null,'00000000-0000-4000-8000-000000000001','2026-06-02T00:00:00Z','2026-06-02T00:00:00Z'),
+('cccc0001-0000-4000-8000-000000000004','11111111-1111-4111-8111-111111111111','REQUIREMENT','ACTIVE','Daily Repayment','Calculation Divisor','30','FINANCE','Phase 1','HIGH',null,'00000000-0000-4000-8000-000000000001','2026-08-21T00:00:00Z','2026-08-21T00:00:00Z'),
+('cccc0001-0000-4000-8000-000000000005','11111111-1111-4111-8111-111111111111','BUSINESS_RULE','ACTIVE','Repayment Source','Deduction Mechanism','Deducted from merchant settlement activity','FINANCE','Phase 1','HIGH',null,'00000000-0000-4000-8000-000000000001','2026-05-11T00:00:00Z','2026-05-11T00:00:00Z'),
+('cccc0001-0000-4000-8000-000000000006','11111111-1111-4111-8111-111111111111','BUSINESS_RULE','ACTIVE','Merchant Eligibility','Minimum Trading History','6 months of continuous settlement activity','PRODUCT','Phase 1','MEDIUM',null,'00000000-0000-4000-8000-000000000001','2026-07-09T00:00:00Z','2026-07-09T00:00:00Z'),
+('cccc0001-0000-4000-8000-000000000007','11111111-1111-4111-8111-111111111111','RISK','ACTIVE','Repayment Reconciliation','Exposure','An incorrect divisor would misstate daily repayment across all active contracts','FINANCE','Phase 1','HIGH',null,'00000000-0000-4000-8000-000000000001','2026-09-03T00:00:00Z','2026-09-03T00:00:00Z'),
+('cccc0001-0000-4000-8000-000000000008','11111111-1111-4111-8111-111111111111','RISK','UNVERIFIED','Merchant Concentration','Portfolio Exposure','Concentration limits per merchant segment are not stated','RISK','Phase 1','LOW',null,'00000000-0000-4000-8000-000000000001','2026-08-02T00:00:00Z','2026-08-02T00:00:00Z'),
+('cccc0001-0000-4000-8000-000000000009','11111111-1111-4111-8111-111111111111','DEPENDENCY','ACTIVE','Settlement Service','Required Capability','Per-merchant daily settlement totals exposed to the finance ledger','TECHNICAL','Phase 1','HIGH',null,'00000000-0000-4000-8000-000000000001','2026-07-30T00:00:00Z','2026-07-30T00:00:00Z'),
+('cccc0001-0000-4000-8000-000000000010','11111111-1111-4111-8111-111111111111','DEPENDENCY','DEFERRED','Disbursement Engine','Required Capability','Automated disbursement to merchant accounts','TECHNICAL','Phase 2','MEDIUM',null,'00000000-0000-4000-8000-000000000001','2026-08-05T00:00:00Z','2026-08-05T00:00:00Z'),
+('cccc0001-0000-4000-8000-000000000011','11111111-1111-4111-8111-111111111111','ASSUMPTION','UNVERIFIED','Settlement Frequency','Assumed Cadence','Merchants settle on at least 20 days per calendar month','FINANCE','Phase 1','LOW',null,'00000000-0000-4000-8000-000000000001','2026-07-09T00:00:00Z','2026-07-09T00:00:00Z'),
+('cccc0001-0000-4000-8000-000000000012','11111111-1111-4111-8111-111111111111','ASSUMPTION','ACTIVE','Contract Term','Default Duration','6 monthly installments','PRODUCT','Phase 1','MEDIUM',null,'00000000-0000-4000-8000-000000000001','2026-07-09T00:00:00Z','2026-07-09T00:00:00Z')
+on conflict (id) do nothing;
+
+-- Inserted after the rest so the supersession target already exists.
+insert into public.claims (id, initiative_id, type, status, subject, attribute, value, domain, phase, confidence, superseded_by_claim_id, created_by, created_at, updated_at) values
+('cccc0001-0000-4000-8000-000000000002','11111111-1111-4111-8111-111111111111','REQUIREMENT','SUPERSEDED','Financing Model','Offered Products','Traditional + Islamic Financing','PRODUCT','Phase 1','HIGH','cccc0001-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000001','2026-04-18T00:00:00Z','2026-08-18T10:05:00Z')
+on conflict (id) do nothing;
+
+insert into public.claim_evidence (claim_id, evidence_id) values
+('cccc0001-0000-4000-8000-000000000001','bbbb0001-0000-4000-8000-000000000005'),
+('cccc0001-0000-4000-8000-000000000002','bbbb0001-0000-4000-8000-000000000007'),
+('cccc0001-0000-4000-8000-000000000003','bbbb0001-0000-4000-8000-000000000002'),
+('cccc0001-0000-4000-8000-000000000004','bbbb0001-0000-4000-8000-000000000004'),
+('cccc0001-0000-4000-8000-000000000005','bbbb0001-0000-4000-8000-000000000001'),
+('cccc0001-0000-4000-8000-000000000006','bbbb0001-0000-4000-8000-000000000003'),
+('cccc0001-0000-4000-8000-000000000007','bbbb0001-0000-4000-8000-000000000002'),
+('cccc0001-0000-4000-8000-000000000007','bbbb0001-0000-4000-8000-000000000004'),
+('cccc0001-0000-4000-8000-000000000009','bbbb0001-0000-4000-8000-000000000001'),
+('cccc0001-0000-4000-8000-000000000010','bbbb0001-0000-4000-8000-000000000006'),
+('cccc0001-0000-4000-8000-000000000011','bbbb0001-0000-4000-8000-000000000003'),
+('cccc0001-0000-4000-8000-000000000012','bbbb0001-0000-4000-8000-000000000003')
+on conflict (claim_id, evidence_id) do nothing;

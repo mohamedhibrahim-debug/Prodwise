@@ -105,7 +105,7 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
 
       <div className={styles.footer}>
         <InitiativeArc mark size={150} className={styles.arcBleed} />
-        <div className={styles.envLabel}>Phase 2</div>
+        <div className={styles.envLabel}>Phase 3</div>
         <p className={styles.envValue}>
           Source: <b>{dataSource}</b>
           <br />

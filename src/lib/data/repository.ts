@@ -1,9 +1,13 @@
 import type {
   ActivityEntry,
+  ClaimPatch,
+  ClaimRecord,
+  ClaimWithEvidence,
   EvidencePatch,
   EvidenceRecord,
   Initiative,
   InitiativeSource,
+  NewClaimInput,
   NewEvidenceInput,
   NewInitiativeInput,
 } from "@/lib/domain/types";
@@ -37,6 +41,28 @@ export interface Repository {
   updateEvidence(id: string, patch: EvidencePatch): Promise<EvidenceRecord>;
 
   listSources(initiativeId: string): Promise<InitiativeSource[]>;
+
+  /* ── Product Memory ──────────────────────────────────────────────────────
+     Claims are real, persisted and human-owned from Phase 3 onward. Nothing
+     generates them: every record is a migrated seed or something a person
+     entered. The repository resolves provenance so no page touches the link
+     table. */
+  listClaims(initiativeId: string): Promise<ClaimWithEvidence[]>;
+  getClaim(id: string): Promise<ClaimWithEvidence | null>;
+  /** Always created UNVERIFIED — a new claim has not been verified by anyone. */
+  createClaim(input: NewClaimInput): Promise<ClaimRecord>;
+  /**
+   * Applies an edit and logs meaningful changes. Normalises the supersession
+   * invariant: `supersededByClaimId` survives only while the status is
+   * SUPERSEDED, whatever the caller passes.
+   */
+  updateClaim(id: string, patch: ClaimPatch): Promise<ClaimRecord>;
+  /**
+   * Replaces a claim's evidence links with exactly `evidenceIds`.
+   * Callers must have already validated the ids (ownership, and that newly
+   * added ones are not EXCLUDED) — see lib/data/access.ts.
+   */
+  setClaimEvidence(claimId: string, evidenceIds: string[]): Promise<void>;
 }
 
 /** Derives a stable, URL-safe slug. Collisions are resolved by the caller. */

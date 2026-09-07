@@ -5,12 +5,14 @@ import { dirname, join } from "node:path";
 
 import type {
   ActivityEntry,
+  ClaimRecord,
   EvidenceRecord,
   Initiative,
   InitiativeSource,
 } from "@/lib/domain/types";
 import { SEED_ACTIVITY, SEED_INITIATIVES } from "./fixtures/initiatives";
 import { SEED_EVIDENCE, SEED_SOURCES } from "./fixtures/evidence";
+import { SEED_CLAIMS, SEED_CLAIM_EVIDENCE } from "./fixtures/claims";
 
 /**
  * LOCAL DEMO PERSISTENCE ONLY.
@@ -29,11 +31,20 @@ import { SEED_EVIDENCE, SEED_SOURCES } from "./fixtures/evidence";
  * that swapping in Supabase changes nothing above the data layer.
  */
 
+/** One link between a claim and a supporting evidence record. */
+export interface ClaimEvidenceLink {
+  claimId: string;
+  evidenceId: string;
+  createdAt: string;
+}
+
 export interface StoreShape {
   initiatives: Initiative[];
   activity: ActivityEntry[];
   evidence: EvidenceRecord[];
   sources: InitiativeSource[];
+  claims: ClaimRecord[];
+  claimEvidence: ClaimEvidenceLink[];
 }
 
 const DATA_FILE = join(process.cwd(), ".data", "prodwise.json");
@@ -44,6 +55,11 @@ function seed(): StoreShape {
     activity: SEED_ACTIVITY.map((a) => ({ ...a })),
     evidence: SEED_EVIDENCE.map((e) => ({ ...e })),
     sources: SEED_SOURCES.map((s) => ({ ...s })),
+    claims: SEED_CLAIMS.map((c) => ({ ...c })),
+    claimEvidence: SEED_CLAIM_EVIDENCE.map((l) => ({
+      ...l,
+      createdAt: "2026-09-06T00:00:00.000Z",
+    })),
   };
 }
 
@@ -63,6 +79,8 @@ function load(): StoreShape {
         activity: parsed.activity ?? base.activity,
         evidence: parsed.evidence ?? base.evidence,
         sources: parsed.sources ?? base.sources,
+        claims: parsed.claims ?? base.claims,
+        claimEvidence: parsed.claimEvidence ?? base.claimEvidence,
       };
       return cache;
     } catch {

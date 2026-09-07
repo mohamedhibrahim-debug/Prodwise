@@ -1,0 +1,13 @@
+.introRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 780px) {
+  .introRow {
+    gap: var(--s-4);
+  }
+}

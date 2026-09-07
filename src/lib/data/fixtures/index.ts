@@ -36,3 +36,4 @@ export function getIntelligence(slug: string): InitiativeIntelligence | null {
 export function hasIntelligence(slug: string): boolean {
   return slug in INTELLIGENCE_BY_SLUG;
 }
+export { SEED_CLAIMS, SEED_CLAIM_EVIDENCE } from "./claims";

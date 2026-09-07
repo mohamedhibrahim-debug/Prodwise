@@ -7,7 +7,7 @@ import { getRepository } from "@/lib/data";
 import {
   EvidenceAccessError,
   resolveOwnedEvidence,
-} from "@/lib/data/evidence-access";
+} from "@/lib/data/access";
 import { WriteDisabledError } from "@/lib/env";
 import {
   EVIDENCE_RELATIONS,

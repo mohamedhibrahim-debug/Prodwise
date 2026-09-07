@@ -235,6 +235,68 @@ export interface NewEvidenceInput {
   occurredAt?: string | null;
 }
 
+/**
+ * A unit of Product Memory: one structured piece of product knowledge.
+ *
+ * Provenance is a real link to evidence records, never a copied source string —
+ * which is why there is no `source` / `sourceDate` here. A claim may have zero,
+ * one or many supporting evidence records.
+ *
+ * The claim holds no interpretation of its own relationship to other claims.
+ * Nothing here says two claims disagree: Phase 3 records knowledge, it does not
+ * judge it. Conflict detection belongs to a later phase.
+ */
+export interface ClaimRecord {
+  id: string;
+  initiativeId: string;
+  type: ClaimType;
+  status: ClaimStatus;
+  subject: string;
+  attribute: string;
+  value: string;
+  domain: Domain;
+  phase: string | null;
+  /** Present on migrated seed records; null for anything a human creates. */
+  confidence: Confidence | null;
+  /**
+   * The claim that replaced this one. Only ever non-null when status is
+   * SUPERSEDED, and always a claim on the same initiative. A claim may be
+   * SUPERSEDED with no known replacement — the system never invents a successor.
+   */
+  supersededByClaimId: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A claim with its provenance resolved. The repository owns the join. */
+export interface ClaimWithEvidence extends ClaimRecord {
+  evidence: EvidenceRecord[];
+}
+
+export interface NewClaimInput {
+  initiativeId: string;
+  type: ClaimType;
+  subject: string;
+  attribute: string;
+  value: string;
+  domain: Domain;
+  phase?: string | null;
+}
+
+/** Fields an editor may change. Confidence is not among them: it is displayed
+ *  where a migrated record has it, never assigned by hand in this phase. */
+export interface ClaimPatch {
+  type?: ClaimType;
+  status?: ClaimStatus;
+  subject?: string;
+  attribute?: string;
+  value?: string;
+  domain?: Domain;
+  phase?: string | null;
+  supersededByClaimId?: string | null;
+}
+
 /** Fields an editor may change. Identity and capture time are not editable. */
 export interface EvidencePatch {
   title?: string;
@@ -296,24 +358,6 @@ export interface ReviewFinding {
   resolution?: string;
 }
 
-export interface MemoryClaim {
-  id: string;
-  type: ClaimType;
-  status: ClaimStatus;
-  subject: string;
-  attribute: string;
-  value: string;
-  domain: Domain;
-  phase: string;
-  source: string;
-  sourceDate: string;
-  confidence: Confidence;
-  /** e.g. "Supersedes: Traditional + Islamic Financing" */
-  relationship?: string;
-  /** Set when this claim participates in an open finding. */
-  flag?: string;
-}
-
 export interface ReadinessAssessment {
   domain: Domain;
   state: AssessmentState;
@@ -329,16 +373,18 @@ export interface ReadinessAssessment {
  * without fixtures — which is every initiative a user creates, and which is why
  * the empty states are exercised by real code paths rather than mocked.
  *
- * Evidence is deliberately NOT part of this. From Phase 2 evidence is real,
- * persisted and human-owned, and it is read through the repository. Keeping it
- * here would imply the findings below were derived from it; they were not.
+ * Evidence (Phase 2) and claims (Phase 3) are deliberately NOT part of this.
+ * Both are real, persisted and human-owned, and are read through the
+ * repository. Keeping either here would imply the findings below were derived
+ * from them. They were not: Review, Readiness, Current State and Next Best
+ * Action remain static fixtures, and nothing in the product derives them from
+ * Product Memory yet.
  */
 export interface InitiativeIntelligence {
   attention: AttentionItem[];
   domains: DomainAssessment[];
   nextBestAction: NextBestAction | null;
   findings: ReviewFinding[];
-  claims: MemoryClaim[];
   readiness: ReadinessAssessment[];
   lastEvaluatedAt: string;
 }

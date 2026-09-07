@@ -1,16 +1,21 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+import { ButtonLink } from "@/components/primitives/Button";
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { ClaimRow } from "@/components/initiative/ClaimRow";
-import { getIntelligence } from "@/lib/data/fixtures";
-import type { ClaimType, MemoryClaim } from "@/lib/domain/types";
+import { getRepository } from "@/lib/data";
+import type { ClaimType, ClaimWithEvidence } from "@/lib/domain/types";
 import styles from "../workspace.module.css";
+import memoryStyles from "./memory.module.css";
 
 export const metadata: Metadata = { title: "Product Memory" };
+export const dynamic = "force-dynamic";
 
 type View = "decisions" | "requirements" | "risks" | "dependencies" | "claims";
 
+/** Section semantics are unchanged from Phase 1. ASSUMPTION lives under Claims. */
 const VIEWS: { key: View; label: string; types: ClaimType[] | null }[] = [
   { key: "decisions", label: "Decisions", types: ["DECISION"] },
   {
@@ -23,7 +28,7 @@ const VIEWS: { key: View; label: string; types: ClaimType[] | null }[] = [
   { key: "claims", label: "Claims", types: null },
 ];
 
-function select(claims: MemoryClaim[], types: ClaimType[] | null) {
+function select(claims: ClaimWithEvidence[], types: ClaimType[] | null) {
   if (!types) return claims;
   return claims.filter((c) => types.includes(c.type));
 }
@@ -42,18 +47,28 @@ export default async function MemoryPage({
     (VIEWS.find((v) => v.key === rawView)?.key as View | undefined) ??
     "decisions";
 
-  const claims = getIntelligence(slug)?.claims ?? [];
+  const repo = getRepository();
+  const initiative = await repo.getInitiativeBySlug(slug);
+  if (!initiative) notFound();
+
+  const claims = await repo.listClaims(initiative.id);
+  const byId = new Map(claims.map((c) => [c.id, c]));
+
   const active = VIEWS.find((v) => v.key === view)!;
   const visible = select(claims, active.types);
 
   return (
     <div className={styles.page}>
       <div className={styles.tabIntro}>
-        <p className={styles.tabIntroText}>
-          Structured knowledge extracted from evidence. Nothing here is deleted
-          when it changes — a requirement that has been replaced is marked
-          superseded and stays available as history.
-        </p>
+        <div className={memoryStyles.introRow}>
+          <p className={styles.tabIntroText}>
+            Structured product knowledge backed by initiative evidence. History
+            is preserved when requirements or decisions change.
+          </p>
+          <ButtonLink href={`/initiatives/${slug}/memory/new`} variant="primary">
+            Add Claim
+          </ButtonLink>
+        </div>
 
         <nav className={styles.filters} aria-label="Product memory sections">
           {VIEWS.map(({ key, label, types }) => (
@@ -74,20 +89,37 @@ export default async function MemoryPage({
 
       {visible.length === 0 ? (
         <EmptyState
-          message={claims.length === 0 ? EMPTY.memory : `No ${active.label.toLowerCase()} have been extracted yet.`}
+          message={
+            claims.length === 0
+              ? EMPTY.memory
+              : `No ${active.label.toLowerCase()} have been recorded yet.`
+          }
           hint={
             claims.length === 0
-              ? "No related evidence has been confirmed yet."
+              ? "Add a claim to start recording what is known about this initiative."
               : undefined
           }
         />
       ) : (
         <>
-          {/* Keeps the heading outline unbroken: claim rows are h3. */}
+          {/* Keeps the heading outline unbroken: claim rows are inside details. */}
           <h2 className="visually-hidden">{active.label}</h2>
           <ul>
             {visible.map((claim) => (
-              <ClaimRow key={claim.id} claim={claim} />
+              <ClaimRow
+                key={claim.id}
+                claim={claim}
+                slug={slug}
+                supersededBy={
+                  claim.supersededByClaimId
+                    ? byId.get(claim.supersededByClaimId)
+                    : undefined
+                }
+                // Reverse relation, derived rather than stored twice.
+                supersedes={claims.filter(
+                  (c) => c.supersededByClaimId === claim.id,
+                )}
+              />
             ))}
           </ul>
         </>

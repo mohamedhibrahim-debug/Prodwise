@@ -3,17 +3,27 @@ import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { assertWriteAllowed, supabaseServiceRoleKey, supabaseUrl } from "@/lib/env";
-import { EVIDENCE_RELATION_LABEL } from "@/lib/domain/labels";
+import {
+  CLAIM_STATUS_LABEL,
+  EVIDENCE_RELATION_LABEL,
+} from "@/lib/domain/labels";
 import type {
   ActivityEntry,
   AssessmentState,
+  ClaimPatch,
+  ClaimRecord,
+  ClaimStatus,
+  ClaimType,
+  Confidence,
   ConnectionState,
   EvidencePatch,
   EvidenceRecord,
   EvidenceRelation,
   EvidenceSourceType,
+  Domain,
   Initiative,
   InitiativeSource,
+  NewClaimInput,
   NewEvidenceInput,
   NewInitiativeInput,
   Stage,
@@ -64,6 +74,23 @@ interface EvidenceRow {
   occurred_at: string | null;
   captured_at: string;
   last_verified_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ClaimRow {
+  id: string;
+  initiative_id: string;
+  type: ClaimType;
+  status: ClaimStatus;
+  subject: string;
+  attribute: string;
+  value: string;
+  domain: Domain;
+  phase: string | null;
+  confidence: Confidence | null;
+  superseded_by_claim_id: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -146,6 +173,25 @@ function toSource(row: SourceRow): InitiativeSource {
     sourceType: row.source_type,
     connectionState: row.connection_state,
     lastSyncedAt: row.last_synced_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function toClaim(row: ClaimRow): ClaimRecord {
+  return {
+    id: row.id,
+    initiativeId: row.initiative_id,
+    type: row.type,
+    status: row.status,
+    subject: row.subject,
+    attribute: row.attribute,
+    value: row.value,
+    domain: row.domain,
+    phase: row.phase,
+    confidence: row.confidence,
+    supersededByClaimId: row.superseded_by_claim_id,
+    createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -346,5 +392,179 @@ export const supabaseRepository: Repository = {
 
     if (error) throw new Error(`Failed to list sources: ${error.message}`);
     return (data as SourceRow[]).map(toSource);
+  },
+
+  /* ── Product Memory ────────────────────────────────────────────────────── */
+
+  async listClaims(initiativeId) {
+    const supabase = getClient();
+
+    const [{ data: claimData, error: claimError }, { data: linkData, error: linkError }] =
+      await Promise.all([
+        supabase
+          .from("claims")
+          .select("*")
+          .eq("initiative_id", initiativeId)
+          .order("created_at", { ascending: true }),
+        supabase.from("claim_evidence").select("claim_id, evidence_id"),
+      ]);
+
+    if (claimError) throw new Error(`Failed to list claims: ${claimError.message}`);
+    if (linkError) throw new Error(`Failed to list provenance: ${linkError.message}`);
+
+    const evidence = await this.listEvidence(initiativeId);
+    const byId = new Map(evidence.map((e) => [e.id, e]));
+    const links = linkData as { claim_id: string; evidence_id: string }[];
+
+    return (claimData as ClaimRow[]).map((row) => ({
+      ...toClaim(row),
+      evidence: links
+        .filter((l) => l.claim_id === row.id)
+        .map((l) => byId.get(l.evidence_id))
+        .filter((e): e is EvidenceRecord => Boolean(e)),
+    }));
+  },
+
+  async getClaim(id) {
+    const supabase = getClient();
+    const { data, error } = await supabase
+      .from("claims")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) throw new Error(`Failed to load claim: ${error.message}`);
+    if (!data) return null;
+
+    const claim = toClaim(data as ClaimRow);
+    const all = await this.listClaims(claim.initiativeId);
+    return all.find((c) => c.id === claim.id) ?? { ...claim, evidence: [] };
+  },
+
+  async createClaim(input: NewClaimInput) {
+    assertWriteAllowed();
+
+    const { data, error } = await getClient()
+      .from("claims")
+      .insert({
+        initiative_id: input.initiativeId,
+        type: input.type,
+        // Nobody has verified a brand-new claim yet.
+        status: "UNVERIFIED",
+        subject: input.subject.trim(),
+        attribute: input.attribute.trim(),
+        value: input.value.trim(),
+        domain: input.domain,
+        phase: input.phase?.trim() || null,
+        confidence: null,
+        superseded_by_claim_id: null,
+      })
+      .select("*")
+      .single();
+
+    if (error) throw new Error(`Failed to create claim: ${error.message}`);
+
+    const created = toClaim(data as ClaimRow);
+    await writeActivity(
+      created.initiativeId,
+      "CLAIM_ADDED",
+      `${created.subject} added as ${CLAIM_STATUS_LABEL[created.status]}`,
+    );
+    return created;
+  },
+
+  async updateClaim(id, patch: ClaimPatch) {
+    assertWriteAllowed();
+
+    const supabase = getClient();
+    const { data: existingRow, error: readError } = await supabase
+      .from("claims")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (readError) throw new Error(`Failed to load claim: ${readError.message}`);
+    if (!existingRow) throw new Error(`Claim ${id} was not found.`);
+
+    const existing = toClaim(existingRow as ClaimRow);
+    const nextStatus = patch.status ?? existing.status;
+    let nextSuperseded =
+      patch.supersededByClaimId !== undefined
+        ? patch.supersededByClaimId || null
+        : existing.supersededByClaimId;
+
+    // Same invariant as the local adapter, enforced regardless of caller.
+    if (nextStatus !== "SUPERSEDED") nextSuperseded = null;
+    if (nextSuperseded === id) nextSuperseded = null;
+
+    const row: Record<string, unknown> = { superseded_by_claim_id: nextSuperseded };
+    if (patch.type !== undefined) row.type = patch.type;
+    if (patch.status !== undefined) row.status = patch.status;
+    if (patch.subject !== undefined) row.subject = patch.subject.trim();
+    if (patch.attribute !== undefined) row.attribute = patch.attribute.trim();
+    if (patch.value !== undefined) row.value = patch.value.trim();
+    if (patch.domain !== undefined) row.domain = patch.domain;
+    if (patch.phase !== undefined) row.phase = patch.phase?.trim() || null;
+
+    const { data, error } = await supabase
+      .from("claims")
+      .update(row)
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) throw new Error(`Failed to update claim: ${error.message}`);
+    const updated = toClaim(data as ClaimRow);
+
+    if (existing.status !== updated.status) {
+      await writeActivity(
+        updated.initiativeId,
+        updated.status === "SUPERSEDED" ? "CLAIM_SUPERSEDED" : "CLAIM_STATUS_CHANGED",
+        updated.status === "SUPERSEDED"
+          ? `${updated.subject} marked ${CLAIM_STATUS_LABEL.SUPERSEDED}`
+          : `${updated.subject} changed from ${CLAIM_STATUS_LABEL[existing.status]} to ${CLAIM_STATUS_LABEL[updated.status]}`,
+      );
+    }
+    if (existing.value !== updated.value) {
+      await writeActivity(
+        updated.initiativeId,
+        "CLAIM_VALUE_CHANGED",
+        `${updated.subject} value changed from "${existing.value}" to "${updated.value}"`,
+      );
+    }
+
+    return updated;
+  },
+
+  async setClaimEvidence(claimId, evidenceIds) {
+    assertWriteAllowed();
+
+    const supabase = getClient();
+    const { data: claimRow, error: claimError } = await supabase
+      .from("claims")
+      .select("*")
+      .eq("id", claimId)
+      .maybeSingle();
+    if (claimError) throw new Error(`Failed to load claim: ${claimError.message}`);
+    if (!claimRow) throw new Error(`Claim ${claimId} was not found.`);
+    const claim = toClaim(claimRow as ClaimRow);
+
+    const { error: deleteError } = await supabase
+      .from("claim_evidence")
+      .delete()
+      .eq("claim_id", claimId);
+    if (deleteError) throw new Error(`Failed to clear provenance: ${deleteError.message}`);
+
+    if (evidenceIds.length > 0) {
+      const { error: insertError } = await supabase
+        .from("claim_evidence")
+        .insert(evidenceIds.map((evidence_id) => ({ claim_id: claimId, evidence_id })));
+      if (insertError) throw new Error(`Failed to link evidence: ${insertError.message}`);
+    }
+
+    await writeActivity(
+      claim.initiativeId,
+      "CLAIM_EVIDENCE_UPDATED",
+      `${claim.subject} evidence links updated`,
+    );
   },
 };

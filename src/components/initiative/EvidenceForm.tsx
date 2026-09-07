@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 
@@ -14,6 +14,7 @@ import {
   EVIDENCE_RELATIONS,
   EVIDENCE_SOURCE_TYPES,
   type EvidenceRecord,
+  type EvidenceRelation,
 } from "@/lib/domain/types";
 import styles from "@/app/initiatives/[slug]/evidence/evidence-form.module.css";
 
@@ -62,6 +63,12 @@ export function EvidenceForm({
   evidence,
 }: EvidenceFormProps) {
   const [state, formAction] = useActionState(action, initialState);
+  // The help text under the boundary select follows the selection. It used to
+  // be pinned to the Current Scope wording, which was wrong for four of the
+  // five values.
+  const [boundary, setBoundary] = useState<EvidenceRelation>(
+    evidence?.boundary ?? "CURRENT_SCOPE",
+  );
 
   return (
     <form action={formAction} className={styles.form}>
@@ -125,7 +132,8 @@ export function EvidenceForm({
             name="boundary"
             required
             className={styles.select}
-            defaultValue={evidence?.boundary ?? "CURRENT_SCOPE"}
+            value={boundary}
+            onChange={(e) => setBoundary(e.target.value as EvidenceRelation)}
           >
             {EVIDENCE_RELATIONS.map((r) => (
               <option key={r} value={r}>
@@ -134,8 +142,7 @@ export function EvidenceForm({
             ))}
           </select>
           <p className={styles.hint}>
-            {EVIDENCE_RELATION_NOTE.CURRENT_SCOPE} You can change this at any
-            time.
+            {EVIDENCE_RELATION_NOTE[boundary]} You can change this at any time.
           </p>
         </div>
       </div>

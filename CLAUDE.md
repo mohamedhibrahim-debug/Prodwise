@@ -383,7 +383,7 @@ Phase 1 intentionally has **no authentication**. That must not create an unrestr
 
 The future logical model stays simple. Expected entities may eventually include: `users` · `initiatives` · `initiative_sources` · `evidence` · `claims` · `relationships` · `review_issues` · `assessments` · `actions` · `activity_log`.
 
-**Create only what the current phase requires.** Phase 1 created exactly: `users`, `initiatives`, `activity_log`. Phase 2 added exactly: `initiative_sources`, `evidence`. No `evidence_history` table — `activity_log` records boundary changes cleanly, and a second history mechanism would be schema for its own sake.
+**Create only what the current phase requires.** Phase 1 created exactly: `users`, `initiatives`, `activity_log`. Phase 2 added exactly: `initiative_sources`, `evidence`. Phase 3 added exactly: `claims`, `claim_evidence`. No `evidence_history`, `claim_history`, `claim_versions`, `knowledge_graph` or `claim_conflicts` — `activity_log` records these changes cleanly, and a second history mechanism would be schema for its own sake.
 
 ---
 
@@ -427,9 +427,39 @@ Delivered: persisted `EvidenceRecord` and `InitiativeSource` entities · five-va
 
 **Persistence:** `.data/prodwise.json` via `src/lib/data/store.ts` is **local demo persistence only** — not distributed, serverless or multi-instance safe. Nothing outside the repository layer may import it. Supabase migrations for the same schema are committed and swap in automatically once env vars exist.
 
-### Not built in Phase 1 or 2, and not to be added without explicit approval
+### Phase 3 — Product Memory — **COMPLETE**
 
-Real Jira integration · Google Drive integration · claim extraction · semantic search · AI conflict detection · readiness AI · Next Best Action generation · real domain activation logic · autonomous agents · authentication · file/binary upload · portfolio analytics.
+Product Memory stops being fixture intelligence and becomes the second real layer. The chain is now **Evidence → Product Memory → (later) Review Intelligence**.
+
+Delivered: persisted `ClaimRecord` reusing the canonical 6 types and 7 statuses unchanged · `claim_evidence` many-to-many provenance with **no role taxonomy** · Add / Edit Claim, status change, evidence linking and unlinking, all human-driven · `supersededByClaimId` with server-enforced invariants · activity logging of meaningful corrections · the 14 seeded claims migrated preserving **Decisions 3 · Requirements 5 · Risks 2 · Dependencies 2 · Claims 14**.
+
+**Real and functional:** claims are created, edited, reclassified, superseded, linked and unlinked; everything persists across reload and server restart.
+
+#### What is real, and what is not
+
+| Layer | State |
+|---|---|
+| Evidence | **Real** (Phase 2) |
+| Product Memory | **Real** (Phase 3) |
+| Review — including the 27-vs-30 conflict | **Synthetic fixture** |
+| Readiness · Current State · Needs Your Attention · Next Best Action | **Synthetic fixture** |
+
+**There is no AI extraction, and no inference of any kind.** Every claim is a migrated seed or something a person typed. Product Memory is **never** to be described as AI-generated. Review findings are **not** derived from claims — the 27 and 30 divisor claims sit side by side as plain ACTIVE requirements, and nothing in the product says they conflict. Deriving that belongs to a later phase.
+
+Future AI may *propose* claims. It must never silently create product truth.
+
+#### Rules that hold going forward
+
+- **No claim is ever hard-deleted.** Knowledge that no longer holds gets `SUPERSEDED` / `REJECTED` / `DEFERRED`. There is no Delete in the UI.
+- **A human-created claim starts `UNVERIFIED`** — unchecked, which is not the same as wrong. Absent evidence is shown as *"No evidence linked"*, never *"no evidence exists"*.
+- **Supersession invariants**, enforced server-side and by DB constraint: a replacement only while `status = SUPERSEDED`; cleared when the status moves off it; same initiative only; never self-referential; `SUPERSEDED` with no known replacement stays valid — no successor is ever invented.
+- **`EXCLUDED` evidence cannot be newly linked.** But a link made before the evidence was excluded is **never removed automatically** — it stays, marked *Excluded evidence*, and only a deliberate human unlink removes it. Silently dropping provenance would rewrite history.
+- **Confidence is displayed, never assigned by hand.** It exists on migrated records only.
+- **Reporting is unchanged** — no claim counts, no evidence counts. Management sees the summary, not Prodwise internals.
+
+### Not built in Phase 1, 2 or 3, and not to be added without explicit approval
+
+Real Jira integration · Google Drive integration · **AI claim extraction** · Claude API integration · semantic search · vector database · **conflict detection** · gap detection · Review engine generation · readiness AI · Next Best Action generation · automated source authority scoring · real domain activation logic · autonomous agents · authentication · file/binary upload · portfolio analytics · **claim deletion**.
 
 ### Rule
 

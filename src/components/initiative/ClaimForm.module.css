@@ -1,0 +1,109 @@
+.staticValue {
+  font-size: var(--t-body);
+  color: var(--ink-900);
+  padding: var(--s-1) 0;
+}
+
+/* ── Provenance picker ───────────────────────────────────────────────────- */
+.evidenceList {
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.evidenceOption {
+  border-bottom: 1px solid var(--rule);
+}
+
+.evidenceList li:last-child {
+  border-bottom: 0;
+}
+
+.checkRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.checkRow:hover {
+  background: var(--surface-subtle);
+}
+
+.checkbox {
+  flex: none;
+  margin-top: 3px;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent-600);
+  cursor: pointer;
+}
+
+.checkBody {
+  min-width: 0;
+}
+
+.checkTop {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.evidenceTitle {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  color: var(--ink-900);
+}
+
+.evidenceRef {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+  background: var(--surface-sunken);
+  border-radius: var(--r-xs);
+  padding: 1px 5px;
+}
+
+.evidenceKind {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.boundaryTag {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-500);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  padding: 1px 6px;
+}
+
+/* Present only when it was linked before exclusion — marked, never hidden. */
+.excludedTag {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--state-unknown-fg);
+  background: var(--state-unknown-bg);
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--r-sm);
+  padding: 1px 6px;
+}
+
+.excludedNote {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+  line-height: 1.5;
+}
