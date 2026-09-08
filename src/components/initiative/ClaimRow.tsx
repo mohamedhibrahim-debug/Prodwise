@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { CategoryTag, Reference } from "@/components/primitives/Meta";
 import {
   CLAIM_STATUS_LABEL,
@@ -178,12 +179,16 @@ export function ClaimRow({
             </ul>
           )}
 
-          <Link
-            href={`/initiatives/${slug}/memory/${claim.id}/edit`}
-            className={styles.editLink}
-          >
-            Edit claim
-          </Link>
+          {isDemoWriteEnabled ? (
+            <Link
+              href={`/initiatives/${slug}/memory/${claim.id}/edit`}
+              className={styles.editLink}
+            >
+              Edit claim
+            </Link>
+          ) : (
+            <p title={WRITE_DISABLED_MESSAGE}>Read-only · Demo mode</p>
+          )}
         </div>
       </details>
     </li>

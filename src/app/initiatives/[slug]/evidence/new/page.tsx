@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import { EvidenceForm } from "@/components/initiative/EvidenceForm";
 import { getRepository } from "@/lib/data";
-import { isDemoWriteEnabled } from "@/lib/env";
+import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { createEvidenceAction } from "./actions";
 import styles from "../evidence-form.module.css";
 
@@ -19,6 +19,18 @@ export default async function NewEvidencePage({
   const { slug } = await params;
   const initiative = await getRepository().getInitiativeBySlug(slug);
   if (!initiative) notFound();
+
+  if (!isDemoWriteEnabled) {
+    return (
+      <div className={styles.page}>
+        <Link href={`/initiatives/${slug}/evidence`} className={styles.back}>
+          ← Evidence
+        </Link>
+        <h1 className={styles.title}>Add Evidence</h1>
+        <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -38,15 +50,6 @@ export default async function NewEvidencePage({
         action={createEvidenceAction}
         submitLabel="Add Evidence"
       />
-
-      {!isDemoWriteEnabled ? (
-        <p className={styles.notice}>
-          <strong>Writes are currently disabled.</strong> Mutations are gated by
-          the <code>DEMO_WRITE_ENABLED</code> environment flag, enforced in the
-          data layer. Set <code>DEMO_WRITE_ENABLED=true</code> in{" "}
-          <code>.env.local</code> to add evidence locally.
-        </p>
-      ) : null}
     </div>
   );
 }

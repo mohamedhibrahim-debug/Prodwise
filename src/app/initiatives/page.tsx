@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
-import { ButtonLink } from "@/components/primitives/Button";
+import { DemoWriteLink } from "@/components/primitives/DemoWriteLink";
+import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { EmptyState } from "@/components/primitives/EmptyState";
 import { InitiativeRow } from "@/components/initiative/InitiativeRow";
 import { getRepository } from "@/lib/data";
@@ -46,15 +47,15 @@ export default async function InitiativesPage() {
             items above everything else.
           </p>
         </div>
-        <ButtonLink href="/initiatives/new" variant="primary">
+        <DemoWriteLink href="/initiatives/new" variant="primary">
           Create Initiative
-        </ButtonLink>
+        </DemoWriteLink>
       </header>
 
       {rows.length === 0 ? (
         <EmptyState
           message="No initiatives yet."
-          hint="Create an initiative to start reconstructing its product context."
+          hint={isDemoWriteEnabled ? "Create an initiative to start reconstructing its product context." : WRITE_DISABLED_MESSAGE}
         />
       ) : (
         <>

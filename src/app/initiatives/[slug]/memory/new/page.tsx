@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import { ClaimForm } from "@/components/initiative/ClaimForm";
 import { getRepository } from "@/lib/data";
-import { isDemoWriteEnabled } from "@/lib/env";
+import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { createClaimAction } from "./actions";
 import styles from "../../evidence/evidence-form.module.css";
 
@@ -22,6 +22,18 @@ export default async function NewClaimPage({
   if (!initiative) notFound();
 
   const evidence = await repo.listEvidence(initiative.id);
+
+  if (!isDemoWriteEnabled) {
+    return (
+      <div className={styles.page}>
+        <Link href={`/initiatives/${slug}/memory`} className={styles.back}>
+          ← Product Memory
+        </Link>
+        <h1 className={styles.title}>Add Claim</h1>
+        <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -42,15 +54,6 @@ export default async function NewClaimPage({
         submitLabel="Add Claim"
         evidence={evidence}
       />
-
-      {!isDemoWriteEnabled ? (
-        <p className={styles.notice}>
-          <strong>Writes are currently disabled.</strong> Mutations are gated by
-          the <code>DEMO_WRITE_ENABLED</code> environment flag, enforced in the
-          data layer. Set <code>DEMO_WRITE_ENABLED=true</code> in{" "}
-          <code>.env.local</code> to add claims locally.
-        </p>
-      ) : null}
     </div>
   );
 }

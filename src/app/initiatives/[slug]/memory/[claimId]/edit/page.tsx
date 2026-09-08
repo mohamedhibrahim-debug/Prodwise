@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { ClaimForm } from "@/components/initiative/ClaimForm";
 import { getRepository } from "@/lib/data";
 import { updateClaimAction } from "./actions";
@@ -33,6 +34,18 @@ export default async function EditClaimPage({
     repo.listEvidence(initiative.id),
     repo.listClaims(initiative.id),
   ]);
+
+  if (!isDemoWriteEnabled) {
+    return (
+      <div className={styles.page}>
+        <Link href={`/initiatives/${slug}/memory`} className={styles.back}>
+          ← Product Memory
+        </Link>
+        <h1 className={styles.title}>Edit Claim</h1>
+        <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>

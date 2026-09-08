@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-import { ButtonLink } from "@/components/primitives/Button";
+import { DemoWriteLink } from "@/components/primitives/DemoWriteLink";
+import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { ClaimRow } from "@/components/initiative/ClaimRow";
 import { getRepository } from "@/lib/data";
@@ -65,9 +66,9 @@ export default async function MemoryPage({
             Structured product knowledge backed by initiative evidence. History
             is preserved when requirements or decisions change.
           </p>
-          <ButtonLink href={`/initiatives/${slug}/memory/new`} variant="primary">
+          <DemoWriteLink href={`/initiatives/${slug}/memory/new`} variant="primary">
             Add Claim
-          </ButtonLink>
+          </DemoWriteLink>
         </div>
 
         <nav className={styles.filters} aria-label="Product memory sections">
@@ -96,7 +97,7 @@ export default async function MemoryPage({
           }
           hint={
             claims.length === 0
-              ? "Add a claim to start recording what is known about this initiative."
+              ? (isDemoWriteEnabled ? "Add a claim to start recording what is known about this initiative." : WRITE_DISABLED_MESSAGE)
               : undefined
           }
         />

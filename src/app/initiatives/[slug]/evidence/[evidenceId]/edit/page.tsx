@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { EvidenceForm } from "@/components/initiative/EvidenceForm";
 import { getRepository } from "@/lib/data";
 import { updateEvidenceAction } from "./actions";
@@ -26,6 +27,18 @@ export default async function EditEvidencePage({
   // Guard against an id from another initiative being edited through this route.
   if (!initiative || !evidence || evidence.initiativeId !== initiative.id) {
     notFound();
+  }
+
+  if (!isDemoWriteEnabled) {
+    return (
+      <div className={styles.page}>
+        <Link href={`/initiatives/${slug}/evidence`} className={styles.back}>
+          ← Evidence
+        </Link>
+        <h1 className={styles.title}>Edit Evidence</h1>
+        <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
+      </div>
+    );
   }
 
   return (

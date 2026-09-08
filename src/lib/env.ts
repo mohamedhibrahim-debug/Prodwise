@@ -30,9 +30,7 @@ export const isDemoWriteEnabled =
   process.env.DEMO_WRITE_ENABLED?.trim().toLowerCase() === "true";
 
 export const WRITE_DISABLED_MESSAGE =
-  "Writes are disabled in this environment. Phase 1 has no authentication, so " +
-  "mutations are gated by DEMO_WRITE_ENABLED, which is currently off. Set " +
-  "DEMO_WRITE_ENABLED=true in .env.local to enable them locally.";
+  "Demo mode — changes are disabled in the public version.";
 
 /** Thrown by the repository layer when a mutation is attempted while gated. */
 export class WriteDisabledError extends Error {

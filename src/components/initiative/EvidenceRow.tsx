@@ -1,8 +1,10 @@
 import Link from "next/link";
 
+import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { Reference, Timestamp } from "@/components/primitives/Meta";
 import {
   EVIDENCE_SOURCE_TYPE_LABEL,
+  EVIDENCE_RELATION_LABEL,
   formatDate,
   formatVerified,
 } from "@/lib/domain/labels";
@@ -118,21 +120,31 @@ export function EvidenceRow({
               ) : null}
             </dl>
 
-            <Link
-              href={`/initiatives/${slug}/evidence/${item.id}/edit`}
-              className={styles.editLink}
-            >
-              Edit evidence
-            </Link>
+            {isDemoWriteEnabled ? (
+              <Link
+                href={`/initiatives/${slug}/evidence/${item.id}/edit`}
+                className={styles.editLink}
+              >
+                Edit evidence
+              </Link>
+            ) : (
+              <p title={WRITE_DISABLED_MESSAGE}>Read-only · Demo mode</p>
+            )}
           </div>
         </details>
 
-        <EvidenceControls
-          evidenceId={item.id}
-          slug={slug}
-          boundary={item.boundary}
-          title={item.title}
-        />
+        {isDemoWriteEnabled ? (
+          <EvidenceControls
+            evidenceId={item.id}
+            slug={slug}
+            boundary={item.boundary}
+            title={item.title}
+          />
+        ) : (
+          <p className={styles.controls}>
+            {EVIDENCE_RELATION_LABEL[item.boundary]} · Read-only
+          </p>
+        )}
       </div>
     </li>
   );

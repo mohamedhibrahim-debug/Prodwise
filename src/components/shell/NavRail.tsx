@@ -105,11 +105,17 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
 
       <div className={styles.footer}>
         <InitiativeArc mark size={150} className={styles.arcBleed} />
-        <div className={styles.envLabel}>Phase 3</div>
+        <div className={styles.envLabel}>{writesEnabled ? "Phase 3" : "Demo mode"}</div>
         <p className={styles.envValue}>
-          Source: <b>{dataSource}</b>
-          <br />
-          Writes: <b>{writesEnabled ? "enabled" : "disabled"}</b>
+          {writesEnabled ? (
+            <>
+              Source: <b>{dataSource}</b>
+              <br />
+              Writes: <b>enabled</b>
+            </>
+          ) : (
+            "Changes are disabled in the public version."
+          )}
         </p>
       </div>
     </aside>

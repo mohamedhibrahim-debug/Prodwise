@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-import { ButtonLink } from "@/components/primitives/Button";
+import { DemoWriteLink } from "@/components/primitives/DemoWriteLink";
+import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { EvidenceRow } from "@/components/initiative/EvidenceRow";
 import { getRepository } from "@/lib/data";
@@ -45,12 +46,12 @@ export default async function EvidencePage({
             you — getting the boundary right is what makes any later conclusion
             trustworthy.
           </p>
-          <ButtonLink
+          <DemoWriteLink
             href={`/initiatives/${slug}/evidence/new`}
             variant="primary"
           >
             Add Evidence
-          </ButtonLink>
+          </DemoWriteLink>
         </div>
 
         {sources.length > 0 ? (
@@ -71,7 +72,7 @@ export default async function EvidencePage({
       {evidence.length === 0 ? (
         <EmptyState
           message={EMPTY.evidence}
-          hint="Add evidence manually to start building this initiative's boundary. Automatic discovery from connected systems arrives in a later phase."
+          hint={isDemoWriteEnabled ? "Add evidence manually to start building this initiative's boundary. Automatic discovery from connected systems arrives in a later phase." : WRITE_DISABLED_MESSAGE}
         />
       ) : (
         /* All five boundaries are always rendered, including empty ones: the
