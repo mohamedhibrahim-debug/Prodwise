@@ -6,7 +6,7 @@ import styles from "./ConsultantPanel.module.css";
 /**
  * AI CONSULTANT — reserved affordance only.
  *
- * Phase 1 implements no AI functionality. This exists so the eventual side
+ * No AI functionality is implemented. This exists so the eventual side
  * panel has a home in the layout, and it says plainly that it does nothing yet
  * rather than pretending otherwise. It is collapsed by default and lives at the
  * screen edge: chat must never become the main product experience.
@@ -52,7 +52,7 @@ export function ConsultantPanel() {
         <div className={styles.panelHead}>
           <div>
             <h2 className={styles.panelTitle}>AI Consultant</h2>
-            <p className={styles.panelSub}>Secondary panel · not yet available</p>
+            <p className={styles.panelSub}>Secondary panel</p>
           </div>
           <button
             type="button"
@@ -72,9 +72,8 @@ export function ConsultantPanel() {
         </div>
 
         <div className={styles.panelBody}>
-          <p className={styles.notice}>
-            The AI Consultant is not implemented in Phase 1.
-          </p>
+          {/* Phase-neutral: this copy should not need editing every phase. */}
+          <p className={styles.notice}>AI Consultant is not yet available.</p>
           <p className={styles.detail}>
             Prodwise is a structured workspace, not a chat product. Reasoning is
             intended to surface in the workspace itself — in Current State,

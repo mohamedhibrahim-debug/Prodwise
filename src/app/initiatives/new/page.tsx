@@ -24,8 +24,8 @@ export default function NewInitiativePage() {
 
       {!isDemoWriteEnabled ? (
         <p className={styles.notice}>
-          <strong>Writes are currently disabled.</strong> Phase 1 has no
-          authentication, so mutations are gated by the{" "}
+          <strong>Writes are currently disabled.</strong> There is no
+          authentication yet, so mutations are gated by the{" "}
           <code>DEMO_WRITE_ENABLED</code> environment flag, enforced in the data
           layer. Set <code>DEMO_WRITE_ENABLED=true</code> in{" "}
           <code>.env.local</code> to create initiatives locally.

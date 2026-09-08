@@ -70,11 +70,15 @@ export default async function ReviewPage({
   return (
     <div className={styles.page}>
       <div className={styles.tabIntro}>
+        {/* No detection engine exists yet. These findings are fixtures, and the
+            copy must not imply they were derived from Product Memory. */}
         <p className={styles.tabIntroText}>
-          Material findings only. A conflict is raised solely when two claims
-          share the same subject, attribute and context, are both active, and
-          hold incompatible values — supersession and scope differences are
-          evaluated first, so this list stays short enough to act on.
+          Demo findings — illustrative only, and not yet derived from this
+          initiative&rsquo;s evidence or Product Memory. When detection arrives,
+          a conflict will be raised only where two claims share the same
+          subject, attribute and context, are both active, and hold
+          incompatible values, with supersession and scope differences
+          evaluated first.
         </p>
 
         <nav className={styles.filters} aria-label="Filter findings">

@@ -244,9 +244,11 @@ export function ClaimForm({
             defaultValue={claim?.supersededByClaimId ?? ""}
           >
             <option value="">No known replacement</option>
+            {/* Same identification as the relation display: a value alone does
+                not identify a claim. */}
             {replacementOptions.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.subject} — {c.value.slice(0, 60)}
+                {c.subject} · {c.attribute} · {c.value.slice(0, 60)}
               </option>
             ))}
           </select>

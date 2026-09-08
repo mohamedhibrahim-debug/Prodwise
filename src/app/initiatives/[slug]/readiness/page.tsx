@@ -18,11 +18,14 @@ export default async function ReadinessPage({
   return (
     <div className={styles.page}>
       <div className={styles.tabIntro}>
+        {/* Nothing computes readiness yet. These assessments are fixtures, and
+            the copy must not imply they were derived from anything. */}
         <p className={styles.tabIntroText}>
-          Readiness is derived from evidence, not from a checklist. Each domain
-          shows what has been confirmed, what is open, what remains unknown, and
-          what would actually change its state. Approval and readiness are not
-          treated as the same thing.
+          Demo assessments — illustrative only, and not yet derived from this
+          initiative&rsquo;s evidence or Product Memory. Each domain shows what
+          has been confirmed, what is open, what remains unknown, and what would
+          change its state. Approval and readiness are not treated as the same
+          thing.
         </p>
       </div>
 

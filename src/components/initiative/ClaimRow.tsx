@@ -23,6 +23,17 @@ interface ClaimRowProps {
 }
 
 /**
+ * Names a related claim unambiguously.
+ *
+ * A value alone is not an identity — "Superseded by 27" tells the reader
+ * nothing about what 27 refers to, and two claims can share a value. The full
+ * address subject · attribute · value is what actually identifies a claim.
+ */
+function identify(claim: ClaimWithEvidence): string {
+  return `${claim.subject} · ${claim.attribute} · ${claim.value}`;
+}
+
+/**
  * One unit of Product Memory.
  *
  * Leads with the knowledge itself — subject · attribute · value — then its
@@ -111,15 +122,14 @@ export function ClaimRow({
 
             {supersededBy ? (
               <span className={styles.relation}>
-                Superseded by <b>{supersededBy.value}</b>
+                Superseded by <b>{identify(supersededBy)}</b>
               </span>
             ) : null}
-            {supersedes.length > 0 ? (
-              <span className={styles.relation}>
-                Supersedes{" "}
-                <b>{supersedes.map((c) => c.value).join(", ")}</b>
+            {supersedes.map((c) => (
+              <span key={c.id} className={styles.relation}>
+                Supersedes <b>{identify(c)}</b>
               </span>
-            ) : null}
+            ))}
           </span>
         </summary>
 

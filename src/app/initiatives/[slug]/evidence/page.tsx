@@ -36,10 +36,14 @@ export default async function EvidencePage({
     <div className={styles.page}>
       <div className={styles.tabIntro}>
         <div className={evidenceStyles.introRow}>
+          {/* Describes what the product actually does today: collect,
+              classify, organise and review source material. It does not yet
+              reason over any of it. */}
           <p className={styles.tabIntroText}>
-            Evidence is the source material Prodwise reasons over. Every item
-            carries one boundary classification, set by you — getting the
-            boundary right is what makes every later conclusion trustworthy.
+            Collect, classify and review the source material for this
+            initiative. Every item carries one boundary classification, set by
+            you — getting the boundary right is what makes any later conclusion
+            trustworthy.
           </p>
           <ButtonLink
             href={`/initiatives/${slug}/evidence/new`}
