@@ -142,6 +142,27 @@ export type ConnectionState = (typeof CONNECTION_STATES)[number];
 
 export type Confidence = "HIGH" | "MEDIUM" | "LOW";
 
+/**
+ * Business Line — portfolio/product context, and nothing more.
+ *
+ * It answers "which part of the business does this initiative belong to?". It
+ * is NOT a lifecycle stage, an assessment state, a status, an evidence boundary
+ * or a free-form tag, and it must never be treated as any of those. It carries
+ * no permissions, no ownership and no reasoning: it is context for grouping and
+ * filtering.
+ *
+ * A controlled list of exactly five values.
+ */
+export const BUSINESS_LINES = [
+  "ACCEPTANCE",
+  "BP",
+  "FS",
+  "MF",
+  "DIGITAL_TRANSFORMATION",
+] as const;
+
+export type BusinessLine = (typeof BUSINESS_LINES)[number];
+
 /* ── Entities ───────────────────────────────────────────────────────────── */
 
 export interface Initiative {
@@ -151,6 +172,8 @@ export interface Initiative {
   name: string;
   description: string | null;
   knownReferences: string | null;
+  /** Required portfolio context. Every initiative has exactly one. */
+  businessLine: BusinessLine;
   stage: Stage;
   overallState: AssessmentState;
   /** One sentence. The first thing a PM reads. */
@@ -171,6 +194,8 @@ export interface ActivityEntry {
 
 export interface NewInitiativeInput {
   name: string;
+  /** Required — an initiative cannot be created without portfolio context. */
+  businessLine: BusinessLine;
   description?: string | null;
   knownReferences?: string | null;
 }

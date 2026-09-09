@@ -6,7 +6,12 @@ import { DemoBadge, Timestamp } from "@/components/primitives/Meta";
 import { EmptyState } from "@/components/primitives/EmptyState";
 import { getRepository } from "@/lib/data";
 import { getIntelligence } from "@/lib/data/fixtures";
-import { STAGE_LABEL } from "@/lib/domain/labels";
+import {
+  BusinessLineFilter,
+  countByBusinessLine,
+  parseBusinessLine,
+} from "@/components/initiative/BusinessLineFilter";
+import { BUSINESS_LINE_LABEL, STAGE_LABEL } from "@/lib/domain/labels";
 import { reportingStateRank, severityRank } from "@/lib/domain/ordering";
 import styles from "./reporting.module.css";
 
@@ -23,10 +28,19 @@ export const dynamic = "force-dynamic";
  * It reads the same initiative truth as the Product Manager workspace. There is
  * no separate management data model, so the two can never disagree.
  */
-export default async function ReportingPage() {
+export default async function ReportingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ line?: string }>;
+}) {
+  const { line } = await searchParams;
+  const selectedLine = parseBusinessLine(line);
+
   const initiatives = await getRepository().listInitiatives();
+  const counts = countByBusinessLine(initiatives.map((i) => i.businessLine));
 
   const rows = initiatives
+    .filter((i) => selectedLine === null || i.businessLine === selectedLine)
     .map((initiative) => {
       const intelligence = getIntelligence(initiative.slug);
       const primary = intelligence?.attention
@@ -70,11 +84,25 @@ export default async function ReportingPage() {
         {anyDemo ? <DemoBadge>Demo data</DemoBadge> : null}
       </header>
 
+      <BusinessLineFilter
+        basePath="/reporting"
+        selected={selectedLine}
+        counts={counts}
+        total={initiatives.length}
+      />
+
       {rows.length === 0 ? (
-        <EmptyState message="No initiatives are being tracked yet." />
+        <EmptyState
+          message={
+            selectedLine
+              ? `No initiatives in ${BUSINESS_LINE_LABEL[selectedLine]}.`
+              : "No initiatives are being tracked yet."
+          }
+        />
       ) : (
         <>
           <div className={styles.columnHead} aria-hidden="true">
+            <span>Business line</span>
             <span>Initiative</span>
             <span>State</span>
             <span>Needs attention</span>
@@ -88,6 +116,13 @@ export default async function ReportingPage() {
                 key={initiative.id}
                 className={`${styles.row} ${styles[`row${initiative.overallState}`]}`}
               >
+                <div className={styles.cellBusinessLine}>
+                  <span className={styles.mobileLabel}>Business line</span>
+                  <span className={styles.businessLine}>
+                    {BUSINESS_LINE_LABEL[initiative.businessLine]}
+                  </span>
+                </div>
+
                 <div className={styles.cellInitiative}>
                   <Link
                     href={`/initiatives/${initiative.slug}`}

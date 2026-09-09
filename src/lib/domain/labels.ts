@@ -1,5 +1,6 @@
 import type {
   AssessmentState,
+  BusinessLine,
   ClaimStatus,
   ClaimType,
   ConnectionState,
@@ -20,6 +21,15 @@ export const STAGE_LABEL: Record<Stage, string> = {
   RELEASE_PREPARATION: "Release Preparation",
   LIVE_VALIDATION: "Live Validation",
   MONITORING: "Monitoring",
+};
+
+/** Display names for the controlled Business Line list. */
+export const BUSINESS_LINE_LABEL: Record<BusinessLine, string> = {
+  ACCEPTANCE: "Acceptance",
+  BP: "BP",
+  FS: "FS",
+  MF: "MF",
+  DIGITAL_TRANSFORMATION: "Digital Transformation",
 };
 
 export const STATE_LABEL: Record<AssessmentState, string> = {

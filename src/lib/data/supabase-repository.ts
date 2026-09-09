@@ -10,6 +10,7 @@ import {
 import type {
   ActivityEntry,
   AssessmentState,
+  BusinessLine,
   ClaimPatch,
   ClaimRecord,
   ClaimStatus,
@@ -45,6 +46,7 @@ interface InitiativeRow {
   name: string;
   description: string | null;
   known_references: string | null;
+  business_line: BusinessLine;
   stage: Stage;
   overall_state: AssessmentState;
   state_summary: string | null;
@@ -126,6 +128,7 @@ function toInitiative(row: InitiativeRow): Initiative {
     name: row.name,
     description: row.description,
     knownReferences: row.known_references,
+    businessLine: row.business_line,
     stage: row.stage,
     overallState: row.overall_state,
     stateSummary: row.state_summary,
@@ -268,6 +271,7 @@ export const supabaseRepository: Repository = {
         name: input.name.trim(),
         description: input.description?.trim() || null,
         known_references: input.knownReferences?.trim() || null,
+        business_line: input.businessLine,
         // No connected evidence yet, so the state is genuinely unknown.
         stage: "DISCOVERY",
         overall_state: "UNKNOWN",

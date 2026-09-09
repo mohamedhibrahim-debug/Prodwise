@@ -142,6 +142,7 @@ export const localRepository: Repository = {
       name: input.name.trim(),
       description: input.description?.trim() || null,
       knownReferences: input.knownReferences?.trim() || null,
+      businessLine: input.businessLine,
       // A new initiative has no connected evidence, so its state is genuinely
       // unknown. Never seed it with an optimistic default.
       stage: "DISCOVERY",

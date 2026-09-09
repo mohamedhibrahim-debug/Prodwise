@@ -1,0 +1,64 @@
+/* Quiet filter strip. Uses the same rule-and-whitespace language as the rest of
+   the product — no card, no toolbar chrome. */
+
+.filter {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  margin-top: var(--s-4);
+}
+
+.label {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-right: var(--s-1);
+}
+
+.option {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  padding: 4px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-pill);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  color: var(--ink-700);
+  white-space: nowrap;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+
+.option:hover {
+  border-color: var(--ink-300);
+  background: var(--surface-subtle);
+}
+
+/* Selection is carried by fill and weight, not by the brand accent alone. */
+.optionActive {
+  background: var(--navy-800);
+  border-color: var(--navy-800);
+  color: var(--navy-ink);
+  font-weight: var(--fw-semibold);
+}
+
+.optionActive:hover {
+  background: var(--navy-700);
+  border-color: var(--navy-700);
+}
+
+.count {
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-400);
+}
+
+.optionActive .count {
+  color: var(--navy-ink-dim);
+}

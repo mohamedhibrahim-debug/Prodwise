@@ -5,9 +5,17 @@ import { revalidatePath } from "next/cache";
 
 import { getRepository } from "@/lib/data";
 import { WriteDisabledError } from "@/lib/env";
+import { BUSINESS_LINES, type BusinessLine } from "@/lib/domain/types";
 
 export interface CreateInitiativeState {
   error: string | null;
+}
+
+function readBusinessLine(value: FormDataEntryValue | null): BusinessLine | null {
+  const v = String(value ?? "");
+  return (BUSINESS_LINES as readonly string[]).includes(v)
+    ? (v as BusinessLine)
+    : null;
 }
 
 export async function createInitiativeAction(
@@ -17,6 +25,7 @@ export async function createInitiativeAction(
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const knownReferences = String(formData.get("knownReferences") ?? "").trim();
+  const businessLine = readBusinessLine(formData.get("businessLine"));
 
   if (name.length === 0) {
     return { error: "Initiative name is required." };
@@ -24,11 +33,17 @@ export async function createInitiativeAction(
   if (name.length > 160) {
     return { error: "Initiative name must be 160 characters or fewer." };
   }
+  // Validated server-side, not just by the select: an initiative without
+  // portfolio context is not creatable through any path.
+  if (!businessLine) {
+    return { error: "Select a business line." };
+  }
 
   let slug: string;
   try {
     const created = await getRepository().createInitiative({
       name,
+      businessLine,
       description: description || null,
       knownReferences: knownReferences || null,
     });

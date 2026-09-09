@@ -35,9 +35,9 @@
 .row {
   display: grid;
   grid-template-columns:
-    minmax(190px, 1.1fr) 108px minmax(160px, 1.2fr)
-    minmax(180px, 1.4fr) 104px;
-  gap: var(--s-5);
+    92px minmax(170px, 1.1fr) 108px minmax(150px, 1.2fr)
+    minmax(170px, 1.4fr) 104px;
+  gap: var(--s-4);
   align-items: baseline;
 }
 
@@ -95,6 +95,19 @@
 }
 .rowREADY::before {
   background: var(--state-ready-mark);
+}
+
+.cellBusinessLine {
+  min-width: 0;
+}
+
+/* Portfolio context. Quiet by design — it groups, it does not signal status. */
+.businessLine {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-500);
 }
 
 .cellInitiative {
@@ -160,6 +173,17 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--s-2) var(--s-4);
     padding: var(--s-5) var(--s-3) var(--s-5) var(--s-4);
+  }
+
+  /* Business line leads the stacked row: it is the grouping context you read
+     before the initiative name. Its label is redundant here, so it is hidden. */
+  .cellBusinessLine {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
+  .cellBusinessLine .mobileLabel {
+    display: none;
   }
 
   .cellInitiative {

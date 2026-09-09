@@ -172,6 +172,19 @@
   flex-wrap: wrap;
 }
 
+/* Portfolio context. Deliberately quiet — it must not read as a status. */
+.businessLine {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-500);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
 @media (max-width: 900px) {
   .row {
     grid-template-columns: minmax(0, 1fr);

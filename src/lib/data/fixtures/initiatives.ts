@@ -22,6 +22,7 @@ export const SEED_INITIATIVES: Initiative[] = [
     description:
       "A merchant working-capital financing initiative allowing eligible merchants to request financing and repay installments from settlement activity.",
     knownReferences: "MFF-104, MFF-118, MFF-133\nProduct Requirements v2.3",
+    businessLine: "MF",
     stage: "DELIVERY",
     overallState: "AT_RISK",
     stateSummary:
@@ -37,6 +38,7 @@ export const SEED_INITIATIVES: Initiative[] = [
     description:
       "Same-day settlement payouts to merchant accounts, replacing the T+2 batch cycle for eligible segments.",
     knownReferences: "ISP-42, ISP-77",
+    businessLine: "FS",
     stage: "RELEASE_PREPARATION",
     overallState: "BLOCKED",
     stateSummary:
@@ -52,6 +54,7 @@ export const SEED_INITIATIVES: Initiative[] = [
     description:
       "Periodic re-verification of merchant identity and beneficial ownership records across the active merchant base.",
     knownReferences: "KYC-11",
+    businessLine: "ACCEPTANCE",
     stage: "ALIGNMENT",
     overallState: "UNKNOWN",
     stateSummary:
@@ -67,6 +70,7 @@ export const SEED_INITIATIVES: Initiative[] = [
     description:
       "Rebuild of the daily collections and arrears reporting pack on the current data platform.",
     knownReferences: "CRR-9, CRR-15",
+    businessLine: "BP",
     stage: "DEFINITION",
     overallState: "READY",
     stateSummary:

@@ -5,6 +5,8 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 
 import { Button } from "@/components/primitives/Button";
+import { BUSINESS_LINE_LABEL } from "@/lib/domain/labels";
+import { BUSINESS_LINES } from "@/lib/domain/types";
 import {
   createInitiativeAction,
   type CreateInitiativeState,
@@ -50,6 +52,32 @@ export function CreateInitiativeForm() {
           className={styles.input}
           placeholder="e.g. Merchant Flex Finance"
         />
+      </div>
+
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="businessLine">
+          Business Line
+        </label>
+        <select
+          id="businessLine"
+          name="businessLine"
+          required
+          defaultValue=""
+          className={styles.select}
+        >
+          <option value="" disabled>
+            Select a business line…
+          </option>
+          {BUSINESS_LINES.map((line) => (
+            <option key={line} value={line}>
+              {BUSINESS_LINE_LABEL[line]}
+            </option>
+          ))}
+        </select>
+        <p className={styles.hint}>
+          Which part of the business this initiative belongs to. Portfolio
+          context only — it does not affect stage, state or evidence.
+        </p>
       </div>
 
       <div className={styles.field}>

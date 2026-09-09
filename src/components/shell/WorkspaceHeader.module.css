@@ -76,6 +76,15 @@
   background: var(--rule-strong);
 }
 
+/* Portfolio context — same weight as the stage label, never a status pill. */
+.businessLine {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
 .statusGroup {
   display: flex;
   align-items: center;

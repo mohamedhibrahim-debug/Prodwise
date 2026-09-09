@@ -22,7 +22,7 @@ on conflict (email) do nothing;
 -- default priority across all four assessment states.
 insert into public.initiatives (
   id, slug, name, description, known_references,
-  stage, overall_state, state_summary, is_demo, created_by, created_at, updated_at
+  business_line, stage, overall_state, state_summary, is_demo, created_by, created_at, updated_at
 ) values
 (
   '11111111-1111-4111-8111-111111111111',
@@ -30,6 +30,7 @@ insert into public.initiatives (
   'Merchant Flex Finance',
   'A merchant working-capital financing initiative allowing eligible merchants to request financing and repay installments from settlement activity.',
   E'MFF-104, MFF-118, MFF-133\nProduct Requirements v2.3',
+  'MF',
   'DELIVERY',
   'AT_RISK',
   'Core implementation is progressing, but release readiness is at risk due to unresolved financial-rule validation.',
@@ -44,6 +45,7 @@ insert into public.initiatives (
   'Instant Settlement Payout',
   'Same-day settlement payouts to merchant accounts, replacing the T+2 batch cycle for eligible segments.',
   'ISP-42, ISP-77',
+  'FS',
   'RELEASE_PREPARATION',
   'BLOCKED',
   'Implementation is complete, but release is blocked pending an unresolved partner-bank cut-off dependency.',
@@ -58,6 +60,7 @@ insert into public.initiatives (
   'Merchant KYC Refresh',
   'Periodic re-verification of merchant identity and beneficial ownership records across the active merchant base.',
   'KYC-11',
+  'ACCEPTANCE',
   'ALIGNMENT',
   'UNKNOWN',
   'Too little evidence has been connected to determine where this initiative currently stands.',
@@ -72,6 +75,7 @@ insert into public.initiatives (
   'Collections Reporting Rebuild',
   'Rebuild of the daily collections and arrears reporting pack on the current data platform.',
   'CRR-9, CRR-15',
+  'BP',
   'DEFINITION',
   'READY',
   'Definition is complete and agreed; no material issues were detected in the connected evidence.',

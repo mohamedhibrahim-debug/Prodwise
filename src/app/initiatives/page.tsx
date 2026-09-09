@@ -6,19 +6,36 @@ import { EmptyState } from "@/components/primitives/EmptyState";
 import { InitiativeRow } from "@/components/initiative/InitiativeRow";
 import { getRepository } from "@/lib/data";
 import { getIntelligence } from "@/lib/data/fixtures";
+import {
+  BusinessLineFilter,
+  countByBusinessLine,
+  parseBusinessLine,
+} from "@/components/initiative/BusinessLineFilter";
+import { BUSINESS_LINE_LABEL } from "@/lib/domain/labels";
 import { attentionRank } from "@/lib/domain/ordering";
 import styles from "./initiatives.module.css";
 
 export const metadata: Metadata = { title: "Initiatives" };
 export const dynamic = "force-dynamic";
 
-export default async function InitiativesPage() {
-  const initiatives = await getRepository().listInitiatives();
+export default async function InitiativesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ line?: string }>;
+}) {
+  const { line } = await searchParams;
+  const selectedLine = parseBusinessLine(line);
 
-  const rows = initiatives.map((initiative) => ({
-    initiative,
-    intelligence: getIntelligence(initiative.slug),
-  }));
+  const initiatives = await getRepository().listInitiatives();
+  // Counts come from the full set, so the chips stay stable while filtering.
+  const counts = countByBusinessLine(initiatives.map((i) => i.businessLine));
+
+  const rows = initiatives
+    .filter((i) => selectedLine === null || i.businessLine === selectedLine)
+    .map((initiative) => ({
+      initiative,
+      intelligence: getIntelligence(initiative.slug),
+    }));
 
   /* Default priority: BLOCKED → critical findings → AT_RISK → UNKNOWN → READY.
      Within a rank, most recently updated first. */
@@ -52,10 +69,29 @@ export default async function InitiativesPage() {
         </DemoWriteLink>
       </header>
 
+      <BusinessLineFilter
+        basePath="/initiatives"
+        selected={selectedLine}
+        counts={counts}
+        total={initiatives.length}
+      />
+
       {rows.length === 0 ? (
         <EmptyState
-          message="No initiatives yet."
-          hint={isDemoWriteEnabled ? "Create an initiative to start reconstructing its product context." : WRITE_DISABLED_MESSAGE}
+          message={
+            selectedLine
+              ? `No initiatives in ${BUSINESS_LINE_LABEL[selectedLine]}.`
+              : "No initiatives yet."
+          }
+          // An empty filter result is about the filter, not about writes — so
+          // the demo-mode notice only applies when the list is genuinely empty.
+          hint={
+            selectedLine
+              ? "Clear the filter to see every initiative."
+              : isDemoWriteEnabled
+                ? "Create an initiative to start reconstructing its product context."
+                : WRITE_DISABLED_MESSAGE
+          }
         />
       ) : (
         <>

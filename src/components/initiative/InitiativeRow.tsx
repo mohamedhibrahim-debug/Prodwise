@@ -2,7 +2,7 @@ import Link from "next/link";
 import { StatePill } from "@/components/primitives/StatePill";
 import { SeverityMark } from "@/components/primitives/SeverityMark";
 import { DemoBadge, Timestamp } from "@/components/primitives/Meta";
-import { STAGE_LABEL } from "@/lib/domain/labels";
+import { BUSINESS_LINE_LABEL, STAGE_LABEL } from "@/lib/domain/labels";
 import { severityRank } from "@/lib/domain/ordering";
 import type { Initiative, InitiativeIntelligence } from "@/lib/domain/types";
 import styles from "@/app/initiatives/initiatives.module.css";
@@ -61,6 +61,11 @@ export function InitiativeRow({ initiative, intelligence }: InitiativeRowProps) 
 
         <div className={styles.rowMeta}>
           <StatePill state={initiative.overallState} />
+          {/* Portfolio context, sitting with the other metadata rather than
+              competing with state. */}
+          <span className={styles.businessLine}>
+            {BUSINESS_LINE_LABEL[initiative.businessLine]}
+          </span>
           {initiative.isDemo ? <DemoBadge /> : null}
           <Timestamp iso={initiative.updatedAt} prefix="Updated" />
         </div>

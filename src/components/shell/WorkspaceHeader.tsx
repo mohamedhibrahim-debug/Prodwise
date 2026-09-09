@@ -2,7 +2,7 @@ import Link from "next/link";
 import { InitiativeArc } from "@/components/primitives/InitiativeArc";
 import { StatePill } from "@/components/primitives/StatePill";
 import { DemoBadge, Timestamp } from "@/components/primitives/Meta";
-import { STAGE_LABEL } from "@/lib/domain/labels";
+import { BUSINESS_LINE_LABEL, STAGE_LABEL } from "@/lib/domain/labels";
 import type { Initiative } from "@/lib/domain/types";
 import { WorkspaceTabs } from "./WorkspaceTabs";
 import styles from "./WorkspaceHeader.module.css";
@@ -28,6 +28,12 @@ export function WorkspaceHeader({ initiative }: { initiative: Initiative }) {
               <div className={styles.stageLine}>
                 <span className={styles.stage}>
                   {STAGE_LABEL[initiative.stage]}
+                </span>
+                <span className={styles.stageDivider} aria-hidden="true" />
+                {/* Portfolio context. Sits in the quiet metadata line so it
+                    never competes with Stage or Overall State. */}
+                <span className={styles.businessLine}>
+                  {BUSINESS_LINE_LABEL[initiative.businessLine]}
                 </span>
                 <span className={styles.stageDivider} aria-hidden="true" />
                 <Timestamp iso={initiative.updatedAt} prefix="Last updated" />

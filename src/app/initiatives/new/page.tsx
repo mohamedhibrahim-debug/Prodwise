@@ -7,6 +7,9 @@ import styles from "./new.module.css";
 
 export const metadata: Metadata = { title: "Create Initiative" };
 
+/* Read-only state below is a runtime value, so this page must not be
+   prerendered — a frozen build-time render could show a public visitor the
+   create form when writes are disabled. */
 export const dynamic = "force-dynamic";
 
 export default function NewInitiativePage() {

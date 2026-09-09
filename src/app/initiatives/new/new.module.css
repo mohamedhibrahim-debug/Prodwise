@@ -61,7 +61,8 @@
 }
 
 .input,
-.textarea {
+.textarea,
+.select {
   width: 100%;
   background: var(--canvas);
   border: 1px solid var(--rule-strong);
@@ -72,6 +73,15 @@
   transition: border-color var(--dur-fast) var(--ease);
 }
 
+.select {
+  cursor: pointer;
+}
+
+/* Until a value is chosen the placeholder option reads as guidance, not data. */
+.select:invalid {
+  color: var(--ink-400);
+}
+
 /* Placeholders carry real guidance here, so they meet AA like any other text. */
 .input::placeholder,
 .textarea::placeholder {
@@ -79,12 +89,14 @@
 }
 
 .input:hover,
-.textarea:hover {
+.textarea:hover,
+.select:hover {
   border-color: var(--ink-300);
 }
 
 .input:focus-visible,
-.textarea:focus-visible {
+.textarea:focus-visible,
+.select:focus-visible {
   border-color: var(--accent-500);
 }
 
