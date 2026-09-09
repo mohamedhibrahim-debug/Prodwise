@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { InitiativeArc } from "@/components/primitives/InitiativeArc";
 import styles from "./NavRail.module.css";
@@ -66,7 +67,15 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
   return (
     <aside className={styles.rail}>
       <div className={styles.brand}>
-        <InitiativeArc mark size={26} className={styles.mark} />
+        <Image
+          src="/assets/prodwise-logo-mark.png"
+          alt=""
+          width={36}
+          height={36}
+          className={styles.mark}
+          priority
+          unoptimized
+        />
         <div className={styles.wordmarkGroup}>
           <div className={styles.wordmark}>Prodwise</div>
           <div className={styles.tagline}>

@@ -23,6 +23,9 @@
 
 .mark {
   flex: none;
+  object-fit: contain;
+  /* Lift the original navy strokes against the dark rail without adding effects. */
+  filter: brightness(1.8);
 }
 
 .wordmarkGroup {
