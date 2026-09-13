@@ -77,6 +77,14 @@ export default async function ReportingPage({
             Which initiatives need attention, and why. Ordered by state —
             blocked first.
           </p>
+          {/* The attention and action columns are hand-authored demo
+              intelligence, not the derived Review findings. They can rank an
+              item that Review deliberately leaves unranked, so the difference
+              has to be stated rather than left for a reader to reconcile. */}
+          <p className={styles.subtitle}>
+            Needs attention and next best action are demo intelligence — not the
+            derived Review findings.
+          </p>
         </div>
         {/* One indicator for the whole view, so an executive is never misled
             into reading synthetic intelligence as live output — and is not

@@ -12,6 +12,7 @@ import type {
   ClaimWithEvidence,
   EvidencePatch,
   EvidenceRecord,
+  FindingState,
   Initiative,
   NewClaimInput,
   NewEvidenceInput,
@@ -394,5 +395,76 @@ export const localRepository: Repository = {
         `${claim.subject} unlinked from evidence ${byId.get(id)?.title ?? id}`,
       );
     }
+  },
+
+  /* ── Review findings ─────────────────────────────────────────────────────
+     Only the human decision is stored. The findings are derived. */
+
+  async listFindingStates(initiativeId) {
+    return readStore()
+      .findingStates.filter((s) => s.initiativeId === initiativeId)
+      .map((s) => ({ ...s }));
+  },
+
+  async setFindingState(initiativeId, fingerprint, input) {
+    assertWriteAllowed();
+
+    const now = nowIso();
+    writeStore((s) => {
+      const existing = s.findingStates.find(
+        (f) => f.initiativeId === initiativeId && f.fingerprint === fingerprint,
+      );
+      const next: FindingState = {
+        initiativeId,
+        fingerprint,
+        ruleId: input.ruleId,
+        contentDigest: input.contentDigest,
+        // Stored here as well as in Postgres. Dropping them locally would make
+        // an orphaned row unreadable on the default demo path — exactly the
+        // un-interpretable audit record the schema exists to prevent — and the
+        // two adapters must not differ in what they preserve.
+        subject: input.subject,
+        attribute: input.attribute,
+        phase: input.phase,
+        valuesRecorded: input.valuesRecorded,
+        status: "RESOLVED",
+        resolution: input.resolution,
+        resolvedAt: now,
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now,
+      };
+      if (existing) Object.assign(existing, next);
+      else s.findingStates.push(next);
+    });
+
+    logActivity(
+      initiativeId,
+      "FINDING_RESOLVED",
+      `${input.subject} finding marked resolved: ${input.resolution}`,
+    );
+  },
+
+  async clearFindingState(initiativeId, fingerprint) {
+    assertWriteAllowed();
+
+    const store = readStore();
+    const existing = store.findingStates.find(
+      (f) => f.initiativeId === initiativeId && f.fingerprint === fingerprint,
+    );
+    if (!existing) return;
+
+    writeStore((s) => {
+      s.findingStates = s.findingStates.filter(
+        (f) => !(f.initiativeId === initiativeId && f.fingerprint === fingerprint),
+      );
+    });
+
+    // The note is not lost with the row: activity_log is the audit trail, so
+    // the reason it was closed stays readable after it is reopened.
+    logActivity(
+      initiativeId,
+      "FINDING_REOPENED",
+      `Finding reopened; previous resolution was: ${existing.resolution ?? "(none recorded)"}`,
+    );
   },
 };

@@ -5,6 +5,8 @@ import type {
   ClaimWithEvidence,
   EvidencePatch,
   EvidenceRecord,
+  FindingState,
+  FindingStateInput,
   Initiative,
   InitiativeSource,
   NewClaimInput,
@@ -63,6 +65,29 @@ export interface Repository {
    * added ones are not EXCLUDED) — see lib/data/access.ts.
    */
   setClaimEvidence(claimId: string, evidenceIds: string[]): Promise<void>;
+
+  /* ── Review findings (Phase 4) ───────────────────────────────────────────
+     Findings themselves are NOT stored. They are derived from claims by the
+     pure engine in lib/review on every read, so they can never drift from
+     Product Memory. Only the human decision about a finding is persisted, and
+     the absence of a state row means OPEN. */
+
+  /** A read: derivation and display must work with writes disabled. */
+  listFindingStates(initiativeId: string): Promise<FindingState[]>;
+  /** Marks a finding resolved. A written reason is required. */
+  setFindingState(
+    initiativeId: string,
+    fingerprint: string,
+    input: FindingStateInput,
+  ): Promise<void>;
+  /**
+   * Reopens a finding by removing its state row.
+   *
+   * The note is not silently discarded: both resolving and reopening are
+   * written to activity_log, which is the audit trail for this kind of change
+   * (CLAUDE.md §19 — no second history mechanism).
+   */
+  clearFindingState(initiativeId: string, fingerprint: string): Promise<void>;
 }
 
 /** Derives a stable, URL-safe slug. Collisions are resolved by the caller. */

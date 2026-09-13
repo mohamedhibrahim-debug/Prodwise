@@ -7,6 +7,7 @@ import type {
   ActivityEntry,
   ClaimRecord,
   EvidenceRecord,
+  FindingState,
   Initiative,
   InitiativeSource,
 } from "@/lib/domain/types";
@@ -45,6 +46,8 @@ export interface StoreShape {
   sources: InitiativeSource[];
   claims: ClaimRecord[];
   claimEvidence: ClaimEvidenceLink[];
+  /** Human decisions about derived findings. The findings are not stored. */
+  findingStates: FindingState[];
 }
 
 const DATA_FILE = join(process.cwd(), ".data", "prodwise.json");
@@ -60,6 +63,9 @@ function seed(): StoreShape {
       ...l,
       createdAt: "2026-09-06T00:00:00.000Z",
     })),
+    // Deliberately empty. The seeded conflict must appear because the engine
+    // ran over the seeded claims, not because a finding was inserted.
+    findingStates: [],
   };
 }
 
@@ -81,6 +87,7 @@ function load(): StoreShape {
         sources: parsed.sources ?? base.sources,
         claims: parsed.claims ?? base.claims,
         claimEvidence: parsed.claimEvidence ?? base.claimEvidence,
+        findingStates: parsed.findingStates ?? base.findingStates,
       };
       return cache;
     } catch {

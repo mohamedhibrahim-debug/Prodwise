@@ -9,8 +9,24 @@ import styles from "./EmptyState.module.css";
  */
 export const EMPTY = {
   evidence: "No related evidence has been confirmed yet.",
+  /**
+   * Overview only. Review has its own strings below, because Review findings
+   * are now derived from Product Memory rather than read from evidence, and
+   * only two of the five finding types are detected at all.
+   */
   findings:
     "No material review issues were detected in the currently connected evidence.",
+  /** Review, when the initiative has no claims to reason over. */
+  reviewNoClaims:
+    "No claims have been recorded yet, so there is nothing to review.",
+  /** Review, when claims exist and neither rule matched. */
+  reviewFindings:
+    "No conflicts or superseded claims were found in this initiative's Product Memory.",
+  /* Not "none has ever been resolved": a finding resolved earlier and reopened
+     when its claims changed is not counted here, and the row itself says so. */
+  reviewResolved: "No finding is currently marked resolved.",
+  /** Review, when findings exist but none is waiting on anyone. */
+  reviewNothingOpen: "Nothing in this initiative is waiting on you.",
   readiness: "Not enough evidence is available to assess this domain.",
   memory: "No structured product memory has been extracted yet.",
   attention:

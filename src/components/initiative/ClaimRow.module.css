@@ -1,5 +1,14 @@
 .row {
   border-bottom: 1px solid var(--rule);
+  /* Clears the sticky workspace header when Review links to a claim anchor. */
+  scroll-margin-top: var(--s-12);
+}
+
+/* Marks the claim a Review finding sent the reader to, so it is findable in a
+   long list without changing anything about the claim itself. */
+.row:target {
+  border-left: 2px solid var(--accent-500);
+  padding-left: var(--s-4);
 }
 
 .disclosure {

@@ -1,11 +1,58 @@
 .row {
-  padding: var(--s-5) 0;
   border-bottom: 1px solid var(--rule);
+}
+
+/* A structural left edge, not a colour code.
+   With severity gone there is no honest colour to reach for: the --state-* and
+   --sev-* ramps both carry meanings a finding has not earned, and brand orange
+   never carries status. So actionable work gets a neutral rule and history gets
+   none — weight and wording do the rest. */
+.row:not(.history) {
+  border-left: 2px solid var(--rule-strong);
+  padding-left: var(--s-4);
+}
+
+.disclosure {
+  padding: var(--s-5) 0;
+}
+
+.summary {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+  cursor: pointer;
+  list-style: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+
+.chevron {
+  flex: none;
+  margin-top: 5px;
+  color: var(--ink-400);
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.disclosure[open] .chevron {
+  transform: rotate(90deg);
+}
+
+.main {
+  min-width: 0;
+  flex: 1;
 }
 
 .head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--s-3);
   flex-wrap: wrap;
 }
@@ -15,71 +62,251 @@
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-tight);
   color: var(--ink-900);
-  margin-right: auto;
+  /* Built from subject + attribute, both free text. An unbroken token — an
+     underscored subject, say — is not a UAX#14 break opportunity and would
+     scroll the whole page sideways at 375px. */
+  overflow-wrap: anywhere;
 }
 
-.meta {
+/* History stays fully readable — it is a record, not noise — but it does not
+   compete with work that still needs doing. */
+.history .title {
+  font-weight: var(--fw-medium);
+}
+
+.facts {
   display: flex;
-  align-items: center;
-  gap: var(--s-3);
   flex-wrap: wrap;
+  gap: var(--s-1) var(--s-3);
+  margin-top: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+}
+
+.fact b {
+  font-weight: var(--fw-medium);
+  color: var(--ink-700);
+}
+
+.sep {
+  color: var(--ink-300);
+}
+
+.body {
+  padding-left: calc(10px + var(--s-3));
+  margin-top: var(--s-4);
 }
 
 .explanation {
-  margin-top: var(--s-2);
   font-size: var(--t-sm);
   color: var(--ink-500);
   line-height: var(--lh-body);
   max-width: 82ch;
+  overflow-wrap: anywhere;
 }
 
-/* Claim comparison — the visual core of a conflict. Two aligned columns so the
-   incompatible values sit directly beside each other. */
-.claims {
+/* The comparison. Two answers to one question, separated by a hairline rule —
+   no fills and no boxes, which would be a card inside a card. */
+/* Capped tracks, not 1fr. Stretched to full width the two values ended up ~550px
+   apart — too far to compare in one look, and far enough that the hairline
+   between them stopped reading as a join. */
+.compare {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--s-4);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 320px));
+  justify-content: start;
+  column-gap: var(--s-8);
+  row-gap: var(--s-4);
   margin-top: var(--s-4);
   padding-top: var(--s-4);
   border-top: 1px dashed var(--rule-strong);
 }
 
-.claim {
+.side {
   min-width: 0;
+  /* Same weight as the row's own left edge, so the divider between the two
+     things being compared is not fainter than the rule above them. */
+  border-left: 1px solid var(--rule-strong);
+  padding-left: var(--s-4);
 }
 
-.claimLabel {
+.side:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+/* Only supersession uses this: it has a direction, so its columns are labelled.
+   A conflict has none, and labelling its sides would invent a winner. */
+.eyebrow {
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-micro);
   text-transform: uppercase;
   color: var(--ink-400);
+  margin-bottom: var(--s-2);
 }
 
-.claimValue {
+.sideLabel {
+  font-size: var(--t-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.claimIdLabel {
+  font-family: var(--font-mono);
+  text-transform: none;
+}
+
+.resolveCaption {
+  margin-top: var(--s-3);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+  line-height: var(--lh-body);
+}
+
+/* The compared values are the reason the finding exists, so they are the
+   terminus of the row — a step above the evidence titles beneath them, which
+   previously carried almost identical weight. */
+.sideValue {
   margin-top: var(--s-2);
-  font-size: var(--t-body);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
   color: var(--ink-900);
-  font-weight: var(--fw-medium);
-  line-height: 1.45;
+  line-height: 1.35;
+  /* value and reference are free text; min-width alone will not break a long
+     unbroken token, and the page must never scroll sideways. */
+  overflow-wrap: anywhere;
 }
 
-.claimSource {
+.sideFacts {
   margin-top: var(--s-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+}
+
+.noEvidence {
+  margin-top: var(--s-3);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+  line-height: var(--lh-body);
+}
+
+.noEvidenceHint {
+  color: var(--ink-400);
+}
+
+.evidenceList {
+  margin-top: var(--s-2);
+  list-style: none;
+}
+
+.evidenceItem {
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.evidenceItem:last-child {
+  border-bottom: 0;
+}
+
+.evidenceTitle {
+  display: block;
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  color: var(--ink-900);
+  overflow-wrap: anywhere;
+}
+
+.evidenceMeta {
+  margin-top: 3px;
   display: flex;
   align-items: center;
   gap: var(--s-2);
   flex-wrap: wrap;
   font-size: var(--t-xs);
+  color: var(--ink-500);
+}
+
+.boundaryTag,
+.excludedTag {
+  font-size: var(--t-micro);
+  /* Matches the identical tag on the Product Memory tab. */
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  border: 1px solid var(--rule-strong);
+  /* --ink-400 on --surface-sunken is ~4.36:1, under AA. --ink-500 clears it. */
+  color: var(--ink-500);
+  background: var(--surface-subtle);
+}
+
+.excludedTag {
+  color: var(--state-blocked-fg);
+  background: var(--state-blocked-bg);
+  border-color: var(--state-blocked-edge);
+}
+
+.claimLink {
+  display: inline-block;
+  margin-top: var(--s-3);
+  font-size: var(--t-xs);
+  color: var(--accent-700);
+}
+
+.claimLink:hover {
+  text-decoration: underline;
+}
+
+/* Below the values, not above: read after the comparison it is the conclusion,
+   read before it is a disclaimer people skip. */
+.caption {
+  margin-top: var(--s-3);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+}
+
+.reason {
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--rule);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+  line-height: var(--lh-body);
+  max-width: 82ch;
+}
+
+.reasonLabel {
+  display: block;
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
   color: var(--ink-400);
+  margin-bottom: 3px;
 }
 
 .resolution {
   margin-top: var(--s-4);
   padding-top: var(--s-3);
   border-top: 1px solid var(--rule);
+}
+
+.resolutionNote {
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+  line-height: var(--lh-body);
+}
+
+.resolutionText {
+  margin-top: var(--s-2);
   font-size: var(--t-sm);
-  color: var(--state-ready-fg);
+  color: var(--ink-900);
   line-height: var(--lh-body);
 }
 
@@ -95,4 +322,87 @@
   border: 1px solid var(--state-ready-edge);
   border-radius: var(--r-pill);
   padding: 2px 9px;
+}
+
+.resolveForm {
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--rule);
+  max-width: 62ch;
+}
+
+.resolveLabel {
+  display: block;
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-bottom: var(--s-2);
+}
+
+.resolveInput {
+  width: 100%;
+  font: inherit;
+  font-size: var(--t-sm);
+  color: var(--ink-900);
+  background: var(--canvas);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  padding: var(--s-3);
+  resize: vertical;
+}
+
+.resolveInput:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+  border-color: var(--accent-500);
+}
+
+.submit {
+  margin-top: var(--s-3);
+  font: inherit;
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  color: var(--ink-900);
+  background: var(--canvas);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  padding: 7px 14px;
+  cursor: pointer;
+}
+
+.submit:hover:not(:disabled) {
+  border-color: var(--ink-400);
+}
+
+.submit:disabled {
+  color: var(--ink-400);
+  cursor: default;
+}
+
+.error {
+  margin-top: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--state-blocked-fg);
+}
+
+/* At the project's existing breakpoint the columns stack, so the divider has to
+   change axis — a vertical rule between stacked blocks separates nothing. */
+@media (max-width: 780px) {
+  .compare {
+    grid-template-columns: 1fr;
+  }
+
+  .side {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--rule);
+    padding-top: var(--s-4);
+  }
+
+  .side:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
 }

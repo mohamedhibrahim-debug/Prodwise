@@ -361,26 +361,198 @@ export interface NextBestAction {
   confidence: Confidence;
 }
 
-export interface ClaimReference {
-  label: string;
+/* ── Review findings (Phase 4) ──────────────────────────────────────────────
+   Unlike everything above this point, a ReviewFinding is NOT a fixture. It is
+   derived deterministically from persisted claims by the pure engine in
+   src/lib/review, and is therefore declared here beside the real domain types
+   rather than among the synthetic shapes. */
+
+/**
+ * Which deterministic rule produced a finding.
+ *
+ * Versioned on purpose: if a rule's logic changes, it gets a new id, so human
+ * decisions recorded against the old reasoning are never silently re-attached
+ * to different reasoning.
+ */
+export const REVIEW_RULES = [
+  "CONFLICT_SAME_ATTRIBUTE_V1",
+  "SUPERSEDED_CLAIM_V1",
+] as const;
+
+export type ReviewRuleId = (typeof REVIEW_RULES)[number];
+
+/** A real, resolvable pointer to a claim — never a copied display string. */
+export interface FindingClaimRef {
+  claimId: string;
+  subject: string;
+  attribute: string;
   value: string;
-  source: string;
-  sourceDate: string;
+  type: ClaimType;
+  status: ClaimStatus;
+  domain: Domain;
+  phase: string | null;
+  /** Provenance for THIS claim. Empty means no evidence is linked — which is
+   *  not the same as no evidence existing, and the UI must say so. */
+  evidence: FindingEvidenceRef[];
+}
+
+/**
+ * Evidence reached through claim provenance only. Review never creates an
+ * evidence link and never asserts one: it reports the links a person made.
+ */
+export interface FindingEvidenceRef {
+  evidenceId: string;
+  title: string;
+  sourceType: EvidenceSourceType;
+  sourceReference: string | null;
+  /** May be EXCLUDED: a link made before the evidence left the boundary is
+   *  preserved rather than rewritten, so the UI must mark it. */
+  boundary: EvidenceRelation;
 }
 
 export interface ReviewFinding {
-  id: string;
+  /**
+   * Deterministic content identity: same claims and same relevant content
+   * always produce the same fingerprint, regardless of input order or clock.
+   * This IS the identity: one logical finding is one row, and re-running the
+   * engine over unchanged claims can never produce a second copy of it.
+   */
+  fingerprint: string;
+
+  /**
+   * Everything the finding actually shows, hashed.
+   *
+   * The fingerprint answers "is this the same finding?" and deliberately
+   * ignores membership, so it survives edits that do not change the compared
+   * values. That makes it the wrong signal for "has this changed since someone
+   * resolved it?".
+   *
+   * Timestamps cannot answer that either: `detectedOn` is the maximum
+   * `updatedAt` across the SURVIVING claims, and a maximum does not move when a
+   * member is removed — so a claim leaving a conflict group is invisible to it.
+   * Nor do evidence links touch `claims.updated_at`, so re-linking provenance
+   * rewrites what a finding cites while every timestamp stays put.
+   *
+   * This digest covers the member claims, their values and their provenance, so
+   * any of those changes reopens a resolved finding instead of letting a stale
+   * decision stand over content it never described.
+   */
+  contentDigest: string;
+
+  initiativeId: string;
+
   type: FindingType;
-  severity: Severity;
+  ruleId: ReviewRuleId;
   status: FindingStatus;
+  /** Whether this belongs in the actionable Open queue. False for history. */
+  actionable: boolean;
+
   title: string;
-  subject: string;
-  domain: Domain;
   explanation: string;
-  claims: ClaimReference[];
+  /** Plain-language statement of the rule that fired. Shown to the user. */
+  reason: string;
+
+  subject: string;
+  /**
+   * Every domain represented by the source claims, deduplicated and ordered by
+   * the canonical DOMAINS declaration. The order carries NO meaning: none of
+   * these is "the" domain, and picking one would invent product truth.
+   */
+  domains: Domain[];
+
+  /**
+   * The phase/context the conflicting claims share, exactly as recorded.
+   *
+   * Part of the finding identity, so it must be visible: two groups differing
+   * ONLY by phase (27-vs-30 at "Phase 1", and 27-vs-30 with no phase) are two
+   * legitimate findings that would otherwise render identically and be
+   * impossible to tell apart once one of them was resolved.
+   */
+  phase: string | null;
+
+  claims: FindingClaimRef[];
+
+  /**
+   * The most recent updatedAt across the source claims — never the clock, so
+   * repeated runs over unchanged data produce identical output. It records
+   * when the underlying claims last changed, NOT when anything was "detected":
+   * a derived finding has no detection event to timestamp.
+   */
   detectedOn: string;
-  /** Present on RESOLVED findings only. */
-  resolution?: string;
+
+  resolution: string | null;
+  resolvedAt: string | null;
+
+  /**
+   * Always null for a deterministic rule, and deliberately so.
+   *
+   * A rule either fires because the structured data satisfies it, or it does
+   * not fire. There is no confidence to report, and inventing one would imply
+   * a probabilistic judgement Prodwise never made. The field exists so a later
+   * phase can PROPOSE a finding without a schema change.
+   */
+  confidence: Confidence | null;
+
+  /**
+   * Deliberately absent from Slice 1 findings.
+   *
+   * Severity is business impact, and the structured data does not prove it: the
+   * same conflict may be trivial or release-critical depending on context the
+   * engine cannot see. A fixed per-rule default would be a fabricated ranking,
+   * and deriving it from domain would be arbitrary scoring (CLAUDE.md §12).
+   */
+  severity: Severity | null;
+}
+
+/**
+ * The human overlay on a derived finding — the ONLY part that is persisted.
+ *
+ * Findings themselves are recomputed from claims on every read, so they can
+ * never drift from Product Memory. A person's decision cannot be recomputed,
+ * so that is stored, keyed by the finding's content fingerprint.
+ *
+ * Absence of a row means OPEN.
+ */
+export interface FindingState {
+  initiativeId: string;
+  fingerprint: string;
+  ruleId: string;
+  /** What the finding contained when the decision was made. See ReviewFinding. */
+  contentDigest: string | null;
+  /**
+   * The plaintext identity behind the hash.
+   *
+   * A fingerprint is one-way, so once claims change and a finding stops
+   * deriving, its row would otherwise be an audit record nobody can read.
+   * Descriptive only — never used to match a finding.
+   */
+  subject: string | null;
+  attribute: string | null;
+  phase: string | null;
+  valuesRecorded: string | null;
+  status: FindingStatus;
+  resolution: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * What a person supplies when resolving a finding.
+ *
+ * The descriptive fields are copied from the derived finding, never from the
+ * request: a fingerprint is one-way, so without them a row whose finding has
+ * stopped deriving becomes an audit record nobody can read.
+ */
+export interface FindingStateInput {
+  ruleId: string;
+  contentDigest: string;
+  subject: string;
+  attribute: string | null;
+  phase: string | null;
+  valuesRecorded: string | null;
+  /** Required. Resolving without saying why is not resolving. */
+  resolution: string;
 }
 
 export interface ReadinessAssessment {
@@ -398,18 +570,20 @@ export interface ReadinessAssessment {
  * without fixtures — which is every initiative a user creates, and which is why
  * the empty states are exercised by real code paths rather than mocked.
  *
- * Evidence (Phase 2) and claims (Phase 3) are deliberately NOT part of this.
- * Both are real, persisted and human-owned, and are read through the
- * repository. Keeping either here would imply the findings below were derived
- * from them. They were not: Review, Readiness, Current State and Next Best
- * Action remain static fixtures, and nothing in the product derives them from
- * Product Memory yet.
+ * Evidence (Phase 2), claims (Phase 3) and review findings (Phase 4) are
+ * deliberately NOT part of this. All three are read through real code — the
+ * first two from the repository, findings derived from claims by the engine in
+ * lib/review. Keeping any of them here would imply the fixtures below were
+ * derived from them.
+ *
+ * What remains is still entirely synthetic: Readiness, Current State, Needs
+ * Your Attention and Next Best Action are hand-authored, and nothing in the
+ * product derives them from Product Memory.
  */
 export interface InitiativeIntelligence {
   attention: AttentionItem[];
   domains: DomainAssessment[];
   nextBestAction: NextBestAction | null;
-  findings: ReviewFinding[];
   readiness: ReadinessAssessment[];
   lastEvaluatedAt: string;
 }

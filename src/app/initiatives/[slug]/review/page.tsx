@@ -1,15 +1,21 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { FindingRow } from "@/components/initiative/FindingRow";
 import { getRepository } from "@/lib/data";
-import { getIntelligence } from "@/lib/data/fixtures";
-import { isActionable, severityRank } from "@/lib/domain/ordering";
+import { isDemoWriteEnabled } from "@/lib/env";
+import { compareFindings, runReview } from "@/lib/review/engine";
+import { applyFindingStates } from "@/lib/review/merge";
 import type { ReviewFinding } from "@/lib/domain/types";
 import styles from "../workspace.module.css";
 
 export const metadata: Metadata = { title: "Review" };
+
+/* Findings are derived from live claims on every request, so a build-time
+   render would freeze them against whatever Product Memory held at build. */
+export const dynamic = "force-dynamic";
 
 type Filter = "open" | "resolved" | "all";
 
@@ -26,7 +32,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 function matches(filter: Filter, finding: ReviewFinding): boolean {
   if (filter === "all") return true;
   if (filter === "resolved") return finding.status === "RESOLVED";
-  return finding.status === "OPEN" && isActionable(finding);
+  return finding.status === "OPEN" && finding.actionable;
 }
 
 export default async function ReviewPage({
@@ -42,16 +48,17 @@ export default async function ReviewPage({
   const filter: Filter =
     rawFilter === "resolved" || rawFilter === "all" ? rawFilter : "open";
 
-  const intelligence = getIntelligence(slug);
-  const all = intelligence?.findings ?? [];
+  const repo = getRepository();
+  const initiative = await repo.getInitiativeBySlug(slug);
+  if (!initiative) notFound();
 
-  // Whether any evidence is connected is now a fact from the repository, not a
-  // fixture — so the empty state can distinguish "reviewed, nothing found" from
-  // "nothing to review" truthfully.
-  const initiative = await getRepository().getInitiativeBySlug(slug);
-  const evidenceCount = initiative
-    ? (await getRepository().listEvidence(initiative.id)).length
-    : 0;
+  const [claims, states, evidence] = await Promise.all([
+    repo.listClaims(initiative.id),
+    repo.listFindingStates(initiative.id),
+    repo.listEvidence(initiative.id),
+  ]);
+
+  const all = applyFindingStates(runReview(initiative.id, claims), states);
 
   const counts: Record<Filter, number> = {
     open: all.filter((f) => matches("open", f)).length,
@@ -59,58 +66,88 @@ export default async function ReviewPage({
     all: all.length,
   };
 
-  const visible = all
-    .filter((f) => matches(filter, f))
-    .sort((a, b) => {
-      const bySeverity = severityRank(a.severity) - severityRank(b.severity);
-      if (bySeverity !== 0) return bySeverity;
-      return Date.parse(b.detectedOn) - Date.parse(a.detectedOn);
-    });
+  /* Deliberately not sorted by severity: Slice 1 findings carry none, so any
+     ranking by importance would be invented. Actionable work sorts above
+     history because that is a derived fact, not a judgement. */
+  const visible = all.filter((f) => matches(filter, f)).sort(compareFindings);
 
   return (
     <div className={styles.page}>
       <div className={styles.tabIntro}>
-        {/* No detection engine exists yet. These findings are fixtures, and the
-            copy must not imply they were derived from Product Memory. */}
+        {/* Deliberately short. The conflict rule itself is stated under "Why
+            this was raised" on the finding it produced, which is where a rule
+            is useful — repeating it here as a spec, above the filters, just
+            gates the content behind reading the reader will skip. What is left
+            is the part no finding can tell you: where these come from, and what
+            is not looked for at all. */}
         <p className={styles.tabIntroText}>
-          Demo findings — illustrative only, and not yet derived from this
-          initiative&rsquo;s evidence or Product Memory. When detection arrives,
-          a conflict will be raised only where two claims share the same
-          subject, attribute and context, are both active, and hold
-          incompatible values, with supersession and scope differences
-          evaluated first.
+          Findings are derived from this initiative&rsquo;s Product Memory
+          &mdash; no AI and no inference, and every one traces back to a claim a
+          person recorded.{" "}
+          <strong>Gaps, unknowns and risks are not detected</strong>, so nothing
+          here does not mean none exist. Readiness and Next Best Action remain
+          demo intelligence.
         </p>
 
-        <nav className={styles.filters} aria-label="Filter findings">
-          {FILTERS.map(({ key, label }) => (
-            <Link
-              key={key}
-              href={`/initiatives/${slug}/review${key === "open" ? "" : `?filter=${key}`}`}
-              className={`${styles.filter} ${filter === key ? styles.filterActive : ""}`}
-              aria-current={filter === key ? "page" : undefined}
-            >
-              {label}
-              <span className={styles.filterCount}>{counts[key]}</span>
-            </Link>
-          ))}
-        </nav>
+        {/* Three tabs all reading zero filter nothing — on an initiative with
+            no findings the strip is noise, so it is not rendered. */}
+        {counts.all > 0 ? (
+          <nav className={styles.filters} aria-label="Filter findings">
+            {FILTERS.map(({ key, label }) => (
+              <Link
+                key={key}
+                href={`/initiatives/${slug}/review${key === "open" ? "" : `?filter=${key}`}`}
+                className={`${styles.filter} ${filter === key ? styles.filterActive : ""}`}
+                aria-current={filter === key ? "page" : undefined}
+              >
+                {label}
+                <span className={styles.filterCount}>{counts[key]}</span>
+              </Link>
+            ))}
+          </nav>
+        ) : null}
+
+        {/* Open + Resolved does not equal All, which reads as a bug unless the
+            difference is explained exactly where it appears. Counted, never
+            hardcoded. */}
+        {counts.all > counts.open + counts.resolved ? (
+          <p className={styles.filterNote}>
+            Open shows the {counts.open === 1 ? "one finding" : `${counts.open} findings`}{" "}
+            needing a decision. The other{" "}
+            {counts.all - counts.open - counts.resolved === 1
+              ? "one is a superseded claim"
+              : `${counts.all - counts.open - counts.resolved} are superseded claims`}{" "}
+            kept as history &mdash; see All.
+          </p>
+        ) : null}
       </div>
 
       {visible.length === 0 ? (
         <EmptyState
+          /* Claims first, not evidence: findings derive from Product Memory
+             now, so an empty Review is explained by the absence of claims. */
           message={
-            // "Nothing was detected" is a claim about a review that happened.
-            // With no connected evidence there was no review to report on.
-            evidenceCount === 0
-              ? EMPTY.evidence
+            claims.length === 0
+              ? EMPTY.reviewNoClaims
               : filter === "resolved"
-                ? "No findings have been resolved yet."
-                : EMPTY.findings
+                ? EMPTY.reviewResolved
+                : /* An empty Open queue is not the same as an empty Review.
+                     Saying "nothing was found" while findings sit under All
+                     would be plainly false. */
+                  counts.all > 0
+                  ? EMPTY.reviewNothingOpen
+                  : EMPTY.reviewFindings
           }
           hint={
-            evidenceCount === 0
-              ? "Findings are detected from connected evidence. Add evidence on the Evidence tab to build this initiative's boundary."
-              : undefined
+            claims.length === 0
+              ? evidence.length === 0
+                ? "Review compares recorded claims. No evidence has been connected yet either, so nothing has been reviewed here."
+                : "Review compares recorded claims. Until Product Memory has claims, no finding can be raised — and none can be ruled out."
+              : filter === "resolved"
+                ? undefined
+                : counts.all > 0
+                  ? `${counts.all} finding${counts.all === 1 ? " is" : "s are"} recorded under All, including resolved findings and superseded claims kept as history.`
+                  : "Only conflicts and supersessions are detected. Gaps, unknowns and risks are not checked, so their absence here does not mean there are none."
           }
         />
       ) : (
@@ -121,7 +158,12 @@ export default async function ReviewPage({
           </h2>
           <ul>
             {visible.map((finding) => (
-              <FindingRow key={finding.id} finding={finding} />
+              <FindingRow
+                key={finding.fingerprint}
+                finding={finding}
+                slug={slug}
+                canResolve={isDemoWriteEnabled}
+              />
             ))}
           </ul>
         </>

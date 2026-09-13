@@ -21,6 +21,8 @@ import type {
   EvidenceRecord,
   EvidenceRelation,
   EvidenceSourceType,
+  FindingState,
+  FindingStatus,
   Domain,
   Initiative,
   InitiativeSource,
@@ -105,6 +107,22 @@ interface SourceRow {
   source_type: EvidenceSourceType;
   connection_state: ConnectionState;
   last_synced_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface FindingStateRow {
+  initiative_id: string;
+  fingerprint: string;
+  rule_id: string;
+  content_digest: string | null;
+  subject: string | null;
+  attribute: string | null;
+  phase: string | null;
+  values_recorded: string | null;
+  status: FindingStatus;
+  resolution: string | null;
+  resolved_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -195,6 +213,24 @@ function toClaim(row: ClaimRow): ClaimRecord {
     confidence: row.confidence,
     supersededByClaimId: row.superseded_by_claim_id,
     createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function toFindingState(row: FindingStateRow): FindingState {
+  return {
+    initiativeId: row.initiative_id,
+    fingerprint: row.fingerprint,
+    ruleId: row.rule_id,
+    contentDigest: row.content_digest,
+    subject: row.subject,
+    attribute: row.attribute,
+    phase: row.phase,
+    valuesRecorded: row.values_recorded,
+    status: row.status,
+    resolution: row.resolution,
+    resolvedAt: row.resolved_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -410,7 +446,16 @@ export const supabaseRepository: Repository = {
           .select("*")
           .eq("initiative_id", initiativeId)
           .order("created_at", { ascending: true }),
-        supabase.from("claim_evidence").select("claim_id, evidence_id"),
+        // Ordered explicitly, and this select is unfiltered by initiative, so
+        // it is also capped well above the demo's size rather than relying on
+        // the default page limit. Order matters because provenance order must
+        // not differ between the two adapters.
+        supabase
+          .from("claim_evidence")
+          .select("claim_id, evidence_id")
+          .order("claim_id", { ascending: true })
+          .order("evidence_id", { ascending: true })
+          .limit(10000),
       ]);
 
     if (claimError) throw new Error(`Failed to list claims: ${claimError.message}`);
@@ -570,5 +615,86 @@ export const supabaseRepository: Repository = {
       "CLAIM_EVIDENCE_UPDATED",
       `${claim.subject} evidence links updated`,
     );
+  },
+
+  /* ── Review findings ─────────────────────────────────────────────────────
+     Only the human decision is stored. The findings are derived. */
+
+  async listFindingStates(initiativeId) {
+    const { data, error } = await getClient()
+      .from("finding_states")
+      .select("*")
+      .eq("initiative_id", initiativeId)
+      .order("fingerprint", { ascending: true });
+
+    if (error) throw new Error(`Failed to list finding states: ${error.message}`);
+    return (data as FindingStateRow[]).map(toFindingState);
+  },
+
+  async setFindingState(initiativeId, fingerprint, input) {
+    assertWriteAllowed();
+
+    const { error } = await getClient().from("finding_states").upsert(
+      {
+        initiative_id: initiativeId,
+        fingerprint,
+        rule_id: input.ruleId,
+        content_digest: input.contentDigest,
+        subject: input.subject,
+        attribute: input.attribute,
+        phase: input.phase,
+        values_recorded: input.valuesRecorded,
+        status: "RESOLVED",
+        resolution: input.resolution,
+        resolved_at: new Date().toISOString(),
+      },
+      { onConflict: "initiative_id,fingerprint" },
+    );
+
+    if (error) throw new Error(`Failed to save finding state: ${error.message}`);
+
+    await writeActivity(
+      initiativeId,
+      "FINDING_RESOLVED",
+      `${input.subject} finding marked resolved: ${input.resolution}`,
+    );
+  },
+
+  async clearFindingState(initiativeId, fingerprint) {
+    assertWriteAllowed();
+
+    const supabase = getClient();
+
+    /* Read BEFORE deleting, and refuse to delete if the read failed. The row is
+       the only copy of the note until activity_log has it, so a swallowed
+       select error would destroy a person's reasoning while the UI reported
+       success. */
+    const { data: existing, error: readError } = await supabase
+      .from("finding_states")
+      .select("resolution")
+      .eq("initiative_id", initiativeId)
+      .eq("fingerprint", fingerprint)
+      .maybeSingle();
+
+    if (readError) {
+      throw new Error(`Failed to reopen finding: ${readError.message}`);
+    }
+    if (!existing) return;
+
+    // Logged before the delete, so the note survives even if the delete fails.
+    const previous = (existing as { resolution: string | null }).resolution;
+    await writeActivity(
+      initiativeId,
+      "FINDING_REOPENED",
+      `Finding reopened; previous resolution was: ${previous ?? "(none recorded)"}`,
+    );
+
+    const { error } = await supabase
+      .from("finding_states")
+      .delete()
+      .eq("initiative_id", initiativeId)
+      .eq("fingerprint", fingerprint);
+
+    if (error) throw new Error(`Failed to reopen finding: ${error.message}`);
   },
 };

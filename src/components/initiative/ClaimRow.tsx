@@ -55,7 +55,9 @@ export function ClaimRow({
   const isSuperseded = claim.status === "SUPERSEDED";
 
   return (
-    <li className={styles.row}>
+    /* Anchor target for Review, which links straight to the claim behind a
+       finding rather than dropping the reader into the full list. */
+    <li id={`claim-${claim.id}`} className={styles.row}>
       <details className={styles.disclosure}>
         <summary className={styles.summary}>
           <svg

@@ -72,42 +72,7 @@ export const instantSettlementPayout: InitiativeIntelligence = {
       "Payouts submitted after an incorrect cut-off would settle a day late, breaking the core promise of the product.",
     suggestedOwner: "Partnerships / Treasury Operations",
     confidence: "HIGH",
-  },
-  findings: [
-    {
-      id: "isp-f-1",
-      type: "RISK",
-      severity: "CRITICAL",
-      status: "OPEN",
-      title: "Payout window rests on an unconfirmed partner cut-off",
-      subject: "Partner Cut-off",
-      domain: "EXTERNAL_PARTNER",
-      explanation:
-        "The implemented payout window assumes a specific partner cut-off time. No connected evidence confirms that time with the partner.",
-      claims: [
-        {
-          label: "Assumed",
-          value: "Partner cut-off at 14:00 local",
-          source: "ISP-77 · Implementation Note",
-          sourceDate: "2026-07-30T00:00:00.000Z",
-        },
-      ],
-      detectedOn: "2026-09-04T08:41:00.000Z",
-    },
-    {
-      id: "isp-f-2",
-      type: "GAP",
-      severity: "MEDIUM",
-      status: "OPEN",
-      title: "Same-day reconciliation break handling is not defined",
-      subject: "Reconciliation",
-      domain: "FINANCE",
-      explanation:
-        "Connected evidence describes the successful payout path but not what happens when a same-day break is detected.",
-      claims: [],
-      detectedOn: "2026-08-21T10:15:00.000Z",
-    },
-  ],
+  },
   readiness: [
     {
       domain: "TECHNICAL",
@@ -198,22 +163,7 @@ export const merchantKycRefresh: InitiativeIntelligence = {
       "The initiative cannot be assessed at all, and any reporting on it would be unfounded.",
     suggestedOwner: "Product Owner",
     confidence: "MEDIUM",
-  },
-  findings: [
-    {
-      id: "kyc-f-1",
-      type: "UNKNOWN",
-      severity: "HIGH",
-      status: "OPEN",
-      title: "Insufficient evidence to determine initiative state",
-      subject: "Initiative Boundary",
-      domain: "PRODUCT",
-      explanation:
-        "One scoping note is connected. No requirements, decisions or delivery items were found in the connected sources.",
-      claims: [],
-      detectedOn: "2026-08-28T16:12:00.000Z",
-    },
-  ],
+  },
   readiness: [
     {
       domain: "PRODUCT",
@@ -274,8 +224,7 @@ export const collectionsReportingRebuild: InitiativeIntelligence = {
       "Delay only; there is no unresolved definition risk recorded against this initiative.",
     suggestedOwner: "Delivery Lead",
     confidence: "MEDIUM",
-  },
-  findings: [],
+  },
   readiness: [
     {
       domain: "PRODUCT",

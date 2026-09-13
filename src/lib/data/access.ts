@@ -4,7 +4,9 @@ import type {
   ClaimWithEvidence,
   EvidenceRecord,
   Initiative,
+  ReviewFinding,
 } from "@/lib/domain/types";
+import { runReview } from "@/lib/review/engine";
 import { getRepository } from "./index";
 
 /**
@@ -161,4 +163,58 @@ export async function resolveClaimEvidenceLinks(
 /** Evidence a user may pick as a NEW link: same initiative, not excluded. */
 export function isLinkableEvidence(evidence: EvidenceRecord): boolean {
   return evidence.boundary !== "EXCLUDED";
+}
+
+/* ── Review findings ──────────────────────────────────────────────────────── */
+
+export const FINDING_ACCESS_MESSAGE =
+  "That finding could not be found on this initiative.";
+
+export class FindingAccessError extends Error {
+  readonly code = "FINDING_ACCESS_DENIED";
+
+  constructor(message: string = FINDING_ACCESS_MESSAGE) {
+    super(message);
+    this.name = "FindingAccessError";
+  }
+}
+
+export interface OwnedFinding {
+  initiative: Initiative;
+  finding: ReviewFinding;
+}
+
+/**
+ * Resolves an initiative by slug and proves a finding fingerprint currently
+ * derives from that initiative's Product Memory.
+ *
+ * A fingerprint is not an entity id — it is a hash of content, and it arrives
+ * from client-controlled input. So it is not looked up; the engine is re-run
+ * and the fingerprint must appear in the result. A forged fingerprint, one
+ * belonging to another initiative, or one for a finding that no longer derives
+ * because a claim changed, all fail here before anything is written.
+ *
+ * Non-actionable findings are refused too. A superseded claim is a permanent
+ * record of history, not a task, so "resolving" one is meaningless — and
+ * without this check the rule that keeps history out of the queue would be
+ * cosmetic, enforced only by hiding a button.
+ */
+export async function resolveOwnedFinding(
+  slug: string,
+  fingerprint: string,
+): Promise<OwnedFinding> {
+  if (!slug || !fingerprint) throw new FindingAccessError();
+
+  const repo = getRepository();
+  const initiative = await repo.getInitiativeBySlug(slug);
+  if (!initiative) throw new FindingAccessError();
+
+  const claims = await repo.listClaims(initiative.id);
+  const finding = runReview(initiative.id, claims).find(
+    (f) => f.fingerprint === fingerprint,
+  );
+
+  if (!finding || !finding.actionable) throw new FindingAccessError();
+
+  return { initiative, finding };
 }

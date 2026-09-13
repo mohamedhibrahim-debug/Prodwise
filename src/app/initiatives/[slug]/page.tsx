@@ -43,9 +43,12 @@ export default async function OverviewPage({
         ) : null}
         {intelligence ? (
           <div className={styles.summaryMeta}>
+            {/* Nothing evaluates evidence. This is a fixture constant, and the
+                freshness pattern is reserved for real timestamps (§16) — so it
+                must not claim an evaluation run that never happened. */}
             <Timestamp
               iso={intelligence.lastEvaluatedAt}
-              prefix="Evidence last evaluated"
+              prefix="Demo intelligence authored"
               withTime
             />
           </div>
@@ -67,6 +70,15 @@ export default async function OverviewPage({
               ? `Showing 3 of ${intelligence.attention.length}`
               : undefined
           }
+          /* These are hand-authored demo items, and they are NOT the derived
+             Review findings — they may describe the same subject and even
+             rank it, while Review deliberately assigns no severity at all.
+             Without saying so, one screen appears to contradict the other. */
+          description={
+            intelligence
+              ? "Demo items — illustrative only, and not the derived Review findings on the Review tab."
+              : undefined
+          }
         >
           {/* "Nothing was detected" is a claim about a review that happened.
               It is now answered by real connected evidence, not by fixtures. */}
@@ -81,6 +93,11 @@ export default async function OverviewPage({
           numeral="02"
           mobileNumeral="01"
           className={styles.orderAction}
+          description={
+            intelligence
+              ? "Demo recommendation — not generated from this initiative's evidence or Product Memory."
+              : undefined
+          }
         >
           <NextBestActionBlock action={intelligence?.nextBestAction ?? null} />
         </Section>
@@ -89,7 +106,11 @@ export default async function OverviewPage({
           title="Current State"
           numeral="03"
           className={styles.orderState}
-          description="Only domains relevant to this initiative are shown."
+          description={
+            intelligence
+              ? "Demo assessment — not derived from this initiative's data. Only domains relevant to this initiative are shown."
+              : "Only domains relevant to this initiative are shown."
+          }
         >
           <DomainStateList domains={intelligence?.domains ?? []} />
         </Section>

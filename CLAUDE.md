@@ -201,7 +201,9 @@ Product Memory must read as **structured knowledge, not a document browser**.
 **Finding types — exactly these five. Do not grow the taxonomy.**
 `CONFLICT` · `GAP` · `UNKNOWN` · `SUPERSEDED` · `RISK`
 
-A `CONFLICT` is only raised after establishing **all** of: same subject · same attribute · same relevant context · same active phase · both active · incompatible values. Always evaluate possible supersession or scope difference **first** (Rule 7).
+As of Phase 4 only **`CONFLICT` and `SUPERSEDED`** are implemented. The other three are not detected at all — which is not the same as none being present, and no screen may let their absence read as an all-clear.
+
+A `CONFLICT` is only raised after establishing **all** of: same subject · same attribute · same relevant context · same phase, or none recorded on either · all claims active · **different recorded values**. The engine establishes that the recorded values *differ*; it never establishes that they are incompatible — free text carries no type or unit, so one value may simply elaborate another. Always evaluate possible supersession or scope difference **first** (Rule 7).
 
 ---
 
@@ -327,7 +329,10 @@ Careful, honest wording — this is Rule 4 made visible:
 | Situation | Copy |
 |---|---|
 | No evidence | "No related evidence has been confirmed yet." |
-| No findings | "No material review issues were detected in the currently connected evidence." |
+| No findings *(Overview only)* | "No material review issues were detected in the currently connected evidence." |
+| Review — no claims to reason over | "No claims have been recorded yet, so there is nothing to review." |
+| Review — claims exist, no rule fired | "No conflicts or superseded claims were found in this initiative's Product Memory." *(hint must name what is **not** checked)* |
+| Review — findings exist but none is open | "Nothing in this initiative is waiting on you." *(never "nothing was found" — findings exist under All)* |
 | Unknown readiness | "Not enough evidence is available to assess this domain." |
 
 **Never say "Everything is perfect."**
@@ -383,7 +388,7 @@ Phase 1 intentionally has **no authentication**. That must not create an unrestr
 
 The future logical model stays simple. Expected entities may eventually include: `users` · `initiatives` · `initiative_sources` · `evidence` · `claims` · `relationships` · `review_issues` · `assessments` · `actions` · `activity_log`.
 
-**Create only what the current phase requires.** Phase 1 created exactly: `users`, `initiatives`, `activity_log`. Phase 2 added exactly: `initiative_sources`, `evidence`. Phase 3 added exactly: `claims`, `claim_evidence`. No `evidence_history`, `claim_history`, `claim_versions`, `knowledge_graph` or `claim_conflicts` — `activity_log` records these changes cleanly, and a second history mechanism would be schema for its own sake.
+**Create only what the current phase requires.** Phase 1 created exactly: `users`, `initiatives`, `activity_log`. Phase 2 added exactly: `initiative_sources`, `evidence`. Phase 3 added exactly: `claims`, `claim_evidence`. Phase 4 added exactly one: `finding_states`, holding only human decisions — findings themselves are derived on every read, never stored, so there is deliberately **no `review_findings` table**. No `evidence_history`, `claim_history`, `claim_versions`, `knowledge_graph` or `claim_conflicts` — `activity_log` records these changes cleanly, and a second history mechanism would be schema for its own sake.
 
 ---
 
@@ -396,6 +401,8 @@ A **synthetic** initiative (slug `merchant-flex-finance`) used to demonstrate th
 **Scenario:** original requirement *Traditional + Islamic Financing*; later decision *Islamic Financing Only* → the old requirement is **SUPERSEDED, not a conflict**. Financial requirement *Daily repayment = Monthly installment / 27* vs implementation requirement *= / 30* → a **critical financial CONFLICT**. Delivery: epic in development, several stories complete, some work open. QA partial. Finance: final authoritative calculation confirmation not found. Compliance: approval evidence not found. Future phase: Automated Disbursement.
 
 **Expected interpretation:** Stage `DELIVERY` · Overall `AT_RISK` · Critical: repayment calculation conflict · Superseded: Traditional+Islamic → Islamic-only · Finance `AT_RISK` · Release `BLOCKED` · Unknown: no evidence confirming Compliance approval was found.
+
+**Which of those the engine actually produces:** only the repayment conflict and the supersession. The Unknown, the domain states and the Next Best Action are carried by the synthetic Overview and Readiness fixtures and are **not** review-engine output — Prodwise does not detect gaps, unknowns or risks.
 
 **Primary Next Best Action:** *Resolve the daily repayment calculation with the relevant Finance / Lending owner before continuing affected implementation.*
 
@@ -444,7 +451,9 @@ Delivered: persisted `ClaimRecord` reusing the canonical 6 types and 7 statuses 
 | Review — including the 27-vs-30 conflict | **Synthetic fixture** |
 | Readiness · Current State · Needs Your Attention · Next Best Action | **Synthetic fixture** |
 
-**There is no AI extraction, and no inference of any kind.** Every claim is a migrated seed or something a person typed. Product Memory is **never** to be described as AI-generated. Review findings are **not** derived from claims — the 27 and 30 divisor claims sit side by side as plain ACTIVE requirements, and nothing in the product says they conflict. Deriving that belongs to a later phase.
+**There is no AI extraction, and no inference of any kind.** Every claim is a migrated seed or something a person typed. Product Memory is **never** to be described as AI-generated.
+
+> **Superseded by Phase 4.** This section originally continued: *"Review findings are not derived from claims — the 27 and 30 divisor claims sit side by side as plain ACTIVE requirements, and nothing in the product says they conflict."* That is no longer true. Phase 4 derives CONFLICT and SUPERSEDED findings from these claims. Everything else in Phase 3 stands.
 
 Future AI may *propose* claims. It must never silently create product truth.
 
@@ -457,9 +466,42 @@ Future AI may *propose* claims. It must never silently create product truth.
 - **Confidence is displayed, never assigned by hand.** It exists on migrated records only.
 - **Reporting is unchanged** — no claim counts, no evidence counts. Management sees the summary, not Prodwise internals.
 
-### Not built in Phase 1, 2 or 3, and not to be added without explicit approval
+### Phase 4, Slice 1 — Review Intelligence: CONFLICT + SUPERSEDED — **COMPLETE**
 
-Real Jira integration · Google Drive integration · **AI claim extraction** · Claude API integration · semantic search · vector database · **conflict detection** · gap detection · Review engine generation · readiness AI · Next Best Action generation · automated source authority scoring · real domain activation logic · autonomous agents · authentication · file/binary upload · portfolio analytics · **claim deletion**.
+Review stops being fixture intelligence. The chain is now **Evidence → Product Memory → Review**.
+
+Delivered: a **pure, deterministic review engine** (`src/lib/review/`) that derives findings from persisted claims — no LLM, no extraction, no semantic similarity, no canonicalisation, no chronology-based inference · `CONFLICT_SAME_ATTRIBUTE_V1` and `SUPERSEDED_CLAIM_V1`, the only two rules · content-addressed finding identity · the human OPEN/RESOLVED overlay in `finding_states` · 46 unit tests under `npm run test` with **zero new dependencies**.
+
+**Real and functional:** findings derive from claims on every read, so they cannot drift from Product Memory — edit a claim and the next render reflects it with no refresh step. Every finding traces to real claim ids, and to whatever evidence those claims have linked through `claim_evidence`. Where a claim has none, the finding says *No evidence linked* — never that none exists. Findings derive fully with `DEMO_WRITE_ENABLED=false`; only resolving is gated.
+
+#### What is real, and what is not
+
+| Layer | State |
+|---|---|
+| Evidence | **Real** (Phase 2) |
+| Product Memory | **Real** (Phase 3) |
+| Review — CONFLICT, SUPERSEDED | **Real** (Phase 4) |
+| Review — GAP, UNKNOWN, RISK | **Not implemented.** Not "none found" — not checked at all |
+| Finding severity and ranking | **Not assessed. Deliberately absent** |
+| Readiness · Current State · Needs Your Attention · Next Best Action · Reporting | **Synthetic fixture** |
+
+**The real demo output is 2 findings on Merchant Flex Finance and none on the other three initiatives**, which have no claims. That is the honest result. No claim, evidence or initiative may be invented to make Review look busier.
+
+#### Rules that hold going forward
+
+- **Findings are never persisted.** Only the human decision is, keyed by fingerprint. A `review_findings` table would be a second source of truth that could drift from Product Memory.
+- **No severity, no confidence, no ranking.** The structured data does not prove business impact: the same conflict may be trivial or release-critical. A fixed per-rule default would be a fabricated ranking, and deriving one from domain would be arbitrary scoring (§12). Both fields exist and are `null`.
+- **`domains` is a list, never a single chosen domain.** Order is canonical and carries no meaning. **Domain is not a conflict gate** — a Finance claim disagreeing with a Technical one is the most valuable conflict there is.
+- **Conflict gates are conservative and complete.** Same subject · same attribute · same context · all ACTIVE · differing values · no supersession link. A stated phase and an absent phase are **not** comparable: prefer a missed conflict to a false one.
+- **Supersession is read, never inferred.** `status === "SUPERSEDED"` only. Never from chronology. A recorded-but-unreachable replacement is reported as such, never as "no replacement".
+- **SUPERSEDED findings are history**: never actionable, never in Open, never auto-resolved.
+- **The engine is pure** — no clock, no database, no environment. `detectedOn` is the latest source-claim `updatedAt`, so repeated runs are identical.
+- **A resolution is a person's decision, not a data change.** The UI says so. If the source claims change after it, the finding reopens and the earlier note is kept.
+- **Known limitation:** free-text values mean the engine proves two claims *record different strings*, not that they *contradict*. `"6 months"` vs `"6 months of continuous settlement activity"` will raise a conflict. This is pinned by a test. It is **not** to be solved with semantic similarity.
+
+### Not built in Phases 1–4, and not to be added without explicit approval
+
+Real Jira integration · Google Drive integration · **AI claim extraction** · Claude API integration · semantic search · vector database · **GAP / UNKNOWN / RISK detection** · readiness reasoning · Product State reasoning · Next Best Action generation · canonicalisation / entity resolution · chronology-based supersession inference · automated source authority scoring · real domain activation logic · autonomous agents · authentication · file/binary upload · portfolio analytics · **claim deletion**.
 
 ### Rule
 

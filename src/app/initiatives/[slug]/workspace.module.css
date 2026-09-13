@@ -140,6 +140,14 @@
   padding-bottom: 1px;
 }
 
+/* Sits under the filter strip, explaining why Open + Resolved ≠ All. */
+.filterNote {
+  margin-top: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+  line-height: var(--lh-body);
+}
+
 .filters::-webkit-scrollbar {
   display: none;
 }
