@@ -52,10 +52,14 @@ export default async function ReviewPage({
   const initiative = await repo.getInitiativeBySlug(slug);
   if (!initiative) notFound();
 
-  const [claims, states, evidence] = await Promise.all([
+  /* Evidence is deliberately NOT fetched here. listClaims already resolves
+     provenance, so requesting it again doubled a cross-region round trip on
+     every render. It is only needed to word one empty state, and only when
+     there are no claims at all — so it is fetched there, not on the path every
+     visitor takes. */
+  const [claims, states] = await Promise.all([
     repo.listClaims(initiative.id),
     repo.listFindingStates(initiative.id),
-    repo.listEvidence(initiative.id),
   ]);
 
   const all = applyFindingStates(runReview(initiative.id, claims), states);
@@ -70,6 +74,11 @@ export default async function ReviewPage({
      ranking by importance would be invented. Actionable work sorts above
      history because that is a derived fact, not a judgement. */
   const visible = all.filter((f) => matches(filter, f)).sort(compareFindings);
+
+  // Only reached when Product Memory is empty, which is the one case where the
+  // wording depends on whether any evidence has been connected.
+  const evidenceCount =
+    claims.length === 0 ? (await repo.listEvidence(initiative.id)).length : 0;
 
   return (
     <div className={styles.page}>
@@ -140,7 +149,7 @@ export default async function ReviewPage({
           }
           hint={
             claims.length === 0
-              ? evidence.length === 0
+              ? evidenceCount === 0
                 ? "Review compares recorded claims. No evidence has been connected yet either, so nothing has been reviewed here."
                 : "Review compares recorded claims. Until Product Memory has claims, no finding can be raised — and none can be ruled out."
               : filter === "resolved"

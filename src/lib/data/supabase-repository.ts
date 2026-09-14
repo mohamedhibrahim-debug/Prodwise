@@ -439,33 +439,40 @@ export const supabaseRepository: Repository = {
   async listClaims(initiativeId) {
     const supabase = getClient();
 
-    const [{ data: claimData, error: claimError }, { data: linkData, error: linkError }] =
-      await Promise.all([
-        supabase
-          .from("claims")
-          .select("*")
-          .eq("initiative_id", initiativeId)
-          .order("created_at", { ascending: true }),
-        // Ordered explicitly, and this select is unfiltered by initiative, so
-        // it is also capped well above the demo's size rather than relying on
-        // the default page limit. Order matters because provenance order must
-        // not differ between the two adapters.
-        supabase
-          .from("claim_evidence")
-          .select("claim_id, evidence_id")
-          .order("claim_id", { ascending: true })
-          .order("evidence_id", { ascending: true })
-          .limit(10000),
-      ]);
+    const [{ data: claimData, error: claimError }, evidence] = await Promise.all([
+      supabase
+        .from("claims")
+        .select("*")
+        .eq("initiative_id", initiativeId)
+        .order("created_at", { ascending: true }),
+      this.listEvidence(initiativeId),
+    ]);
 
     if (claimError) throw new Error(`Failed to list claims: ${claimError.message}`);
+
+    const claimRows = claimData as ClaimRow[];
+    if (claimRows.length === 0) return [];
+
+    /* Scoped to this initiative's claims rather than scanning the whole link
+       table. Ordered explicitly because provenance order must not differ
+       between the two adapters — an unordered read would let the active
+       repository change what a finding cites. */
+    const { data: linkData, error: linkError } = await supabase
+      .from("claim_evidence")
+      .select("claim_id, evidence_id")
+      .in(
+        "claim_id",
+        claimRows.map((r) => r.id),
+      )
+      .order("claim_id", { ascending: true })
+      .order("evidence_id", { ascending: true });
+
     if (linkError) throw new Error(`Failed to list provenance: ${linkError.message}`);
 
-    const evidence = await this.listEvidence(initiativeId);
     const byId = new Map(evidence.map((e) => [e.id, e]));
     const links = linkData as { claim_id: string; evidence_id: string }[];
 
-    return (claimData as ClaimRow[]).map((row) => ({
+    return claimRows.map((row) => ({
       ...toClaim(row),
       evidence: links
         .filter((l) => l.claim_id === row.id)
