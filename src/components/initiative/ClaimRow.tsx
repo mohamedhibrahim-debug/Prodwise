@@ -100,7 +100,7 @@ export function ClaimRow({
               </span>
               {claim.phase ? (
                 <span className={styles.fact}>
-                  Phase <b>{claim.phase}</b>
+                  <b>{claim.phase}</b>
                 </span>
               ) : null}
               <span className={styles.fact}>

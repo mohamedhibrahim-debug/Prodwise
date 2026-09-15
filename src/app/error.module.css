@@ -35,7 +35,7 @@
 }
 
 .retry:focus-visible {
-  outline: var(--focus-ring);
+  box-shadow: var(--focus-ring);
   outline-offset: 2px;
 }
 

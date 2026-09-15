@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { StatePill } from "@/components/primitives/StatePill";
 import { SeverityMark } from "@/components/primitives/SeverityMark";
-import { DemoBadge, Timestamp } from "@/components/primitives/Meta";
+import { Timestamp } from "@/components/primitives/Meta";
 import { BUSINESS_LINE_LABEL, STAGE_LABEL } from "@/lib/domain/labels";
 import { severityRank } from "@/lib/domain/ordering";
 import type { Initiative, InitiativeIntelligence } from "@/lib/domain/types";
@@ -14,7 +14,13 @@ interface InitiativeRowProps {
 
 /**
  * One initiative as a structured row — not a card. The row answers, left to
- * right: what is it, where is it, what needs attention, what should I do next.
+ * right: what is it, what needs attention, what to do next.
+ *
+ * The metadata line is deliberately quiet. It previously carried four separate
+ * 11px uppercase semibold objects — state pill, business line, demo badge,
+ * timestamp — which read as a band of noise rather than a hierarchy. Only the
+ * state keeps emphasis; the rest is plain text, because none of it is what a
+ * reader is scanning for.
  */
 export function InitiativeRow({ initiative, intelligence }: InitiativeRowProps) {
   const top = intelligence?.attention
@@ -25,18 +31,13 @@ export function InitiativeRow({ initiative, intelligence }: InitiativeRowProps) 
   const nba = intelligence?.nextBestAction ?? null;
 
   return (
-    <li
-      className={`${styles.row} ${styles[`row${initiative.overallState}`]}`}
-    >
+    <li className={`${styles.row} ${styles[`row${initiative.overallState}`]}`}>
       <div className={styles.rowMain}>
         <div className={styles.rowTop}>
-          <Link
-            href={`/initiatives/${initiative.slug}`}
-            className={styles.name}
-          >
+          <Link href={`/initiatives/${initiative.slug}`} className={styles.name}>
             {initiative.name}
           </Link>
-          <span className={styles.stage}>{STAGE_LABEL[initiative.stage]}</span>
+          <StatePill state={initiative.overallState} />
         </div>
 
         {top ? (
@@ -59,15 +60,29 @@ export function InitiativeRow({ initiative, intelligence }: InitiativeRowProps) 
           </p>
         )}
 
+        {/* One quiet line of plain text. Stage, portfolio context and freshness
+            are orientation, not scan targets, so they no longer compete with
+            the attention line above them. */}
         <div className={styles.rowMeta}>
-          <StatePill state={initiative.overallState} />
-          {/* Portfolio context, sitting with the other metadata rather than
-              competing with state. */}
-          <span className={styles.businessLine}>
-            {BUSINESS_LINE_LABEL[initiative.businessLine]}
+          <span>{STAGE_LABEL[initiative.stage]}</span>
+          <span className={styles.metaSep} aria-hidden="true">
+            ·
           </span>
-          {initiative.isDemo ? <DemoBadge /> : null}
-          <Timestamp iso={initiative.updatedAt} prefix="Updated" />
+          <span>{BUSINESS_LINE_LABEL[initiative.businessLine]}</span>
+          <span className={styles.metaSep} aria-hidden="true">
+            ·
+          </span>
+          <Timestamp iso={initiative.updatedAt} prefix="updated" />
+          {initiative.isDemo ? (
+            <>
+              <span className={styles.metaSep} aria-hidden="true">
+                ·
+              </span>
+              {/* Still stated on every seeded row — synthetic data must always
+                  be labelled — but as plain text rather than a fourth badge. */}
+              <span className={styles.demoNote}>demo data</span>
+            </>
+          ) : null}
         </div>
       </div>
 

@@ -125,8 +125,9 @@
 
 .attention {
   margin-top: var(--s-2);
-  color: var(--ink-700);
-  font-size: var(--t-sm);
+  color: var(--ink-900);
+  font-size: var(--t-body);
+  font-weight: var(--fw-medium);
   line-height: 1.5;
   display: flex;
   align-items: baseline;
@@ -155,7 +156,7 @@
 
 .nba {
   font-size: var(--t-sm);
-  color: var(--ink-700);
+  color: var(--ink-500);
   line-height: 1.45;
 }
 
@@ -167,9 +168,11 @@
 .rowMeta {
   margin-top: var(--s-2);
   display: flex;
-  align-items: center;
-  gap: var(--s-3);
+  align-items: baseline;
   flex-wrap: wrap;
+  gap: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
 }
 
 /* Portfolio context. Deliberately quiet — it must not read as a status. */
@@ -194,4 +197,13 @@
     padding-top: var(--s-2);
     border-top: 1px solid var(--rule);
   }
+}
+
+/* Plain text, not a badge band. Orientation, not a scan target. */
+.metaSep {
+  color: var(--ink-300);
+}
+
+.demoNote {
+  font-style: italic;
 }

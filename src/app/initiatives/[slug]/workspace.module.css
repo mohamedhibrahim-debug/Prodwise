@@ -215,3 +215,99 @@
   color: var(--ink-400);
   max-width: 74ch;
 }
+
+/* ══ Review: findings + context ═════════════════════════════════════════════
+   At 1440px the container is 1160px but the readable content stopped near
+   780px, leaving roughly 500px of dead space. That space now carries context
+   instead of nothing. Two columns only where there is genuinely room; below
+   that the context leads, because on a narrow screen orientation matters more
+   than the list. */
+
+.reviewLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-8);
+}
+
+.reviewMain {
+  min-width: 0;
+}
+
+/* Hidden below 1200px, and that is deliberate rather than a fallback.
+   The column exists to use horizontal space that only exists on a wide screen.
+   Narrow, every part of it duplicates something already on the page — the
+   state pill sits in the header, the open count in the filter strip, and the
+   tabs are directly above — so stacking it would push the actual finding
+   roughly 600px down the page to say nothing new. */
+.reviewContext {
+  display: none;
+}
+
+.contextLabel {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-bottom: var(--s-2);
+}
+
+.contextBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-1);
+}
+
+.contextCount {
+  font-size: var(--t-h1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+  line-height: 1.1;
+}
+
+.contextValue {
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+}
+
+.contextLink {
+  font-size: var(--t-sm);
+  color: var(--accent-700);
+  padding: 2px 0;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.contextLink:hover {
+  color: var(--accent-600);
+  text-decoration: underline;
+}
+
+.contextNotice {
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+  line-height: var(--lh-body);
+}
+
+@media (min-width: 1200px) {
+  .reviewLayout {
+    grid-template-columns: minmax(0, 1fr) 260px;
+  }
+
+  .reviewContext {
+    /* Sticky below the sticky workspace header, so context stays put while a
+       long findings list scrolls past it. */
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-6);
+    position: sticky;
+    top: calc(var(--header-h) + var(--s-12));
+    align-self: start;
+    order: 0;
+    padding-top: var(--s-6);
+    padding-left: var(--s-6);
+    border-top: 0;
+    border-left: 1px solid var(--rule);
+  }
+}

@@ -1,4 +1,9 @@
+/* Sticky so the tabs stay reachable through a long findings list instead of
+ being scrolled away. Sits below the nav rail (z 20), above page content. */
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   border-bottom: 1px solid var(--rule);
   background: var(--canvas);
 }
@@ -10,19 +15,38 @@
 }
 
 .breadcrumb {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--s-2);
-  color: var(--ink-400);
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-micro);
   text-transform: uppercase;
+  color: var(--ink-400);
+  min-width: 0;
+}
+
+.crumbLink {
+  color: var(--ink-400);
   transition: color var(--dur-fast) var(--ease);
 }
 
-.breadcrumb:hover {
+.crumbLink:hover {
   color: var(--accent-600);
+}
+
+.crumbSep {
+  color: var(--ink-300);
+}
+
+/* The current initiative is stated, not linked: a crumb that navigates to
+   where you already are is noise. Truncated rather than wrapped so the trail
+   stays one line on a narrow screen. */
+.crumbCurrent {
+  color: var(--ink-500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .titleRow {

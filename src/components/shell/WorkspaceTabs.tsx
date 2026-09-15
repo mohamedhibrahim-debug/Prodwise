@@ -13,6 +13,17 @@ const TABS = [
   { segment: "readiness", label: "Readiness" },
 ] as const;
 
+/**
+ * Tabs deliberately carry no counts.
+ *
+ * A count on Review would be the single best attention signal in the product —
+ * but findings are derived in TypeScript from claims and provenance, so there
+ * is no cheap count query for them, and computing one here would load the full
+ * claim set on every tab including Readiness, which currently issues exactly
+ * one query. Badges are not worth multiplying database round trips for.
+ * Attention is carried instead by the Initiatives list and by Review's own
+ * hierarchy.
+ */
 export function WorkspaceTabs({ slug }: { slug: string }) {
   const pathname = usePathname();
   const base = `/initiatives/${slug}`;
@@ -41,6 +52,20 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
     return () => observer.disconnect();
   }, [measure, pathname]);
 
+  /**
+   * Which tab owns the current URL.
+   *
+   * Matched by segment, not by exact path: a sub-route like `/evidence/new` or
+   * `/memory/:id/edit` belongs to its tab, and leaving every tab unlit there
+   * stranded the reader exactly when they were deepest in the product.
+   * Overview is the fallback, so it lights only when nothing else claims
+   * the path.
+   */
+  const rest = pathname.startsWith(base) ? pathname.slice(base.length) : "";
+  const currentSegment = rest.replace(/^\//, "").split("/")[0] ?? "";
+  const activeSegment =
+    TABS.find((t) => t.segment && t.segment === currentSegment)?.segment ?? "";
+
   return (
     <div
       className={styles.tabsViewport}
@@ -50,12 +75,12 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
       <nav
         ref={scroller}
         className={styles.tabs}
-        onScroll={measure}
         aria-label="Initiative sections"
+        onScroll={measure}
       >
         {TABS.map(({ segment, label }) => {
           const href = segment ? `${base}/${segment}` : base;
-          const active = pathname === href;
+          const active = segment === activeSegment;
           return (
             <Link
               key={label}

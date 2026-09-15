@@ -1,0 +1,146 @@
+/* The palette is the one genuinely floating surface in the product, so it is
+   the one place --shadow-panel is spent. It is built from the navy ramp the nav
+   rail already uses — a dark, fast, keyboard-first surface that reads as a tool,
+   and could never be mistaken for the chat rail that was removed. */
+
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  /* High, not centred: the list grows downward and the eye should not have to
+     re-find the input as results change. */
+  padding: 12vh var(--s-4) var(--s-4);
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(8 20 31 / 44%);
+}
+
+.dialog {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--navy-850);
+  border: 1px solid var(--navy-rule);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+  animation: paletteIn var(--dur-fast) var(--ease);
+}
+
+@keyframes paletteIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.input {
+  flex: none;
+  width: 100%;
+  padding: var(--s-4) var(--s-5);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--navy-rule);
+  color: var(--navy-ink);
+  font-size: var(--t-body);
+  letter-spacing: var(--ls-tight);
+}
+
+.input::placeholder {
+  color: var(--navy-ink-faint);
+}
+
+.input:focus {
+  outline: none;
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s-2) 0;
+  list-style: none;
+}
+
+.group {
+  padding: var(--s-3) var(--s-5) var(--s-1);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--navy-ink-faint);
+}
+
+.item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-5);
+  cursor: pointer;
+  color: var(--navy-ink-dim);
+}
+
+/* Selection is shown by fill AND a leading accent edge, never by colour alone. */
+.itemActive {
+  background: var(--navy-700);
+  color: var(--navy-ink);
+  box-shadow: inset 2px 0 0 var(--accent-400);
+}
+
+.itemLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+}
+
+.itemHint {
+  flex: none;
+  font-size: var(--t-xs);
+  color: var(--navy-ink-faint);
+}
+
+.status {
+  padding: var(--s-5);
+  font-size: var(--t-sm);
+  color: var(--navy-ink-dim);
+}
+
+.footer {
+  flex: none;
+  display: flex;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-5);
+  border-top: 1px solid var(--navy-rule);
+  font-size: var(--t-xs);
+  color: var(--navy-ink-faint);
+}
+
+.kbd {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  padding: 1px 5px;
+  margin-right: 3px;
+  border: 1px solid var(--navy-rule);
+  border-radius: var(--r-xs);
+  color: var(--navy-ink-dim);
+}
+
+@media (max-width: 780px) {
+  .layer {
+    padding-top: var(--s-8);
+  }
+
+  .dialog {
+    max-height: 72vh;
+  }
+}
