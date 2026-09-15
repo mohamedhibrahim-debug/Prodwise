@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
+import { StatePill } from "@/components/primitives/StatePill";
 import { FindingRow } from "@/components/initiative/FindingRow";
 import { getRepository } from "@/lib/data";
-import { isDemoWriteEnabled } from "@/lib/env";
+import { STAGE_LABEL } from "@/lib/domain/labels";
+import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { compareFindings, runReview } from "@/lib/review/engine";
 import { applyFindingStates } from "@/lib/review/merge";
 import type { ReviewFinding } from "@/lib/domain/types";
@@ -80,103 +82,149 @@ export default async function ReviewPage({
   const evidenceCount =
     claims.length === 0 ? (await repo.listEvidence(initiative.id)).length : 0;
 
+  const hidden = counts.all - counts.open - counts.resolved;
+
   return (
-    <div className={styles.page}>
-      <div className={styles.tabIntro}>
-        {/* Deliberately short. The conflict rule itself is stated under "Why
-            this was raised" on the finding it produced, which is where a rule
-            is useful — repeating it here as a spec, above the filters, just
-            gates the content behind reading the reader will skip. What is left
-            is the part no finding can tell you: where these come from, and what
-            is not looked for at all. */}
-        <p className={styles.tabIntroText}>
-          Findings are derived from this initiative&rsquo;s Product Memory
-          &mdash; no AI and no inference, and every one traces back to a claim a
-          person recorded.{" "}
-          <strong>Gaps, unknowns and risks are not detected</strong>, so nothing
-          here does not mean none exist. Readiness and Next Best Action remain
-          demo intelligence.
-        </p>
-
-        {/* Three tabs all reading zero filter nothing — on an initiative with
-            no findings the strip is noise, so it is not rendered. */}
-        {counts.all > 0 ? (
-          <nav className={styles.filters} aria-label="Filter findings">
-            {FILTERS.map(({ key, label }) => (
-              <Link
-                key={key}
-                href={`/initiatives/${slug}/review${key === "open" ? "" : `?filter=${key}`}`}
-                className={`${styles.filter} ${filter === key ? styles.filterActive : ""}`}
-                aria-current={filter === key ? "page" : undefined}
-              >
-                {label}
-                <span className={styles.filterCount}>{counts[key]}</span>
-              </Link>
-            ))}
-          </nav>
-        ) : null}
-
-        {/* Open + Resolved does not equal All, which reads as a bug unless the
-            difference is explained exactly where it appears. Counted, never
-            hardcoded. */}
-        {counts.all > counts.open + counts.resolved ? (
-          <p className={styles.filterNote}>
-            Open shows the {counts.open === 1 ? "one finding" : `${counts.open} findings`}{" "}
-            needing a decision. The other{" "}
-            {counts.all - counts.open - counts.resolved === 1
-              ? "one is a superseded claim"
-              : `${counts.all - counts.open - counts.resolved} are superseded claims`}{" "}
-            kept as history &mdash; see All.
+    <div className={`${styles.page} ${styles.reviewLayout}`}>
+      <div className={styles.reviewMain}>
+        <div className={styles.tabIntro}>
+          {/* One line. The rule that produced a finding is stated on the finding
+              itself, under "Why this was raised" — repeating it here as a spec
+              only gates the content behind reading people skip. What stays is
+              the part no finding can tell you: what is NOT looked for, so an
+              empty Review can never be read as an all-clear (Rule 4). */}
+          <p className={styles.tabIntroText}>
+            <strong>
+              No AI or semantic inference &mdash; findings are derived using
+              deterministic rules.
+            </strong>{" "}
+            Conflicts and supersessions only; gaps, unknowns and risks are not
+            checked.
           </p>
-        ) : null}
+
+          {/* Three tabs all reading zero filter nothing — on an initiative with
+              no findings the strip is noise, so it is not rendered. */}
+          {counts.all > 0 ? (
+            <nav className={styles.filters} aria-label="Filter findings">
+              {FILTERS.map(({ key, label }) => (
+                <Link
+                  key={key}
+                  href={`/initiatives/${slug}/review${key === "open" ? "" : `?filter=${key}`}`}
+                  className={`${styles.filter} ${filter === key ? styles.filterActive : ""}`}
+                  aria-current={filter === key ? "page" : undefined}
+                >
+                  {label}
+                  <span className={styles.filterCount}>{counts[key]}</span>
+                </Link>
+              ))}
+            </nav>
+          ) : null}
+
+          {/* Open + Resolved does not equal All, which reads as a bug unless the
+              difference is explained exactly where it appears. Counted, never
+              hardcoded. */}
+          {hidden > 0 ? (
+            <p className={styles.filterNote}>
+              {hidden === 1
+                ? "One superseded claim is kept as history under All."
+                : `${hidden} superseded claims are kept as history under All.`}{" "}
+              History is never an open task.
+            </p>
+          ) : null}
+        </div>
+
+        {visible.length === 0 ? (
+          <EmptyState
+            /* Claims first, not evidence: findings derive from Product Memory
+               now, so an empty Review is explained by the absence of claims. */
+            message={
+              claims.length === 0
+                ? EMPTY.reviewNoClaims
+                : filter === "resolved"
+                  ? EMPTY.reviewResolved
+                  : /* An empty Open queue is not the same as an empty Review.
+                       Saying "nothing was found" while findings sit under All
+                       would be plainly false. */
+                    counts.all > 0
+                    ? EMPTY.reviewNothingOpen
+                    : EMPTY.reviewFindings
+            }
+            hint={
+              claims.length === 0
+                ? evidenceCount === 0
+                  ? "Review compares recorded claims. No evidence has been connected yet either, so nothing has been reviewed here."
+                  : "Review compares recorded claims. Until Product Memory has claims, no finding can be raised — and none can be ruled out."
+                : filter === "resolved"
+                  ? undefined
+                  : counts.all > 0
+                    ? `${counts.all} finding${counts.all === 1 ? " is" : "s are"} recorded under All, including superseded claims kept as history.`
+                    : "Only conflicts and supersessions are detected. Gaps, unknowns and risks are not checked, so their absence here does not mean there are none."
+            }
+          />
+        ) : (
+          <>
+            {/* Keeps the heading outline unbroken: finding rows are h3. */}
+            <h2 className="visually-hidden">
+              {FILTERS.find((f) => f.key === filter)?.label} findings
+            </h2>
+            <ul>
+              {visible.map((finding) => (
+                <FindingRow
+                  key={finding.fingerprint}
+                  finding={finding}
+                  slug={slug}
+                  canResolve={isDemoWriteEnabled}
+                />
+              ))}
+            </ul>
+          </>
+        )}
       </div>
 
-      {visible.length === 0 ? (
-        <EmptyState
-          /* Claims first, not evidence: findings derive from Product Memory
-             now, so an empty Review is explained by the absence of claims. */
-          message={
-            claims.length === 0
-              ? EMPTY.reviewNoClaims
-              : filter === "resolved"
-                ? EMPTY.reviewResolved
-                : /* An empty Open queue is not the same as an empty Review.
-                     Saying "nothing was found" while findings sit under All
-                     would be plainly false. */
-                  counts.all > 0
-                  ? EMPTY.reviewNothingOpen
-                  : EMPTY.reviewFindings
-          }
-          hint={
-            claims.length === 0
-              ? evidenceCount === 0
-                ? "Review compares recorded claims. No evidence has been connected yet either, so nothing has been reviewed here."
-                : "Review compares recorded claims. Until Product Memory has claims, no finding can be raised — and none can be ruled out."
-              : filter === "resolved"
-                ? undefined
-                : counts.all > 0
-                  ? `${counts.all} finding${counts.all === 1 ? " is" : "s are"} recorded under All, including resolved findings and superseded claims kept as history.`
-                  : "Only conflicts and supersessions are detected. Gaps, unknowns and risks are not checked, so their absence here does not mean there are none."
-          }
-        />
-      ) : (
-        <>
-          {/* Keeps the heading outline unbroken: finding rows are h3. */}
-          <h2 className="visually-hidden">
-            {FILTERS.find((f) => f.key === filter)?.label} findings
-          </h2>
-          <ul>
-            {visible.map((finding) => (
-              <FindingRow
-                key={finding.fingerprint}
-                finding={finding}
-                slug={slug}
-                canResolve={isDemoWriteEnabled}
-              />
-            ))}
-          </ul>
-        </>
-      )}
+      {/* Context, not a panel: no input, no scrim, no elevation — a plain column
+          on the same canvas behind one hairline rule, so it can never read as
+          the assistant rail that was removed. Built only from what this page
+          already fetched, so it adds no query. */}
+      <aside className={styles.reviewContext} aria-label="Initiative context">
+        <div className={styles.contextBlock}>
+          <div className={styles.contextLabel}>State</div>
+          <StatePill state={initiative.overallState} />
+          <p className={styles.contextValue}>{STAGE_LABEL[initiative.stage]}</p>
+        </div>
+
+        <div className={styles.contextBlock}>
+          <div className={styles.contextLabel}>Waiting on you</div>
+          <p className={styles.contextCount}>{counts.open}</p>
+          <p className={styles.contextValue}>
+            {counts.open === 1
+              ? "finding needs a decision"
+              : "findings need a decision"}
+          </p>
+        </div>
+
+        <div className={styles.contextBlock}>
+          <div className={styles.contextLabel}>Go to</div>
+          <Link
+            href={`/initiatives/${slug}/memory`}
+            className={styles.contextLink}
+          >
+            Product Memory →
+          </Link>
+          <Link
+            href={`/initiatives/${slug}/evidence`}
+            className={styles.contextLink}
+          >
+            Evidence →
+          </Link>
+          <Link href={`/initiatives/${slug}`} className={styles.contextLink}>
+            Overview →
+          </Link>
+        </div>
+
+        {!isDemoWriteEnabled ? (
+          <p className={styles.contextNotice}>{WRITE_DISABLED_MESSAGE}</p>
+        ) : null}
+      </aside>
     </div>
   );
 }

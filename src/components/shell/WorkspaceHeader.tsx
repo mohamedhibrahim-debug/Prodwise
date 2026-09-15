@@ -11,9 +11,17 @@ export function WorkspaceHeader({ initiative }: { initiative: Initiative }) {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        <Link href="/initiatives" className={styles.breadcrumb}>
-          ← Initiatives
-        </Link>
+        {/* A trail, not a back button: the five sub-routes each hand-rolled
+            their own return link, and none said where you actually were. */}
+        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+          <Link href="/initiatives" className={styles.crumbLink}>
+            Initiatives
+          </Link>
+          <span className={styles.crumbSep} aria-hidden="true">
+            /
+          </span>
+          <span className={styles.crumbCurrent}>{initiative.name}</span>
+        </nav>
 
         <div className={styles.titleRow}>
           <div className={styles.identity}>
