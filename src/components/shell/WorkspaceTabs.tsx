@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./WorkspaceHeader.module.css";
@@ -32,6 +32,27 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
   // Edge fades are driven by measurement, not by breakpoint, so the cue only
   // appears when the tab strip genuinely has more to reveal.
   const [edges, setEdges] = useState({ start: false, end: false });
+
+  // The sticky header grows when an initiative name or metadata wraps. Anchor
+  // offsets must follow its rendered height, not a breakpoint estimate.
+  useLayoutEffect(() => {
+    const header = scroller.current?.closest("header");
+    if (!header) return;
+    const root = document.documentElement;
+    const measureHeader = () => {
+      root.style.setProperty(
+        "--workspace-header-h",
+        `${header.getBoundingClientRect().height}px`,
+      );
+    };
+    measureHeader();
+    const observer = new ResizeObserver(measureHeader);
+    observer.observe(header);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--workspace-header-h");
+    };
+  }, []);
 
   const measure = useCallback(() => {
     const el = scroller.current;

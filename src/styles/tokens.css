@@ -196,9 +196,9 @@
 
 @media (max-width: 780px) {
   :root {
-    /* The rail becomes a top bar. The sticky workspace header is ~198px at
-       375px; leave room for a wrapped name before anchored content. */
-    --workspace-header-h: 216px;
+    /* Conservative anchor fallback until WorkspaceTabs measures the rendered
+       header; longer initiative names can make it taller than the 198px MFF. */
+    --workspace-header-h: 272px;
     --rail-w: 0px;
     --gutter: var(--s-4);
     --t-display: 1.625rem;
