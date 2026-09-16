@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   BUSINESS_LINE_LABEL,
   STAGE_LABEL,
-  STATE_LABEL,
 } from "@/lib/domain/labels";
 import type {
   AssessmentState,
@@ -35,11 +34,11 @@ interface Command {
 }
 
 const WORKSPACE_TABS = [
-  { segment: "", label: "Overview" },
-  { segment: "review", label: "Review" },
-  { segment: "memory", label: "Product Memory" },
-  { segment: "evidence", label: "Evidence" },
+  { segment: "", label: "Status" },
+  { segment: "decisions", label: "Decisions" },
   { segment: "readiness", label: "Readiness" },
+  { segment: "memory", label: "Memory" },
+  { segment: "sources", label: "Sources" },
 ] as const;
 
 /**
@@ -180,7 +179,7 @@ export function CommandPalette() {
       out.push({
         id: `init-${i.slug}`,
         label: i.name,
-        keywords: `${i.name} ${STAGE_LABEL[i.stage]} ${BUSINESS_LINE_LABEL[i.businessLine]} ${STATE_LABEL[i.overallState]}`,
+        keywords: `${i.name} ${STAGE_LABEL[i.stage]} ${BUSINESS_LINE_LABEL[i.businessLine]}`,
         hint: `${STAGE_LABEL[i.stage]} · ${BUSINESS_LINE_LABEL[i.businessLine]}`,
         group: "Initiatives",
         href: `/initiatives/${i.slug}`,
@@ -192,7 +191,7 @@ export function CommandPalette() {
         out.push({
           id: `tab-${t.segment || "overview"}`,
           label: t.label,
-          keywords: `${t.label} tab section`,
+          keywords: `${t.label} tab section area`,
           group: "This initiative",
           href: t.segment
             ? `/initiatives/${currentSlug}/${t.segment}`
@@ -202,10 +201,10 @@ export function CommandPalette() {
       for (const f of ["open", "resolved", "all"] as const) {
         out.push({
           id: `filter-${f}`,
-          label: `Review — ${f[0]!.toUpperCase()}${f.slice(1)}`,
-          keywords: `review findings ${f} filter`,
+          label: `Decisions — ${f[0]!.toUpperCase()}${f.slice(1)}`,
+          keywords: `decisions review findings ${f} filter`,
           group: "This initiative",
-          href: `/initiatives/${currentSlug}/review${f === "open" ? "" : `?filter=${f}`}`,
+          href: `/initiatives/${currentSlug}/decisions${f === "open" ? "" : `?filter=${f}`}`,
         });
       }
     }

@@ -186,18 +186,19 @@
 
 @media (max-width: 780px) {
   .inner {
-    padding-top: var(--s-5);
+    padding-top: var(--s-3);
   }
   .titleRow {
     gap: var(--s-3);
+    margin-top: var(--s-2);
   }
   .identity {
     gap: var(--s-3);
   }
   .tabsViewport {
-    margin-top: var(--s-5);
+    margin-top: var(--s-3);
   }
   .tabs {
-    gap: var(--s-5);
+    gap: var(--s-4);
   }
 }

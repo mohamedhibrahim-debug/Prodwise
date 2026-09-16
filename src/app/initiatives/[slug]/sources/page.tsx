@@ -15,7 +15,7 @@ import { EVIDENCE_RELATIONS } from "@/lib/domain/types";
 import styles from "../workspace.module.css";
 import evidenceStyles from "./evidence.module.css";
 
-export const metadata: Metadata = { title: "Evidence" };
+export const metadata: Metadata = { title: "Sources" };
 export const dynamic = "force-dynamic";
 
 export default async function EvidencePage({
@@ -47,16 +47,22 @@ export default async function EvidencePage({
             trustworthy.
           </p>
           <DemoWriteLink
-            href={`/initiatives/${slug}/evidence/new`}
+            href={`/initiatives/${slug}/sources/new`}
             variant="primary"
           >
             Add Evidence
           </DemoWriteLink>
         </div>
 
+        <p className={evidenceStyles.summary}>
+          <span><b>{sources.length}</b> {sources.length === 1 ? "source" : "sources"}</span>
+          <span aria-hidden="true">·</span>
+          <span><b>{evidence.length}</b> {evidence.length === 1 ? "artifact" : "artifacts"}</span>
+        </p>
+
         {sources.length > 0 ? (
           <p className={evidenceStyles.sources}>
-            <span className={evidenceStyles.sourcesLabel}>Sources</span>
+            <span className={evidenceStyles.sourcesLabel}>Recorded sources</span>
             {sources.map((source) => (
               <span key={source.id} className={evidenceStyles.source}>
                 {source.name}

@@ -129,7 +129,7 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
         </ul>
       </nav>
 
-      <button type="button" className={styles.search} onClick={onOpenPalette}>
+      <button type="button" className={styles.search} onClick={onOpenPalette} aria-label="Search initiatives and sections">
         <SearchIcon />
         <span className={styles.navText}>Search</span>
         <kbd className={styles.kbd}>⌘K</kbd>

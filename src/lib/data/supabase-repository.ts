@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
@@ -261,7 +262,9 @@ export const supabaseRepository: Repository = {
     return (data as InitiativeRow[]).map(toInitiative);
   },
 
-  async getInitiativeBySlug(slug) {
+  // Request-scoped only: metadata, layout and page share this read. No data is
+  // retained across requests, so corrections appear on the next render.
+  getInitiativeBySlug: cache(async (slug: string) => {
     const { data, error } = await getClient()
       .from("initiatives")
       .select("*")
@@ -270,7 +273,7 @@ export const supabaseRepository: Repository = {
 
     if (error) throw new Error(`Failed to load initiative: ${error.message}`);
     return data ? toInitiative(data as InitiativeRow) : null;
-  },
+  }),
 
   async listActivity(initiativeId, limit = 10) {
     const { data, error } = await getClient()
@@ -326,7 +329,8 @@ export const supabaseRepository: Repository = {
 
   /* ── Evidence ──────────────────────────────────────────────────────────── */
 
-  async listEvidence(initiativeId) {
+  // Status and claim provenance need the same records within one render.
+  listEvidence: cache(async (initiativeId: string) => {
     const { data, error } = await getClient()
       .from("evidence")
       .select("*")
@@ -335,7 +339,7 @@ export const supabaseRepository: Repository = {
 
     if (error) throw new Error(`Failed to list evidence: ${error.message}`);
     return (data as EvidenceRow[]).map(toEvidence);
-  },
+  }),
 
   async getEvidence(id) {
     const { data, error } = await getClient()

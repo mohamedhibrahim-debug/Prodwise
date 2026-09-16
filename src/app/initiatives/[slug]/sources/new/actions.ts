@@ -78,6 +78,6 @@ export async function createEvidenceAction(
     };
   }
 
-  revalidatePath(`/initiatives/${slug}/evidence`);
-  redirect(`/initiatives/${slug}/evidence`);
+  revalidatePath(`/initiatives/${slug}/sources`);
+  redirect(`/initiatives/${slug}/sources`);
 }

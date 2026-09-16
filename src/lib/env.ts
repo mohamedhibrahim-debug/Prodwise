@@ -27,6 +27,7 @@ export const isSupabaseConfigured =
  * Defaults to false. Only an explicit "true" opens writes.
  */
 export const isDemoWriteEnabled =
+  process.env.VERCEL_ENV !== "preview" &&
   process.env.DEMO_WRITE_ENABLED?.trim().toLowerCase() === "true";
 
 export const WRITE_DISABLED_MESSAGE =

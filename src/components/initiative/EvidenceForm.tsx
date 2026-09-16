@@ -16,7 +16,7 @@ import {
   type EvidenceRecord,
   type EvidenceRelation,
 } from "@/lib/domain/types";
-import styles from "@/app/initiatives/[slug]/evidence/evidence-form.module.css";
+import styles from "@/app/initiatives/[slug]/sources/evidence-form.module.css";
 
 interface FormState {
   error: string | null;
@@ -217,7 +217,7 @@ export function EvidenceForm({
 
       <div className={styles.actions}>
         <SubmitButton label={submitLabel} />
-        <Link href={`/initiatives/${slug}/evidence`}>
+        <Link href={`/initiatives/${slug}/sources`}>
           <Button type="button" variant="ghost">
             Cancel
           </Button>

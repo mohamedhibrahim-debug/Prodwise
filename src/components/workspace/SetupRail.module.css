@@ -1,0 +1,321 @@
+/* ══ Setup rail ══════════════════════════════════════════════════════════════
+   A pipeline, not a checklist: five nodes on one track, so progress reads as
+   position along a path. Node treatment carries the state — filled for done,
+   a cyan ring for the one current step, a hollow ring for waiting, a dashed
+   ring for what cannot be assessed yet. Cyan marks interaction and "you are
+   here", never status (§16). */
+
+.rail {
+  padding: var(--s-10) 0 var(--s-8);
+}
+
+.railHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--s-6);
+  align-items: baseline;
+}
+
+.railTitle {
+  font-size: var(--t-h1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+}
+
+.railLead {
+  grid-column: 1;
+  margin-top: var(--s-2);
+  max-width: 62ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--ink-500);
+}
+
+.railCount {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-500);
+}
+
+.steps {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: var(--s-8);
+}
+
+.step {
+  min-width: 0;
+}
+
+.track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 28px;
+}
+
+.node {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-pill);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  background: var(--canvas);
+  border: 1.5px solid var(--rule-strong);
+  color: var(--ink-400);
+}
+
+.node[data-state="done"] {
+  background: var(--ink-900);
+  border-color: var(--ink-900);
+  color: var(--canvas);
+}
+
+.node[data-state="current"] {
+  border: 2px solid var(--accent-500);
+  color: var(--ink-900);
+  box-shadow: 0 0 0 4px var(--accent-050);
+}
+
+.node[data-state="not_assessed"] {
+  border-style: dashed;
+  color: var(--ink-300);
+}
+
+/* The track runs from this node to the next one. It is solid only where the
+   step is done, so the filled length is the distance actually travelled. */
+.connector {
+  flex: 1;
+  height: 2px;
+  margin: 0 var(--s-2);
+  background: var(--rule);
+}
+
+.step[data-state="done"] .connector {
+  background: var(--ink-900);
+}
+
+.step:last-child .connector {
+  display: none;
+}
+
+.body {
+  padding: var(--s-4) var(--s-4) 0 0;
+}
+
+.stepState {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.step[data-state="current"] .stepState {
+  color: var(--accent-700);
+}
+
+.stepTitle {
+  margin-top: var(--s-1);
+  font-size: var(--t-h3);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+}
+
+.step[data-state="waiting"] .stepTitle,
+.step[data-state="not_assessed"] .stepTitle {
+  color: var(--ink-500);
+}
+
+.stepFact {
+  margin-top: var(--s-1);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-500);
+}
+
+.stepPurpose {
+  margin-top: var(--s-3);
+  max-width: 34ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--ink-700);
+}
+
+.step[data-state="not_assessed"] .stepPurpose {
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+}
+
+.stepAction {
+  margin-top: var(--s-4);
+}
+
+/* Narrow: the pipeline turns vertical, the track becomes a spine on the left. */
+@media (max-width: 900px) {
+  .rail {
+    padding-top: var(--s-8);
+  }
+
+  .railHead {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .railCount {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: var(--s-2);
+  }
+
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: var(--s-6);
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    column-gap: var(--s-4);
+  }
+
+  .track {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .connector {
+    width: 2px;
+    height: auto;
+    min-height: var(--s-6);
+    margin: var(--s-1) 0;
+  }
+
+  .body {
+    padding: 3px 0 var(--s-6);
+  }
+
+  .stepPurpose {
+    max-width: 60ch;
+  }
+}
+
+/* ══ Condensed strip ═════════════════════════════════════════════════════════
+   The operating view keeps setup visible in one line: five bars, one label
+   each, and the next step as a link. It stays until every step is done. */
+
+.strip {
+  padding: var(--s-6) 0 0;
+}
+
+.stripHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2) var(--s-4);
+}
+
+.stripLabel {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-700);
+}
+
+.stripCount {
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-500);
+}
+
+.stripNext {
+  margin-inline-start: auto;
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  color: var(--accent-700);
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.stripNext:hover {
+  color: var(--accent-600);
+  text-decoration: underline;
+}
+
+.stripNote {
+  margin-inline-start: auto;
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+}
+
+.stripSegments {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--s-1);
+  margin-top: var(--s-3);
+}
+
+.segment {
+  min-width: 0;
+}
+
+.segmentBar {
+  display: block;
+  height: 4px;
+  border-radius: var(--r-xs);
+  background: var(--rule);
+}
+
+.segment[data-state="done"] .segmentBar {
+  background: var(--ink-900);
+}
+
+.segment[data-state="current"] .segmentBar {
+  background: var(--accent-500);
+}
+
+.segment[data-state="not_assessed"] .segmentBar {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--rule-strong) 0 6px,
+    transparent 6px 10px
+  );
+}
+
+.segmentLabel {
+  display: block;
+  margin-top: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.segment[data-state="current"] .segmentLabel,
+.segment[data-state="done"] .segmentLabel {
+  color: var(--ink-900);
+}
+
+@media (max-width: 780px) {
+  .stripNext,
+  .stripNote {
+    margin-inline-start: 0;
+    flex-basis: 100%;
+  }
+
+  .segmentLabel {
+    display: none;
+  }
+}

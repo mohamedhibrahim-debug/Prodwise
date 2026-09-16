@@ -1,20 +1,40 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 import { Section } from "@/components/primitives/Section";
-import { Timestamp } from "@/components/primitives/Meta";
+import { StatePill } from "@/components/primitives/StatePill";
 import {
   AttentionList,
   DomainStateList,
   NextBestActionBlock,
   RecentChanges,
 } from "@/components/initiative/OverviewBlocks";
+import { FoundationBand } from "@/components/workspace/FoundationBand";
+import { OpenDecisions } from "@/components/workspace/OpenDecisions";
+import { SetupRail } from "@/components/workspace/SetupRail";
 import { getRepository } from "@/lib/data";
 import { getIntelligence } from "@/lib/data/fixtures";
+import { compareFindings } from "@/lib/review/engine";
+import { loadDecisions } from "@/lib/workspace/decisions";
+import { deriveSetup } from "@/lib/workspace/setup";
 import styles from "./workspace.module.css";
 
+export const metadata: Metadata = { title: "Status" };
 export const dynamic = "force-dynamic";
 
-export default async function OverviewPage({
+/**
+ * Status.
+ *
+ * One route, two layouts. Until the initiative holds trusted knowledge (an
+ * ACTIVE claim) this IS the setup experience: the pipeline, with one primary
+ * action on the first unfinished step. Afterwards it becomes the operating
+ * view — but setup progress stays visible, condensed, because readiness and
+ * status are not built and switching layout must not read as "set up".
+ *
+ * Everything on the primary surfaces is real. Authored demo intelligence is
+ * confined to one labelled, collapsed block, and only on demo initiatives.
+ */
+export default async function StatusPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -24,105 +44,83 @@ export default async function OverviewPage({
   const initiative = await repo.getInitiativeBySlug(slug);
   if (!initiative) notFound();
 
-  const intelligence = getIntelligence(slug);
-  const [activity, evidence] = await Promise.all([
-    repo.listActivity(initiative.id, 6),
+  const [{ claims, findings }, evidence, activity] = await Promise.all([
+    loadDecisions(initiative.id),
     repo.listEvidence(initiative.id),
+    repo.listActivity(initiative.id, 6),
   ]);
+
+  const progress = deriveSetup({ evidence, claims, findings });
+  const open = findings
+    .filter((f) => f.status === "OPEN" && f.actionable)
+    .sort(compareFindings);
+
+  const demo = initiative.isDemo ? getIntelligence(slug) : null;
 
   return (
     <div className={styles.page}>
-      {/* The one-sentence answer to "where is this initiative?" */}
-      <div className={styles.summary}>
-        <p className={styles.summaryText}>
-          {initiative.stateSummary ??
-            "No evidence has been connected yet, so the current state of this initiative cannot be determined."}
-        </p>
-        {initiative.description ? (
-          <p className={styles.description}>{initiative.description}</p>
-        ) : null}
-        {intelligence ? (
-          <div className={styles.summaryMeta}>
-            {/* Nothing evaluates evidence. This is a fixture constant, and the
-                freshness pattern is reserved for real timestamps (§16) — so it
-                must not claim an evaluation run that never happened. */}
-            <Timestamp
-              iso={intelligence.lastEvaluatedAt}
-              prefix="Demo intelligence authored"
-              withTime
-            />
+      {progress.mode === "setup" ? (
+        <>
+          <SetupRail progress={progress} slug={slug} variant="full" />
+          <Section title="Recent Changes">
+            <RecentChanges entries={activity} />
+          </Section>
+        </>
+      ) : (
+        <>
+          <SetupRail progress={progress} slug={slug} variant="condensed" />
+
+          <FoundationBand facts={progress.facts} slug={slug} />
+
+          <div className={styles.statusColumns}>
+            <Section
+              title="Waiting on you"
+              aside={
+                open.length > 0
+                  ? `${open.length} open`
+                  : undefined
+              }
+              className={styles.statusMain}
+            >
+              <OpenDecisions findings={open} slug={slug} />
+            </Section>
+
+            <Section title="Recent Changes" className={styles.statusSide}>
+              <RecentChanges entries={activity} />
+            </Section>
           </div>
-        ) : null}
-      </div>
+        </>
+      )}
 
-      {/* Order is set in CSS, not markup. Desktop reads Attention -> Next Best
-          Action; below 780px the recommendation is lifted first, so the primary
-          action arrives immediately after orientation rather than after a long
-          finding list. The numerals swap with it. */}
-      <div className={styles.sectionFlow}>
-        <Section
-          title="Needs Your Attention"
-          numeral="01"
-          mobileNumeral="02"
-          className={styles.orderAttention}
-          aside={
-            intelligence && intelligence.attention.length > 3
-              ? `Showing 3 of ${intelligence.attention.length}`
-              : undefined
-          }
-          /* These are hand-authored demo items, and they are NOT the derived
-             Review findings — they may describe the same subject and even
-             rank it, while Review deliberately assigns no severity at all.
-             Without saying so, one screen appears to contradict the other. */
-          description={
-            intelligence
-              ? "Demo items — illustrative only, and not the derived Review findings on the Review tab."
-              : undefined
-          }
-        >
-          {/* "Nothing was detected" is a claim about a review that happened.
-              It is now answered by real connected evidence, not by fixtures. */}
-          <AttentionList
-            items={intelligence?.attention ?? []}
-            hasEvidence={evidence.length > 0}
-          />
-        </Section>
-
-        <Section
-          title="Next Best Action"
-          numeral="02"
-          mobileNumeral="01"
-          className={styles.orderAction}
-          description={
-            intelligence
-              ? "Demo recommendation — not generated from this initiative's evidence or Product Memory."
-              : undefined
-          }
-        >
-          <NextBestActionBlock action={intelligence?.nextBestAction ?? null} />
-        </Section>
-
-        <Section
-          title="Current State"
-          numeral="03"
-          className={styles.orderState}
-          description={
-            intelligence
-              ? "Demo assessment — not derived from this initiative's data. Only domains relevant to this initiative are shown."
-              : "Only domains relevant to this initiative are shown."
-          }
-        >
-          <DomainStateList domains={intelligence?.domains ?? []} />
-        </Section>
-
-        <Section
-          title="Recent Changes"
-          numeral="04"
-          className={styles.orderChanges}
-        >
-          <RecentChanges entries={activity} />
-        </Section>
-      </div>
+      {demo ? (
+        <details className={styles.demoScenario}>
+          <summary className={styles.demoSummary}>
+            <span className={styles.demoTag}>Demo scenario</span>
+            Authored illustration — not derived from this initiative&rsquo;s
+            evidence or memory
+          </summary>
+          <div className={styles.demoBody}>
+            <Section title="Illustrative overall state">
+              <StatePill state={initiative.overallState} />
+            </Section>
+            {initiative.stateSummary ? (
+              <p className={styles.summaryText}>{initiative.stateSummary}</p>
+            ) : null}
+            <Section title="Illustrative attention items">
+              <AttentionList
+                items={demo.attention}
+                hasEvidence={evidence.length > 0}
+              />
+            </Section>
+            <Section title="Illustrative next best action">
+              <NextBestActionBlock action={demo.nextBestAction} />
+            </Section>
+            <Section title="Illustrative domain states">
+              <DomainStateList domains={demo.domains} />
+            </Section>
+          </div>
+        </details>
+      ) : null}
     </div>
   );
 }

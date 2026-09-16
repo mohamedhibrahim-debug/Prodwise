@@ -245,6 +245,31 @@
   }
 }
 
+@media (max-width: 480px) {
+  /* Keep both destinations visible instead of clipping Reporting. */
+  .mark {
+    display: none;
+  }
+
+  .brand {
+    padding-inline: var(--s-2);
+  }
+
+  .nav {
+    min-width: 0;
+    padding-inline: 0;
+  }
+
+  .navItem {
+    min-height: 44px;
+    padding-inline: var(--s-2);
+  }
+
+  .navIcon {
+    display: none;
+  }
+}
+
 /* Teaches the shortcut. A palette nobody discovers is a palette nobody uses,
    and this is the only place in the shell with room to say so. */
 .search {
@@ -293,9 +318,17 @@
   }
 }
 
-/* The rail is a top bar here and the shortcut is not reachable on a phone. */
+/* The rail is a top bar. Search stays reachable by touch. */
 @media (max-width: 780px) {
   .search {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    margin: 0 var(--s-2) 0 0;
+    padding: 0;
+  }
+
+  .search .navText {
     display: none;
   }
 }

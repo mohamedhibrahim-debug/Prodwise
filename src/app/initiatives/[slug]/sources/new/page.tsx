@@ -23,7 +23,7 @@ export default async function NewEvidencePage({
   if (!isDemoWriteEnabled) {
     return (
       <div className={styles.page}>
-        <Link href={`/initiatives/${slug}/evidence`} className={styles.back}>
+        <Link href={`/initiatives/${slug}/sources`} className={styles.back}>
           ← Evidence
         </Link>
         <h1 className={styles.title}>Add Evidence</h1>
@@ -34,7 +34,7 @@ export default async function NewEvidencePage({
 
   return (
     <div className={styles.page}>
-      <Link href={`/initiatives/${slug}/evidence`} className={styles.back}>
+      <Link href={`/initiatives/${slug}/sources`} className={styles.back}>
         ← Evidence
       </Link>
 

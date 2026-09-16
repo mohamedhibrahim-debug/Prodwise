@@ -7,7 +7,7 @@ import {
   reopenFindingAction,
   resolveFindingAction,
   type FindingFormState,
-} from "@/app/initiatives/[slug]/review/actions";
+} from "@/app/initiatives/[slug]/decisions/actions";
 import styles from "./FindingRow.module.css";
 
 const EMPTY: FindingFormState = { error: null };

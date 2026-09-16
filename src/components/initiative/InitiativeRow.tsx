@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { StatePill } from "@/components/primitives/StatePill";
+import { UnestablishedState } from "@/components/primitives/UnestablishedState";
 import { SeverityMark } from "@/components/primitives/SeverityMark";
 import { Timestamp } from "@/components/primitives/Meta";
 import { BUSINESS_LINE_LABEL, STAGE_LABEL } from "@/lib/domain/labels";
@@ -31,13 +31,13 @@ export function InitiativeRow({ initiative, intelligence }: InitiativeRowProps) 
   const nba = intelligence?.nextBestAction ?? null;
 
   return (
-    <li className={`${styles.row} ${styles[`row${initiative.overallState}`]}`}>
+    <li className={styles.row}>
       <div className={styles.rowMain}>
         <div className={styles.rowTop}>
           <Link href={`/initiatives/${initiative.slug}`} className={styles.name}>
             {initiative.name}
           </Link>
-          <StatePill state={initiative.overallState} />
+          <UnestablishedState />
         </div>
 
         {top ? (

@@ -12,7 +12,6 @@ import {
   parseBusinessLine,
 } from "@/components/initiative/BusinessLineFilter";
 import { BUSINESS_LINE_LABEL } from "@/lib/domain/labels";
-import { attentionRank } from "@/lib/domain/ordering";
 import styles from "./initiatives.module.css";
 
 export const metadata: Metadata = { title: "Initiatives" };
@@ -37,22 +36,11 @@ export default async function InitiativesPage({
       intelligence: getIntelligence(initiative.slug),
     }));
 
-  /* Default priority: BLOCKED → critical findings → AT_RISK → UNKNOWN → READY.
-     Within a rank, most recently updated first. */
-  rows.sort((a, b) => {
-    const rankA = attentionRank(
-      a.initiative.overallState,
-      a.intelligence?.attention.some((i) => i.severity === "CRITICAL") ?? false,
-    );
-    const rankB = attentionRank(
-      b.initiative.overallState,
-      b.intelligence?.attention.some((i) => i.severity === "CRITICAL") ?? false,
-    );
-    if (rankA !== rankB) return rankA - rankB;
-    return (
-      Date.parse(b.initiative.updatedAt) - Date.parse(a.initiative.updatedAt)
-    );
-  });
+  // Derived state does not exist yet. Keep list order factual rather than
+  // sorting by a stored/demo state as if it were an assessment.
+  rows.sort(
+    (a, b) => Date.parse(b.initiative.updatedAt) - Date.parse(a.initiative.updatedAt),
+  );
 
   return (
     <div className={styles.page}>
@@ -60,8 +48,7 @@ export default async function InitiativesPage({
         <div>
           <h1 className={styles.title}>Initiatives</h1>
           <p className={styles.subtitle}>
-            Ordered by what needs your attention first — blocked and critical
-            items above everything else.
+            Most recently updated initiatives first. Demo examples are labelled.
           </p>
         </div>
         <DemoWriteLink href="/initiatives/new" variant="primary">

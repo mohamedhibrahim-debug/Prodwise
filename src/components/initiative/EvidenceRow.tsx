@@ -122,7 +122,7 @@ export function EvidenceRow({
 
             {isDemoWriteEnabled ? (
               <Link
-                href={`/initiatives/${slug}/evidence/${item.id}/edit`}
+                href={`/initiatives/${slug}/sources/${item.id}/edit`}
                 className={styles.editLink}
               >
                 Edit evidence

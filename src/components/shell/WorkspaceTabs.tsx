@@ -6,11 +6,11 @@ import { usePathname } from "next/navigation";
 import styles from "./WorkspaceHeader.module.css";
 
 const TABS = [
-  { segment: "", label: "Overview" },
-  { segment: "review", label: "Review" },
-  { segment: "memory", label: "Product Memory" },
-  { segment: "evidence", label: "Evidence" },
+  { segment: "", label: "Status" },
+  { segment: "decisions", label: "Decisions" },
   { segment: "readiness", label: "Readiness" },
+  { segment: "memory", label: "Memory" },
+  { segment: "sources", label: "Sources" },
 ] as const;
 
 /**
@@ -55,7 +55,7 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
   /**
    * Which tab owns the current URL.
    *
-   * Matched by segment, not by exact path: a sub-route like `/evidence/new` or
+   * Matched by segment, not by exact path: a sub-route like `/sources/new` or
    * `/memory/:id/edit` belongs to its tab, and leaving every tab unlit there
    * stranded the reader exactly when they were deepest in the product.
    * Overview is the fallback, so it lights only when nothing else claims

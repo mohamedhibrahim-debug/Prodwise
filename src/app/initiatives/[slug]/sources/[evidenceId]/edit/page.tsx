@@ -32,7 +32,7 @@ export default async function EditEvidencePage({
   if (!isDemoWriteEnabled) {
     return (
       <div className={styles.page}>
-        <Link href={`/initiatives/${slug}/evidence`} className={styles.back}>
+        <Link href={`/initiatives/${slug}/sources`} className={styles.back}>
           ← Evidence
         </Link>
         <h1 className={styles.title}>Edit Evidence</h1>
@@ -43,7 +43,7 @@ export default async function EditEvidencePage({
 
   return (
     <div className={styles.page}>
-      <Link href={`/initiatives/${slug}/evidence`} className={styles.back}>
+      <Link href={`/initiatives/${slug}/sources`} className={styles.back}>
         ← Evidence
       </Link>
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { InitiativeArc } from "@/components/primitives/InitiativeArc";
-import { StatePill } from "@/components/primitives/StatePill";
+import { UnestablishedState } from "@/components/primitives/UnestablishedState";
 import { DemoBadge, Timestamp } from "@/components/primitives/Meta";
 import { BUSINESS_LINE_LABEL, STAGE_LABEL } from "@/lib/domain/labels";
 import type { Initiative } from "@/lib/domain/types";
@@ -51,7 +51,7 @@ export function WorkspaceHeader({ initiative }: { initiative: Initiative }) {
 
           <div className={styles.statusGroup}>
             {initiative.isDemo ? <DemoBadge /> : null}
-            <StatePill state={initiative.overallState} size="lg" />
+            <UnestablishedState />
           </div>
         </div>
 

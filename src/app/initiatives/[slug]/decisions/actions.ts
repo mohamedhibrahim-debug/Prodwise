@@ -94,7 +94,7 @@ export async function resolveFindingAction(
     };
   }
 
-  revalidatePath(`/initiatives/${slug}/review`);
+  revalidatePath(`/initiatives/${slug}/decisions`);
   return { error: null };
 }
 
@@ -123,6 +123,6 @@ export async function reopenFindingAction(
     };
   }
 
-  revalidatePath(`/initiatives/${slug}/review`);
+  revalidatePath(`/initiatives/${slug}/decisions`);
   return { error: null };
 }

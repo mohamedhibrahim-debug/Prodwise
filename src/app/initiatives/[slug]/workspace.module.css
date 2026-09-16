@@ -8,45 +8,23 @@
   padding: 0 var(--gutter) var(--s-16);
 }
 
-/* ── Current state summary — the first thing read on Overview ────────────-
-   No bottom rule: the first section supplies the separator via its own top
-   rule, which keeps the seam correct when sections are reordered on mobile. */
-.summary {
-  padding: var(--s-8) 0 var(--s-6);
+/* ── Status: operating view ──────────────────────────────────────────────-
+   Decisions lead, change sits beside them. One column below 1000px, with the
+   decision queue first because it is the thing that asks something of you. */
+.statusColumns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: var(--s-10);
 }
 
-/* ── Overview section flow ───────────────────────────────────────────────-
-   Desktop: Attention -> Next Best Action -> Current State -> Recent Changes.
-   Below 780px the recommendation is lifted above the attention list, so the
-   primary action is reachable without scrolling past a long finding list.
-   Done with flex `order` - one DOM, no duplicated markup, no layout change. */
-.sectionFlow {
-  display: flex;
-  flex-direction: column;
+.statusMain,
+.statusSide {
+  min-width: 0;
 }
 
-.orderAttention {
-  order: 1;
-}
-
-.orderAction {
-  order: 2;
-}
-
-.orderState {
-  order: 3;
-}
-
-.orderChanges {
-  order: 4;
-}
-
-@media (max-width: 780px) {
-  .orderAction {
-    order: 1;
-  }
-  .orderAttention {
-    order: 2;
+@media (min-width: 1000px) {
+  .statusColumns {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   }
 }
 
@@ -59,19 +37,59 @@
   font-weight: var(--fw-medium);
 }
 
-.summaryMeta {
-  margin-top: var(--s-4);
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  flex-wrap: wrap;
+/* ── Demo scenario ───────────────────────────────────────────────────────-
+   Authored illustration, collapsed and set apart on a sunken surface with a
+   dashed edge, so it can never be mistaken for the real surfaces above it. */
+.demoScenario {
+  margin-top: var(--s-12);
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-subtle);
 }
 
-.description {
-  margin-top: var(--s-3);
+.demoSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2) var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  cursor: pointer;
+  list-style: none;
   font-size: var(--t-sm);
   color: var(--ink-500);
-  max-width: 74ch;
+}
+
+.demoSummary::-webkit-details-marker {
+  display: none;
+}
+
+.demoSummary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--r-md);
+}
+
+.demoTag {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-700);
+}
+
+.demoBody {
+  padding: 0 var(--s-5) var(--s-6);
+}
+
+/* ── Page-level demo banner (Readiness) ──────────────────────────────────- */
+.demoBanner {
+  margin-top: var(--s-6);
+  padding: var(--s-3) var(--s-4);
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-subtle);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
   line-height: var(--lh-body);
 }
 

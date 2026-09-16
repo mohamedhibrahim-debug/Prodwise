@@ -19,7 +19,7 @@ import {
   type ClaimWithEvidence,
   type EvidenceRecord,
 } from "@/lib/domain/types";
-import styles from "@/app/initiatives/[slug]/evidence/evidence-form.module.css";
+import styles from "@/app/initiatives/[slug]/sources/evidence-form.module.css";
 import claimStyles from "./ClaimForm.module.css";
 
 interface FormState {
@@ -54,7 +54,7 @@ function SubmitButton({ label }: { label: string }) {
  *
  * Creation asks for the knowledge and nothing else — no status, no confidence.
  * A new claim is always UNVERIFIED, because nobody has checked it yet, and
- * confidence is only ever displayed for migrated records.
+ * migrated confidence has no persisted basis to explain, so it is not shown.
  */
 export function ClaimForm({
   slug,
@@ -255,19 +255,6 @@ export function ClaimForm({
           <p className={styles.hint}>
             Only applies when the status is Superseded. A claim may be superseded
             without a known replacement — nothing is invented to fill this in.
-          </p>
-        </div>
-      ) : null}
-
-      {claim?.confidence ? (
-        <div className={styles.field}>
-          <span className={styles.label}>Confidence</span>
-          <p className={claimStyles.staticValue}>
-            {claim.confidence.charAt(0) + claim.confidence.slice(1).toLowerCase()}
-          </p>
-          <p className={styles.hint}>
-            Recorded on this migrated claim. Confidence is not assigned by hand
-            in this phase.
           </p>
         </div>
       ) : null}

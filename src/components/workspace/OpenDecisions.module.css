@@ -1,0 +1,121 @@
+.queue {
+  list-style: none;
+}
+
+.item + .item {
+  border-top: 1px solid var(--rule);
+}
+
+.link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "kind values"
+    "title values"
+    "facts values";
+  column-gap: var(--s-6);
+  padding: var(--s-4) var(--s-3) var(--s-4) var(--s-4);
+  border-left: 3px solid var(--accent-500);
+  color: inherit;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.link:hover {
+  background: var(--surface-subtle);
+}
+
+.link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.kind {
+  grid-area: kind;
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.title {
+  grid-area: title;
+  margin-top: 2px;
+  font-size: var(--t-h3);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+  overflow-wrap: anywhere;
+}
+
+.facts {
+  grid-area: facts;
+  margin-top: 2px;
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+}
+
+.values {
+  grid-area: values;
+  align-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: var(--s-2);
+  max-width: 320px;
+}
+
+.valueGroup {
+  display: inline-flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+
+.value {
+  min-width: 0;
+  font-size: var(--t-h1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-900);
+  overflow-wrap: anywhere;
+}
+
+.vs {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.more {
+  display: inline-block;
+  margin-top: var(--s-3);
+  font-size: var(--t-xs);
+  color: var(--accent-700);
+}
+
+.more:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 780px) {
+  .link {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "kind"
+      "title"
+      "values"
+      "facts";
+  }
+
+  .values {
+    justify-content: flex-start;
+    margin-top: var(--s-2);
+    max-width: none;
+  }
+}

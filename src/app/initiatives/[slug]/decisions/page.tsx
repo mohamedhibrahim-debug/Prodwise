@@ -3,17 +3,17 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
-import { StatePill } from "@/components/primitives/StatePill";
+import { UnestablishedState } from "@/components/primitives/UnestablishedState";
 import { FindingRow } from "@/components/initiative/FindingRow";
 import { getRepository } from "@/lib/data";
 import { STAGE_LABEL } from "@/lib/domain/labels";
 import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
-import { compareFindings, runReview } from "@/lib/review/engine";
-import { applyFindingStates } from "@/lib/review/merge";
+import { compareFindings } from "@/lib/review/engine";
+import { loadDecisions } from "@/lib/workspace/decisions";
 import type { ReviewFinding } from "@/lib/domain/types";
 import styles from "../workspace.module.css";
 
-export const metadata: Metadata = { title: "Review" };
+export const metadata: Metadata = { title: "Decisions" };
 
 /* Findings are derived from live claims on every request, so a build-time
    render would freeze them against whatever Product Memory held at build. */
@@ -37,7 +37,7 @@ function matches(filter: Filter, finding: ReviewFinding): boolean {
   return finding.status === "OPEN" && finding.actionable;
 }
 
-export default async function ReviewPage({
+export default async function DecisionsPage({
   params,
   searchParams,
 }: {
@@ -59,12 +59,7 @@ export default async function ReviewPage({
      every render. It is only needed to word one empty state, and only when
      there are no claims at all — so it is fetched there, not on the path every
      visitor takes. */
-  const [claims, states] = await Promise.all([
-    repo.listClaims(initiative.id),
-    repo.listFindingStates(initiative.id),
-  ]);
-
-  const all = applyFindingStates(runReview(initiative.id, claims), states);
+  const { claims, findings: all } = await loadDecisions(initiative.id);
 
   const counts: Record<Filter, number> = {
     open: all.filter((f) => matches("open", f)).length,
@@ -86,7 +81,7 @@ export default async function ReviewPage({
 
   return (
     <div className={`${styles.page} ${styles.reviewLayout}`}>
-      <div className={styles.reviewMain}>
+      <div className={styles.reviewMain} id="lane-open">
         <div className={styles.tabIntro}>
           {/* One line. The rule that produced a finding is stated on the finding
               itself, under "Why this was raised" — repeating it here as a spec
@@ -109,7 +104,7 @@ export default async function ReviewPage({
               {FILTERS.map(({ key, label }) => (
                 <Link
                   key={key}
-                  href={`/initiatives/${slug}/review${key === "open" ? "" : `?filter=${key}`}`}
+                  href={`/initiatives/${slug}/decisions${key === "open" ? "" : `?filter=${key}`}`}
                   className={`${styles.filter} ${filter === key ? styles.filterActive : ""}`}
                   aria-current={filter === key ? "page" : undefined}
                 >
@@ -188,7 +183,7 @@ export default async function ReviewPage({
       <aside className={styles.reviewContext} aria-label="Initiative context">
         <div className={styles.contextBlock}>
           <div className={styles.contextLabel}>State</div>
-          <StatePill state={initiative.overallState} />
+          <UnestablishedState />
           <p className={styles.contextValue}>{STAGE_LABEL[initiative.stage]}</p>
         </div>
 
@@ -208,16 +203,16 @@ export default async function ReviewPage({
             href={`/initiatives/${slug}/memory`}
             className={styles.contextLink}
           >
-            Product Memory →
+            Memory →
           </Link>
           <Link
-            href={`/initiatives/${slug}/evidence`}
+            href={`/initiatives/${slug}/sources`}
             className={styles.contextLink}
           >
-            Evidence →
+            Sources →
           </Link>
           <Link href={`/initiatives/${slug}`} className={styles.contextLink}>
-            Overview →
+            Status →
           </Link>
         </div>
 

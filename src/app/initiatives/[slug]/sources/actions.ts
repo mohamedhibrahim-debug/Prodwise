@@ -57,7 +57,7 @@ export async function reclassifyEvidenceAction(
     return { error: toMessage(error) };
   }
 
-  revalidatePath(`/initiatives/${slug}/evidence`);
+  revalidatePath(`/initiatives/${slug}/sources`);
   revalidatePath(`/initiatives/${slug}`);
   return { error: null };
 }
