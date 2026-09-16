@@ -24,15 +24,9 @@ export default async function ReadinessPage({
   return (
     <div className={styles.page}>
       <div className={styles.tabIntro}>
-        {/* Nothing computes readiness yet. These assessments are fixtures, and
-            the copy must not imply they were derived from anything. */}
         <p className={styles.tabIntroText}>
-          {readiness.length > 0 ? <>Demo assessments — illustrative only, and not yet derived from this
-          initiative&rsquo;s evidence or Product Memory. Each domain shows what
-          has been confirmed, what is open, what remains unknown, and what would
-          change its state. Approval and readiness are not treated as the same
-          thing.</> : <>Readiness is not assessed. Readiness criteria and evidence-backed
-          assessments are not available yet.</>}
+          Readiness is not assessed. Readiness criteria and evidence-backed
+          assessments are not available yet.
         </p>
       </div>
 
@@ -42,9 +36,19 @@ export default async function ReadinessPage({
           hint="Recording sources and claims does not automatically establish readiness."
         />
       ) : (
-        readiness.map((assessment) => (
-          <ReadinessBlock key={assessment.domain} assessment={assessment} />
-        ))
+        <section className={styles.demoBanner} aria-labelledby="readiness-demo-title">
+          <h2 id="readiness-demo-title" className={styles.demoTag}>
+            Demo Scenario
+          </h2>
+          <p>
+            Authored illustration — not derived from this initiative&rsquo;s
+            evidence or Product Memory. Approval and readiness are not treated
+            as the same thing.
+          </p>
+          {readiness.map((assessment) => (
+            <ReadinessBlock key={assessment.domain} assessment={assessment} />
+          ))}
+        </section>
       )}
     </div>
   );
