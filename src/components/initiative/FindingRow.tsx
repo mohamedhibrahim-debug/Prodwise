@@ -6,6 +6,7 @@ import {
   CLAIM_TYPE_LABEL,
   DOMAIN_LABEL,
   EVIDENCE_RELATION_LABEL,
+  FINDING_LABEL,
 } from "@/lib/domain/labels";
 import type { FindingClaimRef, ReviewFinding } from "@/lib/domain/types";
 import { ResolveFindingForm } from "./ResolveFindingForm";
@@ -16,12 +17,12 @@ import styles from "./FindingRow.module.css";
  * are not the same kind of thing and should never look alike.
  *
  * A conflict is an open question — two recorded values, neither endorsed — and
- * it is the loudest thing on the page. A supersession is settled history, and
- * it reads as one quiet line.
+ * it is the loudest thing in the content area. A supersession is settled
+ * history, and it reads as one quiet line.
  *
  * Neither shape invents severity. A conflict earns its prominence from the
- * values themselves being set at display size, not from a colour ramp or a rank
- * the engine never produced.
+ * values themselves being set at scale, not from a colour ramp or a rank the
+ * engine never produced.
  */
 export function FindingRow({
   finding,
@@ -39,6 +40,39 @@ export function FindingRow({
   );
 }
 
+/** Shared disclosure. Proof stays one interaction away, never in the path. */
+function WhyRaised({
+  finding,
+  className,
+}: {
+  finding: ReviewFinding;
+  className?: string;
+}) {
+  return (
+    <details className={`${styles.why} ${className ?? ""}`}>
+      <summary className={styles.whySummary}>
+        <span className={styles.whyChevron} aria-hidden="true">
+          <svg viewBox="0 0 12 12" width="9" height="9">
+            <path
+              d="M4 2l4 4-4 4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+        Why this was raised
+      </summary>
+      <div className={styles.whyBody}>
+        <p>{finding.explanation}</p>
+        <p className={styles.rule}>{finding.reason}</p>
+      </div>
+    </details>
+  );
+}
+
 /* ── Conflict ─────────────────────────────────────────────────────────────── */
 
 function ConflictRow({
@@ -51,44 +85,42 @@ function ConflictRow({
   canResolve: boolean;
 }) {
   const resolved = finding.status === "RESOLVED";
-  const claims = finding.claims;
 
   return (
     <li className={`${styles.conflict} ${resolved ? styles.settled : ""}`}>
       <div className={styles.head}>
-        <div className={styles.kind}>
-          <span className={styles.kindLabel}>Conflict</span>
-          {resolved ? (
-            <span className={styles.resolvedTag}>Resolved</span>
-          ) : (
-            <span className={styles.needsDecision}>Needs a decision</span>
-          )}
-        </div>
-
-        <h3 className={styles.title}>{finding.title}</h3>
-
-        <div className={styles.facts}>
-          {finding.domains.map((d, i) => (
-            <span key={d}>
-              {i > 0 ? <span className={styles.sep}> · </span> : null}
-              {DOMAIN_LABEL[d] ?? d}
-            </span>
-          ))}
-          {finding.phase ? (
-            <>
-              <span className={styles.sep}> · </span>
-              <span>{finding.phase}</span>
-            </>
-          ) : null}
-          <span className={styles.sep}> · </span>
+        <span className={styles.kindLabel}>{FINDING_LABEL[finding.type]}</span>
+        {resolved ? (
+          <span className={styles.resolvedTag}>Resolved</span>
+        ) : (
+          <span className={styles.needsDecision}>Needs a decision</span>
+        )}
+        <span className={styles.headMeta}>
           <Timestamp iso={finding.detectedOn} prefix="claims changed" />
-        </div>
+        </span>
       </div>
 
-      {/* The comparison. Two answers to one question, and the reason the
-          finding exists — so the values, not the chrome, carry the weight. */}
-      <div className={styles.compare} data-count={claims.length}>
-        {claims.map((claim, i) => (
+      <h3 className={styles.title}>{finding.title}</h3>
+
+      <p className={styles.facts}>
+        {finding.domains.map((d, i) => (
+          <span key={d}>
+            {i > 0 ? <span className={styles.sep}> · </span> : null}
+            {DOMAIN_LABEL[d] ?? d}
+          </span>
+        ))}
+        {finding.phase ? (
+          <>
+            <span className={styles.sep}> · </span>
+            {finding.phase}
+          </>
+        ) : null}
+      </p>
+
+      {/* The comparison — two answers to one question, and the reason the
+          finding exists, so the values carry the weight rather than the chrome. */}
+      <div className={styles.compare}>
+        {finding.claims.map((claim, i) => (
           <div key={claim.claimId} className={styles.side}>
             {i > 0 ? (
               <span className={styles.versus} aria-hidden="true">
@@ -104,40 +136,21 @@ function ConflictRow({
         Prodwise has not determined which value is correct.
       </p>
 
-      {/* Proof, not prose: the engine's full explanation and the rule that
-          produced it are one interaction away rather than in the reader's path. */}
-      <details className={styles.why}>
-        <summary className={styles.whySummary}>
-          <span className={styles.whyChevron} aria-hidden="true">
-            <svg viewBox="0 0 12 12" width="9" height="9">
-              <path
-                d="M4 2l4 4-4 4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          Why this was raised
-        </summary>
-        <div className={styles.whyBody}>
-          <p>{finding.explanation}</p>
-          <p className={styles.rule}>{finding.reason}</p>
-        </div>
-      </details>
+      {/* Proof and decision on one row: the two things a reader can do with a
+          finding, together, rather than at opposite ends of a long column. */}
+      <div className={styles.actions}>
+        <WhyRaised finding={finding} />
+        {finding.actionable && canResolve ? (
+          <ResolveFindingForm
+            slug={slug}
+            fingerprint={finding.fingerprint}
+            contentDigest={finding.contentDigest}
+            resolved={resolved}
+          />
+        ) : null}
+      </div>
 
       <ResolutionNote finding={finding} />
-
-      {finding.actionable && canResolve ? (
-        <ResolveFindingForm
-          slug={slug}
-          fingerprint={finding.fingerprint}
-          contentDigest={finding.contentDigest}
-          resolved={resolved}
-        />
-      ) : null}
     </li>
   );
 }
@@ -145,8 +158,8 @@ function ConflictRow({
 /**
  * One side of the comparison.
  *
- * Led by the value at display size, with its provenance directly beneath it —
- * traceability as adjacency rather than as a separate metadata list. Neither
+ * The value leads at scale, and its provenance hangs beneath it on a hairline —
+ * traceability as adjacency rather than as a separate metadata block. Neither
  * side is emphasised and neither is labelled "current" or "original": the
  * engine knows nothing about chronology, so the layout must not imply it.
  */
@@ -164,58 +177,64 @@ function ClaimColumn({ claim, slug }: { claim: FindingClaimRef; slug: string }) 
       <p className={styles.value}>{claim.value}</p>
 
       <div className={styles.provenance}>
-        {primaryRef ? (
-          <Reference>{primaryRef}</Reference>
-        ) : hasExcludedRef ? (
-          <span className={styles.noRef}>No included reference</span>
-        ) : (
-          /* Never a non-identifier: two unreferenced claims would otherwise
-             render identical columns with no way to tell them apart. */
-          <span className={styles.claimId}>Claim {claim.claimId.slice(0, 8)}</span>
-        )}
-        <span className={styles.claimFacts}>
-          {CLAIM_STATUS_LABEL[claim.status]}
-          <span className={styles.sep}> · </span>
-          {CLAIM_TYPE_LABEL[claim.type]}
-        </span>
-      </div>
-
-      {/* Always rendered, never collapsed. A claim with nothing linked must
-          visibly stay a claim with nothing linked: "not checked" is not the
-          same as "there is none", and silence would imply support exists. */}
-      {claim.evidence.length === 0 ? (
-        <p className={styles.noEvidence}>
-          No evidence linked
-          <span className={styles.noEvidenceHint}>
-            {" "}
-            — not checked, and not proof that none exists
+        <div className={styles.provenanceTop}>
+          {primaryRef ? (
+            <Reference>{primaryRef}</Reference>
+          ) : hasExcludedRef ? (
+            <span className={styles.noRef}>No included reference</span>
+          ) : (
+            /* Never a non-identifier: two unreferenced claims would otherwise
+               render identical columns with no way to tell them apart. */
+            <span className={styles.claimId}>
+              Claim {claim.claimId.slice(0, 8)}
+            </span>
+          )}
+          <span className={styles.claimFacts}>
+            {CLAIM_STATUS_LABEL[claim.status]}
+            <span className={styles.sep}> · </span>
+            {CLAIM_TYPE_LABEL[claim.type]}
+            <span className={styles.sep}> · </span>
+            {DOMAIN_LABEL[claim.domain] ?? claim.domain}
           </span>
-        </p>
-      ) : (
-        <ul className={styles.evidence}>
-          {claim.evidence.map((e) => (
-            <li key={e.evidenceId} className={styles.evidenceItem}>
-              <span className={styles.evidenceTitle}>{e.title}</span>
-              <span
-                className={
-                  e.boundary === "EXCLUDED"
-                    ? styles.excludedTag
-                    : styles.boundaryTag
-                }
-              >
-                {EVIDENCE_RELATION_LABEL[e.boundary]}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+        </div>
 
-      <Link
-        href={`/initiatives/${slug}/memory?view=claims#claim-${claim.claimId}`}
-        className={styles.claimLink}
-      >
-        Open {primaryRef ?? "this claim"} in Product Memory →
-      </Link>
+        {/* Always rendered, never collapsed. A claim with nothing linked must
+            visibly stay a claim with nothing linked: "not checked" is not the
+            same as "there is none", and silence would imply support exists. */}
+        {claim.evidence.length === 0 ? (
+          <p className={styles.noEvidence}>
+            No evidence linked
+            <span className={styles.noEvidenceHint}>
+              {" "}
+              — not checked, and not proof that none exists
+            </span>
+          </p>
+        ) : (
+          <ul className={styles.evidence}>
+            {claim.evidence.map((e) => (
+              <li key={e.evidenceId} className={styles.evidenceItem}>
+                <span className={styles.evidenceTitle}>{e.title}</span>
+                <span
+                  className={
+                    e.boundary === "EXCLUDED"
+                      ? styles.excludedTag
+                      : styles.boundaryTag
+                  }
+                >
+                  {EVIDENCE_RELATION_LABEL[e.boundary]}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <Link
+          href={`/initiatives/${slug}/memory?view=claims#claim-${claim.claimId}`}
+          className={styles.claimLink}
+        >
+          Open {primaryRef ?? "this claim"} in Product Memory →
+        </Link>
+      </div>
     </div>
   );
 }
@@ -241,54 +260,39 @@ function SupersededRow({
       <div className={styles.lineageHead}>
         <span className={styles.lineageKind}>Superseded</span>
         <h3 className={styles.lineageTitle}>{finding.title}</h3>
-        <Timestamp iso={finding.detectedOn} />
+        <span className={styles.lineageDate}>
+          <Timestamp iso={finding.detectedOn} />
+        </span>
       </div>
 
       <p className={styles.lineageValues}>
-        <span className={styles.wasValue}>{replaced?.value}</span>
+        <s className={styles.wasValue}>{replaced?.value}</s>
         {replacement ? (
           <>
-            <span className={styles.arrow} aria-hidden="true">
-              →
-            </span>
+            <span className={styles.arrow}>replaced by</span>
             <span className={styles.nowValue}>{replacement.value}</span>
           </>
         ) : (
+          /* Not "no replacement recorded": a pointer can exist and resolve
+             outside this initiative, and the engine deliberately refuses to
+             report that as absence. This wording is true in both cases; the
+             three-case detail stays in "Why this was raised". */
           <span className={styles.noReplacement}>
-            no replacement recorded
+            no replacement recorded on this initiative
           </span>
         )}
       </p>
 
-      <details className={styles.why}>
-        <summary className={styles.whySummary}>
-          <span className={styles.whyChevron} aria-hidden="true">
-            <svg viewBox="0 0 12 12" width="9" height="9">
-              <path
-                d="M4 2l4 4-4 4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          Why this was raised
-        </summary>
-        <div className={styles.whyBody}>
-          <p>{finding.explanation}</p>
-          <p className={styles.rule}>{finding.reason}</p>
-          {replaced ? (
-            <Link
-              href={`/initiatives/${slug}/memory?view=claims#claim-${replaced.claimId}`}
-              className={styles.claimLink}
-            >
-              Open in Product Memory →
-            </Link>
-          ) : null}
-        </div>
-      </details>
+      <WhyRaised finding={finding} className={styles.lineageWhy} />
+
+      {replaced ? (
+        <Link
+          href={`/initiatives/${slug}/memory?view=claims#claim-${replaced.claimId}`}
+          className={styles.claimLink}
+        >
+          Open in Product Memory →
+        </Link>
+      ) : null}
     </li>
   );
 }

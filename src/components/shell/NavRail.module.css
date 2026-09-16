@@ -70,7 +70,7 @@
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  padding: var(--s-2) var(--s-3);
+  padding: 7px var(--s-3);
   border-radius: var(--r-sm);
   color: var(--navy-ink-dim);
   font-size: var(--t-body);
@@ -89,6 +89,13 @@
 .navItemActive {
   background: var(--navy-800);
   color: var(--navy-ink);
+  font-weight: var(--fw-semibold);
+}
+
+/* Cyan on the icon as well as the spine: identity and current position, never
+   status. The text label still carries the meaning on its own. */
+.navItemActive .navIcon {
+  color: var(--accent-400);
 }
 
 /* A 2px cyan spine marks the active destination. */
@@ -215,6 +222,14 @@
     align-items: center;
     padding: 0 var(--s-2);
     flex: none;
+  }
+
+  /* The flex has to reach the items themselves: .nav's only child is the
+     list, so without this the two destinations stacked into a 76px bar. */
+  .nav > ul {
+    display: flex;
+    align-items: center;
+    gap: var(--s-1);
   }
   .navText {
     display: block;

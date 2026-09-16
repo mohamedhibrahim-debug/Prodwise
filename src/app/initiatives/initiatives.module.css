@@ -50,7 +50,7 @@
   grid-template-columns: minmax(0, 1fr) 260px;
   gap: var(--s-6);
   align-items: start;
-  padding: var(--s-5) var(--s-3) var(--s-5) var(--s-4);
+  padding: var(--s-4) var(--s-3) var(--s-4) var(--s-5);
   border-bottom: 1px solid var(--rule);
   position: relative;
   transition: background-color var(--dur-fast) var(--ease);
@@ -62,6 +62,16 @@
 
 .row:hover {
   background: var(--surface-subtle);
+}
+
+/* The spine thickens on hover — the row answers the pointer without a colour
+   change that could be mistaken for a state change. */
+.row::before {
+  transition: width var(--dur-fast) var(--ease);
+}
+
+.row:hover::before {
+  width: 3px;
 }
 
 /* A 2px status spine on the left edge — the fastest scan cue in the list. */
@@ -111,7 +121,7 @@
   inset: 0;
 }
 
-.name:hover {
+.row:hover .name {
   color: var(--accent-700);
 }
 

@@ -61,6 +61,7 @@ export function CommandPalette() {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [initiatives, setInitiatives] = useState<NavInitiative[] | null>(null);
+  const [failed, setFailed] = useState(false);
   /** Fetch guard: a ref, so requesting once never triggers a render. */
   const requested = useRef(false);
 
@@ -97,6 +98,27 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  /* Escape and Tab live on the window, not on the dialog.
+     Bound to the dialog they only fired while focus was inside it — and the
+     dialog holds exactly one focusable node, so clicking its own footer
+     legend (which advertises "esc close") moved focus to <body> and stopped
+     Escape working, while Tab walked into the page behind a scrim that
+     claims aria-modal. */
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+      } else if (e.key === "Tab") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [open, close]);
+
   // Opened from the rail's Search affordance, so the shortcut is discoverable
   // rather than folklore.
   useEffect(() => {
@@ -120,11 +142,19 @@ export function CommandPalette() {
         const res = await fetch("/api/nav");
         if (!res.ok) throw new Error(String(res.status));
         const data = (await res.json()) as { initiatives: NavInitiative[] };
-        if (!cancelled) setInitiatives(data.initiatives);
+        if (!cancelled) {
+          setFailed(false);
+          setInitiatives(data.initiatives);
+        }
       } catch {
-        // The palette is a navigation aid: it degrades to its static
-        // destinations rather than blocking the user with an error.
-        if (!cancelled) setInitiatives([]);
+        // Say so, and allow a retry. Swallowing this into an empty list made
+        // the palette answer "Nothing matches" for the rest of the session —
+        // a confident claim produced by an error, in a product whose whole
+        // thesis is that it never asserts what it does not know.
+        if (!cancelled) {
+          requested.current = false;
+          setFailed(true);
+        }
       }
     })();
 
@@ -249,7 +279,11 @@ export function CommandPalette() {
     document.getElementById(`${listId}-opt-${active}`)?.scrollIntoView({ block: "nearest" });
   }, [active, open, listId]);
 
-  const loading = initiatives === null;
+  /* Initiatives are still arriving, but the static destinations are already
+     real — so the list stays rendered and only says what is still pending.
+     Replacing it with a lone "Loading…" row left a keyboard cursor moving
+     through invisible commands. */
+  const pending = initiatives === null && !failed;
 
   if (!open) return null;
 
@@ -288,18 +322,29 @@ export function CommandPalette() {
           spellCheck={false}
         />
 
+        {/* role="presentation" on the wrappers: an option must be owned by the
+            listbox, and a listitem in between left the accessibility tree with a
+            listbox holding zero options — silent arrow-key selection. */}
         <ul className={styles.list} id={listId} role="listbox" aria-label="Commands">
-          {loading ? (
-            <li className={styles.status}>Loading…</li>
+          {failed ? (
+            <li className={styles.status} role="presentation">
+              Could not load initiatives. Close and reopen to try again.
+            </li>
           ) : results.length === 0 ? (
-            <li className={styles.status}>Nothing matches “{query}”.</li>
+            <li className={styles.status} role="presentation">
+              Nothing matches “{query}”.
+            </li>
           ) : (
             results.map((cmd, i) => {
               const header = cmd.group !== lastGroup ? cmd.group : null;
               lastGroup = cmd.group;
               return (
-                <li key={cmd.id}>
-                  {header ? <div className={styles.group}>{header}</div> : null}
+                <li key={cmd.id} role="presentation">
+                  {header ? (
+                    <div className={styles.group} role="presentation">
+                      {header}
+                    </div>
+                  ) : null}
                   <div
                     id={`${listId}-opt-${i}`}
                     role="option"
@@ -317,6 +362,11 @@ export function CommandPalette() {
               );
             })
           )}
+          {pending ? (
+            <li className={styles.status} role="presentation">
+              Loading initiatives…
+            </li>
+          ) : null}
         </ul>
 
         <div className={styles.footer}>

@@ -28,6 +28,7 @@
   flex-direction: column;
   background: var(--navy-850);
   border: 1px solid var(--navy-rule);
+  border-top: 2px solid var(--accent-500);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-panel);
   overflow: hidden;
@@ -44,7 +45,7 @@
 .input {
   flex: none;
   width: 100%;
-  padding: var(--s-4) var(--s-5);
+  padding: var(--s-5);
   background: transparent;
   border: 0;
   border-bottom: 1px solid var(--navy-rule);
@@ -81,7 +82,7 @@
   display: flex;
   align-items: baseline;
   gap: var(--s-3);
-  padding: var(--s-2) var(--s-5);
+  padding: 7px var(--s-5);
   cursor: pointer;
   color: var(--navy-ink-dim);
 }
@@ -91,6 +92,10 @@
   background: var(--navy-700);
   color: var(--navy-ink);
   box-shadow: inset 2px 0 0 var(--accent-400);
+}
+
+.itemActive .itemHint {
+  color: var(--navy-ink-dim);
 }
 
 .itemLabel {

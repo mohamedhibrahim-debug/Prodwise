@@ -302,7 +302,7 @@
     flex-direction: column;
     gap: var(--s-6);
     position: sticky;
-    top: calc(var(--header-h) + var(--s-12));
+    top: calc(var(--workspace-header-h) + var(--s-4));
     align-self: start;
     order: 0;
     padding-top: var(--s-6);
