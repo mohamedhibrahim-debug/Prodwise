@@ -1,0 +1,12 @@
+.state {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--state-unknown-edge);
+  border-radius: var(--r-pill);
+  background: var(--state-unknown-bg);
+  color: var(--state-unknown-fg);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}

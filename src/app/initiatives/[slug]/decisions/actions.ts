@@ -8,6 +8,16 @@ import { WriteDisabledError } from "@/lib/env";
 
 export interface FindingFormState {
   error: string | null;
+  /**
+   * What the person typed, echoed back on failure.
+   *
+   * React resets an uncontrolled field once a form action settles, including
+   * when it returns an error — so without this a rejected resolve silently
+   * emptied the note. That is worst in the stale-digest case, where the message
+   * says "your note was not saved" and the user then has to retype it from
+   * memory to say the same thing again.
+   */
+  resolution?: string;
 }
 
 function readText(v: FormDataEntryValue | null): string {
@@ -51,6 +61,7 @@ export async function resolveFindingAction(
       return {
         error:
           "This finding changed while you were writing. Reload to see it as it stands now — your note was not saved.",
+        resolution,
       };
     }
 
@@ -72,15 +83,18 @@ export async function resolveFindingAction(
       resolution,
     });
   } catch (error) {
-    if (error instanceof FindingAccessError) return { error: error.message };
-    if (error instanceof WriteDisabledError) return { error: error.message };
+    if (error instanceof FindingAccessError)
+      return { error: error.message, resolution };
+    if (error instanceof WriteDisabledError)
+      return { error: error.message, resolution };
     return {
       error:
         error instanceof Error ? error.message : "Could not resolve the finding.",
+      resolution,
     };
   }
 
-  revalidatePath(`/initiatives/${slug}/review`);
+  revalidatePath(`/initiatives/${slug}/decisions`);
   return { error: null };
 }
 
@@ -109,6 +123,6 @@ export async function reopenFindingAction(
     };
   }
 
-  revalidatePath(`/initiatives/${slug}/review`);
+  revalidatePath(`/initiatives/${slug}/decisions`);
   return { error: null };
 }

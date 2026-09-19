@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/lib/review/*.test.ts\""
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/lib/review/*.test.ts\" \"src/lib/workspace/*.test.ts\""
   },
   "dependencies": {
     "@supabase/supabase-js": "2.58.0",

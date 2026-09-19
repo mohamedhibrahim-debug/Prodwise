@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { InitiativeArc } from "@/components/primitives/InitiativeArc";
-import { StatePill } from "@/components/primitives/StatePill";
+import { UnestablishedState } from "@/components/primitives/UnestablishedState";
 import { DemoBadge, Timestamp } from "@/components/primitives/Meta";
 import { BUSINESS_LINE_LABEL, STAGE_LABEL } from "@/lib/domain/labels";
 import type { Initiative } from "@/lib/domain/types";
@@ -11,9 +11,17 @@ export function WorkspaceHeader({ initiative }: { initiative: Initiative }) {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        <Link href="/initiatives" className={styles.breadcrumb}>
-          ← Initiatives
-        </Link>
+        {/* A trail, not a back button: the five sub-routes each hand-rolled
+            their own return link, and none said where you actually were. */}
+        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+          <Link href="/initiatives" className={styles.crumbLink}>
+            Initiatives
+          </Link>
+          <span className={styles.crumbSep} aria-hidden="true">
+            /
+          </span>
+          <span className={styles.crumbCurrent}>{initiative.name}</span>
+        </nav>
 
         <div className={styles.titleRow}>
           <div className={styles.identity}>
@@ -43,7 +51,7 @@ export function WorkspaceHeader({ initiative }: { initiative: Initiative }) {
 
           <div className={styles.statusGroup}>
             {initiative.isDemo ? <DemoBadge /> : null}
-            <StatePill state={initiative.overallState} size="lg" />
+            <UnestablishedState />
           </div>
         </div>
 

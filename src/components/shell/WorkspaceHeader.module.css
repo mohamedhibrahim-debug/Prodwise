@@ -1,4 +1,9 @@
+/* Sticky so the tabs stay reachable through a long findings list instead of
+ being scrolled away. Sits below the nav rail (z 20), above page content. */
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   border-bottom: 1px solid var(--rule);
   background: var(--canvas);
 }
@@ -10,19 +15,38 @@
 }
 
 .breadcrumb {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--s-2);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-regular);
+  letter-spacing: normal;
+  text-transform: none;
   color: var(--ink-400);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
+  min-width: 0;
+}
+
+.crumbLink {
+  color: var(--ink-400);
   transition: color var(--dur-fast) var(--ease);
 }
 
-.breadcrumb:hover {
+.crumbLink:hover {
   color: var(--accent-600);
+}
+
+.crumbSep {
+  color: var(--ink-300);
+}
+
+/* The current initiative is stated, not linked: a crumb that navigates to
+   where you already are is noise. Truncated rather than wrapped so the trail
+   stays one line on a narrow screen. */
+.crumbCurrent {
+  color: var(--ink-500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .titleRow {
@@ -138,17 +162,20 @@
 .tab {
   position: relative;
   padding-bottom: var(--s-3);
-  font-size: var(--t-body);
+  font-size: var(--t-sm);
   font-weight: var(--fw-medium);
   color: var(--ink-500);
   white-space: nowrap;
-  transition: color var(--dur-fast) var(--ease);
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
 }
 
 .tab:hover {
   color: var(--ink-900);
+  border-bottom-color: var(--rule-strong);
 }
 
 .tabActive {
@@ -159,18 +186,19 @@
 
 @media (max-width: 780px) {
   .inner {
-    padding-top: var(--s-5);
+    padding-top: var(--s-3);
   }
   .titleRow {
     gap: var(--s-3);
+    margin-top: var(--s-2);
   }
   .identity {
     gap: var(--s-3);
   }
   .tabsViewport {
-    margin-top: var(--s-5);
+    margin-top: var(--s-3);
   }
   .tabs {
-    gap: var(--s-5);
+    gap: var(--s-4);
   }
 }

@@ -38,7 +38,7 @@ function identify(claim: ClaimWithEvidence): string {
  * One unit of Product Memory.
  *
  * Leads with the knowledge itself — subject · attribute · value — then its
- * classification. Provenance, confidence and supersession sit behind that, and
+ * classification. Provenance and supersession sit behind that, and
  * the full evidence list is behind the disclosure, so the grouped views stay
  * scannable.
  *
@@ -100,7 +100,7 @@ export function ClaimRow({
               </span>
               {claim.phase ? (
                 <span className={styles.fact}>
-                  Phase <b>{claim.phase}</b>
+                  <b>{claim.phase}</b>
                 </span>
               ) : null}
               <span className={styles.fact}>
@@ -116,11 +116,6 @@ export function ClaimRow({
                   </>
                 )}
               </span>
-              {claim.confidence ? (
-                <span className={styles.fact}>
-                  Confidence <b>{claim.confidence.toLowerCase()}</b>
-                </span>
-              ) : null}
             </span>
 
             {supersededBy ? (

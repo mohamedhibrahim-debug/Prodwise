@@ -1,7 +1,8 @@
 .row {
   border-bottom: 1px solid var(--rule);
-  /* Clears the sticky workspace header when Review links to a claim anchor. */
-  scroll-margin-top: var(--s-12);
+  /* Must clear the sticky workspace header, or a Review deep link parks the
+     claim behind an opaque bar. --s-12 (48px) never did: the header is ~175px. */
+  scroll-margin-top: calc(var(--workspace-header-h) + var(--s-4));
 }
 
 /* Marks the claim a Review finding sent the reader to, so it is findable in a

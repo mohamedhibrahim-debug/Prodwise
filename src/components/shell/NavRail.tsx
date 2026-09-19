@@ -59,6 +59,23 @@ function ReportingIcon() {
   );
 }
 
+function SearchIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10.2 10.2 L13.5 13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Opening is a shell-wide concern, so the rail announces intent rather than
+ *  owning palette state. Keeps the palette self-contained and context-free. */
+export const OPEN_PALETTE_EVENT = "prodwise:open-palette";
+
+function onOpenPalette() {
+  window.dispatchEvent(new CustomEvent(OPEN_PALETTE_EVENT));
+}
+
 export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
   const pathname = usePathname();
   const onInitiatives = pathname === "/" || pathname.startsWith("/initiatives");
@@ -112,9 +129,15 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
         </ul>
       </nav>
 
+      <button type="button" className={styles.search} onClick={onOpenPalette} aria-label="Search initiatives and sections">
+        <SearchIcon />
+        <span className={styles.navText}>Search</span>
+        <kbd className={styles.kbd}>⌘K</kbd>
+      </button>
+
       <div className={styles.footer}>
         <InitiativeArc mark size={150} className={styles.arcBleed} />
-        <div className={styles.envLabel}>{writesEnabled ? "Phase 3" : "Demo mode"}</div>
+        <div className={styles.envLabel}>{writesEnabled ? "Environment" : "Demo mode"}</div>
         <p className={styles.envValue}>
           {writesEnabled ? (
             <>

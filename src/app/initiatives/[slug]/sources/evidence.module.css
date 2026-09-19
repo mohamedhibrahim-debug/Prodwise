@@ -6,6 +6,21 @@
   flex-wrap: wrap;
 }
 
+.summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  margin-top: var(--s-5);
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+  font-variant-numeric: tabular-nums;
+}
+
+.summary b {
+  font-weight: var(--fw-semibold);
+  color: var(--ink-900);
+}
+
 /* Where evidence can conceptually come from. Every source reads MANUAL in
    Phase 2 — there are no connectors, and a fabricated state would be a lie. */
 .sources {

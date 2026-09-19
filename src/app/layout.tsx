@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
 import { NavRail } from "@/components/shell/NavRail";
-import { ConsultantPanel } from "@/components/shell/ConsultantPanel";
+import { CommandPalette } from "@/components/shell/CommandPalette";
 import { isDemoWriteEnabled, isSupabaseConfigured } from "@/lib/env";
 
 import "@/styles/global.css";
@@ -37,7 +37,8 @@ export default function RootLayout({
         <div className={styles.canvas}>
           <main className={styles.main}>{children}</main>
         </div>
-        <ConsultantPanel />
+        {/* Renders nothing until opened; its data loads on first open only. */}
+        <CommandPalette />
       </body>
     </html>
   );

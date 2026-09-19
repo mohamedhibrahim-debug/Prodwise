@@ -7,7 +7,7 @@ import { EVIDENCE_RELATIONS, type EvidenceRelation } from "@/lib/domain/types";
 import {
   excludeEvidenceAction,
   reclassifyEvidenceAction,
-} from "@/app/initiatives/[slug]/evidence/actions";
+} from "@/app/initiatives/[slug]/sources/actions";
 import styles from "./EvidenceRow.module.css";
 
 interface EvidenceControlsProps {

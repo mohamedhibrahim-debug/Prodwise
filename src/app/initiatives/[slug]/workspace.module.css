@@ -8,45 +8,23 @@
   padding: 0 var(--gutter) var(--s-16);
 }
 
-/* ── Current state summary — the first thing read on Overview ────────────-
-   No bottom rule: the first section supplies the separator via its own top
-   rule, which keeps the seam correct when sections are reordered on mobile. */
-.summary {
-  padding: var(--s-8) 0 var(--s-6);
+/* ── Status: operating view ──────────────────────────────────────────────-
+   Decisions lead, change sits beside them. One column below 1000px, with the
+   decision queue first because it is the thing that asks something of you. */
+.statusColumns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: var(--s-10);
 }
 
-/* ── Overview section flow ───────────────────────────────────────────────-
-   Desktop: Attention -> Next Best Action -> Current State -> Recent Changes.
-   Below 780px the recommendation is lifted above the attention list, so the
-   primary action is reachable without scrolling past a long finding list.
-   Done with flex `order` - one DOM, no duplicated markup, no layout change. */
-.sectionFlow {
-  display: flex;
-  flex-direction: column;
+.statusMain,
+.statusSide {
+  min-width: 0;
 }
 
-.orderAttention {
-  order: 1;
-}
-
-.orderAction {
-  order: 2;
-}
-
-.orderState {
-  order: 3;
-}
-
-.orderChanges {
-  order: 4;
-}
-
-@media (max-width: 780px) {
-  .orderAction {
-    order: 1;
-  }
-  .orderAttention {
-    order: 2;
+@media (min-width: 1000px) {
+  .statusColumns {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   }
 }
 
@@ -59,19 +37,59 @@
   font-weight: var(--fw-medium);
 }
 
-.summaryMeta {
-  margin-top: var(--s-4);
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  flex-wrap: wrap;
+/* ── Demo scenario ───────────────────────────────────────────────────────-
+   Authored illustration, collapsed and set apart on a sunken surface with a
+   dashed edge, so it can never be mistaken for the real surfaces above it. */
+.demoScenario {
+  margin-top: var(--s-12);
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-subtle);
 }
 
-.description {
-  margin-top: var(--s-3);
+.demoSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2) var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  cursor: pointer;
+  list-style: none;
   font-size: var(--t-sm);
   color: var(--ink-500);
-  max-width: 74ch;
+}
+
+.demoSummary::-webkit-details-marker {
+  display: none;
+}
+
+.demoSummary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--r-md);
+}
+
+.demoTag {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-700);
+}
+
+.demoBody {
+  padding: 0 var(--s-5) var(--s-6);
+}
+
+/* ── Page-level demo banner (Readiness) ──────────────────────────────────- */
+.demoBanner {
+  margin-top: var(--s-6);
+  padding: var(--s-3) var(--s-4);
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-subtle);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
   line-height: var(--lh-body);
 }
 
@@ -122,6 +140,54 @@
   font-size: var(--t-sm);
   max-width: 74ch;
   line-height: var(--lh-body);
+}
+
+/* ── Decisions lanes ─────────────────────────────────────────────────────-
+   Four visible sections replace the old mutually exclusive filters. They use
+   rules and whitespace so findings keep their existing visual treatment. */
+.decisionLane {
+  padding-top: var(--s-8);
+  scroll-margin-top: calc(var(--workspace-header-h) + var(--s-4));
+}
+
+.decisionLaneHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.decisionLaneTitle {
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+}
+
+.decisionLaneDescription,
+.decisionLaneEmpty {
+  margin-top: var(--s-1);
+  max-width: 74ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--ink-500);
+}
+
+.decisionLaneEmpty {
+  padding: var(--s-5) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.decisionLaneCount {
+  flex: none;
+  min-width: var(--s-6);
+  padding-top: 2px;
+  color: var(--ink-400);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 /* ── Filter strip ────────────────────────────────────────────────────────-
@@ -214,4 +280,100 @@
   font-size: var(--t-xs);
   color: var(--ink-400);
   max-width: 74ch;
+}
+
+/* ══ Review: findings + context ═════════════════════════════════════════════
+   At 1440px the container is 1160px but the readable content stopped near
+   780px, leaving roughly 500px of dead space. That space now carries context
+   instead of nothing. Two columns only where there is genuinely room; below
+   that the context leads, because on a narrow screen orientation matters more
+   than the list. */
+
+.reviewLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-8);
+}
+
+.reviewMain {
+  min-width: 0;
+}
+
+/* Hidden below 1200px, and that is deliberate rather than a fallback.
+   The column exists to use horizontal space that only exists on a wide screen.
+   Narrow, every part of it duplicates something already on the page — the
+   state pill sits in the header, the open count in the filter strip, and the
+   tabs are directly above — so stacking it would push the actual finding
+   roughly 600px down the page to say nothing new. */
+.reviewContext {
+  display: none;
+}
+
+.contextLabel {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-bottom: var(--s-2);
+}
+
+.contextBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-1);
+}
+
+.contextCount {
+  font-size: var(--t-h1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+  line-height: 1.1;
+}
+
+.contextValue {
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+}
+
+.contextLink {
+  font-size: var(--t-sm);
+  color: var(--accent-700);
+  padding: 2px 0;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.contextLink:hover {
+  color: var(--accent-600);
+  text-decoration: underline;
+}
+
+.contextNotice {
+  font-size: var(--t-xs);
+  color: var(--ink-400);
+  line-height: var(--lh-body);
+}
+
+@media (min-width: 1200px) {
+  .reviewLayout {
+    grid-template-columns: minmax(0, 1fr) 260px;
+  }
+
+  .reviewContext {
+    /* Sticky below the sticky workspace header, so context stays put while a
+       long findings list scrolls past it. */
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-6);
+    position: sticky;
+    top: calc(var(--workspace-header-h) + var(--s-4));
+    align-self: start;
+    order: 0;
+    padding-top: var(--s-6);
+    padding-left: var(--s-6);
+    border-top: 0;
+    border-left: 1px solid var(--rule);
+  }
 }

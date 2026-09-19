@@ -21,8 +21,11 @@
   --navy-500: #2a5878;
   --navy-ink: #e8eef4;
   --navy-ink-dim: #9fb2c4;
-  /* Lightened from #64798d (4.13:1 on --navy-900) to clear WCAG AA. */
-  --navy-ink-faint: #6e8398;
+  /* Carries text on three navy grounds now that the command palette exists:
+     6.21:1 on --navy-900, 5.78:1 on --navy-850, 4.52:1 on --navy-700. The
+     earlier value was tuned against navy-900 alone and failed AA on the
+     palette surface. */
+  --navy-ink-faint: #8398ae;
   --navy-rule: #1b3145;
 
   /* ── Identity accent · cyan / teal ─────────────────────────────────────
@@ -112,6 +115,11 @@
      range is the hierarchy device we borrow. */
   --t-display: 2.125rem; /* 34px — initiative name */
   --t-h1: 1.5rem; /* 24px — page title */
+  /* 28px — the compared values in a Review conflict. Sits between h1 and
+     display because the conflict is the product signature and must dominate
+     its content area, while never competing with the initiative name that is
+     pinned in the sticky header at --t-display. */
+  --t-value: 1.75rem;
   --t-h2: 1.0625rem; /* 17px — section heading */
   --t-h3: 0.9375rem; /* 15px — row title */
   --t-body: 0.875rem; /* 14px — body */
@@ -168,6 +176,13 @@
   --content-max: 1160px;
   --gutter: var(--s-10);
   --header-h: 60px;
+  /* The STICKY workspace header, measured: breadcrumb + name + stage line +
+     tab strip ≈ 175px. Distinct from --header-h, which is the nav rail brand
+     block and has nothing to do with this. Anything that scrolls to an anchor
+     or sticks below the header must clear this, or it lands underneath an
+     opaque bar. Approximate by design — a long initiative name can wrap — so
+     it is rounded up rather than down. */
+  --workspace-header-h: 184px;
 
   --focus-ring: 0 0 0 2px var(--canvas), 0 0 0 4px var(--accent-500);
 }
@@ -181,6 +196,9 @@
 
 @media (max-width: 780px) {
   :root {
+    /* Conservative anchor fallback until WorkspaceTabs measures the rendered
+       header; longer initiative names can make it taller than the 198px MFF. */
+    --workspace-header-h: 272px;
     --rail-w: 0px;
     --gutter: var(--s-4);
     --t-display: 1.625rem;

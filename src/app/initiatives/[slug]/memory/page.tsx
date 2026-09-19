@@ -11,14 +11,14 @@ import type { ClaimType, ClaimWithEvidence } from "@/lib/domain/types";
 import styles from "../workspace.module.css";
 import memoryStyles from "./memory.module.css";
 
-export const metadata: Metadata = { title: "Product Memory" };
+export const metadata: Metadata = { title: "Memory" };
 export const dynamic = "force-dynamic";
 
 type View = "decisions" | "requirements" | "risks" | "dependencies" | "claims";
 
 /** Section semantics are unchanged from Phase 1. ASSUMPTION lives under Claims. */
 const VIEWS: { key: View; label: string; types: ClaimType[] | null }[] = [
-  { key: "decisions", label: "Decisions", types: ["DECISION"] },
+  { key: "decisions", label: "Recorded Decisions", types: ["DECISION"] },
   {
     key: "requirements",
     label: "Requirements",

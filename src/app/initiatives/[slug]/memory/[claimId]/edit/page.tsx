@@ -6,7 +6,7 @@ import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { ClaimForm } from "@/components/initiative/ClaimForm";
 import { getRepository } from "@/lib/data";
 import { updateClaimAction } from "./actions";
-import styles from "../../../evidence/evidence-form.module.css";
+import styles from "../../../sources/evidence-form.module.css";
 
 export const metadata: Metadata = { title: "Edit Claim" };
 export const dynamic = "force-dynamic";
