@@ -538,6 +538,21 @@ export interface FindingState {
 }
 
 /**
+ * Read-only foundation data for one initiative.
+ *
+ * Reporting and the Instrument shell need portfolio facts without issuing one
+ * query per initiative. The repository returns the same persisted shapes used
+ * by the initiative pages; all review/setup interpretation remains in the
+ * existing pure domain functions above the repository layer.
+ */
+export interface InitiativeSnapshot {
+  initiative: Initiative;
+  evidence: EvidenceRecord[];
+  claims: ClaimWithEvidence[];
+  findingStates: FindingState[];
+}
+
+/**
  * What a person supplies when resolving a finding.
  *
  * The descriptive fields are copied from the derived finding, never from the

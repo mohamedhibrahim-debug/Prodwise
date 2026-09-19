@@ -8,6 +8,7 @@ import type {
   FindingState,
   FindingStateInput,
   Initiative,
+  InitiativeSnapshot,
   InitiativeSource,
   NewClaimInput,
   NewEvidenceInput,
@@ -26,6 +27,10 @@ import type {
  */
 export interface Repository {
   listInitiatives(): Promise<Initiative[]>;
+  /** One read-only aggregate path; used to avoid portfolio N+1 queries. */
+  listInitiativeSnapshots(): Promise<InitiativeSnapshot[]>;
+  /** The same aggregate shape, scoped to one initiative for shell facts. */
+  getInitiativeSnapshot(initiativeId: string): Promise<InitiativeSnapshot | null>;
   getInitiativeBySlug(slug: string): Promise<Initiative | null>;
   listActivity(initiativeId: string, limit?: number): Promise<ActivityEntry[]>;
   createInitiative(input: NewInitiativeInput): Promise<Initiative>;

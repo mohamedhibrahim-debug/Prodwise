@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { WorkspaceHeader } from "@/components/shell/WorkspaceHeader";
+import { WorkspacePipeline } from "@/components/workspace/WorkspacePipeline";
 import { getRepository } from "@/lib/data";
+import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +19,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const initiative = await getRepository().getInitiativeBySlug(slug);
+  const repo = getRepository();
+  const initiative = await repo.getInitiativeBySlug(slug);
   const name = initiative?.name ?? "Initiative";
 
   // A template so each tab reads "Review · Merchant Flex Finance · Prodwise".
@@ -38,13 +41,18 @@ export default async function InitiativeLayout({
   params,
 }: LayoutProps) {
   const { slug } = await params;
-  const initiative = await getRepository().getInitiativeBySlug(slug);
+  const repo = getRepository();
+  const initiative = await repo.getInitiativeBySlug(slug);
 
   if (!initiative) notFound();
+  const snapshot = await repo.getInitiativeSnapshot(initiative.id);
+  if (!snapshot) notFound();
+  const instrument = deriveInstrumentSnapshot(snapshot);
 
   return (
     <>
       <WorkspaceHeader initiative={initiative} />
+      <WorkspacePipeline progress={instrument.progress} slug={slug} />
       {children}
     </>
   );
