@@ -12,7 +12,7 @@ import type {
   BusinessLine,
   Stage,
 } from "@/lib/domain/types";
-import { OPEN_PALETTE_EVENT } from "./NavRail";
+import { OPEN_PALETTE_EVENT } from "./events";
 import styles from "./CommandPalette.module.css";
 
 interface NavInitiative {

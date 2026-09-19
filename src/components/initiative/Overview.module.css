@@ -140,6 +140,7 @@
   font-size: var(--t-sm);
   color: var(--ink-700);
 }
+.changeProvenance{display:flex;align-items:center;gap:8px;color:var(--ink-500)}.changeProvenance svg{width:15px;flex:none}
 
 @media (max-width: 720px) {
   .attentionItem,

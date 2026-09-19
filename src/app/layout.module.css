@@ -18,3 +18,4 @@
     padding-bottom: var(--s-16);
   }
 }
+@media (max-width:1100px){.main{padding-bottom:var(--mobile-ia-h)}}

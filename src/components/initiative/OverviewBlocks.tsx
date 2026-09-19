@@ -2,6 +2,7 @@ import { StatePill } from "@/components/primitives/StatePill";
 import { SeverityMark } from "@/components/primitives/SeverityMark";
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { ConfidenceNote, Timestamp } from "@/components/primitives/Meta";
+import { InstrumentIcon, type InstrumentIconName } from "@/components/shell/InstrumentIcon";
 import { DOMAIN_LABEL } from "@/lib/domain/labels";
 import { severityRank } from "@/lib/domain/ordering";
 import type {
@@ -121,12 +122,14 @@ export function RecentChanges({ entries }: { entries: ActivityEntry[] }) {
 
   return (
     <ul className={styles.changeList}>
-      {entries.map((entry) => (
-        <li key={entry.id} className={styles.changeRow}>
-          <Timestamp iso={entry.occurredAt} />
-          <span className={styles.changeSummary}>{entry.summary}</span>
-        </li>
-      ))}
+        {entries.map((entry) => {
+          const icon: InstrumentIconName = entry.eventType === "EVIDENCE_ADDED" ? "evidence" : entry.eventType === "DECISION_RECORDED" ? "decision" : "event";
+          return (
+          <li key={entry.id} className={styles.changeRow}>
+            <span className={styles.changeProvenance}><InstrumentIcon name={icon} /><Timestamp iso={entry.occurredAt} /></span>
+            <span className={styles.changeSummary}>{entry.summary}</span>
+          </li>
+        )})}
     </ul>
   );
 }

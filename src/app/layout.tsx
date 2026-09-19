@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Suspense } from "react";
 
 import { NavRail } from "@/components/shell/NavRail";
 import { CommandPalette } from "@/components/shell/CommandPalette";
+import { DemoScenarioSurface } from "@/components/shell/DemoScenarioSurface";
 import { isDemoWriteEnabled, isSupabaseConfigured } from "@/lib/env";
 
 import "@/styles/global.css";
@@ -10,12 +11,6 @@ import styles from "./layout.module.css";
 
 /* Inter is the reference deck's own typeface: it honours the visual DNA while
    remaining brand-neutral enterprise-standard. */
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter",
-});
-
 export const metadata: Metadata = {
   title: {
     default: "Prodwise",
@@ -28,7 +23,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en">
       <body>
         <NavRail
           dataSource={isSupabaseConfigured ? "Supabase" : "Local demo data"}
@@ -39,6 +34,7 @@ export default function RootLayout({
         </div>
         {/* Renders nothing until opened; its data loads on first open only. */}
         <CommandPalette />
+        <Suspense fallback={null}><DemoScenarioSurface /></Suspense>
       </body>
     </html>
   );

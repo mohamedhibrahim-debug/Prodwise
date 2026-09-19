@@ -40,9 +40,14 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
     if (!header) return;
     const root = document.documentElement;
     const measureHeader = () => {
+      const mobileGlobal = window.matchMedia("(max-width: 780px)").matches
+        ? Number.parseFloat(
+            getComputedStyle(root).getPropertyValue("--mobile-global-h"),
+          )
+        : 0;
       root.style.setProperty(
         "--workspace-header-h",
-        `${header.getBoundingClientRect().height}px`,
+        `${header.getBoundingClientRect().height + mobileGlobal}px`,
       );
     };
     measureHeader();
