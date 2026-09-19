@@ -99,7 +99,10 @@ function PrimaryAction({
       );
     case "decisions":
       return (
-        <ButtonLink href={`${base}/decisions#lane-open`} variant="primary">
+        <ButtonLink
+          href={`${base}/decisions#lane-needs-decision`}
+          variant="primary"
+        >
           Open {plural(facts.decisionsOpen, "decision", "decisions")}
         </ButtonLink>
       );
@@ -161,7 +164,7 @@ export function SetupRail({
             <Link
               href={
                 current === "decisions"
-                  ? `/initiatives/${slug}/decisions#lane-open`
+                  ? `/initiatives/${slug}/decisions#lane-needs-decision`
                   : current === "memory"
                     ? `/initiatives/${slug}/memory`
                     : `/initiatives/${slug}/sources`

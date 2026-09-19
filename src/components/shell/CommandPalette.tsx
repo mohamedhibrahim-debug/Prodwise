@@ -198,13 +198,18 @@ export function CommandPalette() {
             : `/initiatives/${currentSlug}`,
         });
       }
-      for (const f of ["open", "resolved", "all"] as const) {
+      for (const lane of [
+        { id: "needs-decision", label: "Needs a decision" },
+        { id: "resolved", label: "Resolved" },
+        { id: "history", label: "History" },
+        { id: "not-checked", label: "Not checked yet" },
+      ] as const) {
         out.push({
-          id: `filter-${f}`,
-          label: `Decisions — ${f[0]!.toUpperCase()}${f.slice(1)}`,
-          keywords: `decisions review findings ${f} filter`,
+          id: `lane-${lane.id}`,
+          label: `Decisions — ${lane.label}`,
+          keywords: `decisions review findings ${lane.label} lane`,
           group: "This initiative",
-          href: `/initiatives/${currentSlug}/decisions${f === "open" ? "" : `?filter=${f}`}`,
+          href: `/initiatives/${currentSlug}/decisions#lane-${lane.id}`,
         });
       }
     }

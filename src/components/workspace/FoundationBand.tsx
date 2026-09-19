@@ -49,7 +49,7 @@ export function FoundationBand({
       </Link>
 
       <Link
-        href={`${base}/decisions#lane-open`}
+        href={`${base}/decisions#lane-needs-decision`}
         className={styles.cell}
         data-attention={facts.decisionsOpen > 0 || undefined}
       >

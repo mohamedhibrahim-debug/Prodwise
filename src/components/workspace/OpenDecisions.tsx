@@ -19,7 +19,7 @@ export function OpenDecisions({
   slug: string;
   limit?: number;
 }) {
-  const href = `/initiatives/${slug}/decisions#lane-open`;
+  const href = `/initiatives/${slug}/decisions#lane-needs-decision`;
 
   if (findings.length === 0) {
     return (

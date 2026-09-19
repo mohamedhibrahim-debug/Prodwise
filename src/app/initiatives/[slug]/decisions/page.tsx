@@ -10,7 +10,6 @@ import { STAGE_LABEL } from "@/lib/domain/labels";
 import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { compareFindings } from "@/lib/review/engine";
 import { loadDecisions } from "@/lib/workspace/decisions";
-import type { ReviewFinding } from "@/lib/domain/types";
 import styles from "../workspace.module.css";
 
 export const metadata: Metadata = { title: "Decisions" };
@@ -19,36 +18,12 @@ export const metadata: Metadata = { title: "Decisions" };
    render would freeze them against whatever Product Memory held at build. */
 export const dynamic = "force-dynamic";
 
-type Filter = "open" | "resolved" | "all";
-
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: "open", label: "Open" },
-  { key: "resolved", label: "Resolved" },
-  { key: "all", label: "All" },
-];
-
-/**
- * "Open" is the actionable queue, not simply everything unresolved: a
- * superseded claim is history, not a task. It stays fully visible under "All".
- */
-function matches(filter: Filter, finding: ReviewFinding): boolean {
-  if (filter === "all") return true;
-  if (filter === "resolved") return finding.status === "RESOLVED";
-  return finding.status === "OPEN" && finding.actionable;
-}
-
 export default async function DecisionsPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ filter?: string }>;
 }) {
   const { slug } = await params;
-  const { filter: rawFilter } = await searchParams;
-
-  const filter: Filter =
-    rawFilter === "resolved" || rawFilter === "all" ? rawFilter : "open";
 
   const repo = getRepository();
   const initiative = await repo.getInitiativeBySlug(slug);
@@ -61,109 +36,52 @@ export default async function DecisionsPage({
      visitor takes. */
   const { claims, findings: all } = await loadDecisions(initiative.id);
 
-  const counts: Record<Filter, number> = {
-    open: all.filter((f) => matches("open", f)).length,
-    resolved: all.filter((f) => matches("resolved", f)).length,
-    all: all.length,
-  };
-
-  /* Deliberately not sorted by severity: Slice 1 findings carry none, so any
-     ranking by importance would be invented. Actionable work sorts above
-     history because that is a derived fact, not a judgement. */
-  const visible = all.filter((f) => matches(filter, f)).sort(compareFindings);
+  /* These lanes partition the already-derived result. They add no state and
+     assign no new meaning: supersessions remain history, while Resolved reads
+     the existing pre-Stage-2 finding-state records exactly as before. */
+  const needsDecision = all
+    .filter((finding) => finding.status === "OPEN" && finding.actionable)
+    .sort(compareFindings);
+  const resolved = all
+    .filter(
+      (finding) =>
+        finding.status === "RESOLVED" && finding.type !== "SUPERSEDED",
+    )
+    .sort(compareFindings);
+  const history = all
+    .filter((finding) => finding.type === "SUPERSEDED")
+    .sort(compareFindings);
 
   // Only reached when Product Memory is empty, which is the one case where the
   // wording depends on whether any evidence has been connected.
   const evidenceCount =
     claims.length === 0 ? (await repo.listEvidence(initiative.id)).length : 0;
 
-  const hidden = counts.all - counts.open - counts.resolved;
-
   return (
     <div className={`${styles.page} ${styles.reviewLayout}`}>
-      <div className={styles.reviewMain} id="lane-open">
+      <div className={styles.reviewMain}>
         <div className={styles.tabIntro}>
-          {/* One line. The rule that produced a finding is stated on the finding
-              itself, under "Why this was raised" — repeating it here as a spec
-              only gates the content behind reading people skip. What stays is
-              the part no finding can tell you: what is NOT looked for, so an
-              empty Review can never be read as an all-clear (Rule 4). */}
           <p className={styles.tabIntroText}>
             <strong>
-              No AI or semantic inference &mdash; findings are derived using
-              deterministic rules.
-            </strong>{" "}
-            Conflicts and supersessions only; gaps, unknowns and risks are not
-            checked.
+              Current Decisions findings are derived using deterministic rules.{" "}
+              AI-assisted detection is not active yet.
+            </strong>
           </p>
-
-          {/* Three tabs all reading zero filter nothing — on an initiative with
-              no findings the strip is noise, so it is not rendered. */}
-          {counts.all > 0 ? (
-            <nav className={styles.filters} aria-label="Filter findings">
-              {FILTERS.map(({ key, label }) => (
-                <Link
-                  key={key}
-                  href={`/initiatives/${slug}/decisions${key === "open" ? "" : `?filter=${key}`}`}
-                  className={`${styles.filter} ${filter === key ? styles.filterActive : ""}`}
-                  aria-current={filter === key ? "page" : undefined}
-                >
-                  {label}
-                  <span className={styles.filterCount}>{counts[key]}</span>
-                </Link>
-              ))}
-            </nav>
-          ) : null}
-
-          {/* Open + Resolved does not equal All, which reads as a bug unless the
-              difference is explained exactly where it appears. Counted, never
-              hardcoded. */}
-          {hidden > 0 ? (
-            <p className={styles.filterNote}>
-              {hidden === 1
-                ? "One superseded claim is kept as history under All."
-                : `${hidden} superseded claims are kept as history under All.`}{" "}
-              History is never an open task.
-            </p>
-          ) : null}
         </div>
 
-        {visible.length === 0 ? (
-          <EmptyState
-            /* Claims first, not evidence: findings derive from Product Memory
-               now, so an empty Review is explained by the absence of claims. */
-            message={
-              claims.length === 0
-                ? EMPTY.reviewNoClaims
-                : filter === "resolved"
-                  ? EMPTY.reviewResolved
-                  : /* An empty Open queue is not the same as an empty Review.
-                       Saying "nothing was found" while findings sit under All
-                       would be plainly false. */
-                    counts.all > 0
-                    ? EMPTY.reviewNothingOpen
-                    : EMPTY.reviewFindings
-            }
-            hint={
-              claims.length === 0
-                ? evidenceCount === 0
-                  ? "Review compares recorded claims. No evidence has been connected yet either, so nothing has been reviewed here."
-                  : "Review compares recorded claims. Until Product Memory has claims, no finding can be raised — and none can be ruled out."
-                : filter === "resolved"
-                  ? undefined
-                  : counts.all > 0
-                    ? `${counts.all} finding${counts.all === 1 ? " is" : "s are"} recorded under All, including superseded claims kept as history.`
-                    : "Only conflicts and supersessions are detected. Gaps, unknowns and risks are not checked, so their absence here does not mean there are none."
-            }
-          />
-        ) : (
-          <>
-            {/* Keeps the heading outline unbroken: finding rows are h3. */}
-            <h2 className="visually-hidden">
-              {FILTERS.find((f) => f.key === filter)?.label} findings
-            </h2>
+        <section className={styles.decisionLane} id="lane-needs-decision">
+          <div className={styles.decisionLaneHead}>
+            <div>
+              <h2 className={styles.decisionLaneTitle}>Needs a decision</h2>
+              <p className={styles.decisionLaneDescription}>
+                Actionable conflicts that are currently open.
+              </p>
+            </div>
+            <span className={styles.decisionLaneCount}>{needsDecision.length}</span>
+          </div>
+          {needsDecision.length > 0 ? (
             <ul>
-              {visible.map((finding) => (
+              {needsDecision.map((finding) => (
                 <FindingRow
                   key={finding.fingerprint}
                   finding={finding}
@@ -172,8 +90,86 @@ export default async function DecisionsPage({
                 />
               ))}
             </ul>
-          </>
-        )}
+          ) : claims.length === 0 ? (
+            <EmptyState
+              message={EMPTY.reviewNoClaims}
+              hint={
+                evidenceCount === 0
+                  ? "Review compares recorded claims. No evidence has been connected yet either, so nothing has been reviewed here."
+                  : "Review compares recorded claims. Until Product Memory has claims, no finding can be raised — and none can be ruled out."
+              }
+            />
+          ) : (
+            <p className={styles.decisionLaneEmpty}>{EMPTY.reviewNothingOpen}</p>
+          )}
+        </section>
+
+        <section className={styles.decisionLane} id="lane-resolved">
+          <div className={styles.decisionLaneHead}>
+            <div>
+              <h2 className={styles.decisionLaneTitle}>Resolved</h2>
+              <p className={styles.decisionLaneDescription}>
+                Existing finding-state decisions and their recorded notes.
+              </p>
+            </div>
+            <span className={styles.decisionLaneCount}>{resolved.length}</span>
+          </div>
+          {resolved.length > 0 ? (
+            <ul>
+              {resolved.map((finding) => (
+                <FindingRow
+                  key={finding.fingerprint}
+                  finding={finding}
+                  slug={slug}
+                  canResolve={isDemoWriteEnabled}
+                />
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.decisionLaneEmpty}>{EMPTY.reviewResolved}</p>
+          )}
+        </section>
+
+        <section className={styles.decisionLane} id="lane-history">
+          <div className={styles.decisionLaneHead}>
+            <div>
+              <h2 className={styles.decisionLaneTitle}>History</h2>
+              <p className={styles.decisionLaneDescription}>
+                Superseded information retained for lineage. Nothing here is an
+                open task.
+              </p>
+            </div>
+            <span className={styles.decisionLaneCount}>{history.length}</span>
+          </div>
+          {history.length > 0 ? (
+            <ul>
+              {history.map((finding) => (
+                <FindingRow
+                  key={finding.fingerprint}
+                  finding={finding}
+                  slug={slug}
+                  canResolve={false}
+                />
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.decisionLaneEmpty}>
+              No superseded findings are recorded.
+            </p>
+          )}
+        </section>
+
+        <section className={styles.decisionLane} id="lane-not-checked">
+          <div className={styles.decisionLaneHead}>
+            <div>
+              <h2 className={styles.decisionLaneTitle}>Not checked yet</h2>
+              <p className={styles.decisionLaneDescription}>
+                GAP, UNKNOWN and RISK detection is not implemented yet. No
+                findings are reported for those types here.
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
 
       {/* Context, not a panel: no input, no scrim, no elevation — a plain column
@@ -189,9 +185,9 @@ export default async function DecisionsPage({
 
         <div className={styles.contextBlock}>
           <div className={styles.contextLabel}>Waiting on you</div>
-          <p className={styles.contextCount}>{counts.open}</p>
+          <p className={styles.contextCount}>{needsDecision.length}</p>
           <p className={styles.contextValue}>
-            {counts.open === 1
+            {needsDecision.length === 1
               ? "finding needs a decision"
               : "findings need a decision"}
           </p>

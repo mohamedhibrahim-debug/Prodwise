@@ -142,6 +142,54 @@
   line-height: var(--lh-body);
 }
 
+/* ── Decisions lanes ─────────────────────────────────────────────────────-
+   Four visible sections replace the old mutually exclusive filters. They use
+   rules and whitespace so findings keep their existing visual treatment. */
+.decisionLane {
+  padding-top: var(--s-8);
+  scroll-margin-top: calc(var(--workspace-header-h) + var(--s-4));
+}
+
+.decisionLaneHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.decisionLaneTitle {
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink-900);
+}
+
+.decisionLaneDescription,
+.decisionLaneEmpty {
+  margin-top: var(--s-1);
+  max-width: 74ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--ink-500);
+}
+
+.decisionLaneEmpty {
+  padding: var(--s-5) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.decisionLaneCount {
+  flex: none;
+  min-width: var(--s-6);
+  padding-top: 2px;
+  color: var(--ink-400);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 /* ── Filter strip ────────────────────────────────────────────────────────-
    Scrolls inside itself when it does not fit (Product Memory has five views
    and overflows a 375px viewport). Overflow is contained here so the strip
