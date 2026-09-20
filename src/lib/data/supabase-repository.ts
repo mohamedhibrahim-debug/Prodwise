@@ -37,6 +37,7 @@ import type {
 } from "@/lib/domain/types";
 import { canOrdinaryUpdateStatus } from "@/lib/domain/trust";
 import { uniqueSlug, type Repository } from "./repository";
+import { partitionEvidenceLinks } from "./claim-evidence-links";
 
 /**
  * Supabase-backed repository.
@@ -723,21 +724,22 @@ export const supabaseRepository: Repository = {
       .select("evidence_id")
       .eq("claim_id", claimId);
     if (currentError) throw new Error(`Failed to load provenance: ${currentError.message}`);
-    const before = new Set((currentRows as { evidence_id: string }[]).map((r) => r.evidence_id));
-    const after = new Set(evidenceIds);
-    const removed = [...before].filter((id) => !after.has(id));
-    const added = [...after].filter((id) => !before.has(id));
+    const { removed, addedEvidenceIds } = partitionEvidenceLinks(
+      (currentRows as { evidence_id: string }[]).map((row) => ({ evidenceId: row.evidence_id })),
+      evidenceIds,
+    );
+    const removedIds = removed.map((link) => link.evidenceId);
 
     const deleteQuery = supabase.from("claim_evidence").delete().eq("claim_id", claimId);
-    const { error: deleteError } = removed.length
-      ? await deleteQuery.in("evidence_id", removed)
+    const { error: deleteError } = removedIds.length
+      ? await deleteQuery.in("evidence_id", removedIds)
       : { error: null };
     if (deleteError) throw new Error(`Failed to clear provenance: ${deleteError.message}`);
 
-    if (added.length > 0) {
+    if (addedEvidenceIds.length > 0) {
       const { error: insertError } = await supabase
         .from("claim_evidence")
-        .insert(added.map((evidence_id) => ({ claim_id: claimId, evidence_id })));
+        .insert(addedEvidenceIds.map((evidence_id) => ({ claim_id: claimId, evidence_id })));
       if (insertError) throw new Error(`Failed to link evidence: ${insertError.message}`);
     }
 
@@ -766,6 +768,7 @@ export const supabaseRepository: Repository = {
         ELIGIBLE_EVIDENCE_REQUIRED: "Link current-scope evidence before verifying this claim.",
         DIRECT_KNOWLEDGE_NOTE_REQUIRED: "Record what direct knowledge supports this verification.",
         CLAIM_NOT_VERIFIABLE: "Only unverified or draft claims can be verified.",
+        ACTOR_REQUIRED: "Actor is required.",
       };
       throw new Error(copy[error.message] ?? `Could not verify claim: ${error.message}`);
     }

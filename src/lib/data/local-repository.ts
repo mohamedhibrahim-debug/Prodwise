@@ -22,6 +22,7 @@ import type {
 import { canOrdinaryUpdateStatus, validateVerification } from "@/lib/domain/trust";
 import { readStore, writeStore, type StoredClaim } from "./store";
 import { uniqueSlug, type Repository } from "./repository";
+import { partitionEvidenceLinks } from "./claim-evidence-links";
 
 /**
  * Repository used when no Supabase project is configured.
@@ -425,41 +426,40 @@ export const localRepository: Repository = {
     const claim = store.claims.find((c) => c.id === claimId);
     if (!claim) throw new Error(`Claim ${claimId} was not found.`);
 
-    const before = new Set(
-      store.claimEvidence.filter((l) => l.claimId === claimId).map((l) => l.evidenceId),
+    const current = store.claimEvidence.filter((l) => l.claimId === claimId);
+    const { retained, removed, addedEvidenceIds } = partitionEvidenceLinks(
+      current,
+      evidenceIds,
     );
-    const after = new Set(evidenceIds);
     const now = nowIso();
+    const retainedIds = new Set(retained.map((link) => link.evidenceId));
 
     writeStore((s) => {
       s.claimEvidence = s.claimEvidence.filter(
-        (l) => l.claimId !== claimId || after.has(l.evidenceId),
+        (link) => link.claimId !== claimId || retainedIds.has(link.evidenceId),
       );
-      for (const evidenceId of after) {
-        if (!before.has(evidenceId)) {
-          s.claimEvidence.push({
-            claimId,
-            evidenceId,
-            createdAt: now,
-            locator: null,
-            excerpt: null,
-          });
-        }
+      for (const evidenceId of addedEvidenceIds) {
+        s.claimEvidence.push({
+          claimId,
+          evidenceId,
+          createdAt: now,
+          locator: null,
+          excerpt: null,
+        });
       }
     });
 
-    const added = [...after].filter((id) => !before.has(id));
-    const removed = [...before].filter((id) => !after.has(id));
     const byId = new Map(store.evidence.map((e) => [e.id, e]));
 
-    for (const id of added) {
+    for (const id of addedEvidenceIds) {
       logActivity(
         claim.initiativeId,
         "CLAIM_EVIDENCE_LINKED",
         `${claim.subject} linked to evidence ${byId.get(id)?.title ?? id}`,
       );
     }
-    for (const id of removed) {
+    for (const link of removed) {
+      const id = link.evidenceId;
       logActivity(
         claim.initiativeId,
         "CLAIM_EVIDENCE_UNLINKED",
@@ -470,6 +470,8 @@ export const localRepository: Repository = {
 
   async verifyClaim(id, input) {
     assertWriteAllowed();
+    const actorLabel = input.actor.label.trim();
+    if (!actorLabel) throw new Error("Actor is required.");
     let result: MemoryClaim | null = null;
     let failure: string | null = null;
     writeStore((s) => {
@@ -497,7 +499,7 @@ export const localRepository: Repository = {
         status: "ACTIVE",
         verifiedAt,
         verifiedActorId: input.actor.id,
-        verifiedActorLabel: input.actor.label,
+        verifiedActorLabel: actorLabel,
         verificationBasis: input.basis,
         verificationNote: input.note?.trim() || null,
         updatedAt: verifiedAt,
@@ -516,9 +518,9 @@ export const localRepository: Repository = {
           note: input.note?.trim() || null,
           evidence: linked.map((e) => ({ id: e.id, boundary: e.boundary })),
           origin: claim.origin,
-          actor: input.actor,
+          actor: { ...input.actor, label: actorLabel },
         },
-        actorLabel: input.actor.label,
+        actorLabel,
       });
       result = withEvidence(claim);
     });
@@ -604,6 +606,8 @@ export const localRepository: Repository = {
 
   async reopenFindingState(initiativeId, fingerprint, actor) {
     assertWriteAllowed();
+    const actorLabel = actor.label.trim();
+    if (!actorLabel) throw new Error("Actor is required.");
 
     const store = readStore();
     const existing = store.findingStates.find(
@@ -630,9 +634,9 @@ export const localRepository: Repository = {
           contentDigest: state.contentDigest,
           ruleId: state.ruleId,
           subject: state.subject,
-          actor,
+          actor: { ...actor, label: actorLabel },
         },
-        actorLabel: actor.label,
+        actorLabel,
       });
     });
     return true;

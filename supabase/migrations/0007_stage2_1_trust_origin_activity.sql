@@ -37,7 +37,9 @@ begin
   end if;
 
   if old.status <> 'ACTIVE' and new.status = 'ACTIVE' then
-    if new.verified_at is null or new.verified_actor_label is null
+    if new.verified_at is null
+       or new.verified_at is not distinct from old.verified_at
+       or new.verified_actor_label is null
        or length(btrim(new.verified_actor_label)) = 0
        or new.verification_basis is null then
       raise exception using errcode = 'P0001', message = 'CLAIM_ACTIVATION_REQUIRES_VERIFICATION';
@@ -84,13 +86,13 @@ create index activity_log_entity_idx on public.activity_log (entity_type, entity
 
 create function public.verify_claim(
   p_claim_id uuid,
-  p_expected_updated_at text,
+  p_expected_updated_at timestamptz,
   p_basis public.verification_basis,
   p_note text,
   p_actor_id text,
   p_actor_label text
 ) returns public.claims
-language plpgsql security definer set search_path = public as $$
+language plpgsql security invoker set search_path = '' as $$
 declare
   v_claim public.claims%rowtype;
   v_row record;
@@ -105,11 +107,11 @@ begin
   if v_claim.status not in ('UNVERIFIED', 'DRAFT') then
     raise exception using errcode='P0001', message='CLAIM_NOT_VERIFIABLE';
   end if;
-  if (to_jsonb(v_claim)->>'updated_at') <> p_expected_updated_at then
+  if v_claim.updated_at is distinct from p_expected_updated_at then
     raise exception using errcode='P0001', message='CLAIM_STALE';
   end if;
   if p_actor_label is null or length(btrim(p_actor_label)) = 0 then
-    raise exception using errcode='P0001', message='ACTOR_LABEL_REQUIRED';
+    raise exception using errcode='P0001', message='ACTOR_REQUIRED';
   end if;
   if p_basis = 'DIRECT_KNOWLEDGE' and (p_note is null or length(btrim(p_note)) = 0) then
     raise exception using errcode='P0001', message='DIRECT_KNOWLEDGE_NOTE_REQUIRED';
@@ -164,9 +166,12 @@ create function public.reopen_finding_state(
   p_actor_id text,
   p_actor_label text
 ) returns boolean
-language plpgsql security definer set search_path = public as $$
+language plpgsql security invoker set search_path = '' as $$
 declare v_state public.finding_states%rowtype;
 begin
+  if p_actor_label is null or length(btrim(p_actor_label)) = 0 then
+    raise exception using errcode='P0001', message='ACTOR_REQUIRED';
+  end if;
   select * into v_state from public.finding_states
     where initiative_id=p_initiative_id and fingerprint=p_fingerprint for update;
   if not found or v_state.status='OPEN' then return false; end if;
@@ -185,11 +190,11 @@ begin
   return true;
 end $$;
 
-revoke all on function public.verify_claim(uuid,text,public.verification_basis,text,text,text)
+revoke all on function public.verify_claim(uuid,timestamptz,public.verification_basis,text,text,text)
   from public, anon, authenticated;
 revoke all on function public.reopen_finding_state(uuid,text,text,text)
   from public, anon, authenticated;
-grant execute on function public.verify_claim(uuid,text,public.verification_basis,text,text,text)
+grant execute on function public.verify_claim(uuid,timestamptz,public.verification_basis,text,text,text)
   to service_role;
 grant execute on function public.reopen_finding_state(uuid,text,text,text)
   to service_role;

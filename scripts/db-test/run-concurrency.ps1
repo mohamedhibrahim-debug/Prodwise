@@ -31,7 +31,7 @@ function Pair([string]$first,[string]$second) {
   return $result
 }
 function VerifySql([string]$id) {
-  return "set lock_timeout='5s'; select (verify_claim('$id',(select to_jsonb(c)->>'updated_at' from claims c where id='$id'),'EVIDENCE',null,null,'Demo mode (no signed-in user)')).id;"
+  return "set lock_timeout='5s'; select (verify_claim('$id',(select updated_at from claims where id='$id'),'EVIDENCE',null,null,'Demo mode (no signed-in user)')).id;"
 }
 
 $idB='dddd0001-0000-4000-8000-000000000001'
