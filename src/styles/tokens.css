@@ -106,7 +106,7 @@
   /* ── Typography ────────────────────────────────────────────────────────
      Inter is the reference deck's own typeface: it honours the visual DNA
      and is simultaneously brand-neutral enterprise-standard. */
-  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI",
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
@@ -171,9 +171,12 @@
   --ease: cubic-bezier(0.2, 0, 0.15, 1);
 
   /* ── Layout ────────────────────────────────────────────────────────────- */
-  --rail-w: 236px;
-  --rail-w-compact: 64px;
-  --content-max: 1160px;
+  --rail-w: 76px;
+  --rail-w-expanded: 212px;
+  --content-max: 1600px;
+  --command-h: 48px;
+  --mobile-global-h: 48px;
+  --mobile-ia-h: 56px;
   --gutter: var(--s-10);
   --header-h: 60px;
   /* The STICKY workspace header, measured: breadcrumb + name + stage line +
@@ -182,14 +185,14 @@
      or sticks below the header must clear this, or it lands underneath an
      opaque bar. Approximate by design — a long initiative name can wrap — so
      it is rounded up rather than down. */
-  --workspace-header-h: 184px;
+  --workspace-header-h: 48px;
 
   --focus-ring: 0 0 0 2px var(--canvas), 0 0 0 4px var(--accent-500);
 }
 
 @media (max-width: 1100px) {
   :root {
-    --rail-w: var(--rail-w-compact);
+    --rail-w: 76px;
     --gutter: var(--s-6);
   }
 }
@@ -198,7 +201,7 @@
   :root {
     /* Conservative anchor fallback until WorkspaceTabs measures the rendered
        header; longer initiative names can make it taller than the 198px MFF. */
-    --workspace-header-h: 272px;
+    --workspace-header-h: 96px;
     --rail-w: 0px;
     --gutter: var(--s-4);
     --t-display: 1.625rem;

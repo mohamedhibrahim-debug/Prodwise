@@ -1,184 +1,48 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-
-import { StatePill } from "@/components/primitives/StatePill";
-import { DemoBadge, Timestamp } from "@/components/primitives/Meta";
-import { EmptyState } from "@/components/primitives/EmptyState";
+import { BusinessLineFilter, countByBusinessLine, parseBusinessLine } from "@/components/initiative/BusinessLineFilter";
 import { getRepository } from "@/lib/data";
-import { getIntelligence } from "@/lib/data/fixtures";
-import {
-  BusinessLineFilter,
-  countByBusinessLine,
-  parseBusinessLine,
-} from "@/components/initiative/BusinessLineFilter";
 import { BUSINESS_LINE_LABEL, STAGE_LABEL } from "@/lib/domain/labels";
-import { reportingStateRank, severityRank } from "@/lib/domain/ordering";
+import type { Stage } from "@/lib/domain/types";
+import { deriveInstrumentSnapshot, initiativeCode } from "@/lib/workspace/instrument";
 import styles from "./reporting.module.css";
 
 export const metadata: Metadata = { title: "Reporting" };
 export const dynamic = "force-dynamic";
+const STAGES: Stage[] = ["DISCOVERY","DEFINITION","ALIGNMENT","DELIVERY","VALIDATION","RELEASE_PREPARATION","LIVE_VALIDATION","MONITORING"];
 
-/**
- * Executive portfolio snapshot.
- *
- * This view exists to REMOVE information. It answers one question — "which
- * initiatives need my attention, and why?" — and shows nothing that does not
- * help answer it. No charts, no percentages, no scores, no KPI tiles.
- *
- * It reads the same initiative truth as the Product Manager workspace. There is
- * no separate management data model, so the two can never disagree.
- */
-export default async function ReportingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ line?: string }>;
-}) {
+export default async function ReportingPage({ searchParams }: { searchParams: Promise<{ line?: string }> }) {
   const { line } = await searchParams;
-  const selectedLine = parseBusinessLine(line);
-
-  const initiatives = await getRepository().listInitiatives();
-  const counts = countByBusinessLine(initiatives.map((i) => i.businessLine));
-
-  const rows = initiatives
-    .filter((i) => selectedLine === null || i.businessLine === selectedLine)
-    .map((initiative) => {
-      const intelligence = getIntelligence(initiative.slug);
-      const primary = intelligence?.attention
-        .slice()
-        .sort((a, b) => severityRank(a.severity) - severityRank(b.severity))[0];
-      return { initiative, intelligence, primary };
-    })
-    .sort((a, b) => {
-      // State leads: management reads "what is blocked" first.
-      const byState =
-        reportingStateRank(a.initiative.overallState) -
-        reportingStateRank(b.initiative.overallState);
-      if (byState !== 0) return byState;
-
-      // Within a state, the existing priority applies: critical first, then
-      // most recently updated.
-      const aCritical = a.primary?.severity === "CRITICAL" ? 0 : 1;
-      const bCritical = b.primary?.severity === "CRITICAL" ? 0 : 1;
-      if (aCritical !== bCritical) return aCritical - bCritical;
-
-      return (
-        Date.parse(b.initiative.updatedAt) - Date.parse(a.initiative.updatedAt)
-      );
-    });
-
-  const anyDemo = rows.some((r) => r.initiative.isDemo);
-
-  return (
-    <div className={styles.page}>
-      <header className={styles.head}>
-        <div>
-          <h1 className={styles.title}>Reporting</h1>
-          <p className={styles.subtitle}>
-            Which initiatives need attention, and why. Ordered by state —
-            blocked first.
-          </p>
-          {/* The attention and action columns are hand-authored demo
-              intelligence, not the derived Review findings. They can rank an
-              item that Review deliberately leaves unranked, so the difference
-              has to be stated rather than left for a reader to reconcile. */}
-          <p className={styles.subtitle}>
-            Needs attention and next best action are demo intelligence — not the
-            derived Review findings.
-          </p>
-        </div>
-        {/* One indicator for the whole view, so an executive is never misled
-            into reading synthetic intelligence as live output — and is not
-            nagged by a disclaimer on every row. */}
-        {anyDemo ? <DemoBadge>Demo data</DemoBadge> : null}
-      </header>
-
-      <BusinessLineFilter
-        basePath="/reporting"
-        selected={selectedLine}
-        counts={counts}
-        total={initiatives.length}
-      />
-
-      {rows.length === 0 ? (
-        <EmptyState
-          message={
-            selectedLine
-              ? `No initiatives in ${BUSINESS_LINE_LABEL[selectedLine]}.`
-              : "No initiatives are being tracked yet."
-          }
-        />
-      ) : (
-        <>
-          <div className={styles.columnHead} aria-hidden="true">
-            <span>Business line</span>
-            <span>Initiative</span>
-            <span>State</span>
-            <span>Needs attention</span>
-            <span>Next best action</span>
-            <span className={styles.updatedCol}>Updated</span>
-          </div>
-
-          <ul className={styles.list}>
-            {rows.map(({ initiative, intelligence, primary }) => (
-              <li
-                key={initiative.id}
-                className={`${styles.row} ${styles[`row${initiative.overallState}`]}`}
-              >
-                <div className={styles.cellBusinessLine}>
-                  <span className={styles.mobileLabel}>Business line</span>
-                  <span className={styles.businessLine}>
-                    {BUSINESS_LINE_LABEL[initiative.businessLine]}
-                  </span>
-                </div>
-
-                <div className={styles.cellInitiative}>
-                  <Link
-                    href={`/initiatives/${initiative.slug}`}
-                    className={styles.name}
-                  >
-                    {initiative.name}
-                  </Link>
-                  <span className={styles.stage}>
-                    {STAGE_LABEL[initiative.stage]}
-                  </span>
-                </div>
-
-                <div className={styles.cellState}>
-                  <StatePill state={initiative.overallState} />
-                </div>
-
-                <div className={styles.cellIssue}>
-                  <span className={styles.mobileLabel}>Needs attention</span>
-                  {primary ? (
-                    <span className={styles.issue}>{primary.title}</span>
-                  ) : (
-                    <span className={styles.muted}>
-                      Nothing currently flagged.
-                    </span>
-                  )}
-                </div>
-
-                <div className={styles.cellAction}>
-                  <span className={styles.mobileLabel}>Next best action</span>
-                  {intelligence?.nextBestAction ? (
-                    <span className={styles.action}>
-                      {intelligence.nextBestAction.action}
-                    </span>
-                  ) : (
-                    <span className={styles.muted}>
-                      Not available until evidence has been connected.
-                    </span>
-                  )}
-                </div>
-
-                <div className={styles.cellUpdated}>
-                  <Timestamp iso={initiative.updatedAt} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
-  );
+  const selected = parseBusinessLine(line);
+  const all = (await getRepository().listInitiativeSnapshots()).map(deriveInstrumentSnapshot);
+  const rows = all.filter(row => selected === null || row.initiative.businessLine === selected);
+  const counts = countByBusinessLine(all.map(row => row.initiative.businessLine));
+  const emptyCount = STAGES.filter(stage => !rows.some(row => row.initiative.stage === stage)).length;
+  const stats = (row: typeof rows[number]) => ({
+    open: row.findings.filter(f => f.type === "CONFLICT" && f.status === "OPEN" && f.actionable).length,
+    history: row.findings.filter(f => f.type === "SUPERSEDED").length,
+    inScope: row.evidence.filter(e => e.boundary === "CURRENT_SCOPE" || e.boundary === "FUTURE_PHASE").length,
+    active: row.claims.filter(c => c.status === "ACTIVE").length,
+    unverified: row.claims.filter(c => c.status === "UNVERIFIED").length,
+  });
+  return <div className={styles.page}>
+    <header className={styles.head}><h1>Portfolio intelligence</h1><p>Recorded foundation and deterministic Review output only. Stage is shown exactly as recorded.</p></header>
+    <BusinessLineFilter basePath="/reporting" selected={selected} counts={counts} total={all.length} />
+    <section className={styles.section}><div className={styles.sectionHead}><h2>Lifecycle Track</h2><span>Stage as recorded</span></div>
+      <div className={styles.lifecycle}>{STAGES.map(stage => {
+        const stageRows = rows.filter(row => row.initiative.stage === stage);
+        return <div key={stage} className={stageRows.length ? styles.stage : styles.emptyStage}><h3>{STAGE_LABEL[stage]}</h3>{stageRows.map(row => {
+          const s=stats(row); return <Link href={`/initiatives/${row.initiative.slug}`} key={row.initiative.id}><strong>{initiativeCode(row.initiative.knownReferences)} · {row.initiative.name}</strong><span>{BUSINESS_LINE_LABEL[row.initiative.businessLine]} · {s.open} open conflict{s.open===1?"":"s"}</span></Link>;
+        })}</div>;
+      })}</div>
+      {emptyCount > 0 && <details className={styles.emptySummary}><summary>{emptyCount} lifecycle stages have no initiatives</summary>{STAGES.filter(stage => !rows.some(row => row.initiative.stage === stage)).map(stage => <span key={stage}>{STAGE_LABEL[stage]}</span>)}</details>}
+    </section>
+    <section className={styles.section}><div className={styles.sectionHead}><h2>Decision Pressure</h2><span>Current deterministic Review output</span></div>
+      <div className={styles.pressure}>{rows.map(row => {const s=stats(row); return <div key={row.initiative.id}><strong>{row.initiative.name}</strong>{row.claims.length===0?<span>no claims recorded</span>:<><span>{s.open ? `${s.open} open conflict${s.open===1?"":"s"}` : "No open conflict is derived under the current rules"}</span><span>{s.history} superseded histor{s.history===1?"y":"ies"}</span></>}</div>})}</div>
+    </section>
+    <section className={styles.section}><div className={styles.sectionHead}><h2>Knowledge Foundation</h2><span>Recorded foundation coverage</span></div>
+      <div className={styles.matrixHead}><span>Initiative</span><span>In-scope evidence</span><span>ACTIVE claims</span><span>UNVERIFIED claims</span><span>Open conflicts</span></div>
+      <div className={styles.matrix}>{rows.map(row=>{const s=stats(row);return <div key={row.initiative.id} className={styles.matrixRow} data-founded={row.claims.length>0||undefined}><strong>{row.initiative.name}</strong>{[s.inScope,s.active,s.unverified,s.open].map((value,index)=><span key={index} data-populated={value>0||undefined}><i>{["In-scope evidence","ACTIVE claims","UNVERIFIED claims","Open conflicts"][index]}</i>{value}</span>)}</div>})}</div>
+    </section>
+  </div>;
 }

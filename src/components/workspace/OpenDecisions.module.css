@@ -75,7 +75,8 @@
 
 .value {
   min-width: 0;
-  font-size: var(--t-h1);
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 4vw, 3.5rem);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-tight);
   line-height: 1.1;
@@ -85,12 +86,14 @@
 }
 
 .vs {
-  font-size: var(--t-micro);
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-micro);
   text-transform: uppercase;
   color: var(--ink-400);
 }
+.quiet{padding:12px 16px;border-top:1px solid var(--rule);font-size:var(--t-xs);color:var(--ink-400)}
 
 .more {
   display: inline-block;

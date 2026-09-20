@@ -26,6 +26,7 @@ import type {
   FindingStatus,
   Domain,
   Initiative,
+  InitiativeSnapshot,
   InitiativeSource,
   NewClaimInput,
   NewEvidenceInput,
@@ -126,6 +127,12 @@ interface FindingStateRow {
   resolved_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface InitiativeSnapshotRow extends InitiativeRow {
+  evidence: EvidenceRow[];
+  claims: ClaimRow[];
+  finding_states: FindingStateRow[];
 }
 
 let client: SupabaseClient | null = null;
@@ -237,6 +244,17 @@ function toFindingState(row: FindingStateRow): FindingState {
   };
 }
 
+function toInitiativeSnapshot(row: InitiativeSnapshotRow): InitiativeSnapshot {
+  return {
+    initiative: toInitiative(row),
+    evidence: row.evidence.map(toEvidence),
+    // The aggregate is used for counts and deterministic finding derivation.
+    // Provenance does not affect whether a conflict/supersession rule fires.
+    claims: row.claims.map((claim) => ({ ...toClaim(claim), evidence: [] })),
+    findingStates: row.finding_states.map(toFindingState),
+  };
+}
+
 /** Fire-and-log audit write: never lose the user's work to a failed audit row. */
 async function writeActivity(
   initiativeId: string,
@@ -261,6 +279,29 @@ export const supabaseRepository: Repository = {
     if (error) throw new Error(`Failed to list initiatives: ${error.message}`);
     return (data as InitiativeRow[]).map(toInitiative);
   },
+
+  async listInitiativeSnapshots() {
+    const { data, error } = await getClient()
+      .from("initiatives")
+      .select("*, evidence(*), claims(*), finding_states(*)")
+      .order("updated_at", { ascending: false });
+
+    if (error)
+      throw new Error(`Failed to load initiative foundations: ${error.message}`);
+    return (data as InitiativeSnapshotRow[]).map(toInitiativeSnapshot);
+  },
+
+  getInitiativeSnapshot: cache(async (initiativeId: string) => {
+    const { data, error } = await getClient()
+      .from("initiatives")
+      .select("*, evidence(*), claims(*), finding_states(*)")
+      .eq("id", initiativeId)
+      .maybeSingle();
+
+    if (error)
+      throw new Error(`Failed to load initiative foundation: ${error.message}`);
+    return data ? toInitiativeSnapshot(data as InitiativeSnapshotRow) : null;
+  }),
 
   // Request-scoped only: metadata, layout and page share this read. No data is
   // retained across requests, so corrections appear on the next render.

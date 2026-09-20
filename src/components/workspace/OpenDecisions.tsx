@@ -39,17 +39,8 @@ export function OpenDecisions({
             <Link href={href} className={styles.link}>
               <span className={styles.kind}>{FINDING_LABEL[f.type]}</span>
               <span className={styles.title}>{f.title}</span>
-              <span className={styles.values}>
-                {f.claims.map((c, i) => (
-                  <span key={c.claimId} className={styles.valueGroup}>
-                    {i > 0 ? (
-                      <span className={styles.vs} aria-hidden="true">
-                        vs
-                      </span>
-                    ) : null}
-                    <span className={styles.value}>{c.value}</span>
-                  </span>
-                ))}
+              <span className={styles.values} aria-label={f.claims.map(c => c.value).join(" compared with ")}>
+                {f.claims.map(c => <span key={c.claimId} className={styles.value}>{c.value}</span>).reduce<React.ReactNode[]>((all, node, index) => index ? [...all, <span key={`delta-${index}`} className={styles.vs} aria-hidden="true">≠</span>, node] : [node], [])}
               </span>
               <span className={styles.facts}>
                 {f.domains.map((d) => DOMAIN_LABEL[d] ?? d).join(" · ")}
@@ -59,6 +50,7 @@ export function OpenDecisions({
           </li>
         ))}
       </ol>
+      <p className={styles.quiet}>No additional items are waiting under the current rules.</p>
       {findings.length > limit ? (
         <Link href={href} className={styles.more}>
           {findings.length - limit} more in Decisions →

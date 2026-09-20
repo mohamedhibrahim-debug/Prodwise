@@ -1,104 +1,28 @@
 import type { Metadata } from "next";
-
 import { DemoWriteLink } from "@/components/primitives/DemoWriteLink";
-import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { EmptyState } from "@/components/primitives/EmptyState";
 import { InitiativeRow } from "@/components/initiative/InitiativeRow";
+import { BusinessLineFilter, countByBusinessLine, parseBusinessLine } from "@/components/initiative/BusinessLineFilter";
 import { getRepository } from "@/lib/data";
-import { getIntelligence } from "@/lib/data/fixtures";
-import {
-  BusinessLineFilter,
-  countByBusinessLine,
-  parseBusinessLine,
-} from "@/components/initiative/BusinessLineFilter";
 import { BUSINESS_LINE_LABEL } from "@/lib/domain/labels";
+import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
 import styles from "./initiatives.module.css";
 
 export const metadata: Metadata = { title: "Initiatives" };
 export const dynamic = "force-dynamic";
 
-export default async function InitiativesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ line?: string }>;
-}) {
+export default async function InitiativesPage({ searchParams }: { searchParams: Promise<{ line?: string }> }) {
   const { line } = await searchParams;
   const selectedLine = parseBusinessLine(line);
-
-  const initiatives = await getRepository().listInitiatives();
-  // Counts come from the full set, so the chips stay stable while filtering.
-  const counts = countByBusinessLine(initiatives.map((i) => i.businessLine));
-
-  const rows = initiatives
-    .filter((i) => selectedLine === null || i.businessLine === selectedLine)
-    .map((initiative) => ({
-      initiative,
-      intelligence: getIntelligence(initiative.slug),
-    }));
-
-  // Derived state does not exist yet. Keep list order factual rather than
-  // sorting by a stored/demo state as if it were an assessment.
-  rows.sort(
-    (a, b) => Date.parse(b.initiative.updatedAt) - Date.parse(a.initiative.updatedAt),
-  );
-
-  return (
-    <div className={styles.page}>
-      <header className={styles.head}>
-        <div>
-          <h1 className={styles.title}>Initiatives</h1>
-          <p className={styles.subtitle}>
-            Most recently updated initiatives first. Demo examples are labelled.
-          </p>
-        </div>
-        <DemoWriteLink href="/initiatives/new" variant="primary">
-          Create Initiative
-        </DemoWriteLink>
-      </header>
-
-      <BusinessLineFilter
-        basePath="/initiatives"
-        selected={selectedLine}
-        counts={counts}
-        total={initiatives.length}
-      />
-
-      {rows.length === 0 ? (
-        <EmptyState
-          message={
-            selectedLine
-              ? `No initiatives in ${BUSINESS_LINE_LABEL[selectedLine]}.`
-              : "No initiatives yet."
-          }
-          // An empty filter result is about the filter, not about writes — so
-          // the demo-mode notice only applies when the list is genuinely empty.
-          hint={
-            selectedLine
-              ? "Clear the filter to see every initiative."
-              : isDemoWriteEnabled
-                ? "Create an initiative to start reconstructing its product context."
-                : WRITE_DISABLED_MESSAGE
-          }
-        />
-      ) : (
-        <>
-          <div className={styles.countLine}>
-            <span className={styles.orderNote}>
-              {rows.length} initiative{rows.length === 1 ? "" : "s"} · seeded
-              demo initiatives are labelled
-            </span>
-          </div>
-          <ul className={styles.list}>
-            {rows.map(({ initiative, intelligence }) => (
-              <InitiativeRow
-                key={initiative.id}
-                initiative={initiative}
-                intelligence={intelligence}
-              />
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
-  );
+  const snapshots = (await getRepository().listInitiativeSnapshots()).map(deriveInstrumentSnapshot);
+  const counts = countByBusinessLine(snapshots.map(row => row.initiative.businessLine));
+  const rows = snapshots.filter(row => selectedLine === null || row.initiative.businessLine === selectedLine);
+  return <div className={styles.page}>
+    <header className={styles.head}><div><h1 className={styles.title}>Initiatives</h1><p className={styles.subtitle}>Recorded stage, foundation and current derived decision pressure.</p></div><DemoWriteLink href="/initiatives/new" variant="primary">Create Initiative</DemoWriteLink></header>
+    <BusinessLineFilter basePath="/initiatives" selected={selectedLine} counts={counts} total={snapshots.length} />
+    {rows.length === 0 ? <EmptyState message={selectedLine ? `No initiatives in ${BUSINESS_LINE_LABEL[selectedLine]}.` : "No initiatives yet."} /> : <>
+      <div className={styles.columnHead}><span>Code</span><span>Initiative</span><span>Recorded stage</span><span>Business line</span><span>Decision pressure</span><span>Scenario</span></div>
+      <ul className={styles.list}>{rows.map(row => <InitiativeRow key={row.initiative.id} snapshot={row} />)}</ul>
+    </>}
+  </div>;
 }

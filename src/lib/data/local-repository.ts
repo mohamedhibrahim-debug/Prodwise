@@ -14,6 +14,7 @@ import type {
   EvidenceRecord,
   FindingState,
   Initiative,
+  InitiativeSnapshot,
   NewClaimInput,
   NewEvidenceInput,
   NewInitiativeInput,
@@ -116,6 +117,31 @@ export const localRepository: Repository = {
     return [...readStore().initiatives].sort(
       (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
     );
+  },
+
+  async listInitiativeSnapshots() {
+    const store = readStore();
+    return store.initiatives
+      .map((initiative): InitiativeSnapshot => ({
+        initiative: { ...initiative },
+        evidence: store.evidence.filter((e) => e.initiativeId === initiative.id),
+        claims: store.claims
+          .filter((c) => c.initiativeId === initiative.id)
+          .map((claim) => withEvidence(claim)),
+        findingStates: store.findingStates.filter(
+          (state) => state.initiativeId === initiative.id,
+        ),
+      }))
+      .sort(
+        (a, b) =>
+          Date.parse(b.initiative.updatedAt) -
+          Date.parse(a.initiative.updatedAt),
+      );
+  },
+
+  async getInitiativeSnapshot(initiativeId) {
+    const all = await this.listInitiativeSnapshots();
+    return all.find((snapshot) => snapshot.initiative.id === initiativeId) ?? null;
   },
 
   async getInitiativeBySlug(slug) {

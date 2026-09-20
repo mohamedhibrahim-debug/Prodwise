@@ -3,9 +3,8 @@
    nested card stacks. */
 
 .page {
-  max-width: var(--content-max);
-  margin: 0 auto;
-  padding: 0 var(--gutter) var(--s-16);
+  width:100%;
+  padding: 0 clamp(16px,2.5vw,36px) var(--s-16);
 }
 
 /* ── Status: operating view ──────────────────────────────────────────────-
@@ -24,7 +23,7 @@
 
 @media (min-width: 1000px) {
   .statusColumns {
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 57fr) minmax(0, 43fr);
   }
 }
 

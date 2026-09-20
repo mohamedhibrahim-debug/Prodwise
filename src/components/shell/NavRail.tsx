@@ -1,155 +1,67 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { InitiativeArc } from "@/components/primitives/InitiativeArc";
+import { InstrumentIcon } from "./InstrumentIcon";
+import { openDemo, openPalette } from "./events";
 import styles from "./NavRail.module.css";
 
 interface NavRailProps {
-  /** Where the data is actually coming from — stated plainly, never faked. */
   dataSource: "Supabase" | "Local demo data";
   writesEnabled: boolean;
 }
 
-function InitiativesIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      aria-hidden="true"
-      className={styles.navIcon}
-    >
-      <path
-        d="M2.5 3.75h11M2.5 8h11M2.5 12.25h7"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function ReportingIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      aria-hidden="true"
-      className={styles.navIcon}
-    >
-      <path
-        d="M2.75 2.5v11h10.5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M5.5 10.5h6M5.5 7.5h3.5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-      <circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M10.2 10.2 L13.5 13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-/** Opening is a shell-wide concern, so the rail announces intent rather than
- *  owning palette state. Keeps the palette self-contained and context-free. */
-export const OPEN_PALETTE_EVENT = "prodwise:open-palette";
-
-function onOpenPalette() {
-  window.dispatchEvent(new CustomEvent(OPEN_PALETTE_EVENT));
-}
-
 export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
   const pathname = usePathname();
-  const onInitiatives = pathname === "/" || pathname.startsWith("/initiatives");
-  const onReporting = pathname.startsWith("/reporting");
+  const [expanded, setExpanded] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  return (
-    <aside className={styles.rail}>
+  useEffect(() => {
+    document.documentElement.style.setProperty("--rail-w", expanded ? "212px" : "76px");
+    return () => { document.documentElement.style.removeProperty("--rail-w"); };
+  }, [expanded]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const close = (event: KeyboardEvent) => event.key === "Escape" && setMobileOpen(false);
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [mobileOpen]);
+
+  const links = [
+    { href: "/initiatives", label: "Initiatives", icon: "initiatives" as const, active: pathname === "/" || pathname.startsWith("/initiatives") },
+    { href: "/reporting", label: "Reporting", icon: "reporting" as const, active: pathname.startsWith("/reporting") },
+  ];
+
+  return <>
+    <header className={styles.mobileBar}>
+      <button type="button" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><InstrumentIcon name="menu" /></button>
+      <Image src="/assets/prodwise-logo-mark.png" alt="" width={24} height={24} unoptimized />
+      <span>Prodwise</span>
+      <button type="button" onClick={openPalette} aria-label="Search"><InstrumentIcon name="search" /></button>
+      <button type="button" onClick={openDemo} aria-label="Open demo scenario"><InstrumentIcon name="demo" /></button>
+    </header>
+    {mobileOpen && <button className={styles.scrim} aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
+    <aside className={`${styles.rail} ${expanded ? styles.expanded : ""} ${mobileOpen ? styles.mobileOpen : ""}`}>
       <div className={styles.brand}>
-        <Image
-          src="/assets/prodwise-logo-mark.png"
-          alt=""
-          width={36}
-          height={36}
-          className={styles.mark}
-          priority
-          unoptimized
-        />
-        <div className={styles.wordmarkGroup}>
-          <div className={styles.wordmark}>Prodwise</div>
-          <div className={styles.tagline}>
-            Product Intelligence, from evidence to action
-          </div>
-        </div>
+        <Image src="/assets/prodwise-logo-mark.png" alt="" width={32} height={32} unoptimized priority />
+        <strong>Prodwise</strong>
       </div>
-
-      <nav className={styles.nav} aria-label="Primary">
-        <div className={styles.navLabel}>Workspace</div>
-        <ul>
-          <li>
-            <Link
-              href="/initiatives"
-              className={`${styles.navItem} ${onInitiatives ? styles.navItemActive : ""}`}
-              aria-current={onInitiatives ? "page" : undefined}
-            >
-              <InitiativesIcon />
-              <span className={styles.navText}>Initiatives</span>
-            </Link>
-          </li>
-          <li>
-            {/* Secondary executive view. Initiatives stays the PM home and the
-                default landing destination. */}
-            <Link
-              href="/reporting"
-              className={`${styles.navItem} ${onReporting ? styles.navItemActive : ""}`}
-              aria-current={onReporting ? "page" : undefined}
-            >
-              <ReportingIcon />
-              <span className={styles.navText}>Reporting</span>
-            </Link>
-          </li>
-        </ul>
+      <nav aria-label="Primary">
+        {links.map(link => <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className={`${styles.navItem} ${link.active ? styles.active : ""}`} aria-current={link.active ? "page" : undefined}>
+          <InstrumentIcon name={link.icon} /><span>{link.label}</span>
+        </Link>)}
+        <button type="button" className={styles.navItem} onClick={openPalette}><InstrumentIcon name="search" /><span>Search</span></button>
       </nav>
-
-      <button type="button" className={styles.search} onClick={onOpenPalette} aria-label="Search initiatives and sections">
-        <SearchIcon />
-        <span className={styles.navText}>Search</span>
-        <kbd className={styles.kbd}>⌘K</kbd>
-      </button>
-
       <div className={styles.footer}>
-        <InitiativeArc mark size={150} className={styles.arcBleed} />
-        <div className={styles.envLabel}>{writesEnabled ? "Environment" : "Demo mode"}</div>
-        <p className={styles.envValue}>
-          {writesEnabled ? (
-            <>
-              Source: <b>{dataSource}</b>
-              <br />
-              Writes: <b>enabled</b>
-            </>
-          ) : (
-            "Changes are disabled in the public version."
-          )}
-        </p>
+        <button type="button" className={styles.navItem} onClick={openDemo}><InstrumentIcon name="demo" /><span>Demo</span></button>
+        <p>{writesEnabled ? `${dataSource} · writes on` : `${dataSource} · read only`}</p>
+        <button type="button" className={styles.pin} onClick={() => setExpanded(value => !value)} aria-label={expanded ? "Collapse navigation" : "Pin expanded navigation"} aria-pressed={expanded}>
+          <InstrumentIcon name="pin" /><span>{expanded ? "Collapse" : "Expand"}</span>
+        </button>
       </div>
     </aside>
-  );
+  </>;
 }
