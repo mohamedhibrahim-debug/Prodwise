@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getRepository } from "@/lib/data";
 import { FindingAccessError, resolveOwnedFinding } from "@/lib/data/access";
 import { WriteDisabledError } from "@/lib/env";
+import { currentActor } from "@/lib/domain/actor";
 
 export interface FindingFormState {
   error: string | null;
@@ -99,7 +100,7 @@ export async function resolveFindingAction(
 }
 
 /**
- * Reopens a finding by removing its decision.
+ * Reopens a finding while preserving its state row and audit history.
  *
  * The note is not lost with the row: both resolving and reopening are written
  * to activity_log, which is this product's audit trail (CLAUDE.md §19).
@@ -113,7 +114,11 @@ export async function reopenFindingAction(
 
   try {
     const { initiative } = await resolveOwnedFinding(slug, fingerprint);
-    await getRepository().clearFindingState(initiative.id, fingerprint);
+    await getRepository().reopenFindingState(
+      initiative.id,
+      fingerprint,
+      currentActor(),
+    );
   } catch (error) {
     if (error instanceof FindingAccessError) return { error: error.message };
     if (error instanceof WriteDisabledError) return { error: error.message };

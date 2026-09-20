@@ -213,7 +213,9 @@ export function ClaimForm({
               className={styles.select}
               defaultValue={claim?.status ?? "UNVERIFIED"}
             >
-              {CLAIM_STATUSES.map((s) => (
+              {CLAIM_STATUSES.filter(
+                (s) => s !== "ACTIVE" || claim?.status === "ACTIVE",
+              ).map((s) => (
                 <option key={s} value={s}>
                   {CLAIM_STATUS_LABEL[s]}
                 </option>

@@ -2,7 +2,9 @@ import type {
   ActivityEntry,
   ClaimPatch,
   ClaimRecord,
-  ClaimWithEvidence,
+  MemoryClaim,
+  Actor,
+  EvidenceAnchorInput,
   EvidencePatch,
   EvidenceRecord,
   FindingState,
@@ -13,6 +15,7 @@ import type {
   NewClaimInput,
   NewEvidenceInput,
   NewInitiativeInput,
+  VerifyClaimInput,
 } from "@/lib/domain/types";
 
 /**
@@ -54,8 +57,8 @@ export interface Repository {
      generates them: every record is a migrated seed or something a person
      entered. The repository resolves provenance so no page touches the link
      table. */
-  listClaims(initiativeId: string): Promise<ClaimWithEvidence[]>;
-  getClaim(id: string): Promise<ClaimWithEvidence | null>;
+  listClaims(initiativeId: string): Promise<MemoryClaim[]>;
+  getClaim(id: string): Promise<MemoryClaim | null>;
   /** Always created UNVERIFIED — a new claim has not been verified by anyone. */
   createClaim(input: NewClaimInput): Promise<ClaimRecord>;
   /**
@@ -70,6 +73,12 @@ export interface Repository {
    * added ones are not EXCLUDED) — see lib/data/access.ts.
    */
   setClaimEvidence(claimId: string, evidenceIds: string[]): Promise<void>;
+  verifyClaim(id: string, input: VerifyClaimInput): Promise<MemoryClaim>;
+  setEvidenceAnchor(
+    claimId: string,
+    evidenceId: string,
+    input: EvidenceAnchorInput,
+  ): Promise<void>;
 
   /* ── Review findings (Phase 4) ───────────────────────────────────────────
      Findings themselves are NOT stored. They are derived from claims by the
@@ -92,7 +101,11 @@ export interface Repository {
    * written to activity_log, which is the audit trail for this kind of change
    * (CLAUDE.md §19 — no second history mechanism).
    */
-  clearFindingState(initiativeId: string, fingerprint: string): Promise<void>;
+  reopenFindingState(
+    initiativeId: string,
+    fingerprint: string,
+    actor: Actor,
+  ): Promise<boolean>;
 }
 
 /** Derives a stable, URL-safe slug. Collisions are resolved by the caller. */

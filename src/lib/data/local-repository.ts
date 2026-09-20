@@ -9,7 +9,7 @@ import type {
   ActivityEntry,
   ClaimPatch,
   ClaimRecord,
-  ClaimWithEvidence,
+  MemoryClaim,
   EvidencePatch,
   EvidenceRecord,
   FindingState,
@@ -19,7 +19,8 @@ import type {
   NewEvidenceInput,
   NewInitiativeInput,
 } from "@/lib/domain/types";
-import { readStore, writeStore } from "./store";
+import { canOrdinaryUpdateStatus, validateVerification } from "@/lib/domain/trust";
+import { readStore, writeStore, type StoredClaim } from "./store";
 import { uniqueSlug, type Repository } from "./repository";
 
 /**
@@ -40,6 +41,12 @@ function logActivity(
   initiativeId: string,
   eventType: string,
   summary: string,
+  structured?: {
+    entityType: string;
+    entityId: string;
+    payload: Record<string, unknown>;
+    actorLabel: string;
+  },
 ): ActivityEntry {
   const entry: ActivityEntry = {
     id: crypto.randomUUID(),
@@ -47,6 +54,10 @@ function logActivity(
     eventType,
     summary,
     occurredAt: nowIso(),
+    entityType: structured?.entityType ?? null,
+    entityId: structured?.entityId ?? null,
+    payload: structured?.payload ?? null,
+    actorLabel: structured?.actorLabel ?? null,
   };
   writeStore((s) => {
     s.activity.push(entry);
@@ -55,7 +66,7 @@ function logActivity(
 }
 
 /** Resolves a claim's provenance so no caller has to touch the link table. */
-function withEvidence(claim: ClaimRecord): ClaimWithEvidence {
+function withEvidence(claim: StoredClaim): MemoryClaim {
   const store = readStore();
   const linked = store.claimEvidence
     .filter((l) => l.claimId === claim.id)
@@ -63,7 +74,19 @@ function withEvidence(claim: ClaimRecord): ClaimWithEvidence {
   const evidence = store.evidence
     .filter((e) => linked.includes(e.id))
     .sort((a, b) => Date.parse(b.capturedAt) - Date.parse(a.capturedAt));
-  return { ...claim, evidence };
+  return {
+    ...claim,
+    evidence,
+    anchors: store.claimEvidence
+      .filter((l) => l.claimId === claim.id)
+      .map((l) => ({ evidenceId: l.evidenceId, locator: l.locator, excerpt: l.excerpt })),
+    origin: claim.origin,
+    verifiedAt: claim.verifiedAt,
+    verifiedActorId: claim.verifiedActorId,
+    verifiedActorLabel: claim.verifiedActorLabel,
+    verificationBasis: claim.verificationBasis,
+    verificationNote: claim.verificationNote,
+  };
 }
 
 /**
@@ -312,7 +335,7 @@ export const localRepository: Repository = {
     assertWriteAllowed();
 
     const now = nowIso();
-    const created: ClaimRecord = {
+    const created: StoredClaim = {
       id: crypto.randomUUID(),
       initiativeId: input.initiativeId,
       type: input.type,
@@ -329,6 +352,12 @@ export const localRepository: Repository = {
       createdBy: null,
       createdAt: now,
       updatedAt: now,
+      origin: "HUMAN_ENTRY",
+      verifiedAt: null,
+      verifiedActorId: null,
+      verifiedActorLabel: null,
+      verificationBasis: null,
+      verificationNote: null,
     };
 
     writeStore((s) => {
@@ -348,8 +377,14 @@ export const localRepository: Repository = {
 
     const existing = readStore().claims.find((c) => c.id === id);
     if (!existing) throw new Error(`Claim ${id} was not found.`);
+    if (
+      patch.status !== undefined &&
+      !canOrdinaryUpdateStatus(existing.status, patch.status)
+    ) {
+      throw new Error("Verify this claim to make it active.");
+    }
 
-    const merged: ClaimRecord = {
+    const merged: StoredClaim = {
       ...existing,
       ...(patch.type !== undefined ? { type: patch.type } : {}),
       ...(patch.status !== undefined ? { status: patch.status } : {}),
@@ -397,9 +432,19 @@ export const localRepository: Repository = {
     const now = nowIso();
 
     writeStore((s) => {
-      s.claimEvidence = s.claimEvidence.filter((l) => l.claimId !== claimId);
+      s.claimEvidence = s.claimEvidence.filter(
+        (l) => l.claimId !== claimId || after.has(l.evidenceId),
+      );
       for (const evidenceId of after) {
-        s.claimEvidence.push({ claimId, evidenceId, createdAt: now });
+        if (!before.has(evidenceId)) {
+          s.claimEvidence.push({
+            claimId,
+            evidenceId,
+            createdAt: now,
+            locator: null,
+            excerpt: null,
+          });
+        }
       }
     });
 
@@ -421,6 +466,93 @@ export const localRepository: Repository = {
         `${claim.subject} unlinked from evidence ${byId.get(id)?.title ?? id}`,
       );
     }
+  },
+
+  async verifyClaim(id, input) {
+    assertWriteAllowed();
+    let result: MemoryClaim | null = null;
+    let failure: string | null = null;
+    writeStore((s) => {
+      const claim = s.claims.find((c) => c.id === id);
+      if (!claim) {
+        failure = `Claim ${id} was not found.`;
+        return;
+      }
+      const linked = s.claimEvidence
+        .filter((l) => l.claimId === id)
+        .map((l) => s.evidence.find((e) => e.id === l.evidenceId))
+        .filter((e): e is EvidenceRecord => Boolean(e));
+      failure = validateVerification(
+        { ...claim, evidence: linked },
+        {
+          basis: input.basis,
+          note: input.note,
+          expectedUpdatedAt: input.expectedUpdatedAt,
+        },
+      );
+      if (failure) return;
+      const previousStatus = claim.status;
+      const verifiedAt = nowIso();
+      Object.assign(claim, {
+        status: "ACTIVE",
+        verifiedAt,
+        verifiedActorId: input.actor.id,
+        verifiedActorLabel: input.actor.label,
+        verificationBasis: input.basis,
+        verificationNote: input.note?.trim() || null,
+        updatedAt: verifiedAt,
+      });
+      s.activity.push({
+        id: crypto.randomUUID(),
+        initiativeId: claim.initiativeId,
+        eventType: "CLAIM_VERIFIED",
+        summary: `${claim.subject} verified`,
+        occurredAt: verifiedAt,
+        entityType: "claim",
+        entityId: claim.id,
+        payload: {
+          previousStatus,
+          basis: input.basis,
+          note: input.note?.trim() || null,
+          evidence: linked.map((e) => ({ id: e.id, boundary: e.boundary })),
+          origin: claim.origin,
+          actor: input.actor,
+        },
+        actorLabel: input.actor.label,
+      });
+      result = withEvidence(claim);
+    });
+    if (failure) throw new Error(failure);
+    if (!result) throw new Error(`Claim ${id} was not found.`);
+    return result;
+  },
+
+  async setEvidenceAnchor(claimId, evidenceId, input) {
+    assertWriteAllowed();
+    const locator = input.locator?.trim() || null;
+    const excerpt = input.excerpt?.trim() || null;
+    if (input.locator !== null && !locator) throw new Error("Locator cannot be blank.");
+    if (input.excerpt !== null && !excerpt) throw new Error("Excerpt cannot be blank.");
+    if (excerpt && excerpt.length > 2000) throw new Error("Excerpt must be 2000 characters or fewer.");
+    let found = false;
+    writeStore((s) => {
+      const link = s.claimEvidence.find((l) => l.claimId === claimId && l.evidenceId === evidenceId);
+      const claim = s.claims.find((c) => c.id === claimId);
+      if (!link || !claim) return;
+      found = true;
+      const before = { locator: link.locator, excerpt: link.excerpt };
+      link.locator = locator;
+      link.excerpt = excerpt;
+      s.activity.push({
+        id: crypto.randomUUID(), initiativeId: claim.initiativeId,
+        eventType: "CLAIM_EVIDENCE_ANCHOR_UPDATED",
+        summary: `${claim.subject} evidence anchor updated`, occurredAt: nowIso(),
+        entityType: "claim", entityId: claimId,
+        payload: { evidenceId, before, after: { locator, excerpt }, actor: input.actor },
+        actorLabel: input.actor.label,
+      });
+    });
+    if (!found) throw new Error("That evidence link was not found.");
   },
 
   /* ── Review findings ─────────────────────────────────────────────────────
@@ -470,27 +602,39 @@ export const localRepository: Repository = {
     );
   },
 
-  async clearFindingState(initiativeId, fingerprint) {
+  async reopenFindingState(initiativeId, fingerprint, actor) {
     assertWriteAllowed();
 
     const store = readStore();
     const existing = store.findingStates.find(
       (f) => f.initiativeId === initiativeId && f.fingerprint === fingerprint,
     );
-    if (!existing) return;
-
+    if (!existing || existing.status === "OPEN") return false;
     writeStore((s) => {
-      s.findingStates = s.findingStates.filter(
-        (f) => !(f.initiativeId === initiativeId && f.fingerprint === fingerprint),
-      );
+      const state = s.findingStates.find(
+        (f) => f.initiativeId === initiativeId && f.fingerprint === fingerprint,
+      )!;
+      const previous = { status: state.status, resolution: state.resolution, resolvedAt: state.resolvedAt };
+      state.status = "OPEN";
+      state.resolution = null;
+      state.resolvedAt = null;
+      state.updatedAt = nowIso();
+      s.activity.push({
+        id: crypto.randomUUID(), initiativeId, eventType: "FINDING_REOPENED",
+        summary: "Finding reopened", occurredAt: state.updatedAt,
+        entityType: "finding", entityId: fingerprint,
+        payload: {
+          previousStatus: previous.status,
+          previousResolution: previous.resolution,
+          previousResolvedAt: previous.resolvedAt,
+          contentDigest: state.contentDigest,
+          ruleId: state.ruleId,
+          subject: state.subject,
+          actor,
+        },
+        actorLabel: actor.label,
+      });
     });
-
-    // The note is not lost with the row: activity_log is the audit trail, so
-    // the reason it was closed stays readable after it is reopened.
-    logActivity(
-      initiativeId,
-      "FINDING_REOPENED",
-      `Finding reopened; previous resolution was: ${existing.resolution ?? "(none recorded)"}`,
-    );
+    return true;
   },
 };
