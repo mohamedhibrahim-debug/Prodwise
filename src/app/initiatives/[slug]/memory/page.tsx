@@ -7,7 +7,7 @@ import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { ClaimRow } from "@/components/initiative/ClaimRow";
 import { getRepository } from "@/lib/data";
-import type { ClaimType, ClaimWithEvidence } from "@/lib/domain/types";
+import type { ClaimType, MemoryClaim } from "@/lib/domain/types";
 import styles from "../workspace.module.css";
 import memoryStyles from "./memory.module.css";
 
@@ -29,7 +29,7 @@ const VIEWS: { key: View; label: string; types: ClaimType[] | null }[] = [
   { key: "claims", label: "Claims", types: null },
 ];
 
-function select(claims: ClaimWithEvidence[], types: ClaimType[] | null) {
+function select(claims: MemoryClaim[], types: ClaimType[] | null) {
   if (!types) return claims;
   return claims.filter((c) => types.includes(c.type));
 }

@@ -11,6 +11,7 @@ import {
   resolveOwnedClaim,
 } from "@/lib/data/access";
 import { WriteDisabledError } from "@/lib/env";
+import { canOrdinaryUpdateStatus } from "@/lib/domain/trust";
 import {
   readClaimStatus,
   readClaimType,
@@ -49,6 +50,9 @@ export async function updateClaimAction(
     // Ownership is proven at the mutation boundary — claimId, slug and every
     // evidenceId arrive from client-controlled input and none is trusted.
     const { initiative, claim } = await resolveOwnedClaim(slug, claimId);
+    if (!canOrdinaryUpdateStatus(claim.status, status)) {
+      return { error: "Verify this claim to make it active." };
+    }
 
     // ── Supersession invariants ──────────────────────────────────────────
     let replacement: string | null = supersededBy || null;

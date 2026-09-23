@@ -466,6 +466,23 @@ Future AI may *propose* claims. It must never silently create product truth.
 - **Confidence is displayed, never assigned by hand.** It exists on migrated records only.
 - **Reporting is unchanged** — no claim counts, no evidence counts. Management sees the summary, not Prodwise internals.
 
+### Stage 2.1 — Trust Foundation — **IMPLEMENTED LOCALLY; NOT DEPLOYED**
+
+Stage 2.1 adds explicit trust provenance without changing Review semantics.
+
+Delivered: immutable claim entry origin (LEGACY / HUMAN_ENTRY) · evidence-backed or direct-knowledge verification · atomic verify_claim and reopen_finding_state database functions with structured audit events · evidence locators/excerpts · preserved finding-state rows on reopen · local JSON shape upgrade · a Windows-native PostgreSQL migration/concurrency harness.
+
+Rules that hold going forward:
+
+- **Origin records entry provenance and never changes.** A legacy claim may be verified later and remains LEGACY.
+- **Verify is the only path from a non-active claim to ACTIVE.** Ordinary edits cannot activate a claim.
+- **Evidence verification requires CURRENT_SCOPE, or FUTURE_PHASE with a recorded non-blank claim phase when no current-scope evidence is linked.** Historical, related and excluded records do not authorise verification.
+- **Direct knowledge requires a written note.**
+- **Legacy active claims with no recorded verifier say exactly “Verification history not recorded.”** No changed-after-verification inference exists in Stage 2.1.
+- **Finding reopen is a state transition, never a delete.** The row and its descriptive identity survive; the reopen and audit row commit atomically.
+- **Evidence-anchor updates preserve existing links.** In the Supabase adapter, the anchor update and its audit insert are intentionally non-atomic in Stage 2.1. Atomic provenance mutation remains later work.
+- Migration 0007_stage2_1_trust_origin_activity.sql is committed but has **not** been applied to hosted Supabase.
+
 ### Phase 4, Slice 1 — Review Intelligence: CONFLICT + SUPERSEDED — **COMPLETE**
 
 Review stops being fixture intelligence. The chain is now **Evidence → Product Memory → Review**.

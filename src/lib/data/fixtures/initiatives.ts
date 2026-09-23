@@ -81,7 +81,10 @@ export const SEED_INITIATIVES: Initiative[] = [
   },
 ];
 
-export const SEED_ACTIVITY: ActivityEntry[] = [
+export const SEED_ACTIVITY: Omit<
+  ActivityEntry,
+  "entityType" | "entityId" | "payload" | "actorLabel"
+>[] = [
   {
     id: "a1111111-1111-4111-8111-111111111101",
     initiativeId: "11111111-1111-4111-8111-111111111111",

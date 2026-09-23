@@ -14,6 +14,7 @@ import type {
   BusinessLine,
   ClaimPatch,
   ClaimRecord,
+  ClaimTrust,
   ClaimStatus,
   ClaimType,
   Confidence,
@@ -32,8 +33,11 @@ import type {
   NewEvidenceInput,
   NewInitiativeInput,
   Stage,
+  MemoryClaim,
 } from "@/lib/domain/types";
+import { canOrdinaryUpdateStatus } from "@/lib/domain/trust";
 import { uniqueSlug, type Repository } from "./repository";
+import { partitionEvidenceLinks } from "./claim-evidence-links";
 
 /**
  * Supabase-backed repository.
@@ -65,6 +69,10 @@ interface ActivityRow {
   event_type: string;
   summary: string;
   occurred_at: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  payload: Record<string, unknown> | null;
+  actor_label: string | null;
 }
 
 interface EvidenceRow {
@@ -100,6 +108,12 @@ interface ClaimRow {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  origin: "LEGACY" | "HUMAN_ENTRY";
+  verified_at: string | null;
+  verified_actor_id: string | null;
+  verified_actor_label: string | null;
+  verification_basis: "EVIDENCE" | "DIRECT_KNOWLEDGE" | null;
+  verification_note: string | null;
 }
 
 interface SourceRow {
@@ -171,6 +185,10 @@ function toActivity(row: ActivityRow): ActivityEntry {
     eventType: row.event_type,
     summary: row.summary,
     occurredAt: row.occurred_at,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    payload: row.payload,
+    actorLabel: row.actor_label,
   };
 }
 
@@ -207,7 +225,7 @@ function toSource(row: SourceRow): InitiativeSource {
   };
 }
 
-function toClaim(row: ClaimRow): ClaimRecord {
+function toClaim(row: ClaimRow): ClaimRecord & ClaimTrust {
   return {
     id: row.id,
     initiativeId: row.initiative_id,
@@ -223,6 +241,12 @@ function toClaim(row: ClaimRow): ClaimRecord {
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    origin: row.origin,
+    verifiedAt: row.verified_at,
+    verifiedActorId: row.verified_actor_id,
+    verifiedActorLabel: row.verified_actor_label,
+    verificationBasis: row.verification_basis,
+    verificationNote: row.verification_note,
   };
 }
 
@@ -260,10 +284,21 @@ async function writeActivity(
   initiativeId: string,
   eventType: string,
   summary: string,
+  structured?: {
+    entity_type: string;
+    entity_id: string;
+    payload: Record<string, unknown>;
+    actor_label: string;
+  },
 ): Promise<void> {
   const { error } = await getClient()
     .from("activity_log")
-    .insert({ initiative_id: initiativeId, event_type: eventType, summary });
+    .insert({
+      initiative_id: initiativeId,
+      event_type: eventType,
+      summary,
+      ...(structured ?? {}),
+    });
   if (error) {
     console.error("Failed to write activity_log entry:", error.message);
   }
@@ -504,7 +539,7 @@ export const supabaseRepository: Repository = {
        repository change what a finding cites. */
     const { data: linkData, error: linkError } = await supabase
       .from("claim_evidence")
-      .select("claim_id, evidence_id")
+      .select("claim_id, evidence_id, locator, excerpt")
       .in(
         "claim_id",
         claimRows.map((r) => r.id),
@@ -515,7 +550,12 @@ export const supabaseRepository: Repository = {
     if (linkError) throw new Error(`Failed to list provenance: ${linkError.message}`);
 
     const byId = new Map(evidence.map((e) => [e.id, e]));
-    const links = linkData as { claim_id: string; evidence_id: string }[];
+    const links = linkData as {
+      claim_id: string;
+      evidence_id: string;
+      locator: string | null;
+      excerpt: string | null;
+    }[];
 
     return claimRows.map((row) => ({
       ...toClaim(row),
@@ -523,6 +563,9 @@ export const supabaseRepository: Repository = {
         .filter((l) => l.claim_id === row.id)
         .map((l) => byId.get(l.evidence_id))
         .filter((e): e is EvidenceRecord => Boolean(e)),
+      anchors: links
+        .filter((l) => l.claim_id === row.id)
+        .map((l) => ({ evidenceId: l.evidence_id, locator: l.locator, excerpt: l.excerpt })),
     }));
   },
 
@@ -538,8 +581,32 @@ export const supabaseRepository: Repository = {
     if (!data) return null;
 
     const claim = toClaim(data as ClaimRow);
-    const all = await this.listClaims(claim.initiativeId);
-    return all.find((c) => c.id === claim.id) ?? { ...claim, evidence: [] };
+    const [{ data: links, error: linkError }, evidence] = await Promise.all([
+      supabase
+        .from("claim_evidence")
+        .select("evidence_id, locator, excerpt")
+        .eq("claim_id", claim.id)
+        .order("evidence_id", { ascending: true }),
+      this.listEvidence(claim.initiativeId),
+    ]);
+    if (linkError) throw new Error(`Failed to load provenance: ${linkError.message}`);
+    const rows = links as {
+      evidence_id: string;
+      locator: string | null;
+      excerpt: string | null;
+    }[];
+    const byId = new Map(evidence.map((item) => [item.id, item]));
+    return {
+      ...claim,
+      evidence: rows
+        .map((row) => byId.get(row.evidence_id))
+        .filter((item): item is EvidenceRecord => Boolean(item)),
+      anchors: rows.map((row) => ({
+        evidenceId: row.evidence_id,
+        locator: row.locator,
+        excerpt: row.excerpt,
+      })),
+    };
   },
 
   async createClaim(input: NewClaimInput) {
@@ -587,6 +654,9 @@ export const supabaseRepository: Repository = {
     if (!existingRow) throw new Error(`Claim ${id} was not found.`);
 
     const existing = toClaim(existingRow as ClaimRow);
+    if (patch.status !== undefined && !canOrdinaryUpdateStatus(existing.status, patch.status)) {
+      throw new Error("Verify this claim to make it active.");
+    }
     const nextStatus = patch.status ?? existing.status;
     let nextSuperseded =
       patch.supersededByClaimId !== undefined
@@ -649,16 +719,27 @@ export const supabaseRepository: Repository = {
     if (!claimRow) throw new Error(`Claim ${claimId} was not found.`);
     const claim = toClaim(claimRow as ClaimRow);
 
-    const { error: deleteError } = await supabase
+    const { data: currentRows, error: currentError } = await supabase
       .from("claim_evidence")
-      .delete()
+      .select("evidence_id")
       .eq("claim_id", claimId);
+    if (currentError) throw new Error(`Failed to load provenance: ${currentError.message}`);
+    const { removed, addedEvidenceIds } = partitionEvidenceLinks(
+      (currentRows as { evidence_id: string }[]).map((row) => ({ evidenceId: row.evidence_id })),
+      evidenceIds,
+    );
+    const removedIds = removed.map((link) => link.evidenceId);
+
+    const deleteQuery = supabase.from("claim_evidence").delete().eq("claim_id", claimId);
+    const { error: deleteError } = removedIds.length
+      ? await deleteQuery.in("evidence_id", removedIds)
+      : { error: null };
     if (deleteError) throw new Error(`Failed to clear provenance: ${deleteError.message}`);
 
-    if (evidenceIds.length > 0) {
+    if (addedEvidenceIds.length > 0) {
       const { error: insertError } = await supabase
         .from("claim_evidence")
-        .insert(evidenceIds.map((evidence_id) => ({ claim_id: claimId, evidence_id })));
+        .insert(addedEvidenceIds.map((evidence_id) => ({ claim_id: claimId, evidence_id })));
       if (insertError) throw new Error(`Failed to link evidence: ${insertError.message}`);
     }
 
@@ -667,6 +748,63 @@ export const supabaseRepository: Repository = {
       "CLAIM_EVIDENCE_UPDATED",
       `${claim.subject} evidence links updated`,
     );
+  },
+
+  async verifyClaim(id, input) {
+    assertWriteAllowed();
+    const { data, error } = await getClient().rpc("verify_claim", {
+      p_claim_id: id,
+      p_expected_updated_at: input.expectedUpdatedAt,
+      p_basis: input.basis,
+      p_note: input.note,
+      p_actor_id: input.actor.id,
+      p_actor_label: input.actor.label,
+    });
+    if (error) {
+      if (error.code === "40P01") throw new Error("Please try again.");
+      const copy: Record<string, string> = {
+        CLAIM_STALE: "This claim changed while you were reviewing it. Reload and try again.",
+        FUTURE_PHASE_REQUIRES_PHASE: "This claim relies on future-phase evidence only. Record the phase it applies to before verifying it.",
+        ELIGIBLE_EVIDENCE_REQUIRED: "Link current-scope evidence before verifying this claim.",
+        DIRECT_KNOWLEDGE_NOTE_REQUIRED: "Record what direct knowledge supports this verification.",
+        CLAIM_NOT_VERIFIABLE: "Only unverified or draft claims can be verified.",
+        ACTOR_REQUIRED: "Actor is required.",
+      };
+      throw new Error(copy[error.message] ?? `Could not verify claim: ${error.message}`);
+    }
+    const row = (Array.isArray(data) ? data[0] : data) as ClaimRow;
+    const all = await this.listClaims(row.initiative_id);
+    return all.find((claim) => claim.id === id) ?? {
+      ...toClaim(row),
+      evidence: [],
+      anchors: [],
+    } as MemoryClaim;
+  },
+
+  async setEvidenceAnchor(claimId, evidenceId, input) {
+    assertWriteAllowed();
+    const supabase = getClient();
+    const { data: before, error: readError } = await supabase
+      .from("claim_evidence").select("locator, excerpt")
+      .eq("claim_id", claimId).eq("evidence_id", evidenceId).maybeSingle();
+    if (readError || !before) throw new Error(readError?.message ?? "That evidence link was not found.");
+    const locator = input.locator?.trim() || null;
+    const excerpt = input.excerpt?.trim() || null;
+    if (input.locator !== null && !locator) throw new Error("Locator cannot be blank.");
+    if (input.excerpt !== null && !excerpt) throw new Error("Excerpt cannot be blank.");
+    if (excerpt && excerpt.length > 2000) throw new Error("Excerpt must be 2000 characters or fewer.");
+    const { error } = await supabase.from("claim_evidence")
+      .update({ locator, excerpt }).eq("claim_id", claimId).eq("evidence_id", evidenceId);
+    if (error) throw new Error(`Failed to update anchor: ${error.message}`);
+    /* Stage 2.1 accepted limitation: this audit insert is not atomic with the
+       anchor update. Atomic provenance mutation is deferred to Stage 2.5. */
+    const claim = await this.getClaim(claimId);
+    if (claim) await writeActivity(claim.initiativeId, "CLAIM_EVIDENCE_ANCHOR_UPDATED",
+      `${claim.subject} evidence anchor updated`, {
+        entity_type: "claim", entity_id: claimId,
+        payload: { evidenceId, before, after: { locator, excerpt }, actor: input.actor },
+        actor_label: input.actor.label,
+      });
   },
 
   /* ── Review findings ─────────────────────────────────────────────────────
@@ -712,41 +850,16 @@ export const supabaseRepository: Repository = {
     );
   },
 
-  async clearFindingState(initiativeId, fingerprint) {
+  async reopenFindingState(initiativeId, fingerprint, actor) {
     assertWriteAllowed();
 
-    const supabase = getClient();
-
-    /* Read BEFORE deleting, and refuse to delete if the read failed. The row is
-       the only copy of the note until activity_log has it, so a swallowed
-       select error would destroy a person's reasoning while the UI reported
-       success. */
-    const { data: existing, error: readError } = await supabase
-      .from("finding_states")
-      .select("resolution")
-      .eq("initiative_id", initiativeId)
-      .eq("fingerprint", fingerprint)
-      .maybeSingle();
-
-    if (readError) {
-      throw new Error(`Failed to reopen finding: ${readError.message}`);
-    }
-    if (!existing) return;
-
-    // Logged before the delete, so the note survives even if the delete fails.
-    const previous = (existing as { resolution: string | null }).resolution;
-    await writeActivity(
-      initiativeId,
-      "FINDING_REOPENED",
-      `Finding reopened; previous resolution was: ${previous ?? "(none recorded)"}`,
-    );
-
-    const { error } = await supabase
-      .from("finding_states")
-      .delete()
-      .eq("initiative_id", initiativeId)
-      .eq("fingerprint", fingerprint);
-
+    const { data, error } = await getClient().rpc("reopen_finding_state", {
+      p_initiative_id: initiativeId,
+      p_fingerprint: fingerprint,
+      p_actor_id: actor.id,
+      p_actor_label: actor.label,
+    });
     if (error) throw new Error(`Failed to reopen finding: ${error.message}`);
+    return Boolean(data);
   },
 };

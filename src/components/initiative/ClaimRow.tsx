@@ -11,16 +11,18 @@ import {
   formatDate,
   formatVerified,
 } from "@/lib/domain/labels";
-import type { ClaimWithEvidence } from "@/lib/domain/types";
+import type { MemoryClaim } from "@/lib/domain/types";
+import { trustLine } from "@/lib/domain/trust";
+import { EvidenceAnchorForm } from "./EvidenceAnchorForm";
 import styles from "./ClaimRow.module.css";
 
 interface ClaimRowProps {
-  claim: ClaimWithEvidence;
+  claim: MemoryClaim;
   slug: string;
   /** The claim that replaced this one, when it has been recorded. */
-  supersededBy?: ClaimWithEvidence;
+  supersededBy?: MemoryClaim;
   /** Claims this one replaced — derived from the reverse relation. */
-  supersedes?: ClaimWithEvidence[];
+  supersedes?: MemoryClaim[];
 }
 
 /**
@@ -30,7 +32,7 @@ interface ClaimRowProps {
  * nothing about what 27 refers to, and two claims can share a value. The full
  * address subject · attribute · value is what actually identifies a claim.
  */
-function identify(claim: ClaimWithEvidence): string {
+function identify(claim: MemoryClaim): string {
   return `${claim.subject} · ${claim.attribute} · ${claim.value}`;
 }
 
@@ -53,6 +55,7 @@ export function ClaimRow({
 }: ClaimRowProps) {
   const statusClass = styles[`status${claim.status}`] ?? "";
   const isSuperseded = claim.status === "SUPERSEDED";
+  const trust = trustLine(claim);
 
   return (
     /* Anchor target for Review, which links straight to the claim behind a
@@ -117,6 +120,7 @@ export function ClaimRow({
                 )}
               </span>
             </span>
+            {trust ? <span className={styles.relation}>{trust}</span> : null}
 
             {supersededBy ? (
               <span className={styles.relation}>
@@ -131,7 +135,18 @@ export function ClaimRow({
           </span>
         </summary>
 
-        <div className={styles.detail}>
+          <div className={styles.detail}>
+          {claim.status === "UNVERIFIED" || claim.status === "DRAFT" ? (
+            <Link href={`/initiatives/${slug}/memory/${claim.id}/verify`} className={styles.editLink}>
+              Verify claim
+            </Link>
+          ) : null}
+          {claim.verifiedAt ? (
+            <p className={styles.detailMuted}>
+              Basis: {claim.verificationBasis === "DIRECT_KNOWLEDGE" ? "Direct knowledge" : "Linked evidence"}
+              {claim.verificationNote ? ` · ${claim.verificationNote}` : ""}
+            </p>
+          ) : null}
           <div className={styles.detailLabel}>Evidence</div>
           {claim.evidence.length === 0 ? (
             <p className={styles.detailMuted}>
@@ -140,7 +155,9 @@ export function ClaimRow({
             </p>
           ) : (
             <ul className={styles.evidenceList}>
-              {claim.evidence.map((e) => (
+              {claim.evidence.map((e) => {
+                const anchor = claim.anchors.find((a) => a.evidenceId === e.id);
+                return (
                 <li key={e.id} className={styles.evidenceItem}>
                   <span className={styles.evidenceTop}>
                     <span className={styles.evidenceTitle}>{e.title}</span>
@@ -171,8 +188,19 @@ export function ClaimRow({
                     </span>
                     {formatVerified(e.lastVerifiedAt)}
                   </span>
+                  {anchor?.locator ? <span className={styles.evidenceMeta}>Locator: {anchor.locator}</span> : null}
+                  {anchor?.excerpt ? <span className={styles.detailMuted}>“{anchor.excerpt}”</span> : null}
+                  {isDemoWriteEnabled ? (
+                    <EvidenceAnchorForm
+                      slug={slug}
+                      claimId={claim.id}
+                      evidenceId={e.id}
+                      locator={anchor?.locator ?? null}
+                      excerpt={anchor?.excerpt ?? null}
+                    />
+                  ) : null}
                 </li>
-              ))}
+              )})}
             </ul>
           )}
 

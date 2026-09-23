@@ -93,6 +93,26 @@ export const CLAIM_STATUSES = [
 
 export type ClaimStatus = (typeof CLAIM_STATUSES)[number];
 
+export interface Actor {
+  id: string | null;
+  label: string;
+}
+
+export const CLAIM_ORIGINS = ["LEGACY", "HUMAN_ENTRY"] as const;
+export type ClaimOrigin = (typeof CLAIM_ORIGINS)[number];
+
+export const VERIFICATION_BASES = ["EVIDENCE", "DIRECT_KNOWLEDGE"] as const;
+export type VerificationBasis = (typeof VERIFICATION_BASES)[number];
+
+export interface ClaimTrust {
+  origin: ClaimOrigin;
+  verifiedAt: string | null;
+  verifiedActorId: string | null;
+  verifiedActorLabel: string | null;
+  verificationBasis: VerificationBasis | null;
+  verificationNote: string | null;
+}
+
 /* ── Evidence ───────────────────────────────────────────────────────────── */
 export const EVIDENCE_RELATIONS = [
   "CURRENT_SCOPE",
@@ -190,6 +210,10 @@ export interface ActivityEntry {
   eventType: string;
   summary: string;
   occurredAt: string;
+  entityType: string | null;
+  entityId: string | null;
+  payload: Record<string, unknown> | null;
+  actorLabel: string | null;
 }
 
 export interface NewInitiativeInput {
@@ -297,6 +321,29 @@ export interface ClaimRecord {
 /** A claim with its provenance resolved. The repository owns the join. */
 export interface ClaimWithEvidence extends ClaimRecord {
   evidence: EvidenceRecord[];
+}
+
+export interface EvidenceAnchor {
+  evidenceId: string;
+  locator: string | null;
+  excerpt: string | null;
+}
+
+export type MemoryClaim = ClaimWithEvidence & ClaimTrust & {
+  anchors: EvidenceAnchor[];
+};
+
+export interface VerifyClaimInput {
+  expectedUpdatedAt: string;
+  basis: VerificationBasis;
+  note: string | null;
+  actor: Actor;
+}
+
+export interface EvidenceAnchorInput {
+  locator: string | null;
+  excerpt: string | null;
+  actor: Actor;
 }
 
 export interface NewClaimInput {

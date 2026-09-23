@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 
 import type {
   ActivityEntry,
+  ClaimTrust,
   ClaimRecord,
   EvidenceRecord,
   FindingState,
@@ -14,6 +15,7 @@ import type {
 import { SEED_ACTIVITY, SEED_INITIATIVES } from "./fixtures/initiatives";
 import { SEED_EVIDENCE, SEED_SOURCES } from "./fixtures/evidence";
 import { SEED_CLAIMS, SEED_CLAIM_EVIDENCE } from "./fixtures/claims";
+import { upgradeStoreShape } from "./store-upgrade";
 
 /**
  * LOCAL DEMO PERSISTENCE ONLY.
@@ -37,14 +39,18 @@ export interface ClaimEvidenceLink {
   claimId: string;
   evidenceId: string;
   createdAt: string;
+  locator: string | null;
+  excerpt: string | null;
 }
+
+export type StoredClaim = ClaimRecord & ClaimTrust;
 
 export interface StoreShape {
   initiatives: Initiative[];
   activity: ActivityEntry[];
   evidence: EvidenceRecord[];
   sources: InitiativeSource[];
-  claims: ClaimRecord[];
+  claims: StoredClaim[];
   claimEvidence: ClaimEvidenceLink[];
   /** Human decisions about derived findings. The findings are not stored. */
   findingStates: FindingState[];
@@ -55,13 +61,29 @@ const DATA_FILE = join(process.cwd(), ".data", "prodwise.json");
 function seed(): StoreShape {
   return {
     initiatives: SEED_INITIATIVES.map((i) => ({ ...i })),
-    activity: SEED_ACTIVITY.map((a) => ({ ...a })),
+    activity: SEED_ACTIVITY.map((a) => ({
+      ...a,
+      entityType: null,
+      entityId: null,
+      payload: null,
+      actorLabel: null,
+    })),
     evidence: SEED_EVIDENCE.map((e) => ({ ...e })),
     sources: SEED_SOURCES.map((s) => ({ ...s })),
-    claims: SEED_CLAIMS.map((c) => ({ ...c })),
+    claims: SEED_CLAIMS.map((c) => ({
+      ...c,
+      origin: "LEGACY" as const,
+      verifiedAt: null,
+      verifiedActorId: null,
+      verifiedActorLabel: null,
+      verificationBasis: null,
+      verificationNote: null,
+    })),
     claimEvidence: SEED_CLAIM_EVIDENCE.map((l) => ({
       ...l,
       createdAt: "2026-09-06T00:00:00.000Z",
+      locator: null,
+      excerpt: null,
     })),
     // Deliberately empty. The seeded conflict must appear because the engine
     // ran over the seeded claims, not because a finding was inserted.
@@ -80,7 +102,7 @@ function load(): StoreShape {
       // Tolerate a file written by an older shape rather than crashing the app:
       // any missing collection falls back to its seed.
       const base = seed();
-      cache = {
+      cache = upgradeStoreShape({
         initiatives: parsed.initiatives ?? base.initiatives,
         activity: parsed.activity ?? base.activity,
         evidence: parsed.evidence ?? base.evidence,
@@ -88,7 +110,7 @@ function load(): StoreShape {
         claims: parsed.claims ?? base.claims,
         claimEvidence: parsed.claimEvidence ?? base.claimEvidence,
         findingStates: parsed.findingStates ?? base.findingStates,
-      };
+      });
       return cache;
     } catch {
       // A corrupt demo store should not take the application down. Fall back to
@@ -101,6 +123,7 @@ function load(): StoreShape {
   persist();
   return cache;
 }
+
 
 function persist(): void {
   if (!cache) return;
