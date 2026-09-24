@@ -20,7 +20,9 @@ import type {
   NewInitiativeInput,
 } from "@/lib/domain/types";
 import { canOrdinaryUpdateStatus, validateVerification } from "@/lib/domain/trust";
-import { readStore, writeStore, type StoredClaim } from "./store";
+import { readStore, writeStore, writeStoreAtomic, type StoredClaim } from "./store";
+import { runReview } from "../review/engine";
+import { normalise } from "../review/normalise";
 import { uniqueSlug, type Repository } from "./repository";
 import { partitionEvidenceLinks } from "./claim-evidence-links";
 
@@ -560,6 +562,163 @@ export const localRepository: Repository = {
   /* ── Review findings ─────────────────────────────────────────────────────
      Only the human decision is stored. The findings are derived. */
 
+  async resolveConflict(plan) {
+    assertWriteAllowed();
+    return writeStoreAtomic((s) => {
+      let now = nowIso();
+      const current = s.claims.filter((claim) => claim.initiativeId === plan.initiativeId)
+        .map((claim) => ({ ...claim, evidence: s.claimEvidence
+          .filter((link) => link.claimId === claim.id)
+          .map((link) => s.evidence.find((e) => e.id === link.evidenceId)!)
+          .filter(Boolean) }));
+      const finding = runReview(plan.initiativeId, current)
+        .find((item) => item.fingerprint === plan.fingerprint && item.type === "CONFLICT");
+      if (!finding || finding.contentDigest !== plan.contentDigest
+          || finding.claims.length !== plan.members.length
+          || finding.claims.some((claim) => !plan.members.some((member) => member.id === claim.claimId)))
+        throw new Error("FINDING_STALE");
+      const members = plan.members.map((member) => {
+        const claim = s.claims.find((candidate) => candidate.id === member.id);
+        if (!claim || claim.initiativeId !== plan.initiativeId || claim.status !== "ACTIVE"
+            || claim.updatedAt !== member.expectedUpdatedAt) throw new Error("CLAIM_STALE");
+        return claim;
+      });
+      const state = s.findingStates.find((item) => item.initiativeId === plan.initiativeId
+        && item.fingerprint === plan.fingerprint);
+      if (state?.outcome && state.resolvedAt === now) {
+        now = new Date(Date.parse(now) + 1).toISOString();
+      }
+      if (plan.outcome === "CHOSE_EXISTING") {
+        const chosen = members.find((claim) => claim.id === plan.chosenClaimId);
+        if (!chosen || plan.correctedValue !== null || plan.decisionDomain !== null)
+          throw new Error("INVALID_DECISION_SHAPE");
+        for (const member of plan.members) {
+          const claim = members.find((candidate) => candidate.id === member.id)!;
+          if (member.keep !== (normalise(claim.value) === normalise(chosen.value)))
+            throw new Error("FINDING_STALE");
+        }
+      } else if (plan.outcome === "CORRECTED_VALUE") {
+        if (!plan.correctedValue?.trim() || plan.chosenClaimId !== null
+          || members.some((claim) => normalise(claim.value) === normalise(plan.correctedValue!)))
+          throw new Error("CHOOSE_EXISTING_VALUE");
+      } else throw new Error("INVALID_DECISION_SHAPE");
+      if (!plan.actor.label.trim()) throw new Error("ACTOR_REQUIRED");
+      if (!plan.rationale.trim()) throw new Error("RATIONALE_REQUIRED");
+
+      const chosen = members.find((claim) => claim.id === plan.chosenClaimId);
+      let decisionClaimId: string | null = null;
+      const decidedValue = chosen?.value ?? plan.correctedValue!.trim();
+      if (plan.outcome === "CORRECTED_VALUE") {
+        const domains = new Set(members.map((member) => member.domain));
+        const domain = plan.decisionDomain ?? (domains.size === 1 ? members[0]!.domain : null);
+        if (!domain || !domains.has(domain)) throw new Error("DECISION_DOMAIN_REQUIRED");
+        decisionClaimId = crypto.randomUUID();
+        s.claims.push({
+          id: decisionClaimId, initiativeId: plan.initiativeId,
+          type: "DECISION", status: "ACTIVE", subject: plan.subject,
+          attribute: plan.attribute, phase: plan.phase, value: decidedValue,
+          domain, confidence: null, supersededByClaimId: null, createdBy: null,
+          createdAt: now, updatedAt: now, origin: "HUMAN_DECISION",
+          verifiedAt: now, verifiedActorId: plan.actor.id,
+          verifiedActorLabel: plan.actor.label.trim(), verificationBasis: "DIRECT_KNOWLEDGE",
+          verificationNote: plan.rationale.trim(),
+        });
+      }
+      const replacement = plan.chosenClaimId ?? decisionClaimId!;
+      const snapshots = members.map((claim) => {
+        const keep = plan.outcome === "CHOSE_EXISTING"
+          && normalise(claim.value) === normalise(chosen!.value);
+        const result = { id: claim.id, value: claim.value, statusBefore: "ACTIVE",
+          statusAfter: keep ? "ACTIVE" : "SUPERSEDED",
+          supersededBy: keep ? null : replacement };
+        if (!keep) {
+          claim.status = "SUPERSEDED";
+          claim.supersededByClaimId = replacement;
+          claim.updatedAt = now;
+        }
+        return result;
+      });
+      const nextState: FindingState = {
+        initiativeId: plan.initiativeId, fingerprint: plan.fingerprint,
+        ruleId: plan.ruleId, contentDigest: plan.contentDigest,
+        subject: plan.subject, attribute: plan.attribute, phase: plan.phase,
+        valuesRecorded: plan.valuesRecorded, status: "RESOLVED",
+        outcome: plan.outcome, chosenClaimId: plan.chosenClaimId,
+        decisionClaimId, decidedValue, resolution: plan.rationale,
+        resolvedAt: now, actorId: plan.actor.id, actorLabel: plan.actor.label.trim(),
+        confirmedWith: state?.confirmerLabel ?? null,
+        confirmerLabel: null, confirmerSetAt: null, confirmerSetByLabel: null,
+        createdAt: state?.createdAt ?? now, updatedAt: now,
+      };
+      if (state) Object.assign(state, nextState);
+      else s.findingStates.push(nextState);
+      s.activity.push({
+        id: crypto.randomUUID(), initiativeId: plan.initiativeId,
+        eventType: "FINDING_DECIDED",
+        summary: `${plan.subject} — ${plan.attribute} decided: ${decidedValue}`,
+        occurredAt: now, entityType: "finding", entityId: plan.fingerprint,
+        payload: { schema: 1, fingerprint: plan.fingerprint, ruleId: plan.ruleId,
+          contentDigest: plan.contentDigest, outcome: plan.outcome,
+          subject: plan.subject, attribute: plan.attribute, phase: plan.phase,
+          decidedValue, chosenClaimId: plan.chosenClaimId, decisionClaimId,
+          members: snapshots, rationale: plan.rationale,
+          confirmedWith: nextState.confirmedWith,
+          actor: { id: plan.actor.id, label: plan.actor.label.trim() } },
+        actorLabel: plan.actor.label.trim(),
+      });
+      return { outcome: plan.outcome, chosenClaimId: plan.chosenClaimId,
+        decisionClaimId, supersededIds: snapshots
+          .filter((item) => item.statusAfter === "SUPERSEDED").map((item) => item.id) };
+    });
+  },
+
+  async assignFindingConfirmer(plan) {
+    assertWriteAllowed();
+    writeStoreAtomic((s) => {
+      if (!plan.actor.label.trim() || (plan.label !== null
+          && (plan.label.trim().length < 1 || plan.label.trim().length > 120)))
+        throw new Error("INVALID_CONFIRMER");
+      const current = s.claims.filter((claim) => claim.initiativeId === plan.initiativeId)
+        .map((claim) => ({ ...claim, evidence: s.claimEvidence
+          .filter((link) => link.claimId === claim.id)
+          .map((link) => s.evidence.find((e) => e.id === link.evidenceId)!).filter(Boolean) }));
+      const finding = runReview(plan.initiativeId, current)
+        .find((item) => item.fingerprint === plan.fingerprint && item.type === "CONFLICT");
+      const state = s.findingStates.find((item) => item.initiativeId === plan.initiativeId
+        && item.fingerprint === plan.fingerprint);
+      if (state?.outcome && !finding) throw new Error("DECISION_STANDING");
+      if (!finding || (state?.outcome ? "REEMERGED" : "FIRST") !== plan.cycle)
+        throw new Error("FINDING_STALE");
+      const now = nowIso();
+      const previousLabel = state?.confirmerLabel ?? null;
+      const next: FindingState = state ?? {
+        initiativeId: plan.initiativeId, fingerprint: plan.fingerprint,
+        ruleId: finding.ruleId, contentDigest: null, subject: finding.subject,
+        attribute: finding.claims[0]!.attribute, phase: finding.phase,
+        valuesRecorded: null, status: "OPEN", resolution: null,
+        resolvedAt: null, createdAt: now, updatedAt: now,
+        outcome: null, chosenClaimId: null, decisionClaimId: null,
+        decidedValue: null, confirmedWith: null, actorId: null, actorLabel: null,
+        confirmerLabel: null, confirmerSetAt: null, confirmerSetByLabel: null,
+      };
+      next.confirmerLabel = plan.label;
+      next.confirmerSetAt = plan.label === null ? null : now;
+      next.confirmerSetByLabel = plan.label === null ? null : plan.actor.label.trim();
+      next.updatedAt = now;
+      if (!state) s.findingStates.push(next);
+      s.activity.push({ id: crypto.randomUUID(), initiativeId: plan.initiativeId,
+        eventType: "FINDING_CONFIRMER_ASSIGNED", summary: "Finding confirmer assigned",
+        occurredAt: now, entityType: "finding", entityId: plan.fingerprint,
+        payload: { schema: 1, fingerprint: plan.fingerprint, previousLabel,
+          label: plan.label, cycle: plan.cycle,
+          previousDecision: state?.outcome ? { outcome: state.outcome,
+            decidedValue: state.decidedValue, confirmedWith: state.confirmedWith,
+            decidedAt: state.resolvedAt } : null,
+          actor: { id: plan.actor.id, label: plan.actor.label.trim() } },
+        actorLabel: plan.actor.label.trim() });
+    });
+  },
+
   async listFindingStates(initiativeId) {
     return readStore()
       .findingStates.filter((s) => s.initiativeId === initiativeId)
@@ -568,6 +727,9 @@ export const localRepository: Repository = {
 
   async setFindingState(initiativeId, fingerprint, input) {
     assertWriteAllowed();
+
+    if (readStore().findingStates.some((state) => state.initiativeId === initiativeId
+        && state.fingerprint === fingerprint && state.outcome)) throw new Error("DECISION_IMMUTABLE");
 
     const now = nowIso();
     writeStore((s) => {
@@ -590,6 +752,11 @@ export const localRepository: Repository = {
         status: "RESOLVED",
         resolution: input.resolution,
         resolvedAt: now,
+        outcome: null, chosenClaimId: null, decisionClaimId: null,
+        decidedValue: null, confirmedWith: null, actorId: null, actorLabel: null,
+        confirmerLabel: existing?.confirmerLabel ?? null,
+        confirmerSetAt: existing?.confirmerSetAt ?? null,
+        confirmerSetByLabel: existing?.confirmerSetByLabel ?? null,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       };
@@ -613,6 +780,7 @@ export const localRepository: Repository = {
     const existing = store.findingStates.find(
       (f) => f.initiativeId === initiativeId && f.fingerprint === fingerprint,
     );
+    if (existing?.outcome) throw new Error("DECISION_IMMUTABLE");
     if (!existing || existing.status === "OPEN") return false;
     writeStore((s) => {
       const state = s.findingStates.find(
