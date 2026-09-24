@@ -11,7 +11,7 @@ import {
   formatDate,
   formatVerified,
 } from "@/lib/domain/labels";
-import type { MemoryClaim } from "@/lib/domain/types";
+import type { MemoryClaim, FindingState } from "@/lib/domain/types";
 import { trustLine } from "@/lib/domain/trust";
 import { EvidenceAnchorForm } from "./EvidenceAnchorForm";
 import styles from "./ClaimRow.module.css";
@@ -23,6 +23,7 @@ interface ClaimRowProps {
   supersededBy?: MemoryClaim;
   /** Claims this one replaced — derived from the reverse relation. */
   supersedes?: MemoryClaim[];
+  decisions?: FindingState[];
 }
 
 /**
@@ -52,6 +53,7 @@ export function ClaimRow({
   slug,
   supersededBy,
   supersedes = [],
+  decisions = [],
 }: ClaimRowProps) {
   const statusClass = styles[`status${claim.status}`] ?? "";
   const isSuperseded = claim.status === "SUPERSEDED";
@@ -121,6 +123,9 @@ export function ClaimRow({
               </span>
             </span>
             {trust ? <span className={styles.relation}>{trust}</span> : null}
+            {claim.origin === "HUMAN_DECISION" ? <span className={styles.relation}>Confirmed Decision entry · Entered as a corrected value</span> : null}
+            {decisions.filter((s) => s.outcome === "CHOSE_EXISTING").map((s) =>
+              <span key={s.fingerprint} className={styles.relation}>Chosen in a decision · {s.resolvedAt ? formatDate(s.resolvedAt) : "Date not recorded"}</span>)}
 
             {supersededBy ? (
               <span className={styles.relation}>
@@ -136,6 +141,10 @@ export function ClaimRow({
         </summary>
 
           <div className={styles.detail}>
+          {decisions.map((s) => <p key={s.fingerprint} className={styles.detailMuted}>
+            <Link href={`/initiatives/${slug}/decisions#decision-${s.fingerprint}`}>Decision record</Link>
+            {" · "}{s.resolution}{" · Confirmed with: "}{s.confirmedWith ?? "Not recorded"}
+          </p>)}
           {claim.status === "UNVERIFIED" || claim.status === "DRAFT" ? (
             <Link href={`/initiatives/${slug}/memory/${claim.id}/verify`} className={styles.editLink}>
               Verify claim

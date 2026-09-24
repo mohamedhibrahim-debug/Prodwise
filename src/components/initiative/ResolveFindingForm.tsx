@@ -55,14 +55,14 @@ export function ResolveFindingForm({
         <input type="hidden" name="slug" value={slug} />
         <input type="hidden" name="fingerprint" value={fingerprint} />
         {error ? <p className={styles.error}>{error}</p> : null}
-        <Submit label="Reopen finding" busy="Reopening…" />
+        <Submit label="Review again" busy="Reopening…" />
       </form>
     );
   }
 
   return (
     <details className={styles.resolveDisclosure} open={Boolean(error)}>
-      <summary className={styles.resolveTrigger}>Mark resolved</summary>
+      <summary className={styles.resolveTrigger}>Review with a note only</summary>
 
       <form action={resolve} className={styles.resolveForm}>
         <input type="hidden" name="slug" value={slug} />
@@ -75,7 +75,7 @@ export function ResolveFindingForm({
           htmlFor={`resolution-${fingerprint}`}
           className={styles.resolveLabel}
         >
-          Record what was decided
+          Review note
         </label>
         <textarea
           id={`resolution-${fingerprint}`}
@@ -89,16 +89,15 @@ export function ResolveFindingForm({
              remount so the restored value actually takes. */
           key={resolveState.resolution ?? "empty"}
           defaultValue={resolveState.resolution ?? ""}
-          placeholder="e.g. Confirmed with Finance that 27 is authoritative; MFF-133 to be corrected."
+          placeholder="Explain what you reviewed."
         />
 
         <p className={styles.resolveCaption}>
-          This records your decision. It does not change the claims — they will
-          still record exactly what they record now.
+          Knowledge will not change. This saves a review note only.
         </p>
 
-        {error ? <p className={styles.error}>{error}</p> : null}
-        <Submit label="Save decision" busy="Saving…" />
+        {error ? <p role="alert" className={styles.error}>{error}</p> : null}
+        <Submit label="Save review note" busy="Saving…" />
       </form>
     </details>
   );
