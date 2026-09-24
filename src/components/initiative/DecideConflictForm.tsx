@@ -23,7 +23,12 @@ export function DecideConflictForm({ finding, slug }: { finding: ReviewFinding; 
   const duplicate = choice === "corrected" && values.some((c) => normalise(c.value) === normalise(corrected));
   return <details className={styles.decisionForm}>
     <summary className={styles.resolveTrigger}>Make a decision</summary>
-    <form action={action} onSubmit={(event) => { if (duplicate) event.preventDefault(); }}>
+    <form action={action}
+      // React resets action forms even when the action returns a refusal.
+      // Cancel the native reset so selects/radios retain their controlled values
+      // alongside text inputs. Successful decisions disappear via revalidation.
+      onReset={(event) => event.preventDefault()}
+      onSubmit={(event) => { if (duplicate) event.preventDefault(); }}>
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="fingerprint" value={finding.fingerprint} />
       <input type="hidden" name="contentDigest" value={finding.contentDigest} />

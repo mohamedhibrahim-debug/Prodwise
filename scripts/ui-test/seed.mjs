@@ -26,6 +26,12 @@ if (scenario === "reemerged") {
     ruleId: mismatch.ruleId, contentDigest: mismatch.contentDigest, subject: mismatch.subject,
     attribute: mismatch.claims[0].attribute, phase: mismatch.phase, valuesRecorded: "27 | 30",
     resolution: "Legacy review note" });
+} else if (scenario === "refusals") {
+  // A mixed-domain mismatch exercises the corrected decision's domain input.
+  writeStoreAtomic((store) => {
+    const competitor = store.claims.find((c) => c.subject === "Daily Repayment" && c.value === "30");
+    competitor.domain = "TECHNICAL";
+  });
 } else {
   // Persist the lazy seed without modifying any fixture values.
   writeStoreAtomic(() => {});

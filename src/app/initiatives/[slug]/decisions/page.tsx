@@ -37,16 +37,17 @@ export default async function DecisionsPage({
      visitor takes. */
   const { claims, findings: all, states } = await loadDecisions(initiative.id);
 
-  /* These lanes partition the already-derived result. They add no state and
-     assign no new meaning: supersessions remain history, while Resolved reads
-     the existing pre-Stage-2 finding-state records exactly as before. */
+  /* Presentation only: note-only reviews are separate from decisions that
+     changed Knowledge. The existing engine still determines actionability. */
   const needsDecision = all
     .filter((finding) => finding.status === "OPEN" && finding.actionable)
     .sort(compareFindings);
-  const resolved = all
+  const reviewed = all
     .filter(
       (finding) =>
-        finding.status === "RESOLVED" && finding.type !== "SUPERSEDED",
+        finding.status === "RESOLVED" && finding.type !== "SUPERSEDED" &&
+        states.some((state) => state.fingerprint === finding.fingerprint &&
+          state.status === "RESOLVED" && state.outcome === null),
     )
     .sort(compareFindings);
   const history = all
@@ -107,20 +108,19 @@ export default async function DecisionsPage({
           )}
         </section>
 
-        <section className={styles.decisionLane} id="lane-resolved">
+        <section className={styles.decisionLane} id="lane-reviewed">
           <div className={styles.decisionLaneHead}>
             <div>
-              <h2 className={styles.decisionLaneTitle}>Resolved</h2>
+              <h2 className={styles.decisionLaneTitle}>Reviewed</h2>
               <p className={styles.decisionLaneDescription}>
-                Decision records and reviewed notes.
+                Notes only. Knowledge was not changed.
               </p>
             </div>
-            <span className={styles.decisionLaneCount}>{resolved.length + standing.length}</span>
+            <span className={styles.decisionLaneCount}>{reviewed.length}</span>
           </div>
-          {resolved.length + standing.length > 0 ? (
+          {reviewed.length > 0 ? (
             <ul>
-              {standing.map((state) => <DecisionRecord key={state.fingerprint} state={state} slug={slug} />)}
-              {resolved.map((finding) => (
+              {reviewed.map((finding) => (
                 <FindingRow
                   key={finding.fingerprint}
                   finding={finding}
@@ -131,7 +131,24 @@ export default async function DecisionsPage({
               ))}
             </ul>
           ) : (
-            <p className={styles.decisionLaneEmpty}>No decision records or reviewed notes yet.</p>
+            <p className={styles.decisionLaneEmpty}>No reviewed notes yet.</p>
+          )}
+        </section>
+
+        <section className={styles.decisionLane} id="lane-resolved">
+          <div className={styles.decisionLaneHead}>
+            <div>
+              <h2 className={styles.decisionLaneTitle}>Resolved</h2>
+              <p className={styles.decisionLaneDescription}>Decisions that changed Knowledge.</p>
+            </div>
+            <span className={styles.decisionLaneCount}>{standing.length}</span>
+          </div>
+          {standing.length > 0 ? (
+            <ul>
+              {standing.map((state) => <DecisionRecord key={state.fingerprint} state={state} slug={slug} />)}
+            </ul>
+          ) : (
+            <p className={styles.decisionLaneEmpty}>No decision records yet.</p>
           )}
         </section>
 
