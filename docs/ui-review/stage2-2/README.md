@@ -123,7 +123,6 @@ The remediation reruns the same complete final gate under PowerShell 7. No gate 
 - docs/ui-review/stage2-2/03-standing-decision.png
 - docs/ui-review/stage2-2/04-chosen-knowledge.png
 - docs/ui-review/stage2-2/05-corrected-form.png
-- docs/ui-review/stage2-2/06-corrected-knowledge.png
 - docs/ui-review/stage2-2/07-reemerged-decision.png
 - docs/ui-review/stage2-2/08-reemerged-mobile.png
 - docs/ui-review/stage2-2/09-legacy-note.png
