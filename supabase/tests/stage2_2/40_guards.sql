@@ -22,7 +22,7 @@ begin
       v_fp,null,'Demo reviewer');
     raise exception 'Reopen accepted decision';
   exception when sqlstate 'P0001' then
-    if sqlerrm <> 'DECISION_IMMUTABLE' then raise; end if;
+    if sqlerrm <> 'DECISION_NOT_REOPENABLE' then raise; end if;
   end;
   begin
     update public.finding_states set outcome=null where fingerprint=v_fp;

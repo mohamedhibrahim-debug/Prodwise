@@ -6,6 +6,8 @@ import { runReview } from "../review/engine.ts";
 import { applyFindingStates } from "../review/merge.ts";
 import type { FindingState, ResolveConflictInput } from "../domain/types.ts";
 import { planResolution } from "./plan.ts";
+import { decideConflict, assignConfirmer } from "./decide.ts";
+import type { Repository } from "../data/repository.ts";
 
 const initiativeId = "11111111-1111-4111-8111-111111111111";
 const claims = SEED_CLAIMS.map((claim) => ({ ...claim, evidence: SEED_CLAIM_EVIDENCE
@@ -46,6 +48,23 @@ test("stale digest and missing claim timestamp are refused", () => {
   assert.throws(() => planResolution(finding, input({ contentDigest: "stale" }), stamps),
     /FINDING_STALE/);
   assert.throws(() => planResolution(finding, input(), new Map()), /CLAIM_STALE/);
+});
+
+test("decideConflict re-derives and refuses a stale render before calling persistence", async () => {
+  let writes = 0;
+  const repo = {
+    listClaims: async () => structuredClone(claims),
+    listFindingStates: async () => [],
+    resolveConflict: async () => { writes++; throw new Error("Unexpected write"); },
+  } as unknown as Repository;
+  await assert.rejects(decideConflict(repo, input({ contentDigest: "old-render" })), /FINDING_STALE/);
+  assert.equal(writes, 0);
+});
+
+test("assignConfirmer refuses a blank label before repository work", async () => {
+  const repo = { listClaims: async () => { throw new Error("Unexpected read"); } } as unknown as Repository;
+  await assert.rejects(assignConfirmer(repo, { initiativeId, fingerprint: finding.fingerprint,
+    actor, label: "   " }), /INVALID_CONFIRMER/);
 });
 
 test("a prior decision is open on re-emergence even when the digest is identical", () => {

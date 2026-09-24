@@ -1,4 +1,4 @@
-param([switch]$KeepDatabase)
+param([switch]$KeepDatabase, [switch]$WithStage22)
 $ErrorActionPreference = "Stop"
 $pgBin = if ($env:PRODWISE_PG_BIN) { $env:PRODWISE_PG_BIN } else { Join-Path $env:LOCALAPPDATA "ProdwiseTools\PostgreSQL\16" }
 if (Test-Path (Join-Path $pgBin "bin\psql.exe")) { $pgBin = Join-Path $pgBin "bin" }
@@ -31,6 +31,11 @@ try {
   Remove-Item $preSeed -Force
   Invoke-Psql $db (Join-Path $tests "01_baseline.sql")
   Invoke-Psql $db (Join-Path $tests "02_apply_2_1.sql")
+  if ($WithStage22) {
+    Invoke-Psql $db (Join-Path $migrations "0008_stage2_2_origin_enum.sql")
+    Invoke-Psql $db (Join-Path $migrations "0009_stage2_2_decision_truth.sql")
+    Write-Host "Running Stage 2.1 regression on top of committed 0008/0009"
+  }
   foreach ($name in @("10_backfill","20_constraints","30_verify_claim","31_verify_atomicity","40_reopen","41_reopen_atomicity","50_privileges","60_regression","80_fresh_seed")) {
     Invoke-Psql $db (Join-Path $tests "$name.sql")
   }

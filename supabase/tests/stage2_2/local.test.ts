@@ -47,7 +47,7 @@ test("local adapter decides, audits and retains prior decision through re-emerge
       attribute: finding.claims[0]!.attribute, phase: finding.phase,
       valuesRecorded: "27 | 30", resolution: "Note" }), /DECISION_IMMUTABLE/);
     await assert.rejects(localRepository.reopenFindingState(initiativeId, finding.fingerprint, actor),
-      /DECISION_IMMUTABLE/);
+      /DECISION_NOT_REOPENABLE/);
     await assert.rejects(assignConfirmer(localRepository, { initiativeId,
       fingerprint: finding.fingerprint, label: "Another owner", actor }), /DECISION_STANDING/);
     writeStore((store) => {

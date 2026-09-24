@@ -6,6 +6,7 @@ $hostName = if ($env:PRODWISE_PG_HOST) { $env:PRODWISE_PG_HOST } else { "127.0.0
 $port = if ($env:PRODWISE_PG_PORT) { $env:PRODWISE_PG_PORT } else { "55432" }
 $db = "prodwise_s22_$PID"
 $rollbackDb = "${db}_rollback"
+$raceDb = "${db}_note_race"
 $psql = Join-Path $pgBin "psql.exe"
 $createdb = Join-Path $pgBin "createdb.exe"
 $dropdb = Join-Path $pgBin "dropdb.exe"
@@ -26,6 +27,10 @@ try {
     SqlFile $db (Join-Path $tests "$name.sql")
     Write-Host "Stage 2.2 $name passed"
   }
+  & $createdb -h $hostName -p $port -U postgres -T $db $raceDb
+  if ($LASTEXITCODE -ne 0) { throw "Could not create $raceDb" }
+  & (Join-Path $PSScriptRoot "run-stage2-2-note-race.ps1") -Database $raceDb `
+    -PgBin $pgBin -HostName $hostName -Port $port
   & (Join-Path $PSScriptRoot "run-stage2-2-concurrency.ps1") -Database $db `
     -PgBin $pgBin -HostName $hostName -Port $port
   if ($LASTEXITCODE -ne 0) { throw "Stage 2.2 concurrency failed" }
@@ -45,10 +50,16 @@ try {
     -c "rollback" | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "0009 rollback failed" }
   SqlFile $rollbackDb (Join-Path $migrations "0009_stage2_2_decision_truth.sql")
+  SqlFile $rollbackDb (Join-Path $root "supabase\rollback\0009_stage2_2_decision_truth.sql")
+  SqlFile $rollbackDb (Join-Path $tests "70_rollback.sql")
+  SqlFile $rollbackDb (Join-Path $root "supabase\tests\stage2_1\40_reopen.sql")
+  SqlFile $rollbackDb (Join-Path $migrations "0008_stage2_2_origin_enum.sql")
+  SqlFile $rollbackDb (Join-Path $migrations "0009_stage2_2_decision_truth.sql")
   SqlFile $rollbackDb (Join-Path $tests "10_choose_27.sql")
   Write-Host "Stage 2.2 rollback/reapply passed"
   Write-Host "Stage 2.2 database harness passed: $db"
 } finally {
   if (!$KeepDatabase) { & $dropdb --if-exists -h $hostName -p $port -U postgres $db }
   if (!$KeepDatabase) { & $dropdb --if-exists -h $hostName -p $port -U postgres $rollbackDb }
+  if (!$KeepDatabase) { & $dropdb --if-exists -h $hostName -p $port -U postgres $raceDb }
 }

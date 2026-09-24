@@ -15,7 +15,7 @@ $b=Start-Job -ScriptBlock $block -ArgumentList $psql,$HostName,$Port,$Database,$
 @($a,$b) | Wait-Job | Out-Null
 $results=@((Receive-Job $a),(Receive-Job $b))
 Remove-Job $a,$b -Force
-if($results[0].Code -ne 0 -or $results[1].Code -eq 0){
+if($results[0].Code -ne 0 -or $results[1].Code -eq 0 -or $results[1].Output -notmatch 'ERROR:\s+CLAIM_STALE(?:\r?\n|$)'){
   throw "Double decision did not serialize: $($results | ConvertTo-Json -Compress)"
 }
 $audit=(& $psql -X -At -h $HostName -p $Port -U postgres -d $Database -c `

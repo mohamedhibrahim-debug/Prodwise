@@ -531,6 +531,8 @@ export interface ReviewFinding {
   resolvedAt: string | null;
   /** A decided mismatch that has appeared again is actionable even when its digest repeats. */
   previousDecision?: PreviousDecision | null;
+  /** Current decision cycle only; never the confirmedWith audit snapshot. */
+  confirmerLabel: string | null;
 
   /**
    * Always null for a deterministic rule, and deliberately so.

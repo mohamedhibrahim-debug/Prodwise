@@ -1,7 +1,9 @@
 begin;
 do $$
-declare v_result jsonb; v_plan jsonb;
+declare v_result jsonb; v_plan jsonb; v_chosen_before jsonb;
 begin
+  select to_jsonb(c) into v_chosen_before from public.claims c
+    where id='cccc0001-0000-4000-8000-000000000003';
   select jsonb_build_object(
     'initiativeId','11111111-1111-4111-8111-111111111111',
     'fingerprint','f2f628a25ea8bcf38ef8db92896bbcc1f61b20e159c3d7635ed85c98dd84f5ca',
@@ -24,7 +26,13 @@ begin
     raise exception 'Unexpected resolution result: %',v_result;
   end if;
   if (select status from public.claims where id='cccc0001-0000-4000-8000-000000000003') <> 'ACTIVE'
+    or (select to_jsonb(c) from public.claims c where id='cccc0001-0000-4000-8000-000000000003')
+       is distinct from v_chosen_before
+    or (select decided_value from public.finding_states where fingerprint=v_plan->>'fingerprint')
+       is distinct from '27'
     or (select status from public.claims where id='cccc0001-0000-4000-8000-000000000004') <> 'SUPERSEDED'
+    or (select superseded_by_claim_id from public.claims where id='cccc0001-0000-4000-8000-000000000004')
+       is distinct from 'cccc0001-0000-4000-8000-000000000003'::uuid
     or (select count(*) from public.activity_log where event_type='FINDING_DECIDED') <> 1
     or exists (select 1 from public.activity_log where event_type='FINDING_DECIDED'
        and (payload ? 'occurredAt' or payload->>'confirmedWith' is not null

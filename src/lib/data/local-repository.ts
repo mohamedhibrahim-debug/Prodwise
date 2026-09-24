@@ -780,7 +780,7 @@ export const localRepository: Repository = {
     const existing = store.findingStates.find(
       (f) => f.initiativeId === initiativeId && f.fingerprint === fingerprint,
     );
-    if (existing?.outcome) throw new Error("DECISION_IMMUTABLE");
+    if (existing?.outcome) throw new Error("DECISION_NOT_REOPENABLE");
     if (!existing || existing.status === "OPEN") return false;
     writeStore((s) => {
       const state = s.findingStates.find(

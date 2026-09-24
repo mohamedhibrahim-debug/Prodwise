@@ -20,7 +20,8 @@ export function applyFindingStates(
 
   return findings.map((finding) => {
     const state = byFingerprint.get(finding.fingerprint);
-    if (!state || state.status !== "RESOLVED") return finding;
+    if (!state) return { ...finding, confirmerLabel: null };
+    if (state.status !== "RESOLVED") return { ...finding, confirmerLabel: state.confirmerLabel };
 
     if (state.outcome) {
       // A real decision changed Knowledge. If the original conflict derives
@@ -31,6 +32,7 @@ export function applyFindingStates(
         actionable: true,
         resolution: null,
         resolvedAt: null,
+        confirmerLabel: state.confirmerLabel,
         previousDecision: {
           outcome: state.outcome,
           decidedValue: state.decidedValue!,
@@ -54,6 +56,7 @@ export function applyFindingStates(
         status: "OPEN",
         resolution: state.resolution,
         resolvedAt: state.resolvedAt,
+        confirmerLabel: state.confirmerLabel,
       };
     }
 
@@ -62,6 +65,7 @@ export function applyFindingStates(
       status: "RESOLVED",
       resolution: state.resolution,
       resolvedAt: state.resolvedAt,
+      confirmerLabel: null,
     };
   });
 }

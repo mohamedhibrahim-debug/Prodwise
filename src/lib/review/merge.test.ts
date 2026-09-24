@@ -23,6 +23,7 @@ function finding(over: Partial<ReviewFinding> = {}): ReviewFinding {
     detectedOn: "2026-06-01T00:00:00.000Z",
     resolution: null,
     resolvedAt: null,
+    confirmerLabel: null,
     confidence: null,
     severity: null,
     ...over,
@@ -52,9 +53,45 @@ function state(over: Partial<FindingState> = {}): FindingState {
 }
 
 test("no state row means OPEN", () => {
-  const [f] = applyFindingStates([finding()], []);
+  const [f] = applyFindingStates([finding({ confirmerLabel: "stale display label" })], []);
   assert.equal(f!.status, "OPEN");
   assert.equal(f!.resolution, null);
+  assert.equal(f!.confirmerLabel, null);
+});
+
+test("OPEN state exposes its current confirmer without mutating inputs", () => {
+  const input = finding();
+  const overlay = state({ status: "OPEN", resolution: null, resolvedAt: null,
+    confirmerLabel: "Finance owner" });
+  const before = structuredClone({ input, overlay });
+  assert.equal(applyFindingStates([input], [overlay])[0]!.confirmerLabel, "Finance owner");
+  assert.deepEqual({ input, overlay }, before);
+});
+
+test("re-emerged decision exposes the new cycle confirmer and preserves its snapshot", () => {
+  const input = finding();
+  const overlay = state({ outcome: "CHOSE_EXISTING", chosenClaimId: "c27",
+    decidedValue: "27", confirmedWith: "First owner", confirmerLabel: "New owner" });
+  const before = structuredClone({ input, overlay });
+  const result = applyFindingStates([input], [overlay])[0]!;
+  assert.equal(result.status, "OPEN");
+  assert.equal(result.actionable, true);
+  assert.equal(result.confirmerLabel, "New owner");
+  assert.deepEqual(result.previousDecision, { outcome: "CHOSE_EXISTING", decidedValue: "27",
+    rationale: overlay.resolution, decidedAt: overlay.resolvedAt });
+  assert.deepEqual({ input, overlay }, before);
+  assert.equal(overlay.confirmedWith, "First owner");
+});
+
+test("standing decision has no derived row or current confirmer to display", () => {
+  const standing = state({ outcome: "CHOSE_EXISTING", chosenClaimId: "c27",
+    decidedValue: "27", confirmedWith: "First owner", confirmerLabel: null });
+  const before = structuredClone(standing);
+  // Standing means the mismatch no longer derives; merge must not manufacture it.
+  assert.deepEqual(applyFindingStates([], [standing]), []);
+  const [unrelated] = applyFindingStates([finding({ fingerprint: "other" })], [standing]);
+  assert.equal(unrelated!.confirmerLabel, null);
+  assert.deepEqual(standing, before);
 });
 
 test("a matching resolved row marks the finding resolved", () => {

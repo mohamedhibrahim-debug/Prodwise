@@ -67,7 +67,7 @@ begin
     where initiative_id=p_initiative_id and fingerprint=p_fingerprint for update;
   if not found then return false; end if;
   if v_state.outcome is not null then
-    raise exception using errcode='P0001', message='DECISION_IMMUTABLE';
+    raise exception using errcode='P0001', message='DECISION_NOT_REOPENABLE';
   end if;
   if v_state.status='OPEN' then return false; end if;
   update public.finding_states set status='OPEN',resolution=null,resolved_at=null
@@ -372,6 +372,7 @@ begin
   v_cycle := case when v_state.outcome is null then 'FIRST' else 'REEMERGED' end;
   v_values := array(select distinct public.decision_normalise(value) collate "C"
     from public.claims where initiative_id=v_initiative and status='ACTIVE'
+      and nullif(public.decision_normalise(value),'') is not null
       and public.decision_normalise(subject)=public.decision_normalise(p_plan->>'subject')
       and public.decision_normalise(attribute)=public.decision_normalise(p_plan->>'attribute')
       and nullif(public.decision_normalise(phase),'') is not distinct from
@@ -442,7 +443,13 @@ begin
     rule_id=excluded.rule_id,content_digest=excluded.content_digest,
     subject=excluded.subject,attribute=excluded.attribute,phase=excluded.phase,
     values_recorded=excluded.values_recorded,status='RESOLVED',
-    resolution=excluded.resolution,resolved_at=excluded.resolved_at;
+    resolution=excluded.resolution,resolved_at=excluded.resolved_at
+    where public.finding_states.outcome is null;
+  -- The initial lookup can miss an uncommitted decision. Recheck on the
+  -- conflicting row after waiting for its transaction, before writing audit.
+  if not found then
+    raise exception using errcode='P0001',message='DECISION_IMMUTABLE';
+  end if;
   insert into public.activity_log(initiative_id,event_type,summary)
   values(p_initiative_id,'FINDING_RESOLVED',
     (p_input->>'subject') || ' finding marked resolved: ' || btrim(p_input->>'resolution'));

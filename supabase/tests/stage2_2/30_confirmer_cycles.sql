@@ -12,7 +12,24 @@ begin
   v_assign := jsonb_build_object('initiativeId','11111111-1111-4111-8111-111111111111',
     'fingerprint',v_fp,'label','Finance owner','actor',jsonb_build_object('id',null,'label','Demo reviewer'),
     'cycle','FIRST','subject','Daily Repayment','attribute','Calculation Divisor','phase','Phase 1');
+  begin
+    perform public.assign_finding_confirmer(jsonb_set(v_assign,'{label}','"   "'::jsonb));
+    raise exception 'Blank confirmer unexpectedly accepted';
+  exception when sqlstate 'P0001' then
+    if sqlerrm <> 'INVALID_CONFIRMER' then raise; end if;
+  end;
+  if exists(select 1 from public.activity_log where event_type='FINDING_CONFIRMER_ASSIGNED') then
+    raise exception 'Refused confirmer wrote audit';
+  end if;
+  -- Normalizes to empty: the Review engine excludes this from its value set.
+  insert into public.claims(id,initiative_id,type,status,subject,attribute,value,domain,phase,origin)
+  values('dddd0001-0000-4000-8000-000000000023','11111111-1111-4111-8111-111111111111',
+    'REQUIREMENT','ACTIVE','Daily Repayment','Calculation Divisor','.','FINANCE','Phase 1','LEGACY');
   perform public.assign_finding_confirmer(v_assign);
+  if not exists(select 1 from public.activity_log where event_type='FINDING_CONFIRMER_ASSIGNED'
+    and payload->'previousLabel'='null'::jsonb and payload->>'label'='Finance owner') then
+    raise exception 'First assignment audit labels incorrect';
+  end if;
   select * into v_state from public.finding_states where fingerprint=v_fp;
   if v_state.status <> 'OPEN' or v_state.confirmer_label <> 'Finance owner'
      or (select payload->>'cycle' from public.activity_log
@@ -56,6 +73,18 @@ begin
     raise exception 'Re-emerged confirmer altered decision history';
   end if;
 
+  if not exists(select 1 from public.activity_log where event_type='FINDING_CONFIRMER_ASSIGNED'
+    and payload->>'cycle'='REEMERGED' and payload->'previousLabel'='null'::jsonb
+    and payload->>'label'='Second owner') then
+    raise exception 'Re-emerged assignment audit labels incorrect';
+  end if;
+  v_assign := jsonb_set(v_assign,'{label}','"Third owner"'::jsonb);
+  perform public.assign_finding_confirmer(v_assign);
+  if not exists(select 1 from public.activity_log where event_type='FINDING_CONFIRMER_ASSIGNED'
+    and payload->>'previousLabel'='Second owner' and payload->>'label'='Third owner'
+    and payload->'previousDecision'->>'confirmedWith'='Finance owner') then
+    raise exception 'Reassignment lost previous/new label or historical snapshot';
+  end if;
   -- The prior audit remains a separate immutable event after a new decision.
   v_digest := public.decision_hash(array[v_fp,
     'cccc0001-0000-4000-8000-000000000003','27','ACTIVE','Phase 1',
@@ -68,7 +97,7 @@ begin
     from public.claims where id in ('cccc0001-0000-4000-8000-000000000003',v_new)));
   perform public.resolve_conflict(v_plan);
   select * into v_state from public.finding_states where fingerprint=v_fp;
-  if v_state.confirmed_with <> 'Second owner' or v_state.confirmer_label is not null
+  if v_state.confirmed_with <> 'Third owner' or v_state.confirmer_label is not null
     or (select count(*) from public.activity_log where event_type='FINDING_DECIDED') <> 2
     or not exists (select 1 from public.activity_log
       where event_type='FINDING_DECIDED' and payload=v_first_audit) then
