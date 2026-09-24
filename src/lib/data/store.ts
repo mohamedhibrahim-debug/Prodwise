@@ -1,6 +1,6 @@
 import "server-only";
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import type {
@@ -150,4 +150,21 @@ export function writeStore(mutate: (store: StoreShape) => void): void {
   const store = load();
   mutate(store);
   persist();
+}
+
+/** Commit all decision effects as one local-store replacement. */
+export function writeStoreAtomic<T>(mutate: (store: StoreShape) => T): T {
+  const next = structuredClone(load());
+  const result = mutate(next);
+  const temporary = `${DATA_FILE}.${crypto.randomUUID()}.tmp`;
+  mkdirSync(dirname(DATA_FILE), { recursive: true });
+  try {
+    writeFileSync(temporary, JSON.stringify(next, null, 2), "utf8");
+    renameSync(temporary, DATA_FILE);
+    cache = next;
+    return result;
+  } catch (error) {
+    rmSync(temporary, { force: true });
+    throw error;
+  }
 }

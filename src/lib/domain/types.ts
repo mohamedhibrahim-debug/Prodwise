@@ -98,7 +98,7 @@ export interface Actor {
   label: string;
 }
 
-export const CLAIM_ORIGINS = ["LEGACY", "HUMAN_ENTRY"] as const;
+export const CLAIM_ORIGINS = ["LEGACY", "HUMAN_ENTRY", "HUMAN_DECISION"] as const;
 export type ClaimOrigin = (typeof CLAIM_ORIGINS)[number];
 
 export const VERIFICATION_BASES = ["EVIDENCE", "DIRECT_KNOWLEDGE"] as const;
@@ -529,6 +529,10 @@ export interface ReviewFinding {
 
   resolution: string | null;
   resolvedAt: string | null;
+  /** A decided mismatch that has appeared again is actionable even when its digest repeats. */
+  previousDecision?: PreviousDecision | null;
+  /** Current decision cycle only; never the confirmedWith audit snapshot. */
+  confirmerLabel: string | null;
 
   /**
    * Always null for a deterministic rule, and deliberately so.
@@ -549,6 +553,64 @@ export interface ReviewFinding {
    * and deriving it from domain would be arbitrary scoring (CLAUDE.md §12).
    */
   severity: Severity | null;
+}
+
+export const FINDING_OUTCOMES = ["CHOSE_EXISTING", "CORRECTED_VALUE"] as const;
+export type FindingOutcome = (typeof FINDING_OUTCOMES)[number];
+export interface PreviousDecision {
+  outcome: FindingOutcome;
+  decidedValue: string;
+  rationale: string;
+  decidedAt: string;
+}
+
+export interface DecisionMember {
+  id: string;
+  expectedUpdatedAt: string;
+  keep: boolean;
+}
+
+export interface ResolveConflictInput {
+  initiativeId: string;
+  fingerprint: string;
+  contentDigest: string;
+  outcome: FindingOutcome;
+  chosenClaimId: string | null;
+  correctedValue: string | null;
+  decisionDomain: Domain | null;
+  rationale: string;
+  actor: Actor;
+}
+
+export interface ResolveConflictPlan extends ResolveConflictInput {
+  ruleId: "CONFLICT_SAME_ATTRIBUTE_V1";
+  subject: string;
+  attribute: string;
+  phase: string | null;
+  valuesRecorded: string;
+  members: DecisionMember[];
+}
+
+export interface ResolveConflictResult {
+  outcome: FindingOutcome;
+  chosenClaimId: string | null;
+  decisionClaimId: string | null;
+  supersededIds: string[];
+}
+
+export interface AssignConfirmerInput {
+  initiativeId: string;
+  fingerprint: string;
+  label: string | null;
+  actor: Actor;
+}
+
+export interface AssignConfirmerPlan extends AssignConfirmerInput {
+  cycle: "FIRST" | "REEMERGED";
+  subject: string;
+  attribute: string;
+  phase: string | null;
+  contentDigest: string;
 }
 
 /**
@@ -580,6 +642,16 @@ export interface FindingState {
   status: FindingStatus;
   resolution: string | null;
   resolvedAt: string | null;
+  outcome: FindingOutcome | null;
+  chosenClaimId: string | null;
+  decisionClaimId: string | null;
+  decidedValue: string | null;
+  confirmedWith: string | null;
+  actorId: string | null;
+  actorLabel: string | null;
+  confirmerLabel: string | null;
+  confirmerSetAt: string | null;
+  confirmerSetByLabel: string | null;
   createdAt: string;
   updatedAt: string;
 }

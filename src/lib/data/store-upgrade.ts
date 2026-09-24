@@ -25,5 +25,18 @@ export function upgradeStoreShape(store: StoreShape): StoreShape {
       locator: link.locator ?? null,
       excerpt: link.excerpt ?? null,
     })),
+    findingStates: store.findingStates.map((state) => ({
+      ...state,
+      outcome: state.outcome ?? null,
+      chosenClaimId: state.chosenClaimId ?? null,
+      decisionClaimId: state.decisionClaimId ?? null,
+      decidedValue: state.decidedValue ?? null,
+      confirmedWith: state.confirmedWith ?? null,
+      actorId: state.actorId ?? null,
+      actorLabel: state.actorLabel ?? null,
+      confirmerLabel: state.confirmerLabel ?? null,
+      confirmerSetAt: state.confirmerSetAt ?? null,
+      confirmerSetByLabel: state.confirmerSetByLabel ?? null,
+    })),
   };
 }

@@ -139,6 +139,16 @@ interface FindingStateRow {
   status: FindingStatus;
   resolution: string | null;
   resolved_at: string | null;
+  outcome: FindingState["outcome"];
+  chosen_claim_id: string | null;
+  decision_claim_id: string | null;
+  decided_value: string | null;
+  confirmed_with: string | null;
+  actor_id: string | null;
+  actor_label: string | null;
+  confirmer_label: string | null;
+  confirmer_set_at: string | null;
+  confirmer_set_by_label: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -263,6 +273,16 @@ function toFindingState(row: FindingStateRow): FindingState {
     status: row.status,
     resolution: row.resolution,
     resolvedAt: row.resolved_at,
+    outcome: row.outcome ?? null,
+    chosenClaimId: row.chosen_claim_id ?? null,
+    decisionClaimId: row.decision_claim_id ?? null,
+    decidedValue: row.decided_value ?? null,
+    confirmedWith: row.confirmed_with ?? null,
+    actorId: row.actor_id ?? null,
+    actorLabel: row.actor_label ?? null,
+    confirmerLabel: row.confirmer_label ?? null,
+    confirmerSetAt: row.confirmer_set_at ?? null,
+    confirmerSetByLabel: row.confirmer_set_by_label ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -823,31 +843,24 @@ export const supabaseRepository: Repository = {
 
   async setFindingState(initiativeId, fingerprint, input) {
     assertWriteAllowed();
-
-    const { error } = await getClient().from("finding_states").upsert(
-      {
-        initiative_id: initiativeId,
-        fingerprint,
-        rule_id: input.ruleId,
-        content_digest: input.contentDigest,
-        subject: input.subject,
-        attribute: input.attribute,
-        phase: input.phase,
-        values_recorded: input.valuesRecorded,
-        status: "RESOLVED",
-        resolution: input.resolution,
-        resolved_at: new Date().toISOString(),
-      },
-      { onConflict: "initiative_id,fingerprint" },
-    );
-
+    const { error } = await getClient().rpc("set_finding_note", {
+      p_initiative_id: initiativeId, p_fingerprint: fingerprint, p_input: input,
+    });
     if (error) throw new Error(`Failed to save finding state: ${error.message}`);
+  },
 
-    await writeActivity(
-      initiativeId,
-      "FINDING_RESOLVED",
-      `${input.subject} finding marked resolved: ${input.resolution}`,
-    );
+  async resolveConflict(plan) {
+    assertWriteAllowed();
+    const { data, error } = await getClient().rpc("resolve_conflict", { p_plan: plan });
+    if (error) throw new Error(error.message);
+    return data as { outcome: typeof plan.outcome; chosenClaimId: string | null;
+      decisionClaimId: string | null; supersededIds: string[] };
+  },
+
+  async assignFindingConfirmer(plan) {
+    assertWriteAllowed();
+    const { error } = await getClient().rpc("assign_finding_confirmer", { p_plan: plan });
+    if (error) throw new Error(error.message);
   },
 
   async reopenFindingState(initiativeId, fingerprint, actor) {

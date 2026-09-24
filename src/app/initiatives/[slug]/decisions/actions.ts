@@ -4,8 +4,24 @@ import { revalidatePath } from "next/cache";
 
 import { getRepository } from "@/lib/data";
 import { FindingAccessError, resolveOwnedFinding } from "@/lib/data/access";
-import { WriteDisabledError } from "@/lib/env";
+import { assertWriteAllowed, WriteDisabledError } from "@/lib/env";
 import { currentActor } from "@/lib/domain/actor";
+import { submitDecisionForm } from "@/lib/decisions/submit";
+import { decisionError, STALE_DECISION_MESSAGE, type DecisionFormState } from "@/lib/decisions/ui";
+
+function refreshDecisionPages(slug: string) {
+  revalidatePath(`/initiatives/${slug}`, "layout");
+}
+
+export async function decideAction(_prev: DecisionFormState, form: FormData): Promise<DecisionFormState> {
+  return submitDecisionForm(form, { repo: getRepository(), actor: currentActor(),
+    assertWrite: assertWriteAllowed, refresh: refreshDecisionPages }, "decision");
+}
+
+export async function confirmerAction(_prev: DecisionFormState, form: FormData): Promise<DecisionFormState> {
+  return submitDecisionForm(form, { repo: getRepository(), actor: currentActor(),
+    assertWrite: assertWriteAllowed, refresh: refreshDecisionPages }, "confirmer");
+}
 
 export interface FindingFormState {
   error: string | null;
@@ -52,16 +68,17 @@ export async function resolveFindingAction(
   }
 
   try {
+    assertWriteAllowed();
     const { initiative, finding } = await resolveOwnedFinding(slug, fingerprint);
 
     /* The fingerprint ignores membership, so it cannot serve as a concurrency
        token: a claim can join or leave the group between rendering this form
        and submitting it without the fingerprint moving. Resolving then records
        a decision about something the person never saw. */
-    if (seenDigest && seenDigest !== finding.contentDigest) {
+    if (seenDigest !== finding.contentDigest) {
       return {
         error:
-          "This finding changed while you were writing. Reload to see it as it stands now — your note was not saved.",
+          STALE_DECISION_MESSAGE,
         resolution,
       };
     }
@@ -85,12 +102,12 @@ export async function resolveFindingAction(
     });
   } catch (error) {
     if (error instanceof FindingAccessError)
-      return { error: error.message, resolution };
+      return { error: STALE_DECISION_MESSAGE, resolution };
     if (error instanceof WriteDisabledError)
       return { error: error.message, resolution };
     return {
       error:
-        error instanceof Error ? error.message : "Could not resolve the finding.",
+        decisionError(error),
       resolution,
     };
   }
@@ -113,6 +130,7 @@ export async function reopenFindingAction(
   const fingerprint = readText(formData.get("fingerprint"));
 
   try {
+    assertWriteAllowed();
     const { initiative } = await resolveOwnedFinding(slug, fingerprint);
     await getRepository().reopenFindingState(
       initiative.id,
@@ -120,11 +138,11 @@ export async function reopenFindingAction(
       currentActor(),
     );
   } catch (error) {
-    if (error instanceof FindingAccessError) return { error: error.message };
+    if (error instanceof FindingAccessError) return { error: STALE_DECISION_MESSAGE };
     if (error instanceof WriteDisabledError) return { error: error.message };
     return {
       error:
-        error instanceof Error ? error.message : "Could not reopen the finding.",
+        decisionError(error),
     };
   }
 

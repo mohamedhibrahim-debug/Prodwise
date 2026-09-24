@@ -45,6 +45,20 @@ DEMO_WRITE_ENABLED=true
 
 ### Scripts
 
+Stage 2.2's required local final gate is `npm run test:stage2-2-final`.
+It runs unit tests (including the exact MFF fingerprint), local adapter tests,
+Stage 2.2 SQL and both decision concurrency tests, committed rollback/reapply,
+**Stage 2.1 SQL and concurrency after 0008/0009**, typecheck, lint, build, and
+browser UI tests. The Stage 2.1-after-2.2 run is mandatory inside this command.
+
+Prerequisites: PowerShell 7 (`pwsh`), installed PostgreSQL 16 binaries (`PRODWISE_PG_BIN` overrides the
+local default) and Chrome or Edge (`PRODWISE_CHROME` overrides discovery). No new
+packages are required. The gate creates and removes a disposable loopback-only
+PostgreSQL cluster and disposable browser/demo stores. It never uses hosted
+Supabase. Port 55432 must be free, or invoke the PowerShell script with `-Port`.
+Browser tests can be rerun after a build with `npm run test:stage2-2-ui`.
+Screenshots and scenario coverage are in `docs/ui-review/stage2-2/`.
+
 | Command | Purpose |
 |---|---|
 | `npm run dev` | Development server |

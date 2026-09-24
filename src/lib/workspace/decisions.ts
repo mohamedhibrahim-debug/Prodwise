@@ -3,7 +3,7 @@ import "server-only";
 import { getRepository } from "@/lib/data";
 import { runReview } from "@/lib/review/engine";
 import { applyFindingStates } from "@/lib/review/merge";
-import type { ClaimWithEvidence, ReviewFinding } from "@/lib/domain/types";
+import type { ClaimWithEvidence, ReviewFinding, FindingState } from "@/lib/domain/types";
 
 /**
  * Claims plus the findings derived from them, with human decisions applied.
@@ -16,6 +16,7 @@ import type { ClaimWithEvidence, ReviewFinding } from "@/lib/domain/types";
 export async function loadDecisions(initiativeId: string): Promise<{
   claims: ClaimWithEvidence[];
   findings: ReviewFinding[];
+  states: FindingState[];
 }> {
   const repo = getRepository();
   const [claims, states] = await Promise.all([
@@ -25,6 +26,7 @@ export async function loadDecisions(initiativeId: string): Promise<{
 
   return {
     claims,
+    states,
     findings: applyFindingStates(runReview(initiativeId, claims), states),
   };
 }

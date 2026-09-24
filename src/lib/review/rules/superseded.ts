@@ -74,6 +74,7 @@ export function detectSuperseded(
         detectedOn: latestTimestamp(members.map((c) => c.updatedAt)),
         resolution: null,
         resolvedAt: null,
+        confirmerLabel: null,
         confidence: null,
         severity: null,
       };

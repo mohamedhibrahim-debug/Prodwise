@@ -7,9 +7,11 @@ import {
   DOMAIN_LABEL,
   EVIDENCE_RELATION_LABEL,
   FINDING_LABEL,
+  formatDateTime,
 } from "@/lib/domain/labels";
 import type { FindingClaimRef, ReviewFinding } from "@/lib/domain/types";
 import { ResolveFindingForm } from "./ResolveFindingForm";
+import { DecideConflictForm, ConfirmerForm } from "./DecideConflictForm";
 import styles from "./FindingRow.module.css";
 
 /**
@@ -28,15 +30,17 @@ export function FindingRow({
   finding,
   slug,
   canResolve,
+  previousConfirmedWith,
 }: {
   finding: ReviewFinding;
   slug: string;
   canResolve: boolean;
+  previousConfirmedWith?: string | null;
 }) {
   return finding.type === "SUPERSEDED" ? (
     <SupersededRow finding={finding} slug={slug} />
   ) : (
-    <ConflictRow finding={finding} slug={slug} canResolve={canResolve} />
+    <ConflictRow finding={finding} slug={slug} canResolve={canResolve} previousConfirmedWith={previousConfirmedWith} />
   );
 }
 
@@ -63,11 +67,10 @@ function WhyRaised({
             />
           </svg>
         </span>
-        Why this was raised
+        Why raised
       </summary>
       <div className={styles.whyBody}>
         <p>{finding.explanation}</p>
-        <p className={styles.rule}>{finding.reason}</p>
       </div>
     </details>
   );
@@ -79,10 +82,12 @@ function ConflictRow({
   finding,
   slug,
   canResolve,
+  previousConfirmedWith,
 }: {
   finding: ReviewFinding;
   slug: string;
   canResolve: boolean;
+  previousConfirmedWith?: string | null;
 }) {
   const resolved = finding.status === "RESOLVED";
 
@@ -91,7 +96,7 @@ function ConflictRow({
       <div className={styles.head}>
         <span className={styles.kindLabel}>{FINDING_LABEL[finding.type]}</span>
         {resolved ? (
-          <span className={styles.resolvedTag}>Resolved</span>
+          <span className={styles.resolvedTag}>Reviewed — note only</span>
         ) : (
           <span className={styles.needsDecision}>Needs a decision</span>
         )}
@@ -133,14 +138,14 @@ function ConflictRow({
       </div>
 
       <p className={styles.caption}>
-        Prodwise has not determined which value is correct.
+        Values differ. Review the sources before making a decision.
       </p>
 
       {/* Proof and decision on one row: the two things a reader can do with a
           finding, together, rather than at opposite ends of a long column. */}
       <div className={styles.actions}>
         <WhyRaised finding={finding} />
-        {finding.actionable && canResolve ? (
+        {finding.actionable && canResolve && !finding.previousDecision ? (
           <ResolveFindingForm
             slug={slug}
             fingerprint={finding.fingerprint}
@@ -149,6 +154,22 @@ function ConflictRow({
           />
         ) : null}
       </div>
+
+      {finding.previousDecision ? <details id={`decision-${finding.fingerprint}`} className={styles.decisionForm}>
+        <summary className={styles.resolveTrigger}>Decided before</summary>
+        <p className={styles.resolveCaption}>Values differ again. The previous decision remains part of the record.</p>
+        <p>{finding.previousDecision.outcome === "CHOSE_EXISTING" ? "Chosen value" : "Corrected value"}: {finding.previousDecision.decidedValue}</p>
+        <p>{finding.previousDecision.rationale}</p>
+        <p>Confirmed with: {previousConfirmedWith ?? "Not recorded"}</p>
+        <p>{formatDateTime(finding.previousDecision.decidedAt)} UTC</p>
+      </details> : null}
+      {finding.actionable && !resolved ? <>
+        {finding.confirmerLabel ? <p className={styles.facts}>Confirm with: {finding.confirmerLabel}</p> : null}
+        {canResolve ? <>
+          <ConfirmerForm key={finding.confirmerLabel ?? "unassigned"} finding={finding} slug={slug} />
+          <DecideConflictForm finding={finding} slug={slug} />
+        </> : null}
+      </> : null}
 
       <ResolutionNote finding={finding} />
     </li>
@@ -179,7 +200,7 @@ function ClaimColumn({ claim, slug }: { claim: FindingClaimRef; slug: string }) 
       <div className={styles.provenance}>
         <div className={styles.provenanceTop}>
           {primaryRef ? (
-            <Reference>{primaryRef}</Reference>
+            <Reference>Source: {primaryRef}</Reference>
           ) : hasExcludedRef ? (
             <span className={styles.noRef}>No included reference</span>
           ) : (
@@ -306,14 +327,14 @@ function ResolutionNote({ finding }: { finding: ReviewFinding }) {
         <p className={styles.resolutionNote}>
           {/* A resolution is a person's decision about the finding, not a change
               to the data. Saying so stops "Resolved" reading as "fixed". */}
-          Marked resolved by a person
+          Reviewed — note only
           {finding.resolvedAt ? (
             <>
               {" "}
               on <Timestamp iso={finding.resolvedAt} />
             </>
           ) : null}
-          . The claims still record what they record.
+          . Knowledge was not changed.
         </p>
         <p className={styles.resolutionText}>{finding.resolution}</p>
       </div>

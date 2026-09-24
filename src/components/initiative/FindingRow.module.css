@@ -559,6 +559,32 @@
 }
 
 /* ══ Narrow ════════════════════════════════════════════════════════════════ */
+.decisionForm {
+  margin-block: var(--s-4);
+  padding-block: var(--s-3);
+  border-top: 1px solid var(--rule);
+}
+
+.decisionForm form {
+  margin-top: var(--s-4);
+  max-width: 100%;
+}
+
+.formFields {
+  border: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+
+.formFields legend {
+  font-weight: var(--fw-semibold);
+  margin-bottom: var(--s-3);
+}
+
+.decisionForm .submit, .decisionForm .resolveTrigger {
+  min-height: var(--s-11, 44px);
+}
 
 @media (max-width: 780px) {
   .conflict {

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { UnestablishedState } from "@/components/primitives/UnestablishedState";
+import { DecisionRecord } from "@/components/initiative/DecisionRecord";
 import { FindingRow } from "@/components/initiative/FindingRow";
 import { getRepository } from "@/lib/data";
 import { STAGE_LABEL } from "@/lib/domain/labels";
@@ -34,23 +35,26 @@ export default async function DecisionsPage({
      every render. It is only needed to word one empty state, and only when
      there are no claims at all — so it is fetched there, not on the path every
      visitor takes. */
-  const { claims, findings: all } = await loadDecisions(initiative.id);
+  const { claims, findings: all, states } = await loadDecisions(initiative.id);
 
-  /* These lanes partition the already-derived result. They add no state and
-     assign no new meaning: supersessions remain history, while Resolved reads
-     the existing pre-Stage-2 finding-state records exactly as before. */
+  /* Presentation only: note-only reviews are separate from decisions that
+     changed Knowledge. The existing engine still determines actionability. */
   const needsDecision = all
     .filter((finding) => finding.status === "OPEN" && finding.actionable)
     .sort(compareFindings);
-  const resolved = all
+  const reviewed = all
     .filter(
       (finding) =>
-        finding.status === "RESOLVED" && finding.type !== "SUPERSEDED",
+        finding.status === "RESOLVED" && finding.type !== "SUPERSEDED" &&
+        states.some((state) => state.fingerprint === finding.fingerprint &&
+          state.status === "RESOLVED" && state.outcome === null),
     )
     .sort(compareFindings);
   const history = all
     .filter((finding) => finding.type === "SUPERSEDED")
     .sort(compareFindings);
+
+  const standing = states.filter((state) => state.outcome && !needsDecision.some((f) => f.fingerprint === state.fingerprint));
 
   // Only reached when Product Memory is empty, which is the one case where the
   // wording depends on whether any evidence has been connected.
@@ -63,8 +67,7 @@ export default async function DecisionsPage({
         <div className={styles.tabIntro}>
           <p className={styles.tabIntroText}>
             <strong>
-              Current Decisions findings are derived using deterministic rules.{" "}
-              AI-assisted detection is not active yet.
+              Compare recorded values, review their sources, and record a decision.
             </strong>
           </p>
         </div>
@@ -74,7 +77,7 @@ export default async function DecisionsPage({
             <div>
               <h2 className={styles.decisionLaneTitle}>Needs a decision</h2>
               <p className={styles.decisionLaneDescription}>
-                Actionable conflicts that are currently open.
+                Mismatches where current values differ.
               </p>
             </div>
             <span className={styles.decisionLaneCount}>{needsDecision.length}</span>
@@ -87,6 +90,7 @@ export default async function DecisionsPage({
                   finding={finding}
                   slug={slug}
                   canResolve={isDemoWriteEnabled}
+                  previousConfirmedWith={states.find((s) => s.fingerprint === finding.fingerprint)?.confirmedWith}
                 />
               ))}
             </ul>
@@ -96,7 +100,7 @@ export default async function DecisionsPage({
               hint={
                 evidenceCount === 0
                   ? "Review compares recorded claims. No evidence has been connected yet either, so nothing has been reviewed here."
-                  : "Review compares recorded claims. Until Product Memory has claims, no finding can be raised — and none can be ruled out."
+                  : "Review compares recorded claims. Until Knowledge has entries, values cannot be compared."
               }
             />
           ) : (
@@ -104,29 +108,47 @@ export default async function DecisionsPage({
           )}
         </section>
 
-        <section className={styles.decisionLane} id="lane-resolved">
+        <section className={styles.decisionLane} id="lane-reviewed">
           <div className={styles.decisionLaneHead}>
             <div>
-              <h2 className={styles.decisionLaneTitle}>Resolved</h2>
+              <h2 className={styles.decisionLaneTitle}>Reviewed</h2>
               <p className={styles.decisionLaneDescription}>
-                Existing finding-state decisions and their recorded notes.
+                Notes only. Knowledge was not changed.
               </p>
             </div>
-            <span className={styles.decisionLaneCount}>{resolved.length}</span>
+            <span className={styles.decisionLaneCount}>{reviewed.length}</span>
           </div>
-          {resolved.length > 0 ? (
+          {reviewed.length > 0 ? (
             <ul>
-              {resolved.map((finding) => (
+              {reviewed.map((finding) => (
                 <FindingRow
                   key={finding.fingerprint}
                   finding={finding}
                   slug={slug}
                   canResolve={isDemoWriteEnabled}
+                  previousConfirmedWith={states.find((s) => s.fingerprint === finding.fingerprint)?.confirmedWith}
                 />
               ))}
             </ul>
           ) : (
-            <p className={styles.decisionLaneEmpty}>{EMPTY.reviewResolved}</p>
+            <p className={styles.decisionLaneEmpty}>No reviewed notes yet.</p>
+          )}
+        </section>
+
+        <section className={styles.decisionLane} id="lane-resolved">
+          <div className={styles.decisionLaneHead}>
+            <div>
+              <h2 className={styles.decisionLaneTitle}>Resolved</h2>
+              <p className={styles.decisionLaneDescription}>Decisions that changed Knowledge.</p>
+            </div>
+            <span className={styles.decisionLaneCount}>{standing.length}</span>
+          </div>
+          {standing.length > 0 ? (
+            <ul>
+              {standing.map((state) => <DecisionRecord key={state.fingerprint} state={state} slug={slug} />)}
+            </ul>
+          ) : (
+            <p className={styles.decisionLaneEmpty}>No decision records yet.</p>
           )}
         </section>
 
@@ -154,7 +176,7 @@ export default async function DecisionsPage({
             </ul>
           ) : (
             <p className={styles.decisionLaneEmpty}>
-              No superseded findings are recorded.
+              No replaced values are recorded.
             </p>
           )}
         </section>
@@ -164,8 +186,7 @@ export default async function DecisionsPage({
             <div>
               <h2 className={styles.decisionLaneTitle}>Not checked yet</h2>
               <p className={styles.decisionLaneDescription}>
-                GAP, UNKNOWN and RISK detection is not implemented yet. No
-                findings are reported for those types here.
+                Gaps, unknowns, and risks are not checked here yet.
               </p>
             </div>
           </div>
@@ -188,8 +209,8 @@ export default async function DecisionsPage({
           <p className={styles.contextCount}>{needsDecision.length}</p>
           <p className={styles.contextValue}>
             {needsDecision.length === 1
-              ? "finding needs a decision"
-              : "findings need a decision"}
+              ? "mismatch needs a decision"
+              : "mismatches need a decision"}
           </p>
         </div>
 

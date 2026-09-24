@@ -16,6 +16,9 @@ import type {
   NewEvidenceInput,
   NewInitiativeInput,
   VerifyClaimInput,
+  ResolveConflictPlan,
+  ResolveConflictResult,
+  AssignConfirmerPlan,
 } from "@/lib/domain/types";
 
 /**
@@ -88,6 +91,8 @@ export interface Repository {
 
   /** A read: derivation and display must work with writes disabled. */
   listFindingStates(initiativeId: string): Promise<FindingState[]>;
+  resolveConflict(plan: ResolveConflictPlan): Promise<ResolveConflictResult>;
+  assignFindingConfirmer(plan: AssignConfirmerPlan): Promise<void>;
   /** Marks a finding resolved. A written reason is required. */
   setFindingState(
     initiativeId: string,

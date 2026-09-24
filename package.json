@@ -9,7 +9,10 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/lib/domain/*.test.ts\" \"src/lib/data/*.test.ts\" \"src/lib/review/*.test.ts\" \"src/lib/workspace/*.test.ts\""
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/lib/domain/*.test.ts\" \"src/lib/data/*.test.ts\" \"src/lib/review/*.test.ts\" \"src/lib/decisions/*.test.ts\" \"src/lib/workspace/*.test.ts\"",
+    "test:stage2-2-local": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/db-test/test-alias.mjs --test supabase/tests/stage2_2/local.test.ts",
+    "test:stage2-2-ui": "node scripts/ui-test/run.mjs",
+    "test:stage2-2-final": "pwsh -NoProfile -File scripts/db-test/run-stage2-2-final.ps1"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.58.0",

@@ -20,7 +20,27 @@ export function applyFindingStates(
 
   return findings.map((finding) => {
     const state = byFingerprint.get(finding.fingerprint);
-    if (!state || state.status !== "RESOLVED") return finding;
+    if (!state) return { ...finding, confirmerLabel: null };
+    if (state.status !== "RESOLVED") return { ...finding, confirmerLabel: state.confirmerLabel };
+
+    if (state.outcome) {
+      // A real decision changed Knowledge. If the original conflict derives
+      // again, it is a new decision cycle even if its digest repeats exactly.
+      return {
+        ...finding,
+        status: "OPEN",
+        actionable: true,
+        resolution: null,
+        resolvedAt: null,
+        confirmerLabel: state.confirmerLabel,
+        previousDecision: {
+          outcome: state.outcome,
+          decidedValue: state.decidedValue!,
+          rationale: state.resolution!,
+          decidedAt: state.resolvedAt!,
+        },
+      };
+    }
 
     if (isStale(finding, state)) {
       // The claims behind this finding changed AFTER it was resolved, so the
@@ -36,6 +56,7 @@ export function applyFindingStates(
         status: "OPEN",
         resolution: state.resolution,
         resolvedAt: state.resolvedAt,
+        confirmerLabel: state.confirmerLabel,
       };
     }
 
@@ -44,6 +65,7 @@ export function applyFindingStates(
       status: "RESOLVED",
       resolution: state.resolution,
       resolvedAt: state.resolvedAt,
+      confirmerLabel: null,
     };
   });
 }

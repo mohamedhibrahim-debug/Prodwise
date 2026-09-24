@@ -52,7 +52,7 @@ export default async function MemoryPage({
   const initiative = await repo.getInitiativeBySlug(slug);
   if (!initiative) notFound();
 
-  const claims = await repo.listClaims(initiative.id);
+  const [claims, states] = await Promise.all([repo.listClaims(initiative.id), repo.listFindingStates(initiative.id)]);
   const byId = new Map(claims.map((c) => [c.id, c]));
 
   const active = VIEWS.find((v) => v.key === view)!;
@@ -111,6 +111,7 @@ export default async function MemoryPage({
                 key={claim.id}
                 claim={claim}
                 slug={slug}
+                decisions={states.filter((s) => s.outcome && (s.chosenClaimId === claim.id || s.decisionClaimId === claim.id))}
                 supersededBy={
                   claim.supersededByClaimId
                     ? byId.get(claim.supersededByClaimId)
