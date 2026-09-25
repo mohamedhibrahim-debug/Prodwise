@@ -1,0 +1,11 @@
+
+> prodwise@0.1.0 test:stage2-2-ui
+> node scripts/ui-test/run.mjs
+
+B1/B2/B3/B5/B7/B10/B12 passed (browser + persisted store)
+B6 passed (browser + persisted corrected entry)
+B10 hardened: both modes, selected value, corrected value, domain, rationale preserved; stale and server/domain refusals write nothing
+B4/B8 passed; mobile has no horizontal overflow
+B9 passed
+B11 passed; all Stage 2.2 browser checks passed
+Multi-item queue, isolated inputs and second-item deep link passed

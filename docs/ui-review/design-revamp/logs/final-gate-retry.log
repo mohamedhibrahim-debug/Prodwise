@@ -1,0 +1,572 @@
+
+> prodwise@0.1.0 test:stage2-2-final
+> pwsh -NoProfile -File scripts/db-test/run-stage2-2-final.ps1
+
+
+> prodwise@0.1.0 test
+> node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test "src/lib/domain/*.test.ts" "src/lib/data/*.test.ts" "src/lib/review/*.test.ts" "src/lib/decisions/*.test.ts" "src/lib/workspace/*.test.ts"
+
+✔ unchanged claim-evidence links preserve their exact anchors (3.0358ms)
+✔ local store upgrade is idempotent and preserves claim timestamps (3.2033ms)
+✔ store upgrade gives legacy notes empty decision fields and preserves real decisions (1.6321ms)
+✔ choosing either existing value keeps every matching claim and supersedes competitors (1.9425ms)
+✔ corrected 28 plans one decision; equivalent existing value is refused (0.8821ms)
+✔ stale digest and missing claim timestamp are refused (0.3703ms)
+✔ decideConflict re-derives and refuses a stale render before calling persistence (1.8072ms)
+✔ assignConfirmer refuses a blank label before repository work (0.5733ms)
+✔ a prior decision is open on re-emergence even when the digest is identical (0.482ms)
+✔ UI existing-value submission delegates the exact decision and refreshes only after persistence (80.6438ms)
+✔ UI corrected-value submission creates a corrected decision plan (1.3097ms)
+✔ UI refuses normalized duplicates server-side without persistence or refresh (2.619ms)
+✔ UI stale error is safe and leaves the submitted values intact (1.2435ms)
+✔ UI write-disabled boundary blocks decision and confirmer direct submissions (2.6854ms)
+✔ UI translates named refusals and never returns raw RPC text (0.7781ms)
+✔ evidence verification boundary rules (2.121ms)
+✔ direct knowledge, state and raw staleness rules (0.5462ms)
+✔ ordinary edits cannot activate a non-active claim (0.2806ms)
+✔ trust copy is scoped and exact (58.0534ms)
+✔ 27 vs 30, same subject/attribute/phase, both ACTIVE -> exactly 1 CONFLICT (6.8739ms)
+✔ the explanation never asserts a contradiction or a winner (0.7602ms)
+✔ three differing ACTIVE values -> ONE grouped conflict, not three pairs (3.0134ms)
+✔ SUPERSEDED claim with a replacement -> 1 finding naming it (1.4845ms)
+✔ SUPERSEDED claim with no replacement -> honest wording, no invented successor (0.4882ms)
+✔ an explicit supersession pair is history, not a conflict (1.969ms)
+✔ gate 7 holds even if the status invariant is relaxed (2.2428ms)
+✔ different phases are not comparable (0.8552ms)
+✔ a stated phase and an absent phase are not comparable (0.4219ms)
+✔ a blank phase is treated as absent, not as a third context (0.6551ms)
+✔ DRAFT vs ACTIVE raises nothing — unchecked is not false (0.3296ms)
+✔ REJECTED vs ACTIVE raises nothing — unchecked is not false (0.1755ms)
+✔ DEFERRED vs ACTIVE raises nothing — unchecked is not false (0.1406ms)
+✔ UNKNOWN vs ACTIVE raises nothing — unchecked is not false (0.1853ms)
+✔ UNVERIFIED vs ACTIVE raises nothing — unchecked is not false (0.1333ms)
+✔ same subject, different attribute (0.2467ms)
+✔ same attribute, different subject (the real Required Capability pair) (0.2042ms)
+✔ identical values (0.2066ms)
+✔ formatting-only differences are not disagreements (0.2972ms)
+✔ a single claim conflicts with nothing (0.1989ms)
+✔ claims from another initiative are excluded entirely (0.1937ms)
+✔ blank subject, attribute or value never reaches a finding (0.257ms)
+✔ shuffled input produces identical output, order included (1.0218ms)
+✔ repeated runs are byte-identical (no clock anywhere) (0.4572ms)
+✔ evidence order in the input cannot change the output (0.5591ms)
+✔ changing a conflicting value changes the fingerprint (0.4278ms)
+✔ an unrelated edit leaves the finding's identity untouched (0.6179ms)
+✔ detectedOn is the latest source updatedAt, never the clock (0.2757ms)
+✔ an unparseable updatedAt degrades instead of throwing (0.4614ms)
+✔ a delimiter inside a field cannot forge another finding's identity (0.5552ms)
+✔ splitting a value into two claims does not inherit the old identity (0.4131ms)
+✔ two groups differing only by phase are distinguishable (C2) (0.446ms)
+✔ the fingerprint is scoped to its initiative (0.4377ms)
+✔ rewriting a superseded claim's content changes its fingerprint (H12) (0.3072ms)
+✔ cyclic supersession does not crash or hang (0.3305ms)
+✔ a replacement pointing outside the initiative says so, and does not lie (0.3153ms)
+✔ empty input yields no findings (0.1783ms)
+✔ KNOWN LIMITATION: elaboration is indistinguishable from contradiction (0.2941ms)
+✔ an EXCLUDED reference is not cited in the explanation (25.1697ms)
+✔ an in-scope reference is still cited when an excluded one sorts first (1.253ms)
+✔ the excluded link is still carried on the finding, not dropped (1.0607ms)
+✔ no state row means OPEN (3.8887ms)
+✔ OPEN state exposes its current confirmer without mutating inputs (29.3141ms)
+✔ re-emerged decision exposes the new cycle confirmer and preserves its snapshot (0.5176ms)
+✔ standing decision has no derived row or current confirmer to display (0.9644ms)
+✔ a matching resolved row marks the finding resolved (0.3589ms)
+✔ a state row for a different fingerprint is ignored (0.2444ms)
+✔ content changed since resolution -> reopened, note kept as history (0.2569ms)
+✔ unchanged content stays resolved even when timestamps move (1.1038ms)
+✔ a row predating digests is treated as current, not reopened (0.6409ms)
+✔ merging never mutates its inputs (0.4295ms)
+✔ Merchant Flex Finance retains its accepted conflict and supersession identities (7.5078ms)
+✔ a claim LEAVING the group changes the digest, though the fingerprint does not (5.0005ms)
+✔ a claim JOINING with a duplicate value changes the digest (0.808ms)
+✔ an evidence link changes the digest, though no claim timestamp moves (0.9719ms)
+✔ excluding linked evidence changes the digest (0.5537ms)
+✔ the digest is stable when nothing shown has changed (0.4896ms)
+✔ absent frames as a length that cannot occur, so no value can forge it (0.2445ms)
+✔ unpaired surrogates are distinguishable (UTF-8 would fold them together) (0.26ms)
+✔ a delimiter in a component still cannot shift a boundary (0.243ms)
+✔ normalise coerces non-string input instead of throwing (0.4736ms)
+✔ a numeric value in a hand-edited store does not take the page down (0.6439ms)
+✔ a numeric value equal to its string form is not a conflict (0.313ms)
+✔ typed activity renders structurally and unknown human text stays unchanged (2.0195ms)
+✔ known activity never displays a stored engine summary when payload is absent (0.3307ms)
+✔ local and Supabase-shaped events display the same copy (0.3315ms)
+✔ attention names confirmed differing values without a click (26.9271ms)
+✔ legacy provenance never invents a verification (3.325ms)
+✔ decision markers distinguish chosen and corrected values (6.4555ms)
+✔ replacement lineage resolves both directions from loaded entries (0.6325ms)
+✔ identical normalized values in different phases stay separate (0.6009ms)
+✔ mixed-status groups retain each underlying status and provenance (0.4529ms)
+✔ Preview refuses repository writes even when the demo write flag is true (171.1332ms)
+✔ setup requires an eligible Source, an entry, and a Confirmed entry independently (2.9102ms)
+✔ only CURRENT_SCOPE and FUTURE_PHASE sources satisfy setup (0.4295ms)
+✔ losing a required condition restores setup without hiding attention (0.2982ms)
+ℹ tests 95
+ℹ suites 0
+ℹ pass 95
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1092.6253
+
+> prodwise@0.1.0 test:stage2-2-local
+> node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/db-test/test-alias.mjs --test supabase/tests/stage2_2/local.test.ts
+
+✔ local adapter decides, audits and retains prior decision through re-emergence (56.9536ms)
+✔ atomic local writer discards claim changes when audit construction fails (3.3159ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 329.8614
+The files belonging to this database system will be owned by user "mohamed.hibrahim".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "English_United States.1252".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+creating directory C:/Users/mohamed.hibrahim/AppData/Local/Temp/prodwise-stage22-gate-0f861c2b384e46d998ef075357bced1c ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... windows
+selecting default max_connections ... 100
+selecting default shared_buffers ... 128MB
+selecting default time zone ... Africa/Cairo
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+waiting for server to start.... done
+server started
+Stage 2.2 00_helpers passed
+Stage 2.2 10_choose_27 passed
+Stage 2.2 20_outcomes passed
+Stage 2.2 30_confirmer_cycles passed
+Stage 2.2 40_guards passed
+Stage 2.2 50_atomicity passed
+Stage 2.2 60_privileges passed
+Stage 2.2 note/decision race passed: DECISION_IMMUTABLE; decision and Knowledge identical; audit 1/0
+Stage 2.2 concurrent double decision passed
+psql:C:/Users/mohamed.hibrahim/.codex/.chatgpt-projects/g-p-6a9c18d9edc481918dfc988bd280765c/prodwise-design-revamp/supabase/migrations/0008_stage2_2_origin_enum.sql:2: NOTICE:  enum label "HUMAN_DECISION" already exists, skipping
+Stage 2.2 rollback/reapply passed
+Stage 2.2 database harness passed: prodwise_s22_744
+DO
+CREATE TYPE
+CREATE TYPE
+CREATE TABLE
+COMMENT
+CREATE TABLE
+COMMENT
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+REVOKE
+REVOKE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TABLE
+COMMENT
+CREATE INDEX
+CREATE TABLE
+COMMENT
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE TRIGGER
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+REVOKE
+REVOKE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TABLE
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+CREATE INDEX
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+REVOKE
+REVOKE
+CREATE TYPE
+ALTER TABLE
+UPDATE 0
+UPDATE 0
+UPDATE 0
+UPDATE 0
+UPDATE 0
+ALTER TABLE
+COMMENT
+CREATE INDEX
+CREATE TYPE
+CREATE TABLE
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE TRIGGER
+ALTER TABLE
+REVOKE
+ALTER TABLE
+COMMENT
+INSERT 0 1
+INSERT 0 4
+INSERT 0 7
+INSERT 0 4
+INSERT 0 18
+INSERT 0 13
+INSERT 0 1
+INSERT 0 12
+SELECT 14
+CREATE TYPE
+CREATE TYPE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+GRANT
+GRANT
+ALTER TYPE
+CREATE TYPE
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+GRANT
+GRANT
+Running Stage 2.1 regression on top of committed 0008/0009
+DO
+DO
+INSERT 0 1
+DO
+DELETE 1
+DO
+INSERT 0 1
+INSERT 0 1
+DO
+INSERT 0 1
+INSERT 0 1
+DO
+INSERT 0 1
+DO
+INSERT 0 1
+DO
+SELECT 1
+UPDATE 1
+DO
+DO
+INSERT 0 1
+DO
+INSERT 0 1
+DO
+ALTER TABLE
+DO
+ALTER TABLE
+INSERT 0 1
+DO
+DO
+INSERT 0 1
+ALTER TABLE
+DO
+ALTER TABLE
+DO
+DO
+DELETE 14
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 13
+INSERT 0 1
+INSERT 0 12
+DO
+UPDATE 1
+SET
+                  id
+--------------------------------------
+ cccc0001-0000-4000-8000-000000000008
+(1 row)
+
+SET
+DO
+32_verify_concurrency: double verify passed
+INSERT 0 1
+INSERT 0 1
+DO
+INSERT 0 1
+INSERT 0 1
+DO
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+DO
+INSERT 0 1
+INSERT 0 1
+DO
+INSERT 0 1
+INSERT 0 1
+DO
+33_verify_membership_concurrency: unlink, boundary, link and relink cases passed
+DO
+CREATE TYPE
+CREATE TYPE
+CREATE TABLE
+COMMENT
+CREATE TABLE
+COMMENT
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+REVOKE
+REVOKE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TABLE
+COMMENT
+CREATE INDEX
+CREATE TABLE
+COMMENT
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE TRIGGER
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+REVOKE
+REVOKE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TABLE
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+CREATE INDEX
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+REVOKE
+REVOKE
+CREATE TYPE
+ALTER TABLE
+UPDATE 0
+UPDATE 0
+UPDATE 0
+UPDATE 0
+UPDATE 0
+ALTER TABLE
+COMMENT
+CREATE INDEX
+CREATE TYPE
+CREATE TABLE
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE TRIGGER
+ALTER TABLE
+REVOKE
+ALTER TABLE
+COMMENT
+BEGIN
+CREATE TYPE
+CREATE TYPE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+GRANT
+GRANT
+ROLLBACK
+CREATE TYPE
+CREATE TYPE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+GRANT
+GRANT
+DO
+Stage 2.1 database harness passed: prodwise_s21_744
+
+> prodwise@0.1.0 typecheck
+> tsc --noEmit
+
+
+> prodwise@0.1.0 lint
+> eslint .
+
+
+> prodwise@0.1.0 build
+> next build
+
+▲ Next.js 16.3.4 (Turbopack)
+✓ Running next.config.ts took 51ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.1s
+  Running TypeScript ...
+  Finished TypeScript in 3.3s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/4) ...
+  Generating static pages using 7 workers (1/4)
+  Generating static pages using 7 workers (2/4)
+  Generating static pages using 7 workers (3/4)
+✓ Generating static pages using 7 workers (4/4) in 251ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /api/nav
+├ ○ /apple-icon.png
+├ ○ /icon.png
+├ ƒ /initiatives
+├ ƒ /initiatives/[slug]
+├ ƒ /initiatives/[slug]/decisions
+├ ƒ /initiatives/[slug]/knowledge
+├ ƒ /initiatives/[slug]/knowledge/[claimId]/confirm
+├ ƒ /initiatives/[slug]/knowledge/[claimId]/edit
+├ ƒ /initiatives/[slug]/knowledge/new
+├ ƒ /initiatives/[slug]/knowledge/sources
+├ ƒ /initiatives/[slug]/knowledge/sources/[evidenceId]/edit
+├ ƒ /initiatives/[slug]/knowledge/sources/new
+├ ƒ /initiatives/[slug]/memory
+├ ƒ /initiatives/[slug]/memory/[claimId]/edit
+├ ƒ /initiatives/[slug]/memory/[claimId]/verify
+├ ƒ /initiatives/[slug]/memory/new
+├ ƒ /initiatives/[slug]/sources
+├ ƒ /initiatives/[slug]/sources/[evidenceId]/edit
+├ ƒ /initiatives/[slug]/sources/new
+├ ƒ /initiatives/new
+└ ƒ /reporting
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+> prodwise@0.1.0 test:stage2-2-ui
+> node scripts/ui-test/run.mjs
+
+B1/B2/B3/B5/B7/B10/B12 passed (browser + persisted store)
+B6 passed (browser + persisted corrected entry)
+B10 hardened: both modes, selected value, corrected value, domain, rationale preserved; stale and server/domain refusals write nothing
+B4/B8 passed; mobile has no horizontal overflow
+B9 passed
+B11 passed; all Stage 2.2 browser checks passed
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
+  [
+    'Select a value',
++   '27',
++   '30'
+-   'Alpha',
+-   'Beta'
+  ]
+
+    at file:///C:/Users/mohamed.hibrahim/.codex/.chatgpt-projects/g-p-6a9c18d9edc481918dfc988bd280765c/prodwise-design-revamp/scripts/ui-test/run.mjs:446:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: [ 'Select a value', '27', '30' ],
+  expected: [ 'Select a value', 'Alpha', 'Beta' ],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.20.0
+waiting for server to shut down.... done
+server stopped
+Exception: C:\Users\mohamed.hibrahim\.codex\.chatgpt-projects\g-p-6a9c18d9edc481918dfc988bd280765c\prodwise-design-revamp\scripts\db-test\run-stage2-2-final.ps1:14
+Line |
+  14 |    if ($LASTEXITCODE -ne 0) { throw "Gate failed: npm $Arguments" }
+     |                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Gate failed: npm run test:stage2-2-ui

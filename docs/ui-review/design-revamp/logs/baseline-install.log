@@ -1,0 +1,37 @@
+npm warn deprecated eslint@9.36.0: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+npm warn cleanup Failed to remove some directories [
+npm warn cleanup   [
+npm warn cleanup     '\\\\?\\C:\\Users\\mohamed.hibrahim\\.codex\\.chatgpt-projects\\g-p-6a9c18d9edc481918dfc988bd280765c\\prodwise-design-revamp\\node_modules',
+npm warn cleanup     [Error: EPERM: operation not permitted, rmdir 'C:\Users\mohamed.hibrahim\.codex\.chatgpt-projects\g-p-6a9c18d9edc481918dfc988bd280765c\prodwise-design-revamp\node_modules\next\dist\server\route-modules'] {
+npm warn cleanup       errno: -4048,
+npm warn cleanup       code: 'EPERM',
+npm warn cleanup       syscall: 'rmdir',
+npm warn cleanup       path: 'C:\\Users\\mohamed.hibrahim\\.codex\\.chatgpt-projects\\g-p-6a9c18d9edc481918dfc988bd280765c\\prodwise-design-revamp\\node_modules\\next\\dist\\server\\route-modules'
+npm warn cleanup     }
+npm warn cleanup   ]
+npm warn cleanup ]
+npm error code EPERM
+npm error syscall spawn
+npm error errno -4048
+npm error Error: spawn EPERM
+npm error     at ChildProcess.spawn (node:internal/child_process:458:11)
+npm error     at spawn (node:child_process:813:9)
+npm error     at promiseSpawn (C:\Users\mohamed.hibrahim\AppData\Local\Programs\node\node_modules\npm\node_modules\@npmcli\promise-spawn\lib\index.js:39:16)
+npm error     at spawnWithShell (C:\Users\mohamed.hibrahim\AppData\Local\Programs\node\node_modules\npm\node_modules\@npmcli\promise-spawn\lib\index.js:124:10)
+npm error     at promiseSpawn (C:\Users\mohamed.hibrahim\AppData\Local\Programs\node\node_modules\npm\node_modules\@npmcli\promise-spawn\lib\index.js:12:12)
+npm error     at runScriptPkg (C:\Users\mohamed.hibrahim\AppData\Local\Programs\node\node_modules\npm\node_modules\@npmcli\run-script\lib\run-script-pkg.js:79:13)
+npm error     at runScript (C:\Users\mohamed.hibrahim\AppData\Local\Programs\node\node_modules\npm\node_modules\@npmcli\run-script\lib\run-script.js:9:12)
+npm error     at C:\Users\mohamed.hibrahim\AppData\Local\Programs\node\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\rebuild.js:348:17
+npm error     at run (C:\Users\mohamed.hibrahim\AppData\Local\Programs\node\node_modules\npm\node_modules\promise-call-limit\dist\commonjs\index.js:67:22)
+npm error     at C:\Users\mohamed.hibrahim\AppData\Local\Programs\node\node_modules\npm\node_modules\promise-call-limit\dist\commonjs\index.js:84:9 {
+npm error   errno: -4048,
+npm error   code: 'EPERM',
+npm error   syscall: 'spawn'
+npm error }
+npm error
+npm error The operation was rejected by your operating system.
+npm error It's possible that the file was already in use (by a text editor or antivirus), or that you lack permissions to access it.
+npm error
+npm error If you believe this might be a permissions issue, please double-check the permissions of the file and its containing directories, or try running the command again as root/Administrator.
+npm error Log files were not written due to an error writing to the directory: C:\Users\mohamed.hibrahim\AppData\Local\npm-cache\_logs
+npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal

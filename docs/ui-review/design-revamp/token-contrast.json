@@ -1,0 +1,50 @@
+[
+  {
+    "foreground": "--ink-900",
+    "background": "--panel",
+    "ratio": 16.41,
+    "passesNormalTextAA": true
+  },
+  {
+    "foreground": "--ink-500",
+    "background": "--panel",
+    "ratio": 5.45,
+    "passesNormalTextAA": true
+  },
+  {
+    "foreground": "--ink-500",
+    "background": "--canvas",
+    "ratio": 4.98,
+    "passesNormalTextAA": true
+  },
+  {
+    "foreground": "--accent-700",
+    "background": "--panel",
+    "ratio": 5.44,
+    "passesNormalTextAA": true
+  },
+  {
+    "foreground": "--navy-ink-dim",
+    "background": "--navy-900",
+    "ratio": 6.78,
+    "passesNormalTextAA": true
+  },
+  {
+    "foreground": "--navy-ink-faint",
+    "background": "--navy-900",
+    "ratio": 4.97,
+    "passesNormalTextAA": true
+  },
+  {
+    "foreground": "--navy-850",
+    "background": "--accent-500",
+    "ratio": 6.57,
+    "passesNormalTextAA": true
+  },
+  {
+    "foreground": "--panel",
+    "background": "--navy-900",
+    "ratio": 14.77,
+    "passesNormalTextAA": true
+  }
+]
