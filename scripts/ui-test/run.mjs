@@ -54,9 +54,11 @@ try {
   };
   const text = () => evaluate("document.body.innerText");
   const vocabularyGate = async (label) => {
-    const visible = await text();
-    const storedActivity = await evaluate("[...document.querySelectorAll('[data-activity-summary]')].map(e=>e.textContent)");
-    const chrome = storedActivity.reduce((copy, summary) => copy.replace(summary, ""), visible);
+    const chrome = await evaluate(`(() => {
+      const copy = document.body.cloneNode(true);
+      copy.querySelectorAll('script,style,svg,[data-activity-legacy]').forEach(e => e.remove());
+      return copy.textContent;
+    })()`);
     assert.doesNotMatch(chrome, /\b(?:Product Memory|Memory|claims?|evidence|Readiness|findings?|fingerprint|contentDigest|finding_state|deterministic)\b/i, label);
     assert.doesNotMatch(chrome, /\b(?:CONFLICT|ACTIVE)\b/, label);
   };
@@ -154,6 +156,10 @@ try {
   await loadAbsolute("/initiatives"); await vocabularyGate("Initiatives");
   await loadAbsolute("/initiatives/new"); await vocabularyGate("Create Initiative");
   await loadAbsolute("/initiatives/merchant-flex-finance"); await waitText("Delivery facts"); await vocabularyGate("Brief"); await shot("brief-desktop-1440"); await mobileShot("brief-mobile-375");
+  await click("Why raised");
+  await waitText("Two confirmed entries record different values for the same subject, attribute and phase. Prodwise checks that the recorded values differ — not whether they contradict.");
+  assert.doesNotMatch(await evaluate("document.querySelector('details[open] p').textContent"), /\b(?:CONFLICT|active claims|FINDING_CONFLICT|ruleId)\b/i);
+  await vocabularyGate("Brief expanded Why raised");
   await cdp("Emulation.setDeviceMetricsOverride", { width: 375, height: 844, deviceScaleFactor: 1, mobile: true });
   assert.equal(await evaluate("document.querySelector('[aria-label=\"Open navigation\"]')?.parentElement?.querySelector('span')?.textContent"), "Merchant Flex Finance");
   await cdp("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
@@ -338,9 +344,25 @@ try {
   await evaluate("(() => { const e=document.querySelector('[name=resolution]'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(e,'Finance reviewed this mismatch'); e.dispatchEvent(new Event('input',{bubbles:true})); })()");
   await click("Save review note"); await waitText("Finance reviewed this mismatch");
   await vocabularyGate("Decisions after note-only action");
+  const noteStore = persisted();
+  const noteEvent = noteStore.activity.findLast((entry) => entry.eventType === "FINDING_RESOLVED");
+  assert.ok(noteEvent, "note-only activity exists");
+  noteEvent.payload = null;
+  noteEvent.summary = "Daily Repayment finding marked resolved: Finance reviewed this mismatch";
+  writeFileSync(join(dataDir, ".data/prodwise.json"), JSON.stringify(noteStore));
   await loadAbsolute("/"); await vocabularyGate("Home after note-only action");
-  await waitText("Reviewed — note only: Daily Repayment");
+  await waitText("Reviewed — note only");
+  assert.doesNotMatch(await text(), /finding marked resolved/i);
   await loadAbsolute("/initiatives/merchant-flex-finance"); await vocabularyGate("Brief after note-only action");
+  await waitText("Reviewed — note only");
+  assert.doesNotMatch(await text(), /finding marked resolved/i);
+  await start("clear-confirmer"); await click("Assign confirmer"); await fill("label", "Finance owner"); await click("Save confirmer");
+  await waitText("Confirm with: Finance owner"); await click("Change confirmer"); await click("Clear confirmer");
+  await until(() => persisted().activity.some((entry) => entry.eventType === "FINDING_CONFIRMER_ASSIGNED" && entry.payload?.label === null), "clear confirmer activity");
+  await loadAbsolute("/"); await waitText("Confirmer cleared"); await vocabularyGate("Home after clear confirmer");
+  assert.doesNotMatch(await text(), /\bFinding\b/i);
+  await loadAbsolute("/initiatives/merchant-flex-finance"); await waitText("Confirmer cleared"); await vocabularyGate("Brief after clear confirmer");
+  assert.doesNotMatch(await text(), /\bFinding\b/i);
   await start("readonly", false);
   assert.equal(await evaluate("document.querySelectorAll('form').length"), 0);
   assert.ok(!(await text()).includes("Make a decision")); await shot("10-write-disabled");

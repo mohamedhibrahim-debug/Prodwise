@@ -4,7 +4,7 @@ import { getRepository } from "@/lib/data";
 import { STAGE_LABEL } from "@/lib/domain/labels";
 import { compareFindings } from "@/lib/review/engine";
 import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
-import { activitySummary, attentionSentence } from "@/lib/workspace/copy";
+import { activitySummary, attentionSentence, isStructuredActivity } from "@/lib/workspace/copy";
 import styles from "./home.module.css";
 
 export const metadata: Metadata = { title: "Home" };
@@ -54,7 +54,7 @@ export default async function Home() {
         const initiative = byId.get(entry.initiativeId);
         if (!initiative) return null;
         return <li key={entry.id}><Link href={`/initiatives/${initiative.slug}`}>
-          <strong data-activity-summary>{activitySummary(entry)}</strong><span>{initiative.name} · <time dateTime={entry.occurredAt}>{new Date(entry.occurredAt).toLocaleDateString("en-GB")}</time></span>
+          <strong data-activity-summary data-activity-legacy={!isStructuredActivity(entry) || undefined}>{activitySummary(entry)}</strong><span>{initiative.name} · <time dateTime={entry.occurredAt}>{new Date(entry.occurredAt).toLocaleDateString("en-GB")}</time></span>
         </Link></li>;
       })}</ul> : <p>No recent changes recorded.</p>}
     </section>

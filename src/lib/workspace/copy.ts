@@ -4,24 +4,35 @@ import { normalise } from "../review/normalise.ts";
 const field = (payload: ActivityEntry["payload"], key: string) =>
   typeof payload?.[key] === "string" ? payload[key] as string : null;
 
+const STRUCTURED_ACTIVITY_TYPES = new Set([
+  "FINDING_CONFIRMER_ASSIGNED", "FINDING_DECIDED", "FINDING_RESOLVED",
+  "FINDING_REOPENED", "CLAIM_VERIFIED",
+]);
+
+export const MISMATCH_WHY_RAISED =
+  "Two confirmed entries record different values for the same subject, attribute and phase. Prodwise checks that the recorded values differ — not whether they contradict.";
+
+export const isStructuredActivity = (entry: ActivityEntry) =>
+  STRUCTURED_ACTIVITY_TYPES.has(entry.eventType);
+
 /** Only typed system events get new display copy. Stored human text is never edited. */
 export function activitySummary(entry: ActivityEntry): string {
   const subject = field(entry.payload, "subject");
   switch (entry.eventType) {
     case "FINDING_CONFIRMER_ASSIGNED": {
       const label = field(entry.payload, "label");
-      return label ? `Confirmer assigned: ${label}` : entry.summary;
+      return label ? `Confirmer assigned: ${label}` : "Confirmer cleared";
     }
     case "FINDING_DECIDED": {
       const attribute = field(entry.payload, "attribute");
-      return subject && attribute ? `Decision recorded: ${subject} — ${attribute}` : entry.summary;
+      return subject && attribute ? `Decision recorded: ${subject} — ${attribute}` : "Decision recorded";
     }
     case "FINDING_RESOLVED":
-      return subject ? `Reviewed — note only: ${subject}` : entry.summary;
+      return subject ? `Reviewed — note only: ${subject}` : "Reviewed — note only";
     case "FINDING_REOPENED":
       return "Reviewed item reopened";
     case "CLAIM_VERIFIED":
-      return subject ? `${subject} confirmed` : entry.summary;
+      return subject ? `${subject} confirmed` : "Knowledge entry confirmed";
     default:
       return entry.summary;
   }

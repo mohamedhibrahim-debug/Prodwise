@@ -10,6 +10,7 @@ import {
   formatDateTime,
 } from "@/lib/domain/labels";
 import type { FindingClaimRef, ReviewFinding } from "@/lib/domain/types";
+import { MISMATCH_WHY_RAISED } from "@/lib/workspace/copy";
 import { ResolveFindingForm } from "./ResolveFindingForm";
 import { DecideConflictForm, ConfirmerForm } from "./DecideConflictForm";
 import styles from "./FindingRow.module.css";
@@ -52,7 +53,7 @@ function WhyRaised({
   finding: ReviewFinding;
   className?: string;
 }) {
-  const explanation = finding.explanation
+  const explanation = finding.type === "CONFLICT" ? MISMATCH_WHY_RAISED : finding.explanation
     .replace(/\bclaims\b/gi, "Knowledge entries")
     .replace(/\bclaim\b/gi, "Knowledge entry")
     .replace(/\bsuperseded\b/gi, "replaced")
