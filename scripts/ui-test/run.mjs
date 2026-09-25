@@ -13,7 +13,7 @@ const chrome = process.env.PRODWISE_CHROME || [
 ].find(existsSync);
 assert.ok(chrome, "Set PRODWISE_CHROME to an installed Chromium browser; no dependency installation needed.");
 const env = { ...process.env, SUPABASE_URL: "", SUPABASE_SERVICE_ROLE_KEY: "", DEMO_WRITE_ENABLED: "true", VERCEL_ENV: "development" };
-const screenshots = join(root, "docs/ui-review/ia-consolidation");
+const screenshots = join(root, "docs/ui-review/design-revamp");
 mkdirSync(screenshots, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function until(fn, label) {
@@ -62,10 +62,19 @@ try {
     assert.doesNotMatch(chrome, /\b(?:Product Memory|Memory|claims?|evidence|Readiness|findings?|fingerprint|contentDigest|finding_state|deterministic)\b/i, label);
     assert.doesNotMatch(chrome, /\b(?:CONFLICT|ACTIVE)\b/, label);
   };
-  const click = (label) => evaluate(`(() => { const e=[...document.querySelectorAll('button,summary,label')].find(e=>e.textContent.trim()===${JSON.stringify(label)}); if(!e) throw Error('Missing control: '+${JSON.stringify(label)}); e.click(); })()`);
-  const fill = async (name, value) => {
-    await until(() => evaluate(`(() => { const e=document.querySelector('[name="${name}"]'); return e && Object.keys(e).some(k=>k.startsWith('__reactProps') && typeof e[k].onChange === 'function'); })()`), `hydrated ${name}`);
-    await evaluate(`(() => { const e=document.querySelector('[name="${name}"]'); const p=e.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:e.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(p,'value').set.call(e,${JSON.stringify(value)}); e.dispatchEvent(new Event('input',{bubbles:true})); e.dispatchEvent(new Event('change',{bubbles:true})); })()`);
+  const click = async (label) => {
+    // These records now open through the workbench's lane navigation.
+    if (label === "Show resolved" || label === "Show history") {
+      const lane = label === "Show resolved" ? "resolved" : "history";
+      await evaluate(`document.querySelector('[aria-controls="lane-${lane}"]').click()`);
+      await until(() => evaluate(`!document.querySelector('#lane-${lane}').hidden`), `selected ${lane} lane`);
+      return;
+    }
+    return evaluate(`(() => { const e=[...document.querySelectorAll('button,summary,label')].find(e=>e.textContent.trim()===${JSON.stringify(label)}); if(!e) throw Error('Missing control: '+${JSON.stringify(label)}); e.click(); })()`);
+  };
+  const fill = async (name, value, scope = "") => {
+    await until(() => evaluate(`(() => { const e=document.querySelector('${scope} [name="${name}"]'); return e && Object.keys(e).some(k=>k.startsWith('__reactProps') && typeof e[k].onChange === 'function'); })()`), `hydrated ${name}`);
+    await evaluate(`(() => { const e=document.querySelector('${scope} [name="${name}"]'); const p=e.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:e.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(p,'value').set.call(e,${JSON.stringify(value)}); e.dispatchEvent(new Event('input',{bubbles:true})); e.dispatchEvent(new Event('change',{bubbles:true})); })()`);
   };
   const waitText = async (value) => {
     try { await until(async () => (await text()).toLowerCase().includes(value.toLowerCase()), value); }
@@ -74,6 +83,10 @@ try {
   const shot = async (name) => {
     const { data } = await cdp("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
     writeFileSync(join(screenshots, name + ".png"), Buffer.from(data, "base64"));
+  };
+  const viewportShot = async name => {
+    const {data} = await cdp("Page.captureScreenshot", {format:"png",captureBeyondViewport:true,clip:{x:0,y:0,width:1440,height:1100,scale:1}});
+    writeFileSync(join(screenshots, name + ".png"), Buffer.from(data,"base64"));
   };
   await cdp("Page.enable");
   await cdp("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
@@ -88,12 +101,18 @@ try {
     await until(async () => await evaluate("document.readyState === 'complete' && !!document.querySelector('main')"), "page load");
     await sleep(500);
   };
-  const start = async (scenario, writable = true) => {
+  const start = async (scenario, writable = true, prepareStore) => {
     await stop(server);
     dataDir = join(temp, scenario); mkdirSync(dataDir);
     const seed = child(["--conditions=react-server", "--import", pathToFileURL(join(root, "scripts/db-test/test-alias.mjs")).href, join(root, "scripts/ui-test/seed.mjs"), scenario], dataDir);
     let seedLog = ""; seed.stderr.on("data", (b) => seedLog += b);
     assert.equal(await new Promise((r) => seed.on("exit", r)), 0, seedLog);
+    if (prepareStore) {
+      const storePath = join(dataDir, ".data/prodwise.json");
+      const store = JSON.parse(readFileSync(storePath, "utf8"));
+      prepareStore(store);
+      writeFileSync(storePath, JSON.stringify(store));
+    }
     server = child([join(root, "scripts/ui-test/server.mjs")], dataDir, { DEMO_WRITE_ENABLED: writable ? "true" : "false" });
     let log = ""; server.stdout.on("data", (b) => log += b); server.stderr.on("data", (b) => log += b);
     const match = await until(() => { if (server.exitCode !== null) throw Error(log); return log.match(/UI_TEST_PORT=(\d+)/); }, "app startup");
@@ -117,6 +136,33 @@ try {
   };
 
   await start("existing");
+  const viewportResults = [];
+  const responsiveRoutes = [
+    ["home", "/"], ["initiatives", "/initiatives"], ["reporting", "/reporting"],
+    ["brief", "/initiatives/merchant-flex-finance"], ["setup", "/initiatives/merchant-kyc-refresh"],
+    ["decisions", "/initiatives/merchant-flex-finance/decisions"],
+    ["knowledge", "/initiatives/merchant-flex-finance/knowledge"],
+    ["sources", "/initiatives/merchant-flex-finance/knowledge/sources"],
+  ];
+  for (const [name, route] of responsiveRoutes) {
+    await loadAbsolute(route);
+    for (const width of [375, 390, 768, 1024, 1280, 1440, 1920]) {
+      await cdp("Emulation.setDeviceMetricsOverride", { width, height:width < 780 ? 844 : 1100, deviceScaleFactor:1, mobile:width < 780 });
+      await sleep(150);
+      const dimensions = await evaluate("({width:innerWidth,scroll:document.documentElement.scrollWidth})");
+      assert.ok(dimensions.scroll <= dimensions.width, `${name} overflow at ${width}: ${dimensions.scroll}`);
+      viewportResults.push({route, ...dimensions, passed:true});
+      if ([375, 1440].includes(width)) await shot(`${name}-responsive-${width}`);
+    }
+  }
+  writeFileSync(join(screenshots, "viewport-results.json"), JSON.stringify(viewportResults, null, 2));
+  await cdp("Emulation.setDeviceMetricsOverride", {width:1440,height:1100,deviceScaleFactor:1,mobile:false});
+  await loadAbsolute("/");
+  await evaluate("document.querySelector('[aria-label=\"Collapse navigation\"]').click()");
+  await loadAbsolute("/");
+  assert.equal(await evaluate("document.querySelector('[aria-label=\"Pin expanded navigation\"]')?.getAttribute('aria-pressed')"), "false");
+  await shot("rail-collapsed-1440");
+  await evaluate("document.querySelector('[aria-label=\"Pin expanded navigation\"]').click()");
   for (const [oldPath, newPath] of [
     ["/memory", "/knowledge"], ["/memory/new", "/knowledge/new"],
     ["/memory/sample/edit", "/knowledge/sample/edit"], ["/memory/sample/verify", "/knowledge/sample/confirm"],
@@ -132,6 +178,7 @@ try {
   assert.match(await text(), /Listed in default order — not prioritised/);
   assert.match(await text(), /Recorded stage — not a schedule/);
   await shot("home-desktop-1440"); await mobileShot("home-mobile-375");
+  await viewportShot("implementation-home-1440");
   await cdp("Emulation.setDeviceMetricsOverride", { width: 375, height: 844, deviceScaleFactor: 1, mobile: true });
   assert.equal(await evaluate("getComputedStyle(document.querySelector('aside[role=dialog]') ?? document.querySelector('aside')).visibility"), "hidden");
   await evaluate("document.querySelector('[aria-label=\"Open navigation\"]').click()");
@@ -151,6 +198,7 @@ try {
   await cdp("Input.dispatchKeyEvent", { type: "keyDown", key: "k", code: "KeyK", modifiers: 2 });
   await until(() => evaluate("!!document.querySelector('[role=dialog][aria-label=\"Command palette\"]')"), "Ctrl+K opens search");
   assert.equal(await evaluate("document.activeElement?.getAttribute('aria-label')"), "Search commands");
+  await shot("search-1440"); await mobileShot("search-375");
   await cdp("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape" });
   await until(() => evaluate("!document.querySelector('[role=dialog][aria-label=\"Command palette\"]')"), "Escape closes search");
   await loadAbsolute("/initiatives"); await vocabularyGate("Initiatives");
@@ -161,7 +209,8 @@ try {
   assert.doesNotMatch(await evaluate("document.querySelector('details[open] p').textContent"), /\b(?:CONFLICT|active claims|FINDING_CONFLICT|ruleId)\b/i);
   await vocabularyGate("Brief expanded Why raised");
   await cdp("Emulation.setDeviceMetricsOverride", { width: 375, height: 844, deviceScaleFactor: 1, mobile: true });
-  assert.equal(await evaluate("document.querySelector('[aria-label=\"Open navigation\"]')?.parentElement?.querySelector('span')?.textContent"), "Merchant Flex Finance");
+  assert.equal(await evaluate("document.querySelector('[aria-label=\"Open navigation\"]')?.parentElement?.querySelector('span')?.textContent"), "Prodwise");
+  assert.equal(await evaluate("[...document.querySelectorAll('h1')].filter(e=>e.getClientRects().length).length"), 1);
   await cdp("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
   assert.match(await text(), /Daily Repayment — Calculation Divisor has two confirmed values: 27 and 30/);
   for (const label of ["Review decision", "View source", "Why raised", "History"]) assert.ok((await text()).includes(label), label);
@@ -177,11 +226,15 @@ try {
   await cdp("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape" });
   await loadAbsolute("/initiatives/merchant-flex-finance/knowledge"); await waitText("Knowledge"); await vocabularyGate("Knowledge"); await shot("knowledge-desktop-1440");
   await click("Sources and details"); await waitText("Verification history not recorded."); await shot("knowledge-expanded-desktop-1440");
+  await viewportShot("implementation-knowledge-1440");
   await mobileShot("knowledge-mobile-375");
   await loadAbsolute("/initiatives/merchant-flex-finance/knowledge/sources"); await waitText("Sources"); await vocabularyGate("Sources"); await shot("sources-desktop-1440"); await mobileShot("sources-mobile-375");
+  await evaluate("document.querySelector('main details').open=true"); await shot("source-details-1440");
   await loadAbsolute("/initiatives/merchant-kyc-refresh"); await waitText("Set up this initiative"); await vocabularyGate("Setup"); await shot("setup-desktop-1440"); await mobileShot("setup-mobile-375");
   await loadAbsolute("/initiatives/merchant-flex-finance/knowledge/new"); await vocabularyGate("New Knowledge entry");
+  await shot("knowledge-create-1440"); await mobileShot("knowledge-create-375");
   await loadAbsolute("/initiatives/merchant-flex-finance/knowledge/sources/new"); await vocabularyGate("New Source");
+  await shot("source-create-1440"); await mobileShot("source-create-375");
   await evaluate("document.querySelector('input')?.focus()");
   await cdp("Input.dispatchKeyEvent", { type: "keyDown", key: "2", code: "Digit2", modifiers: 1 });
   assert.equal(await evaluate("location.pathname.endsWith('/knowledge/sources/new')"), true);
@@ -189,6 +242,7 @@ try {
   const sourceId = persisted().evidence[0].id;
   await loadAbsolute(`/initiatives/merchant-flex-finance/knowledge/${entryId}/edit`); await vocabularyGate("Edit Knowledge entry");
   await loadAbsolute(`/initiatives/merchant-flex-finance/knowledge/${entryId}/confirm`); await vocabularyGate("Confirm Knowledge");
+  await shot("knowledge-confirm-1440"); await mobileShot("knowledge-confirm-375");
   await loadAbsolute(`/initiatives/merchant-flex-finance/knowledge/sources/${sourceId}/edit`); await vocabularyGate("Edit Source");
   await load(); await vocabularyGate("Decisions"); await mobileShot("decisions-mobile-375");
   const itemId = await evaluate("document.querySelector('#lane-needs-decision li[id^=item-]').id");
@@ -207,6 +261,8 @@ try {
   await until(() => evaluate("!document.activeElement?.closest('[id^=item-]')?.querySelector('details[open]')"), "Escape closes decision detail");
   await cdp("Input.dispatchKeyEvent", { type: "keyDown", key: "k", code: "KeyK" });
   assert.equal(await evaluate("document.activeElement?.id?.startsWith('item-')"), true);
+  // j/k now select the record, so return to the actionable lane before editing.
+  await load();
   await click("Make a decision");
   await evaluate("document.querySelector('[name=rationale]').focus()");
   await cdp("Input.dispatchKeyEvent", { type: "keyDown", key: "j", code: "KeyJ" });
@@ -219,6 +275,7 @@ try {
   await loadAbsolute("/initiatives/merchant-flex-finance"); await vocabularyGate("Brief after confirmer");
   await load(); await click("Make a decision");
   await shot("01-actionable-desktop");
+  await viewportShot("implementation-decisions-1440");
   await fill("chosenClaimId", await evaluate("[...document.querySelector('[name=chosenClaimId]').options].find(o=>o.text==='27').value"));
   await fill("rationale", "Keep this rationale on stale");
   const existingInputs = await inputs();
@@ -252,6 +309,8 @@ try {
   await loadAbsolute("/"); await vocabularyGate("Home after decision"); await waitText("Decision recorded: Daily Repayment — Calculation Divisor");
   await loadAbsolute("/initiatives/merchant-flex-finance"); await vocabularyGate("Brief after decision");
   await load("/knowledge"); await waitText("Confirmed");
+  await evaluate("[...document.querySelectorAll('[id^=claim-]')].find(e=>e.textContent.includes('Chosen in a decision'))?.querySelector('details')?.setAttribute('open','')");
+  await waitText("Chosen in a decision"); await waitText("Replaces");
   await shot("04-chosen-knowledge");
   console.log("B1/B2/B3/B5/B7/B10/B12 passed (browser + persisted store)");
 
@@ -368,6 +427,44 @@ try {
   assert.ok(!(await text()).includes("Make a decision")); await shot("10-write-disabled");
   assert.equal(persisted().findingStates.length, 0);
   console.log("B11 passed; all Stage 2.2 browser checks passed");
+  await mobileShot("readonly-375");
+
+  // Only this disposable store gains a second comparison. Committed fixtures remain untouched.
+  await start("multiple-items", true, store => {
+    const originals = store.claims.filter(entry => entry.subject === "Daily Repayment" && entry.status === "ACTIVE");
+    originals.forEach((entry, index) => store.claims.push({ ...entry,
+      id: `eeee0001-0000-4000-8000-00000000000${index + 1}`, subject:"Second comparison", value:index === 0 ? "Alpha" : "Beta" }));
+  });
+  const queueIds = await evaluate("[...document.querySelectorAll('#lane-needs-decision li[id^=item-]')].map(e=>e.id)");
+  assert.equal(queueIds.length, 2);
+  await click("Make a decision");
+  await fill("rationale", "First comparison rationale", `#${queueIds[0]}`);
+  await evaluate(`document.querySelector('[aria-label="Decision lanes"] [aria-pressed="false"]').click()`);
+  await until(() => evaluate(`!document.querySelector('#${queueIds[1]}').closest('[hidden]')`), "second item selected");
+  await evaluate(`document.querySelector('#${queueIds[1]} [name=rationale]').closest('details').open=true`);
+  assert.equal(await evaluate(`document.querySelector('#${queueIds[1]} [name=rationale]').value`), "");
+  assert.deepEqual(await evaluate(`Array.from(document.querySelector('#${queueIds[1]} [name=chosenClaimId]').options,o=>o.text)`), ["Select a value", "Alpha", "Beta"]);
+  await fill("rationale", "Second comparison rationale", `#${queueIds[1]}`);
+  await shot("multiple-items-1440");
+  await evaluate(`document.querySelector('[aria-label="Decision lanes"] [aria-pressed="false"]').click()`);
+  assert.equal(await evaluate(`document.querySelector('#${queueIds[0]} [name=rationale]').value`), "First comparison rationale");
+  await load(`/decisions?item=${queueIds[1].slice(5)}`);
+  await until(() => evaluate(`document.activeElement?.id===${JSON.stringify(queueIds[1])}`), "second item deep link focus");
+  await waitText("Alpha");
+  console.log("Multi-item queue, isolated inputs and second-item deep link passed");
+
+  const referencePath = process.env.PRODWISE_DESIGN_REFERENCE;
+  if (referencePath) {
+    await cdp("Emulation.setDeviceMetricsOverride", {width:1496,height:1200,deviceScaleFactor:1,mobile:false});
+    await cdp("Page.navigate", {url:pathToFileURL(referencePath).href});
+    await until(() => evaluate("document.readyState==='complete' && !!document.querySelector('#s-kn .frame')"), "approved reference load");
+    await evaluate("document.fonts.ready");
+    for (const [name, selector] of [["home","#s-home .frame"],["decisions","#s-dec .frame"],["knowledge","#s-kn .frame"]]) {
+      const clip = await evaluate(`(() => {const r=document.querySelector('${selector}').getBoundingClientRect();return {x:r.x+scrollX,y:r.y+scrollY,width:1440,height:Math.min(1100,r.height),scale:1};})()`);
+      const {data} = await cdp("Page.captureScreenshot", {format:"png",captureBeyondViewport:true,clip});
+      writeFileSync(join(screenshots, `reference-${name}-1440.png`), Buffer.from(data,"base64"));
+    }
+  }
 } finally {
   socket?.close(); await stop(server); await stop(browser);
   // Delete only the exact disposable directory created by this invocation.

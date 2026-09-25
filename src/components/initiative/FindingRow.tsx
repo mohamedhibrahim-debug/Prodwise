@@ -9,7 +9,7 @@ import {
   FINDING_LABEL,
   formatDateTime,
 } from "@/lib/domain/labels";
-import type { FindingClaimRef, ReviewFinding, ClaimWithEvidence } from "@/lib/domain/types";
+import type { FindingClaimRef, ReviewFinding, ClaimWithEvidence, ClaimTrust } from "@/lib/domain/types";
 import { trustLine } from "@/lib/domain/trust";
 import { MISMATCH_WHY_RAISED } from "@/lib/workspace/copy";
 import { ResolveFindingForm } from "./ResolveFindingForm";
@@ -199,6 +199,10 @@ function ConflictRow({
  * engine knows nothing about chronology, so the layout must not imply it.
  */
 function ClaimColumn({ claim, slug, record }: { claim: FindingClaimRef; slug: string; record?: ClaimWithEvidence }) {
+  // The review loader deliberately exposes only comparison fields. Use trust
+  // metadata only when the already-loaded repository record actually carries it.
+  const trust = record && ["origin", "verifiedAt", "verifiedActorId", "verifiedActorLabel", "verificationBasis", "verificationNote"].every(key => key in record)
+    ? trustLine(record as ClaimWithEvidence & ClaimTrust) : null;
   /* EXCLUDED evidence is not cited as the reference behind a value. The link is
      kept and listed below, tagged — but a record a person removed from the
      boundary must not head the column as if it still backed this. */
@@ -271,7 +275,7 @@ function ClaimColumn({ claim, slug, record }: { claim: FindingClaimRef; slug: st
           Open {primaryRef ?? "this entry"} in Knowledge →
         </Link>
       </div>
-      {record && trustLine(record) ? <p className={styles.trust}>{trustLine(record)}</p> : null}
+      {trust ? <p className={styles.trust}>{trust}</p> : null}
     </div>
   );
 }
