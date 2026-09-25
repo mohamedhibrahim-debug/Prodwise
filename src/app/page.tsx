@@ -42,7 +42,7 @@ export default async function Home() {
       <h2 id="waiting-setup">Waiting on setup</h2>
       {waiting.length ? <ul className={styles.list}>{waiting.map((row) =>
         <li key={row.initiative.id}><Link href={`/initiatives/${row.initiative.slug}`}>
-          <strong>{row.initiative.name}</strong><span>{row.progress.current === "sources" ? "Add sources" : row.progress.current === "memory" ? "Record Knowledge" : "Confirm Knowledge"}</span>
+          <strong>{row.initiative.name}</strong><span>{row.progress.current === "sources" ? "Add sources" : row.progress.current === "record" ? "Record Knowledge" : "Confirm Knowledge"}</span>
         </Link></li>
       )}</ul> : <p>Every initiative has the required setup records.</p>}
     </section>

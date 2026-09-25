@@ -1,0 +1,8 @@
+.page{max-width:1120px;padding:30px clamp(16px,3vw,44px) 72px}
+.identity h1{font-size:var(--t-h1)}.identity p{margin-top:8px;font-size:var(--t-sm);color:var(--ink-700)}
+.identity .meta{font-size:var(--t-xs);color:var(--ink-500)}
+.section{border-top:1px solid var(--rule);margin-top:32px;padding-top:18px}
+.section h2{font-size:var(--t-h2);margin-bottom:12px}.section p{font-size:var(--t-sm);color:var(--ink-500)}
+.list li{border-top:1px solid var(--rule)}.list a,.change{display:flex;justify-content:space-between;gap:16px;padding:13px 2px;color:var(--ink-900);text-decoration:none;font-size:var(--t-sm)}
+.list a:hover,.list a:focus-visible{background:var(--surface-subtle)}.list span,.change time{color:var(--ink-500)}
+@media(max-width:600px){.list a,.change{flex-direction:column;gap:4px}}

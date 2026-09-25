@@ -155,7 +155,7 @@ interface FindingStateRow {
 
 interface InitiativeSnapshotRow extends InitiativeRow {
   evidence: EvidenceRow[];
-  claims: ClaimRow[];
+  claims: (ClaimRow & { claim_evidence: { evidence_id: string }[] })[];
   finding_states: FindingStateRow[];
 }
 
@@ -294,7 +294,10 @@ function toInitiativeSnapshot(row: InitiativeSnapshotRow): InitiativeSnapshot {
     evidence: row.evidence.map(toEvidence),
     // The aggregate is used for counts and deterministic finding derivation.
     // Provenance does not affect whether a conflict/supersession rule fires.
-    claims: row.claims.map((claim) => ({ ...toClaim(claim), evidence: [] })),
+    claims: row.claims.map((claim) => ({
+      ...toClaim(claim),
+      evidence: row.evidence.filter((item) => claim.claim_evidence?.some((link) => link.evidence_id === item.id)).map(toEvidence),
+    })),
     findingStates: row.finding_states.map(toFindingState),
   };
 }
@@ -338,7 +341,7 @@ export const supabaseRepository: Repository = {
   async listInitiativeSnapshots() {
     const { data, error } = await getClient()
       .from("initiatives")
-      .select("*, evidence(*), claims(*), finding_states(*)")
+      .select("*, evidence(*), claims(*, claim_evidence(evidence_id)), finding_states(*)")
       .order("updated_at", { ascending: false });
 
     if (error)
@@ -349,7 +352,7 @@ export const supabaseRepository: Repository = {
   getInitiativeSnapshot: cache(async (initiativeId: string) => {
     const { data, error } = await getClient()
       .from("initiatives")
-      .select("*, evidence(*), claims(*), finding_states(*)")
+      .select("*, evidence(*), claims(*, claim_evidence(evidence_id)), finding_states(*)")
       .eq("id", initiativeId)
       .maybeSingle();
 
