@@ -460,7 +460,11 @@ try {
   await load(`/decisions?item=${queueIds[1].slice(5)}`);
   await until(() => evaluate(`document.activeElement?.id===${JSON.stringify(queueIds[1])}`), "second item deep link focus");
   await waitText(secondValues[0]);
-  console.log("Multi-item queue, isolated inputs and second-item deep link passed");
+  await evaluate(`document.querySelector('[aria-controls="lane-reviewed"]').click()`);
+  await until(() => evaluate("!document.querySelector('#lane-reviewed').hidden"), "empty lane selectable after item deep link");
+  await evaluate(`document.querySelector('[aria-controls="lane-needs-decision"]').click()`);
+  await until(() => evaluate("!document.querySelector('#lane-needs-decision').hidden"), "return from empty lane");
+  console.log("Multi-item queue, isolated inputs, second-item deep link and empty-lane navigation passed");
 
   const referencePath = process.env.PRODWISE_DESIGN_REFERENCE;
   if (referencePath) {

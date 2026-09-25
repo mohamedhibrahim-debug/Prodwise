@@ -17,7 +17,7 @@ export function DecisionWorkbench({ lanes, initialItem, children }: {
   lanes: WorkbenchLane[]; initialItem?: string; children: ReactNode;
 }) {
   const [selection, setSelection] = useState<{ lane: DecisionLaneKey; id?: string } | null>(null);
-  const requested = selection?.id ?? initialItem;
+  const requested = selection ? selection.id : initialItem;
   const containing = requested ? lanes.find(lane => lane.items.some(item => item.id === requested)) : undefined;
   const current = containing ?? (selection && !selection.id ? lanes.find(lane => lane.key === selection.lane) : undefined)
     ?? lanes.find(lane => lane.items.length > 0) ?? lanes[0]!;
