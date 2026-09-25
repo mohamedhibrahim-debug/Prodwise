@@ -135,3 +135,16 @@ hr {
     scroll-behavior: auto !important;
   }
 }
+
+/* Approved elevated presentation. */
+
+[hidden] { display: none !important; }
+input, select, textarea { accent-color: var(--navy-900); }
+summary { cursor: pointer; }
+button, a, summary { -webkit-tap-highlight-color: transparent; }
+[id^="item-"], [id^="claim-"], [id^="source-"] { scroll-margin-top: calc(var(--workspace-header-h) + 24px); }
+@media (max-width:780px) {
+  input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]), select, textarea { font-size:16px; }
+  summary { min-height:44px; align-content:center; }
+}
+

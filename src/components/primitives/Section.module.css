@@ -66,3 +66,6 @@
   color: var(--ink-500);
   max-width: 68ch;
 }
+
+/* Approved elevated presentation. */
+.section {background:var(--panel);border:1px solid var(--rule);border-radius:var(--r-lg);padding:var(--s-6);margin-top:var(--s-6);box-shadow:var(--shadow-card);}

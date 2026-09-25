@@ -13,10 +13,10 @@
 :root {
   /* ── Structural navy · the navigation rail ──────────────────────────────
      Dark navigation against a light working canvas is the core contrast. */
-  --navy-900: #08141f;
-  --navy-850: #0b1b29;
-  --navy-800: #0e2337;
-  --navy-700: #143049;
+  --navy-900: #002a47;
+  --navy-850: #001b30;
+  --navy-800: #0a3a5e;
+  --navy-700: #134a72;
   --navy-600: #1d4260;
   --navy-500: #2a5878;
   --navy-ink: #e8eef4;
@@ -30,15 +30,15 @@
 
   /* ── Identity accent · cyan / teal ─────────────────────────────────────
      The primary brand accent. Carries identity and interaction, never state. */
-  --accent-700: #006579;
+  --accent-700: #007489;
   /* Darkened from #00849a (4.41:1 with white text) to clear WCAG AA on the
      primary button. The shift is imperceptible; the hue is unchanged. */
   --accent-600: #007d91;
-  --accent-500: #00a5be;
+  --accent-500: #00aec7;
   --accent-400: #22c0d6;
   --accent-200: #9fdce7;
   --accent-100: #cceef4;
-  --accent-050: #e4f4f8;
+  --accent-050: #e2f4f7;
 
   /* ── Secondary brand accent · warm orange ──────────────────────────────
      DECORATION ONLY. Restricted to the arc motif and section numerals.
@@ -49,14 +49,17 @@
   --brand-orange-soft: #f2ddd0;
 
   /* ── Neutral working surfaces ──────────────────────────────────────────- */
-  --canvas: #ffffff;
+  --canvas: #f2f5f7;
+  --panel: #ffffff;
+  --orange-geometry: #dc6b2f;
+  --shadow-card: 0 1px 2px rgb(0 42 71 / 6%), 0 1px 1px rgb(0 42 71 / 4%);
   --surface-subtle: #f7f8fa;
   --surface-sunken: #f1f3f6;
   --surface-inset: #eceff3;
 
-  --ink-900: #101820;
-  --ink-700: #35424f;
-  --ink-500: #5e6c7a;
+  --ink-900: #0b2133;
+  --ink-700: #34495a;
+  --ink-500: #586c7c;
   /* Darkened from #8493a2 (3.15:1). This token carries the micro labels,
      timestamps and meta text, so it has to clear WCAG AA for normal text -
      including on --surface-subtle, which is where the Next Best Action labels
@@ -67,8 +70,8 @@
      has to be read; anything meaningful uses --ink-400 or darker. */
   --ink-300: #a9b4bf;
 
-  --rule: #e4e8ec;
-  --rule-strong: #cdd5dd;
+  --rule: #e1e8ed;
+  --rule-strong: #cfdae2;
 
   /* ── Semantic status ───────────────────────────────────────────────────
      Deliberately independent of the brand palette. AT_RISK is a dark
@@ -106,7 +109,7 @@
   /* ── Typography ────────────────────────────────────────────────────────
      Inter is the reference deck's own typeface: it honours the visual DNA
      and is simultaneously brand-neutral enterprise-standard. */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI",
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
@@ -114,12 +117,12 @@
   /* The deck runs 50pt display down to 6pt micro-labels. That dramatic
      range is the hierarchy device we borrow. */
   --t-display: 2.125rem; /* 34px — initiative name */
-  --t-h1: 1.5rem; /* 24px — page title */
+  --t-h1: 2rem; /* 24px — page title */
   /* 28px — the compared values in a Review conflict. Sits between h1 and
      display because the conflict is the product signature and must dominate
      its content area, while never competing with the initiative name that is
      pinned in the sticky header at --t-display. */
-  --t-value: 1.75rem;
+  --t-value: 3.5rem;
   --t-h2: 1.0625rem; /* 17px — section heading */
   --t-h3: 0.9375rem; /* 15px — row title */
   --t-body: 0.875rem; /* 14px — body */
@@ -137,7 +140,7 @@
 
   --fw-regular: 400;
   --fw-medium: 500;
-  --fw-semibold: 600;
+  --fw-semibold: 700;
 
   /* ── Spacing · 4px base ────────────────────────────────────────────────- */
   --s-1: 0.25rem;
@@ -154,13 +157,13 @@
   /* ── Radius · deliberately tight ───────────────────────────────────────
      No giant rounded rectangles. Pills are reserved for status only. */
   --r-xs: 2px;
-  --r-sm: 3px;
-  --r-md: 6px;
-  --r-lg: 10px;
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 12px;
   --r-pill: 999px;
 
-  /* ── Elevation · almost none ───────────────────────────────────────────
-     Structure comes from 1px rules and whitespace, not shadow. The single
+  /* ── Elevation · supporting panels ───────────────────────────────────────────
+     Purposeful cards use a light shadow. The stronger
      shadow is reserved for the one genuinely floating surface. */
   --shadow-panel: 0 12px 32px -12px rgb(16 24 32 / 22%),
     0 2px 6px -2px rgb(16 24 32 / 10%);
@@ -171,11 +174,11 @@
   --ease: cubic-bezier(0.2, 0, 0.15, 1);
 
   /* ── Layout ────────────────────────────────────────────────────────────- */
-  --rail-w: 76px;
-  --rail-w-expanded: 212px;
+  --rail-w: 248px;
+  --rail-w-expanded: 248px;
   --content-max: 1600px;
-  --command-h: 48px;
-  --mobile-global-h: 48px;
+  --command-h: 64px;
+  --mobile-global-h: 56px;
   --mobile-ia-h: 56px;
   --gutter: var(--s-10);
   --header-h: 60px;
@@ -185,7 +188,7 @@
      or sticks below the header must clear this, or it lands underneath an
      opaque bar. Approximate by design — a long initiative name can wrap — so
      it is rounded up rather than down. */
-  --workspace-header-h: 48px;
+  --workspace-header-h: 152px;
 
   --focus-ring: 0 0 0 2px var(--canvas), 0 0 0 4px var(--accent-500);
 }

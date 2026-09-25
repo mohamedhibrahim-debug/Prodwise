@@ -15,16 +15,31 @@ interface NavRailProps {
 
 export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
   const pathname = usePathname();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+  const [preferenceReady, setPreferenceReady] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileTitle, setMobileTitle] = useState("Initiative");
   const drawerRef = useRef<HTMLElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--rail-w", expanded ? "212px" : "76px");
+    const media = window.matchMedia("(min-width: 1101px)");
+    const sync = () => {
+      let saved: string | null = null;
+      try { saved = localStorage.getItem("prodwise.navigation.expanded"); } catch { /* Storage may be unavailable. */ }
+      setExpanded(media.matches && saved !== "false");
+      setPreferenceReady(true);
+    };
+    const frame = requestAnimationFrame(sync);
+    media.addEventListener("change", sync);
+    return () => { cancelAnimationFrame(frame); media.removeEventListener("change", sync); };
+  }, []);
+
+  useEffect(() => {
+    if (!preferenceReady) return;
+    document.documentElement.style.setProperty("--rail-w", expanded ? "248px" : "76px");
     return () => { document.documentElement.style.removeProperty("--rail-w"); };
-  }, [expanded]);
+  }, [expanded, preferenceReady]);
 
   const closeDrawer = useCallback(() => {
     setMobileOpen(false);
@@ -66,7 +81,7 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
     <header className={styles.mobileBar}>
       <button ref={hamburgerRef} type="button" onClick={() => setMobileOpen(true)} aria-label="Open navigation" aria-expanded={mobileOpen}><InstrumentIcon name="menu" /></button>
       <Image src="/assets/prodwise-logo-mark.png" alt="" width={24} height={24} unoptimized />
-      <span>{pathname === "/" ? "Home" : pathname.startsWith("/initiatives/") ? mobileTitle : pathname.startsWith("/initiatives") ? "Initiatives" : "Reporting"}</span>
+      <span>{/^\/initiatives\/[^/]+$/.test(pathname) && pathname !== "/initiatives/new" ? "Prodwise" : pathname === "/" ? "Home" : pathname.startsWith("/initiatives/") ? mobileTitle : pathname.startsWith("/initiatives") ? "Initiatives" : "Reporting"}</span>
       <button type="button" onClick={openPalette} aria-label="Search"><InstrumentIcon name="search" /></button>
       <button type="button" onClick={openDemo} aria-label="Open demo scenario"><InstrumentIcon name="demo" /></button>
     </header>
@@ -83,7 +98,11 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
       </nav>
       <div className={styles.footer}>
         <p>{writesEnabled ? `${dataSource} · writes on` : `${dataSource} · read only`}</p>
-        <button type="button" className={styles.pin} onClick={() => setExpanded(value => !value)} aria-label={expanded ? "Collapse navigation" : "Pin expanded navigation"} aria-pressed={expanded}>
+        <button type="button" className={styles.pin} onClick={() => {
+          const next = !expanded;
+          setExpanded(next);
+          try { localStorage.setItem("prodwise.navigation.expanded", String(next)); } catch { /* Keep the in-session preference. */ }
+        }} aria-label={expanded ? "Collapse navigation" : "Pin expanded navigation"} aria-pressed={expanded}>
           <InstrumentIcon name="pin" /><span>{expanded ? "Collapse" : "Expand"}</span>
         </button>
       </div>
