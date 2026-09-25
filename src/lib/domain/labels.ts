@@ -58,7 +58,7 @@ export const FINDING_LABEL: Record<FindingType, string> = {
   CONFLICT: "Mismatch",
   GAP: "Gap",
   UNKNOWN: "Unknown",
-  SUPERSEDED: "Superseded",
+  SUPERSEDED: "Replaced",
   RISK: "Risk",
 };
 
@@ -79,13 +79,13 @@ export const CLAIM_TYPE_LABEL: Record<ClaimType, string> = {
 };
 
 export const CLAIM_STATUS_LABEL: Record<ClaimStatus, string> = {
-  ACTIVE: "Active",
-  SUPERSEDED: "Superseded",
+  ACTIVE: "Confirmed",
+  SUPERSEDED: "Replaced",
   DRAFT: "Draft",
   REJECTED: "Rejected",
   DEFERRED: "Deferred",
   UNKNOWN: "Unknown",
-  UNVERIFIED: "Unverified",
+  UNVERIFIED: "Not confirmed",
 };
 
 export const EVIDENCE_RELATION_LABEL: Record<EvidenceRelation, string> = {
@@ -115,7 +115,7 @@ export const CONNECTION_STATE_LABEL: Record<ConnectionState, string> = {
 /** What each boundary bucket means, so the classification decision is legible. */
 export const EVIDENCE_RELATION_NOTE: Record<EvidenceRelation, string> = {
   CURRENT_SCOPE:
-    "Evidence directly relevant to the initiative being assessed now.",
+    "Sources directly relevant to this initiative now.",
   FUTURE_PHASE:
     "Belongs to a later phase or release, but is still related to the initiative.",
   HISTORICAL:

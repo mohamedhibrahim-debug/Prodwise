@@ -13,7 +13,7 @@ const chrome = process.env.PRODWISE_CHROME || [
 ].find(existsSync);
 assert.ok(chrome, "Set PRODWISE_CHROME to an installed Chromium browser; no dependency installation needed.");
 const env = { ...process.env, SUPABASE_URL: "", SUPABASE_SERVICE_ROLE_KEY: "", DEMO_WRITE_ENABLED: "true", VERCEL_ENV: "development" };
-const screenshots = join(root, "docs/ui-review/stage2-2");
+const screenshots = join(root, "docs/ui-review/ia-consolidation");
 mkdirSync(screenshots, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function until(fn, label) {
@@ -53,6 +53,11 @@ try {
     return r.result.value;
   };
   const text = () => evaluate("document.body.innerText");
+  const vocabularyGate = async (label) => {
+    const visible = await text();
+    assert.doesNotMatch(visible, /\b(?:Product Memory|claims?|evidence|Readiness|fingerprint|contentDigest|finding_state)\b/i, label);
+    assert.doesNotMatch(visible, /\b(?:CONFLICT|ACTIVE)\b/, label);
+  };
   const click = (label) => evaluate(`(() => { const e=[...document.querySelectorAll('button,summary,label')].find(e=>e.textContent.trim()===${JSON.stringify(label)}); if(!e) throw Error('Missing control: '+${JSON.stringify(label)}); e.click(); })()`);
   const fill = async (name, value) => {
     await until(() => evaluate(`(() => { const e=document.querySelector('[name="${name}"]'); return e && Object.keys(e).some(k=>k.startsWith('__reactProps') && typeof e[k].onChange === 'function'); })()`), `hydrated ${name}`);
@@ -73,6 +78,11 @@ try {
     await cdp("Page.navigate", { url: base + "/initiatives/merchant-flex-finance" + path });
     await until(async () => await evaluate("document.readyState === 'complete' && !!document.querySelector('main')"), "page load");
     await sleep(500); // Hydration before interactions; every result below is explicitly awaited.
+  };
+  const loadAbsolute = async (path) => {
+    await cdp("Page.navigate", { url: base + path });
+    await until(async () => await evaluate("document.readyState === 'complete' && !!document.querySelector('main')"), "page load");
+    await sleep(500);
   };
   const start = async (scenario, writable = true) => {
     await stop(server);
@@ -95,13 +105,48 @@ try {
       domain: value('decisionDomain'), rationale: value('rationale') };
   })()`);
   const mobileShot = async (name) => {
-    await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+    await cdp("Emulation.setDeviceMetricsOverride", { width: 375, height: 844, deviceScaleFactor: 1, mobile: true });
     assert.equal(await evaluate("document.documentElement.scrollWidth <= window.innerWidth"), true);
     await shot(name);
     await cdp("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
   };
 
   await start("existing");
+  for (const [oldPath, newPath] of [
+    ["/memory", "/knowledge"], ["/memory/new", "/knowledge/new"],
+    ["/memory/sample/edit", "/knowledge/sample/edit"], ["/memory/sample/verify", "/knowledge/sample/confirm"],
+    ["/sources", "/knowledge/sources"], ["/sources/new", "/knowledge/sources/new"],
+    ["/sources/sample/edit", "/knowledge/sources/sample/edit"], ["/readiness", ""],
+  ]) {
+    const response = await fetch(base + "/initiatives/merchant-flex-finance" + oldPath, { redirect: "manual" });
+    assert.equal(response.status, 308, oldPath);
+    assert.equal(new URL(response.headers.get("location"), base).pathname, "/initiatives/merchant-flex-finance" + newPath, oldPath);
+  }
+  await loadAbsolute("/"); await waitText("What needs attention now?"); await vocabularyGate("Home"); await shot("home-desktop-1440"); await mobileShot("home-mobile-375");
+  await cdp("Input.dispatchKeyEvent", { type: "keyDown", key: "k", code: "KeyK", modifiers: 2 });
+  await until(() => evaluate("!!document.querySelector('[role=dialog][aria-label=\"Command palette\"]')"), "Ctrl+K opens search");
+  assert.equal(await evaluate("document.activeElement?.getAttribute('aria-label')"), "Search commands");
+  await cdp("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape" });
+  await until(() => evaluate("!document.querySelector('[role=dialog][aria-label=\"Command palette\"]')"), "Escape closes search");
+  await loadAbsolute("/initiatives"); await vocabularyGate("Initiatives");
+  await loadAbsolute("/initiatives/new"); await vocabularyGate("Create Initiative");
+  await loadAbsolute("/initiatives/merchant-flex-finance"); await waitText("Delivery facts"); await vocabularyGate("Brief"); await shot("brief-desktop-1440"); await mobileShot("brief-mobile-375");
+  assert.equal(await evaluate("document.querySelectorAll('[aria-label=\"Initiative sections\"] a').length"), 3);
+  await loadAbsolute("/initiatives/merchant-flex-finance/knowledge"); await waitText("Knowledge"); await vocabularyGate("Knowledge"); await shot("knowledge-desktop-1440"); await mobileShot("knowledge-mobile-375");
+  await loadAbsolute("/initiatives/merchant-flex-finance/knowledge/sources"); await waitText("Sources"); await vocabularyGate("Sources"); await shot("sources-desktop-1440"); await mobileShot("sources-mobile-375");
+  await loadAbsolute("/initiatives/merchant-kyc-refresh"); await waitText("Set up this initiative"); await vocabularyGate("Setup"); await shot("setup-desktop-1440"); await mobileShot("setup-mobile-375");
+  await loadAbsolute("/initiatives/merchant-flex-finance/knowledge/new"); await vocabularyGate("New Knowledge entry");
+  await loadAbsolute("/initiatives/merchant-flex-finance/knowledge/sources/new"); await vocabularyGate("New Source");
+  const entryId = persisted().claims.find((entry) => entry.status === "UNVERIFIED").id;
+  const sourceId = persisted().evidence[0].id;
+  await loadAbsolute(`/initiatives/merchant-flex-finance/knowledge/${entryId}/edit`); await vocabularyGate("Edit Knowledge entry");
+  await loadAbsolute(`/initiatives/merchant-flex-finance/knowledge/${entryId}/confirm`); await vocabularyGate("Confirm Knowledge");
+  await loadAbsolute(`/initiatives/merchant-flex-finance/knowledge/sources/${sourceId}/edit`); await vocabularyGate("Edit Source");
+  await load(); await vocabularyGate("Decisions");
+  const itemId = await evaluate("document.querySelector('#lane-needs-decision li[id^=item-]').id");
+  await load(`/decisions?item=${encodeURIComponent(itemId.slice(5))}`);
+  await until(() => evaluate(`document.activeElement?.id === ${JSON.stringify(itemId)}`), "decision deep link focus");
+  await load();
   await click("Make a decision");
   assert.deepEqual(await evaluate("[...document.querySelector('[name=chosenClaimId]').options].map(o=>o.text)"), ["Select a value", "27", "30"]);
   await click("Assign confirmer"); await fill("label", "Finance owner"); await click("Save confirmer");
@@ -135,7 +180,7 @@ try {
   await load(); await waitText("Decision record · Confirmed");
   await shot("03-standing-decision");
   await mobileShot("12-resolved-mobile");
-  await load("/memory?view=claims"); await waitText("Chosen in a decision");
+  await load("/knowledge"); await waitText("Confirmed");
   await shot("04-chosen-knowledge");
   console.log("B1/B2/B3/B5/B7/B10/B12 passed (browser + persisted store)");
 
@@ -147,7 +192,7 @@ try {
   const correctedStore = persisted();
   assert.equal(correctedStore.findingStates[0].outcome, "CORRECTED_VALUE");
   assert.equal(correctedStore.claims.filter((c) => c.origin === "HUMAN_DECISION" && c.value === "28").length, 1);
-  await load("/memory?view=claims"); await waitText("Confirmed Decision entry"); await shot("06-corrected-knowledge");
+  await load("/knowledge"); await waitText("28"); await shot("06-corrected-knowledge");
   console.log("B6 passed (browser + persisted corrected entry)");
 
   await start("refusals"); await click("Make a decision");
@@ -204,7 +249,7 @@ try {
   assert.doesNotMatch(await laneText("resolved"), /Daily Repayment|Decision record · Confirmed/i);
   assert.ok(!(await text()).includes("Review with a note only"));
   await shot("07-reemerged-decision");
-  await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  await cdp("Emulation.setDeviceMetricsOverride", { width: 375, height: 844, deviceScaleFactor: 1, mobile: true });
   assert.equal(await evaluate("document.documentElement.scrollWidth <= window.innerWidth"), true);
   await shot("08-reemerged-mobile");
   console.log("B4/B8 passed; mobile has no horizontal overflow");

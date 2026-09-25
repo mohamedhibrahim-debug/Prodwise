@@ -12,7 +12,7 @@ export function InitiativeRow({ snapshot }: { snapshot: InstrumentSnapshot }) {
     <Link href={`/initiatives/${initiative.slug}`} className={styles.name}>{initiative.name}</Link>
     <span>{STAGE_LABEL[initiative.stage]}</span>
     <span>{BUSINESS_LINE_LABEL[initiative.businessLine]}</span>
-    <span className={conflicts ? styles.conflict : styles.quiet}>{conflicts} open conflict{conflicts === 1 ? "" : "s"}</span>
+    <span className={conflicts ? styles.conflict : styles.quiet}>{conflicts} {conflicts === 1 ? "mismatch" : "mismatches"} needing a decision</span>
     <span className={styles.demo}>{initiative.isDemo ? "Demo" : "—"}</span>
   </li>;
 }

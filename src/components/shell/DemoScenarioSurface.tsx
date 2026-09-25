@@ -47,6 +47,8 @@ export function DemoScenarioSurface() {
         <div className={styles.meta}><strong>{initiative.name}</strong><span>{STAGE_LABEL[initiative.stage]} · {BUSINESS_LINE_LABEL[initiative.businessLine]}</span></div>
         <section><h3>Illustrative state</h3><strong>{initiative.overallState.replace("_", " ")}</strong><p>{initiative.stateSummary}</p></section>
         <section><h3>Authored attention</h3>{intelligence.attention.map(item => <div className={styles.item} key={item.id}><strong>{item.title}</strong><p>{item.detail}</p></div>)}</section>
+        <section><h3>Illustrative readiness</h3><p>This is authored demo content and does not assess this initiative.</p>
+          {intelligence.readiness.map(item => <div className={styles.item} key={item.domain}><strong>{item.domain}</strong><p>{item.whatWouldMakeThisReady}</p></div>)}</section>
         {intelligence.nextBestAction && <section><h3>Illustrative next action</h3><p>{intelligence.nextBestAction.action}</p></section>}
       </> : <>
         <p>This surface contains the seeded narrative used to illustrate future product intelligence. It does not describe derived product state.</p>

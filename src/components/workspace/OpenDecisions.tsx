@@ -36,7 +36,7 @@ export function OpenDecisions({
       <ol className={styles.queue}>
         {findings.slice(0, limit).map((f) => (
           <li key={f.fingerprint} className={styles.item}>
-            <Link href={href} className={styles.link}>
+            <Link href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(f.fingerprint)}`} className={styles.link}>
               <span className={styles.kind}>{FINDING_LABEL[f.type]}</span>
               <span className={styles.title}>{f.title}</span>
               <span className={styles.values} aria-label={f.claims.map(c => c.value).join(" compared with ")}>

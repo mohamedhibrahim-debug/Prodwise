@@ -155,7 +155,7 @@ interface FindingStateRow {
 
 interface InitiativeSnapshotRow extends InitiativeRow {
   evidence: EvidenceRow[];
-  claims: (ClaimRow & { claim_evidence: { evidence_id: string }[] })[];
+  claims: (ClaimRow & { claim_evidence: { evidence_id: string; locator: string | null; excerpt: string | null }[] })[];
   finding_states: FindingStateRow[];
 }
 
@@ -297,6 +297,7 @@ function toInitiativeSnapshot(row: InitiativeSnapshotRow): InitiativeSnapshot {
     claims: row.claims.map((claim) => ({
       ...toClaim(claim),
       evidence: row.evidence.filter((item) => claim.claim_evidence?.some((link) => link.evidence_id === item.id)).map(toEvidence),
+      anchors: (claim.claim_evidence ?? []).map((link) => ({ evidenceId: link.evidence_id, locator: link.locator, excerpt: link.excerpt })),
     })),
     findingStates: row.finding_states.map(toFindingState),
   };
@@ -341,7 +342,7 @@ export const supabaseRepository: Repository = {
   async listInitiativeSnapshots() {
     const { data, error } = await getClient()
       .from("initiatives")
-      .select("*, evidence(*), claims(*, claim_evidence(evidence_id)), finding_states(*)")
+      .select("*, evidence(*), claims(*, claim_evidence(evidence_id, locator, excerpt)), finding_states(*)")
       .order("updated_at", { ascending: false });
 
     if (error)
@@ -352,7 +353,7 @@ export const supabaseRepository: Repository = {
   getInitiativeSnapshot: cache(async (initiativeId: string) => {
     const { data, error } = await getClient()
       .from("initiatives")
-      .select("*, evidence(*), claims(*, claim_evidence(evidence_id)), finding_states(*)")
+      .select("*, evidence(*), claims(*, claim_evidence(evidence_id, locator, excerpt)), finding_states(*)")
       .eq("id", initiativeId)
       .maybeSingle();
 

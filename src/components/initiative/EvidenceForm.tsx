@@ -180,7 +180,7 @@ export function EvidenceForm({
             defaultValue={toDateInput(evidence?.occurredAt)}
           />
           <p className={styles.hint}>
-            When the artifact itself is dated. Leave blank if unknown.
+            When the Source itself is dated. Leave blank if unknown.
           </p>
         </div>
       </div>
@@ -211,7 +211,7 @@ export function EvidenceForm({
           rows={3}
           className={styles.textarea}
           defaultValue={evidence?.contentSummary ?? ""}
-          placeholder="One or two sentences describing what this evidence says."
+          placeholder="One or two sentences describing what this Source says."
         />
       </div>
 

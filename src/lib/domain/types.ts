@@ -667,7 +667,7 @@ export interface FindingState {
 export interface InitiativeSnapshot {
   initiative: Initiative;
   evidence: EvidenceRecord[];
-  claims: ClaimWithEvidence[];
+  claims: MemoryClaim[];
   findingStates: FindingState[];
 }
 

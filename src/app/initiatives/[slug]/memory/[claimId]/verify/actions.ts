@@ -19,7 +19,7 @@ export async function verifyClaimAction(_state: State, data: FormData): Promise<
   const basis: VerificationBasis | null =
     rawBasis === "EVIDENCE" || rawBasis === "DIRECT_KNOWLEDGE" ? rawBasis : null;
   const note = text(data.get("note")) || null;
-  if (!basis) return { error: "Select a verification basis." };
+  if (!basis) return { error: "Select a confirmation basis." };
   try {
     await resolveOwnedClaim(slug, claimId);
     await getRepository().verifyClaim(claimId, {
@@ -33,6 +33,6 @@ export async function verifyClaimAction(_state: State, data: FormData): Promise<
       return { error: error.message };
     return { error: error instanceof Error ? error.message : "Could not verify the claim." };
   }
-  revalidatePath(`/initiatives/${slug}/memory`);
-  redirect(`/initiatives/${slug}/memory?view=claims#claim-${claimId}`);
+  revalidatePath(`/initiatives/${slug}/knowledge`);
+  redirect(`/initiatives/${slug}/knowledge#claim-${claimId}`);
 }

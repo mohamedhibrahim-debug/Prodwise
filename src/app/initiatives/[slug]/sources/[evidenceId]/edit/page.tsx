@@ -8,7 +8,7 @@ import { getRepository } from "@/lib/data";
 import { updateEvidenceAction } from "./actions";
 import styles from "../../evidence-form.module.css";
 
-export const metadata: Metadata = { title: "Edit Evidence" };
+export const metadata: Metadata = { title: "Edit Source" };
 export const dynamic = "force-dynamic";
 
 export default async function EditEvidencePage({
@@ -32,10 +32,10 @@ export default async function EditEvidencePage({
   if (!isDemoWriteEnabled) {
     return (
       <div className={styles.page}>
-        <Link href={`/initiatives/${slug}/sources`} className={styles.back}>
-          ← Evidence
+        <Link href={`/initiatives/${slug}/knowledge/sources`} className={styles.back}>
+          ← Sources
         </Link>
-        <h1 className={styles.title}>Edit Evidence</h1>
+        <h1 className={styles.title}>Edit Source</h1>
         <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
       </div>
     );
@@ -43,11 +43,11 @@ export default async function EditEvidencePage({
 
   return (
     <div className={styles.page}>
-      <Link href={`/initiatives/${slug}/sources`} className={styles.back}>
-        ← Evidence
+      <Link href={`/initiatives/${slug}/knowledge/sources`} className={styles.back}>
+        ← Sources
       </Link>
 
-      <h1 className={styles.title}>Edit Evidence</h1>
+      <h1 className={styles.title}>Edit Source</h1>
       <p className={styles.intro}>
         Correcting a record here is the same act as correcting it inline — a
         boundary change is recorded in the initiative&rsquo;s activity either way.

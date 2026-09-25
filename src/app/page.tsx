@@ -4,6 +4,7 @@ import { getRepository } from "@/lib/data";
 import { STAGE_LABEL } from "@/lib/domain/labels";
 import { compareFindings } from "@/lib/review/engine";
 import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
+import { activitySummary } from "@/lib/workspace/copy";
 import styles from "./home.module.css";
 
 export const metadata: Metadata = { title: "Home" };
@@ -52,7 +53,7 @@ export default async function Home() {
         const initiative = byId.get(entry.initiativeId);
         if (!initiative) return null;
         return <li key={entry.id}><Link href={`/initiatives/${initiative.slug}`}>
-          <strong>{entry.summary}</strong><span>{initiative.name}</span>
+          <strong>{activitySummary(entry.summary)}</strong><span>{initiative.name}</span>
         </Link></li>;
       })}</ul> : <p>No recent changes recorded.</p>}
     </section>

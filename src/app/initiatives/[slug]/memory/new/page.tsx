@@ -8,7 +8,7 @@ import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { createClaimAction } from "./actions";
 import styles from "../../sources/evidence-form.module.css";
 
-export const metadata: Metadata = { title: "Add Claim" };
+export const metadata: Metadata = { title: "Add Knowledge entry" };
 export const dynamic = "force-dynamic";
 
 export default async function NewClaimPage({
@@ -26,10 +26,10 @@ export default async function NewClaimPage({
   if (!isDemoWriteEnabled) {
     return (
       <div className={styles.page}>
-        <Link href={`/initiatives/${slug}/memory`} className={styles.back}>
-          ← Product Memory
+        <Link href={`/initiatives/${slug}/knowledge`} className={styles.back}>
+          ← Knowledge
         </Link>
-        <h1 className={styles.title}>Add Claim</h1>
+        <h1 className={styles.title}>Add Knowledge entry</h1>
         <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
       </div>
     );
@@ -37,21 +37,21 @@ export default async function NewClaimPage({
 
   return (
     <div className={styles.page}>
-      <Link href={`/initiatives/${slug}/memory`} className={styles.back}>
-        ← Product Memory
+      <Link href={`/initiatives/${slug}/knowledge`} className={styles.back}>
+        ← Knowledge
       </Link>
 
-      <h1 className={styles.title}>Add Claim</h1>
+      <h1 className={styles.title}>Add Knowledge entry</h1>
       <p className={styles.intro}>
         Record something known about {initiative.name} as structured knowledge —
-        a subject, the attribute in question, and its value. Linking supporting
-        evidence is optional, and a claim can be recorded before any exists.
+        a subject, the attribute in question, and its value. Linking a Source
+        is optional, and an entry can be recorded before any exists.
       </p>
 
       <ClaimForm
         slug={slug}
         action={createClaimAction}
-        submitLabel="Add Claim"
+        submitLabel="Add Knowledge entry"
         evidence={evidence}
       />
     </div>

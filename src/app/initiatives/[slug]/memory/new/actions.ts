@@ -28,7 +28,7 @@ export async function createClaimAction(
   const phase = readText(formData.get("phase"));
   const evidenceIds = formData.getAll("evidenceIds").map(String);
 
-  if (!type) return { error: "Select a claim type." };
+  if (!type) return { error: "Select a Knowledge entry type." };
   if (!subject) return { error: "Subject is required." };
   if (!attribute) return { error: "Attribute is required." };
   if (!value) return { error: "Value is required." };
@@ -71,6 +71,6 @@ export async function createClaimAction(
     };
   }
 
-  revalidatePath(`/initiatives/${slug}/memory`);
-  redirect(`/initiatives/${slug}/memory?view=claims#${createdId}`);
+  revalidatePath(`/initiatives/${slug}/knowledge`);
+  redirect(`/initiatives/${slug}/knowledge?view=all#claim-${createdId}`);
 }

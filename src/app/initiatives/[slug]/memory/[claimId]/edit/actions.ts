@@ -38,8 +38,8 @@ export async function updateClaimAction(
   const supersededBy = readText(formData.get("supersededByClaimId"));
   const evidenceIds = formData.getAll("evidenceIds").map(String);
 
-  if (!claimId) return { error: "That claim could not be identified." };
-  if (!type) return { error: "Select a claim type." };
+  if (!claimId) return { error: "That Knowledge entry could not be identified." };
+  if (!type) return { error: "Select a Knowledge entry type." };
   if (!status) return { error: "Select a status." };
   if (!subject) return { error: "Subject is required." };
   if (!attribute) return { error: "Attribute is required." };
@@ -51,7 +51,7 @@ export async function updateClaimAction(
     // evidenceId arrive from client-controlled input and none is trusted.
     const { initiative, claim } = await resolveOwnedClaim(slug, claimId);
     if (!canOrdinaryUpdateStatus(claim.status, status)) {
-      return { error: "Verify this claim to make it active." };
+      return { error: "Confirm this Knowledge entry to make it current." };
     }
 
     // ── Supersession invariants ──────────────────────────────────────────
@@ -62,13 +62,13 @@ export async function updateClaimAction(
       replacement = null;
     }
     if (replacement === claimId) {
-      return { error: "A claim cannot supersede itself." };
+      return { error: "A Knowledge entry cannot replace itself." };
     }
     if (replacement) {
       // The replacement must be a claim on this same initiative.
       const target = await getRepository().getClaim(replacement);
       if (!target || target.initiativeId !== initiative.id) {
-        return { error: "That replacement claim is not on this initiative." };
+        return { error: "That replacement Knowledge entry is not on this initiative." };
       }
     }
     // SUPERSEDED with no known replacement stays valid — nothing is invented.
@@ -103,6 +103,6 @@ export async function updateClaimAction(
     };
   }
 
-  revalidatePath(`/initiatives/${slug}/memory`);
-  redirect(`/initiatives/${slug}/memory?view=claims`);
+  revalidatePath(`/initiatives/${slug}/knowledge`);
+  redirect(`/initiatives/${slug}/knowledge?view=all`);
 }

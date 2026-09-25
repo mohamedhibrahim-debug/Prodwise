@@ -7,7 +7,7 @@ import type {
 } from "./types";
 
 export const FUTURE_PHASE_ERROR =
-  "This claim relies on future-phase evidence only. Record the phase it applies to before verifying it.";
+  "This Knowledge entry relies on future-phase sources only. Record the phase it applies to before confirming it.";
 
 export interface VerificationCandidate {
   status: ClaimStatus;
@@ -21,22 +21,22 @@ export function validateVerification(
   input: { basis: VerificationBasis; note: string | null; expectedUpdatedAt: string },
 ): string | null {
   if (claim.status !== "UNVERIFIED" && claim.status !== "DRAFT") {
-    return "Only unverified or draft claims can be verified.";
+    return "Only unconfirmed or draft Knowledge entries can be confirmed.";
   }
   if (claim.updatedAt !== input.expectedUpdatedAt) {
-    return "This claim changed while you were reviewing it. Reload and try again.";
+    return "This Knowledge entry changed while you were reviewing it. Reload and try again.";
   }
   if (input.basis === "DIRECT_KNOWLEDGE") {
     return input.note?.trim()
       ? null
-      : "Record what direct knowledge supports this verification.";
+      : "Record what direct knowledge supports this confirmation.";
   }
   const current = claim.evidence.some((e) => e.boundary === "CURRENT_SCOPE");
   if (current) return null;
   const future = claim.evidence.some((e) => e.boundary === "FUTURE_PHASE");
   if (future && !claim.phase?.trim()) return FUTURE_PHASE_ERROR;
   if (future) return null;
-  return "Link current-scope evidence before verifying this claim.";
+  return "Link a current-scope Source before confirming this Knowledge entry.";
 }
 
 export function canOrdinaryUpdateStatus(from: ClaimStatus, to: ClaimStatus): boolean {
@@ -53,8 +53,8 @@ export function trustLine(claim: Pick<MemoryClaim, "status" | keyof ClaimTrust>)
       timeZone: "UTC",
     }).format(new Date(claim.verifiedAt));
     return claim.verifiedActorId === null
-      ? `Verified in demo mode · ${date}`
-      : `Verified by ${claim.verifiedActorLabel ?? "Recorded actor"} · ${date}`;
+      ? `Confirmed in demo · ${date}`
+      : `Confirmed by ${claim.verifiedActorLabel ?? "Recorded actor"} · ${date}`;
   }
-  return claim.origin === "LEGACY" ? "Verification history not recorded." : null;
+  return claim.origin === "LEGACY" ? "Confirmation history not recorded." : null;
 }

@@ -5,6 +5,7 @@ import { getRepository } from "@/lib/data";
 import { STAGE_LABEL, BUSINESS_LINE_LABEL } from "@/lib/domain/labels";
 import { compareFindings } from "@/lib/review/engine";
 import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
+import { activitySummary } from "@/lib/workspace/copy";
 import { SetupGuide } from "@/components/workspace/SetupGuide";
 import styles from "./brief.module.css";
 
@@ -46,7 +47,7 @@ export default async function BriefPage({ params }: { params: Promise<{ slug: st
     <section className={styles.section}>
       <h2>What changed</h2>
       {activity.length ? <ul className={styles.list}>{activity.map((entry) => <li key={entry.id}>
-        <span className={styles.change}><strong>{entry.summary}</strong><time dateTime={entry.occurredAt}>{new Date(entry.occurredAt).toLocaleDateString("en-GB")}</time></span>
+        <span className={styles.change}><strong>{activitySummary(entry.summary)}</strong><time dateTime={entry.occurredAt}>{new Date(entry.occurredAt).toLocaleDateString("en-GB")}</time></span>
       </li>)}</ul> : <p>No recent changes recorded.</p>}
     </section>
     <section className={styles.section}>

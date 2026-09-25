@@ -34,11 +34,9 @@ interface Command {
 }
 
 const WORKSPACE_TABS = [
-  { segment: "", label: "Status" },
+  { segment: "", label: "Brief" },
   { segment: "decisions", label: "Decisions" },
-  { segment: "readiness", label: "Readiness" },
-  { segment: "memory", label: "Memory" },
-  { segment: "sources", label: "Sources" },
+  { segment: "knowledge", label: "Knowledge" },
 ] as const;
 
 /**
@@ -200,6 +198,7 @@ export function CommandPalette() {
       }
       for (const lane of [
         { id: "needs-decision", label: "Needs a decision" },
+        { id: "reviewed", label: "Reviewed" },
         { id: "resolved", label: "Resolved" },
         { id: "history", label: "History" },
         { id: "not-checked", label: "Not checked yet" },
@@ -215,6 +214,13 @@ export function CommandPalette() {
     }
 
     out.push(
+      {
+        id: "go-home",
+        label: "Home",
+        keywords: "home attention portfolio",
+        group: "Go to",
+        href: "/",
+      },
       {
         id: "go-initiatives",
         label: "All initiatives",

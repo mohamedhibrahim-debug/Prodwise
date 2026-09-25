@@ -76,7 +76,7 @@ export function CreateInitiativeForm() {
         </select>
         <p className={styles.hint}>
           Which part of the business this initiative belongs to. Portfolio
-          context only — it does not affect stage, state or evidence.
+          context only — it does not affect stage, state or Sources.
         </p>
       </div>
 
@@ -107,7 +107,7 @@ export function CreateInitiativeForm() {
         <p className={styles.hint}>
           Anything you already know points at this initiative — Jira keys,
           document names, epic references. One per line. These become starting
-          points for evidence discovery in a later phase.
+          points for Source discovery in a later phase.
         </p>
       </div>
 

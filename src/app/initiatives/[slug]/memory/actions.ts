@@ -21,7 +21,7 @@ export async function updateEvidenceAnchorAction(
   try {
     const { claim } = await resolveOwnedClaim(slug, claimId);
     if (!claim.evidence.some((e) => e.id === evidenceId))
-      return { error: "That evidence is no longer linked to this claim." };
+      return { error: "That Source is no longer linked to this Knowledge entry." };
     await getRepository().setEvidenceAnchor(claimId, evidenceId, {
       locator,
       excerpt,
@@ -32,6 +32,6 @@ export async function updateEvidenceAnchorAction(
       return { error: error.message };
     return { error: error instanceof Error ? error.message : "Could not save the evidence anchor." };
   }
-  revalidatePath(`/initiatives/${slug}/memory`);
+  revalidatePath(`/initiatives/${slug}/knowledge`);
   return { error: null, saved: true };
 }

@@ -110,10 +110,10 @@ export function ClaimRow({
               ) : null}
               <span className={styles.fact}>
                 {claim.evidence.length === 0 ? (
-                  <span className={styles.noEvidence}>No evidence linked</span>
+                  <span className={styles.noEvidence}>No Source linked</span>
                 ) : (
                   <>
-                    Evidence{" "}
+                    Source{" "}
                     <b>
                       {claim.evidence.length}{" "}
                       {claim.evidence.length === 1 ? "record" : "records"}
@@ -129,7 +129,7 @@ export function ClaimRow({
 
             {supersededBy ? (
               <span className={styles.relation}>
-                Superseded by <b>{identify(supersededBy)}</b>
+                Replaced by <b>{identify(supersededBy)}</b>
               </span>
             ) : null}
             {supersedes.map((c) => (
@@ -142,24 +142,24 @@ export function ClaimRow({
 
           <div className={styles.detail}>
           {decisions.map((s) => <p key={s.fingerprint} className={styles.detailMuted}>
-            <Link href={`/initiatives/${slug}/decisions#decision-${s.fingerprint}`}>Decision record</Link>
+            <Link href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(s.fingerprint)}`}>Decision record</Link>
             {" · "}{s.resolution}{" · Confirmed with: "}{s.confirmedWith ?? "Not recorded"}
           </p>)}
           {claim.status === "UNVERIFIED" || claim.status === "DRAFT" ? (
-            <Link href={`/initiatives/${slug}/memory/${claim.id}/verify`} className={styles.editLink}>
-              Verify claim
+            <Link href={`/initiatives/${slug}/knowledge/${claim.id}/confirm`} className={styles.editLink}>
+              Confirm Knowledge
             </Link>
           ) : null}
           {claim.verifiedAt ? (
             <p className={styles.detailMuted}>
-              Basis: {claim.verificationBasis === "DIRECT_KNOWLEDGE" ? "Direct knowledge" : "Linked evidence"}
+              Basis: {claim.verificationBasis === "DIRECT_KNOWLEDGE" ? "Direct knowledge" : "Linked Source"}
               {claim.verificationNote ? ` · ${claim.verificationNote}` : ""}
             </p>
           ) : null}
-          <div className={styles.detailLabel}>Evidence</div>
+          <div className={styles.detailLabel}>Sources</div>
           {claim.evidence.length === 0 ? (
             <p className={styles.detailMuted}>
-              No evidence linked. This claim has not been connected to a source
+              No Source linked. This Knowledge entry has not been connected to a Source
               record yet — it is not, on that basis, incorrect.
             </p>
           ) : (
@@ -186,7 +186,7 @@ export function ClaimRow({
                       }
                     >
                       {e.boundary === "EXCLUDED"
-                        ? "Excluded evidence"
+                        ? "Excluded Source"
                         : EVIDENCE_RELATION_LABEL[e.boundary]}
                     </span>
                   </span>
@@ -215,10 +215,10 @@ export function ClaimRow({
 
           {isDemoWriteEnabled ? (
             <Link
-              href={`/initiatives/${slug}/memory/${claim.id}/edit`}
+              href={`/initiatives/${slug}/knowledge/${claim.id}/edit`}
               className={styles.editLink}
             >
-              Edit claim
+              Edit Knowledge entry
             </Link>
           ) : (
             <p title={WRITE_DISABLED_MESSAGE}>Read-only · Demo mode</p>

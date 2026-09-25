@@ -33,15 +33,14 @@ export default function NewInitiativePage() {
 
       <h1 className={styles.title}>Create Initiative</h1>
       <p className={styles.intro}>
-        Start with what you know. Prodwise builds the rest from evidence — you
-        do not need to describe scope, stakeholders or domains up front.
+        Start with what you know. You can add Sources and Knowledge entries
+        after creating the initiative.
       </p>
 
       <CreateInitiativeForm />
 
       <p className={styles.notice}>
-        A new initiative starts with no connected evidence, so its state is
-        genuinely <strong>Unknown</strong> until evidence is added. Prodwise
+        A new initiative starts with no Sources or Knowledge entries. Prodwise
         will not assume a starting position it cannot support.
       </p>
     </div>

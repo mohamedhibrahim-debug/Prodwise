@@ -8,7 +8,7 @@ import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { createEvidenceAction } from "./actions";
 import styles from "../evidence-form.module.css";
 
-export const metadata: Metadata = { title: "Add Evidence" };
+export const metadata: Metadata = { title: "Add Source" };
 export const dynamic = "force-dynamic";
 
 export default async function NewEvidencePage({
@@ -23,10 +23,10 @@ export default async function NewEvidencePage({
   if (!isDemoWriteEnabled) {
     return (
       <div className={styles.page}>
-        <Link href={`/initiatives/${slug}/sources`} className={styles.back}>
-          ← Evidence
+        <Link href={`/initiatives/${slug}/knowledge/sources`} className={styles.back}>
+          ← Sources
         </Link>
-        <h1 className={styles.title}>Add Evidence</h1>
+        <h1 className={styles.title}>Add Source</h1>
         <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
       </div>
     );
@@ -34,21 +34,21 @@ export default async function NewEvidencePage({
 
   return (
     <div className={styles.page}>
-      <Link href={`/initiatives/${slug}/sources`} className={styles.back}>
-        ← Evidence
+      <Link href={`/initiatives/${slug}/knowledge/sources`} className={styles.back}>
+        ← Sources
       </Link>
 
-      <h1 className={styles.title}>Add Evidence</h1>
+      <h1 className={styles.title}>Add Source</h1>
       <p className={styles.intro}>
         Record a piece of source material for {initiative.name}. Prodwise stores
-        what the evidence is and where it came from — it does not upload, parse
+        what the source is and where it came from — it does not upload, parse
         or interpret the artifact itself.
       </p>
 
       <EvidenceForm
         slug={slug}
         action={createEvidenceAction}
-        submitLabel="Add Evidence"
+        submitLabel="Add Source"
       />
     </div>
   );

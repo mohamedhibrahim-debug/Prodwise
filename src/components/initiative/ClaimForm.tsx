@@ -225,9 +225,9 @@ export function ClaimForm({
         ) : (
           <div className={styles.field}>
             <span className={styles.label}>Status</span>
-            <p className={claimStyles.staticValue}>Unverified</p>
+            <p className={claimStyles.staticValue}>Not confirmed</p>
             <p className={styles.hint}>
-              New claims start unverified — nobody has checked this yet. That is
+              New Knowledge entries start Not confirmed — nobody has checked this yet. That is
               not the same as it being wrong. Change it later from Edit.
             </p>
           </div>
@@ -237,7 +237,7 @@ export function ClaimForm({
       {isEdit ? (
         <div className={styles.field}>
           <label className={styles.label} htmlFor="supersededByClaimId">
-            Superseded by
+            Replaced by
           </label>
           <select
             id="supersededByClaimId"
@@ -255,7 +255,7 @@ export function ClaimForm({
             ))}
           </select>
           <p className={styles.hint}>
-            Only applies when the status is Superseded. A claim may be superseded
+            Only applies when the status is Replaced. A Knowledge entry may be replaced
             without a known replacement — nothing is invented to fill this in.
           </p>
         </div>
@@ -263,11 +263,11 @@ export function ClaimForm({
 
       {/* ── Provenance ──────────────────────────────────────────────────── */}
       <div className={styles.field}>
-        <span className={styles.label}>Supporting evidence</span>
+        <span className={styles.label}>Linked Sources</span>
         {selectable.length === 0 ? (
           <p className={styles.hint}>
-            No evidence has been recorded on this initiative yet. A claim does
-            not need evidence to be created.
+            No Sources have been recorded on this initiative yet. A Knowledge entry does
+            not need a Source to be created.
           </p>
         ) : (
           <>
@@ -305,13 +305,13 @@ export function ClaimForm({
                             }
                           >
                             {wasExcluded
-                              ? "Excluded evidence"
+                              ? "Excluded Source"
                               : EVIDENCE_RELATION_LABEL[e.boundary]}
                           </span>
                         </span>
                         {wasExcluded ? (
                           <span className={claimStyles.excludedNote}>
-                            Linked before this evidence was excluded. It stays
+                            Linked before this Source was excluded. It stays
                             linked unless you uncheck it.
                           </span>
                         ) : null}
@@ -322,7 +322,7 @@ export function ClaimForm({
               })}
             </ul>
             <p className={styles.hint}>
-              Excluded evidence cannot be added as new support, because it sits
+              An excluded Source cannot be added as new support, because it sits
               outside the initiative boundary.
             </p>
           </>
@@ -331,7 +331,7 @@ export function ClaimForm({
 
       <div className={styles.actions}>
         <SubmitButton label={submitLabel} />
-        <Link href={`/initiatives/${slug}/memory`}>
+        <Link href={`/initiatives/${slug}/knowledge`}>
           <Button type="button" variant="ghost">
             Cancel
           </Button>

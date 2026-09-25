@@ -6,7 +6,7 @@ import styles from "./FindingRow.module.css";
 /** Read-only persisted decision; no assignment or legacy note controls. */
 export function DecisionRecord({ state, slug }: { state: FindingState; slug: string }) {
   const claimId = state.chosenClaimId ?? state.decisionClaimId;
-  return <li className={styles.conflict} id={`decision-${state.fingerprint}`}>
+  return <li className={styles.conflict} id={`item-${state.fingerprint}`} tabIndex={-1}>
     <span className={styles.resolvedTag}>Decision record · Confirmed</span>
     <h3 className={styles.title}>{state.subject} · {state.attribute}</h3>
     {state.phase ? <p className={styles.facts}>{state.phase}</p> : null}
@@ -16,6 +16,6 @@ export function DecisionRecord({ state, slug }: { state: FindingState; slug: str
     <p className={styles.facts}>Confirmed with: {state.confirmedWith ?? "Not recorded"}</p>
     <p className={styles.facts}>Recorded by {state.actorLabel ?? "Not recorded"}
       {state.resolvedAt ? ` · ${formatDateTime(state.resolvedAt)} UTC` : ""}</p>
-    {claimId ? <Link className={styles.claimLink} href={`/initiatives/${slug}/memory?view=claims#claim-${claimId}`}>Open value in Knowledge →</Link> : null}
+    {claimId ? <Link className={styles.claimLink} href={`/initiatives/${slug}/knowledge?view=all#claim-${claimId}`}>Open value in Knowledge →</Link> : null}
   </li>;
 }

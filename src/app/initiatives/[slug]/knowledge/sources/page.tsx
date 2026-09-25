@@ -15,7 +15,9 @@ export default async function KnowledgeSourcesPage({ params }: { params: Promise
   const repo = getRepository();
   const initiative = await repo.getInitiativeBySlug(slug);
   if (!initiative) notFound();
-  const [evidence, claims] = await Promise.all([repo.listEvidence(initiative.id), repo.listClaims(initiative.id)]);
+  const snapshot = await repo.getInitiativeSnapshot(initiative.id);
+  if (!snapshot) notFound();
+  const { evidence, claims } = snapshot;
   const base = `/initiatives/${slug}/knowledge`;
   return <div className={styles.page}>
     <div className={styles.head}><div><h1>Knowledge</h1><p>Source material grouped by initiative boundary.</p></div>

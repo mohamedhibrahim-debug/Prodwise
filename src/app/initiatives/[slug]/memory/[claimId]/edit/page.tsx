@@ -8,7 +8,7 @@ import { getRepository } from "@/lib/data";
 import { updateClaimAction } from "./actions";
 import styles from "../../../sources/evidence-form.module.css";
 
-export const metadata: Metadata = { title: "Edit Claim" };
+export const metadata: Metadata = { title: "Edit Knowledge entry" };
 export const dynamic = "force-dynamic";
 
 export default async function EditClaimPage({
@@ -38,10 +38,10 @@ export default async function EditClaimPage({
   if (!isDemoWriteEnabled) {
     return (
       <div className={styles.page}>
-        <Link href={`/initiatives/${slug}/memory`} className={styles.back}>
-          ← Product Memory
+        <Link href={`/initiatives/${slug}/knowledge`} className={styles.back}>
+          ← Knowledge
         </Link>
-        <h1 className={styles.title}>Edit Claim</h1>
+        <h1 className={styles.title}>Edit Knowledge entry</h1>
         <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
       </div>
     );
@@ -49,14 +49,14 @@ export default async function EditClaimPage({
 
   return (
     <div className={styles.page}>
-      <Link href={`/initiatives/${slug}/memory`} className={styles.back}>
-        ← Product Memory
+      <Link href={`/initiatives/${slug}/knowledge`} className={styles.back}>
+        ← Knowledge
       </Link>
 
-      <h1 className={styles.title}>Edit Claim</h1>
+      <h1 className={styles.title}>Edit Knowledge entry</h1>
       <p className={styles.intro}>
-        Knowledge is corrected here, never deleted. If a claim no longer holds,
-        give it the status that says so — superseded, rejected or deferred — so
+        Knowledge is corrected here, never deleted. If an entry no longer holds,
+        give it the status that says so — replaced, rejected or deferred — so
         the history stays inspectable.
       </p>
 

@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getRepository } from "@/lib/data";
 import { isDemoWriteEnabled } from "@/lib/env";
+import { EvidenceAnchorForm } from "@/components/initiative/EvidenceAnchorForm";
 import { normalise } from "@/lib/review/normalise";
+import { runReview } from "@/lib/review/engine";
 import type { MemoryClaim } from "@/lib/domain/types";
 import styles from "./knowledge.module.css";
 
@@ -34,7 +36,12 @@ export default async function KnowledgePage({ params, searchParams }: {
   const repo = getRepository();
   const initiative = await repo.getInitiativeBySlug(slug);
   if (!initiative) notFound();
-  const claims = await repo.listClaims(initiative.id);
+  const snapshot = await repo.getInitiativeSnapshot(initiative.id);
+  if (!snapshot) notFound();
+  const { claims, findingStates: states } = snapshot;
+  const mismatchItems = new Map(runReview(initiative.id, claims)
+    .filter((finding) => finding.type === "CONFLICT")
+    .map((finding) => [`${normalise(finding.subject)}|${normalise(finding.claims[0]?.attribute ?? "")}`, finding.fingerprint]));
   const visible = claims.filter((claim) => view === "all" ? claim.status !== "SUPERSEDED" : view === "replaced" ? claim.status === "SUPERSEDED" : claim.status === "ACTIVE");
   const grouped = group(visible);
   const base = `/initiatives/${slug}/knowledge`;
@@ -61,11 +68,23 @@ export default async function KnowledgePage({ params, searchParams }: {
               {sources.length ? <ul>{sources.map((source) => <li key={source.id}><Link href={`${base}/sources#source-${source.id}`}>{source.title}</Link></li>)}</ul> : <p>No source linked.</p>}
               <ul>{entries.map((entry) => <li key={entry.id} id={entry.id === first.id ? undefined : `claim-${entry.id}`}>
                 <Link href={`${base}/${entry.id}/edit`}>Edit Knowledge entry</Link>{entry.status !== "ACTIVE" ? <> · <Link href={`${base}/${entry.id}/confirm`}>Confirm Knowledge</Link></> : null}
+                {states.filter((state) => state.outcome && (state.chosenClaimId === entry.id || state.decisionClaimId === entry.id)).map((state) =>
+                  <p key={state.fingerprint}><Link href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(state.fingerprint)}`}>Chosen in a decision →</Link></p>)}
+                {entry.evidence.map((source) => {
+                  const anchor = entry.anchors.find((item) => item.evidenceId === source.id);
+                  return <div key={source.id} className={styles.provenance}>
+                    <Link href={`${base}/sources#source-${source.id}`}>{source.title}</Link>
+                    {anchor?.locator ? <p>Locator: {anchor.locator}</p> : null}
+                    {anchor?.excerpt ? <p>“{anchor.excerpt}”</p> : null}
+                    {isDemoWriteEnabled ? <EvidenceAnchorForm slug={slug} claimId={entry.id} evidenceId={source.id}
+                      locator={anchor?.locator ?? null} excerpt={anchor?.excerpt ?? null} /> : null}
+                  </div>;
+                })}
               </li>)}</ul>
             </details>
           </div>;
         })}
-        {values.size > 1 && view !== "replaced" ? <Link className={styles.mismatch} href={`/initiatives/${slug}/decisions`}>Values differ → Decisions</Link> : null}
+        {values.size > 1 && view !== "replaced" && mismatchItems.has(`${normalise(subject)}|${normalise(attribute)}`) ? <Link className={styles.mismatch} href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(mismatchItems.get(`${normalise(subject)}|${normalise(attribute)}`)!)}`}>Values differ → Decisions</Link> : null}
       </div>)}</section>) : <p className={styles.empty}>{view === "confirmed" ? "No Confirmed Knowledge entries yet." : "No Knowledge entries in this view."}</p>}
   </div>;
 }

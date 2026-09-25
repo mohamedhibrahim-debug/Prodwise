@@ -52,6 +52,12 @@ function WhyRaised({
   finding: ReviewFinding;
   className?: string;
 }) {
+  const explanation = finding.explanation
+    .replace(/\bclaims\b/gi, "Knowledge entries")
+    .replace(/\bclaim\b/gi, "Knowledge entry")
+    .replace(/\bsuperseded\b/gi, "replaced")
+    .replace(/\bactive\b/gi, "Confirmed")
+    .replace(/\bevidence\b/gi, "sources");
   return (
     <details className={`${styles.why} ${className ?? ""}`}>
       <summary className={styles.whySummary}>
@@ -70,7 +76,7 @@ function WhyRaised({
         Why raised
       </summary>
       <div className={styles.whyBody}>
-        <p>{finding.explanation}</p>
+        <p>{explanation}</p>
       </div>
     </details>
   );
@@ -92,7 +98,7 @@ function ConflictRow({
   const resolved = finding.status === "RESOLVED";
 
   return (
-    <li className={`${styles.conflict} ${resolved ? styles.settled : ""}`}>
+    <li id={`item-${finding.fingerprint}`} tabIndex={-1} className={`${styles.conflict} ${resolved ? styles.settled : ""}`}>
       <div className={styles.head}>
         <span className={styles.kindLabel}>{FINDING_LABEL[finding.type]}</span>
         {resolved ? (
@@ -101,7 +107,7 @@ function ConflictRow({
           <span className={styles.needsDecision}>Needs a decision</span>
         )}
         <span className={styles.headMeta}>
-          <Timestamp iso={finding.detectedOn} prefix="claims changed" />
+          <Timestamp iso={finding.detectedOn} prefix="entries changed" />
         </span>
       </div>
 
@@ -145,14 +151,6 @@ function ConflictRow({
           finding, together, rather than at opposite ends of a long column. */}
       <div className={styles.actions}>
         <WhyRaised finding={finding} />
-        {finding.actionable && canResolve && !finding.previousDecision ? (
-          <ResolveFindingForm
-            slug={slug}
-            fingerprint={finding.fingerprint}
-            contentDigest={finding.contentDigest}
-            resolved={resolved}
-          />
-        ) : null}
       </div>
 
       {finding.previousDecision ? <details id={`decision-${finding.fingerprint}`} className={styles.decisionForm}>
@@ -170,6 +168,11 @@ function ConflictRow({
           <DecideConflictForm finding={finding} slug={slug} />
         </> : null}
       </> : null}
+
+      {finding.actionable && canResolve && !finding.previousDecision ? (
+        <ResolveFindingForm slug={slug} fingerprint={finding.fingerprint}
+          contentDigest={finding.contentDigest} resolved={resolved} />
+      ) : null}
 
       <ResolutionNote finding={finding} />
     </li>
@@ -207,7 +210,7 @@ function ClaimColumn({ claim, slug }: { claim: FindingClaimRef; slug: string }) 
             /* Never a non-identifier: two unreferenced claims would otherwise
                render identical columns with no way to tell them apart. */
             <span className={styles.claimId}>
-              Claim {claim.claimId.slice(0, 8)}
+              Knowledge entry
             </span>
           )}
           <span className={styles.claimFacts}>
@@ -224,7 +227,7 @@ function ClaimColumn({ claim, slug }: { claim: FindingClaimRef; slug: string }) 
             same as "there is none", and silence would imply support exists. */}
         {claim.evidence.length === 0 ? (
           <p className={styles.noEvidence}>
-            No evidence linked
+            No source linked
             <span className={styles.noEvidenceHint}>
               {" "}
               — not checked, and not proof that none exists
@@ -250,10 +253,10 @@ function ClaimColumn({ claim, slug }: { claim: FindingClaimRef; slug: string }) 
         )}
 
         <Link
-          href={`/initiatives/${slug}/memory?view=claims#claim-${claim.claimId}`}
+          href={`/initiatives/${slug}/knowledge?view=all#claim-${claim.claimId}`}
           className={styles.claimLink}
         >
-          Open {primaryRef ?? "this claim"} in Product Memory →
+          Open {primaryRef ?? "this entry"} in Knowledge →
         </Link>
       </div>
     </div>
@@ -277,9 +280,9 @@ function SupersededRow({
   const [replaced, replacement] = finding.claims;
 
   return (
-    <li className={styles.lineage}>
+    <li id={`item-${finding.fingerprint}`} tabIndex={-1} className={styles.lineage}>
       <div className={styles.lineageHead}>
-        <span className={styles.lineageKind}>Superseded</span>
+        <span className={styles.lineageKind}>Replaced</span>
         <h3 className={styles.lineageTitle}>{finding.title}</h3>
         <span className={styles.lineageDate}>
           <Timestamp iso={finding.detectedOn} />
@@ -308,10 +311,10 @@ function SupersededRow({
 
       {replaced ? (
         <Link
-          href={`/initiatives/${slug}/memory?view=claims#claim-${replaced.claimId}`}
+          href={`/initiatives/${slug}/knowledge?view=replaced#claim-${replaced.claimId}`}
           className={styles.claimLink}
         >
-          Open in Product Memory →
+          Open in Knowledge →
         </Link>
       ) : null}
     </li>
@@ -348,7 +351,7 @@ function ResolutionNote({ finding }: { finding: ReviewFinding }) {
       <p className={styles.resolutionNote}>
         {/* Resolved earlier, then a source claim changed — so the decision no
             longer describes what is on screen. It reopens, and the note stays. */}
-        This was marked resolved earlier, but the claims behind it have changed
+        This was marked resolved earlier, but the Knowledge entries behind it have changed
         since, so it is open again. The earlier note was:
       </p>
       <p className={styles.resolutionText}>{finding.resolution}</p>

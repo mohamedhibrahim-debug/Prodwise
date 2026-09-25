@@ -49,9 +49,9 @@ export async function createEvidenceAction(
   const sourceType = readSourceType(formData.get("sourceType"));
   const boundary = readBoundary(formData.get("boundary"));
 
-  if (title.length === 0) return { error: "Evidence title is required." };
+  if (title.length === 0) return { error: "Source title is required." };
   if (title.length > 200)
-    return { error: "Evidence title must be 200 characters or fewer." };
+    return { error: "Source title must be 200 characters or fewer." };
   if (!sourceType) return { error: "Select a source type." };
   if (!boundary) return { error: "Select a boundary classification." };
 
@@ -78,6 +78,6 @@ export async function createEvidenceAction(
     };
   }
 
-  revalidatePath(`/initiatives/${slug}/sources`);
-  redirect(`/initiatives/${slug}/sources`);
+  revalidatePath(`/initiatives/${slug}/knowledge/sources`);
+  redirect(`/initiatives/${slug}/knowledge/sources`);
 }

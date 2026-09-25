@@ -8,7 +8,7 @@ import styles from "@/app/initiatives/[slug]/sources/evidence-form.module.css";
 interface State { error: string | null }
 function Submit() {
   const { pending } = useFormStatus();
-  return <Button type="submit" variant="primary" disabled={pending}>{pending ? "Verifying…" : "Verify claim"}</Button>;
+  return <Button type="submit" variant="primary" disabled={pending}>{pending ? "Confirming…" : "Confirm Knowledge"}</Button>;
 }
 
 export function VerifyClaimForm({
@@ -29,14 +29,14 @@ export function VerifyClaimForm({
       <input type="hidden" name="claimId" value={claimId} />
       <input type="hidden" name="expectedUpdatedAt" value={expectedUpdatedAt} />
       <div className={styles.field}>
-        <label className={styles.label} htmlFor="basis">Verification basis</label>
+        <label className={styles.label} htmlFor="basis">Confirmation basis</label>
         <select className={styles.select} id="basis" name="basis" defaultValue="EVIDENCE">
-          <option value="EVIDENCE">Linked evidence</option>
+          <option value="EVIDENCE">Linked Source</option>
           <option value="DIRECT_KNOWLEDGE">Direct knowledge</option>
         </select>
       </div>
       <div className={styles.field}>
-        <label className={styles.label} htmlFor="note">Verification note</label>
+        <label className={styles.label} htmlFor="note">Confirmation note</label>
         <textarea className={styles.textarea} id="note" name="note" rows={4} maxLength={2000} />
         <p className={styles.hint}>Required when the basis is direct knowledge.</p>
       </div>
