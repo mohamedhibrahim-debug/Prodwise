@@ -5,4 +5,5 @@
 .section h2{font-size:var(--t-h2);margin-bottom:12px}.section p{font-size:var(--t-sm);color:var(--ink-500)}
 .list li{border-top:1px solid var(--rule)}.list a,.change{display:flex;justify-content:space-between;gap:16px;padding:13px 2px;color:var(--ink-900);text-decoration:none;font-size:var(--t-sm)}
 .list a:hover,.list a:focus-visible{background:var(--surface-subtle)}.list span,.change time{color:var(--ink-500)}
+.attentionActions{display:flex;flex-wrap:wrap;gap:8px 18px;padding:0 2px 13px;font-size:var(--t-xs)}.attentionActions a{display:inline;padding:0;color:var(--accent-700)}.attentionActions details{display:inline}.attentionActions summary{cursor:pointer;color:var(--accent-700)}.attentionActions details p{max-width:650px;margin-top:8px}
 @media(max-width:600px){.list a,.change{flex-direction:column;gap:4px}}

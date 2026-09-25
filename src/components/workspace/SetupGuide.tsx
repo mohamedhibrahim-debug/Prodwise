@@ -18,7 +18,7 @@ export function SetupGuide({ progress, slug }: { progress: SetupProgress; slug: 
   };
   return <section className={styles.guide} aria-label="Setup guide">
     <h2>Set up this initiative</h2>
-    <p>Checking starts when an in-scope source, a Knowledge entry, and a sourced Confirmed entry are recorded.</p>
+    <p>Checking starts when an in-scope source, a Knowledge entry, and a Confirmed entry are recorded.</p>
     <ol className={styles.track}>{progress.steps.map((step, index) => <li key={step.key} data-state={step.state}>
       <span className={styles.number}>{String(index + 1).padStart(2, "0")}</span>
       {step.key === "checking" ? <span>{labels[step.key]}<small>Available after setup</small></span> :

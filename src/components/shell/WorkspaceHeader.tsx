@@ -10,7 +10,7 @@ export function WorkspaceHeader({ initiative }: { initiative: Initiative }) {
     <div className={styles.inner}>
       <div className={styles.identity}>
         <nav aria-label="Breadcrumb"><Link href="/initiatives">Initiatives</Link><span>/</span></nav>
-        <strong title={initiative.name}>{initiative.name}</strong>
+        <strong data-workspace-title title={initiative.name}>{initiative.name}</strong>
         <span className={styles.meta}>{STAGE_LABEL[initiative.stage]}</span>
         <span className={styles.meta}>{BUSINESS_LINE_LABEL[initiative.businessLine]}</span>
       </div>

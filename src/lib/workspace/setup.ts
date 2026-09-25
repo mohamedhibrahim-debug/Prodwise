@@ -12,7 +12,7 @@ export interface SetupFacts {
   claimsUnverified: number;
   claimsSuperseded: number;
   decisionsOpen: number;
-  confirmedWithSource: number;
+  confirmed: number;
 }
 export interface SetupProgress {
   steps: SetupStep[];
@@ -24,7 +24,7 @@ export interface SetupProgress {
 }
 export interface SetupInput {
   evidence: Pick<EvidenceRecord, "boundary" | "createdAt">[];
-  claims: Pick<MemoryClaim, "status" | "evidence">[];
+  claims: Pick<MemoryClaim, "status">[];
   findings: Pick<ReviewFinding, "status" | "actionable">[];
 }
 
@@ -43,12 +43,12 @@ export function deriveSetup({ evidence, claims, findings }: SetupInput): SetupPr
     claimsUnverified: claims.filter((item) => item.status === "UNVERIFIED").length,
     claimsSuperseded: claims.filter((item) => item.status === "SUPERSEDED").length,
     decisionsOpen: findings.filter((item) => item.status === "OPEN" && item.actionable).length,
-    confirmedWithSource: claims.filter((item) => item.status === "ACTIVE" && item.evidence.some((source) => IN_SCOPE.has(source.boundary))).length,
+    confirmed: claims.filter((item) => item.status === "ACTIVE").length,
   };
   const satisfied = {
     sources: facts.evidenceInScope > 0,
     record: facts.claimsTotal > 0,
-    confirm: facts.confirmedWithSource > 0,
+    confirm: facts.confirmed > 0,
   };
   const order = ["sources", "record", "confirm"] as const;
   const current = order.find((key) => !satisfied[key]) ?? null;

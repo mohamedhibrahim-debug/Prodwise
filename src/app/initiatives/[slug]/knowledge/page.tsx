@@ -6,25 +6,14 @@ import { isDemoWriteEnabled } from "@/lib/env";
 import { EvidenceAnchorForm } from "@/components/initiative/EvidenceAnchorForm";
 import { normalise } from "@/lib/review/normalise";
 import { runReview } from "@/lib/review/engine";
-import type { MemoryClaim } from "@/lib/domain/types";
+import { CLAIM_STATUS_LABEL, CLAIM_TYPE_LABEL, DOMAIN_LABEL, formatDate } from "@/lib/domain/labels";
+import { trustLine } from "@/lib/domain/trust";
+import { decisionMarkers, groupKnowledge, replacementLineage, type KnowledgeValueGroup } from "@/lib/workspace/knowledge";
 import styles from "./knowledge.module.css";
 
 export const metadata: Metadata = { title: "Knowledge" };
 export const dynamic = "force-dynamic";
-
 type View = "confirmed" | "all" | "replaced";
-function group(claims: MemoryClaim[]) {
-  const subjects = new Map<string, Map<string, Map<string, MemoryClaim[]>>>();
-  for (const claim of claims) {
-    const attributes = subjects.get(claim.subject) ?? new Map();
-    subjects.set(claim.subject, attributes);
-    const values = attributes.get(claim.attribute) ?? new Map();
-    attributes.set(claim.attribute, values);
-    const key = normalise(claim.value);
-    values.set(key, [...(values.get(key) ?? []), claim]);
-  }
-  return subjects;
-}
 
 export default async function KnowledgePage({ params, searchParams }: {
   params: Promise<{ slug: string }>;
@@ -41,9 +30,17 @@ export default async function KnowledgePage({ params, searchParams }: {
   const { claims, findingStates: states } = snapshot;
   const mismatchItems = new Map(runReview(initiative.id, claims)
     .filter((finding) => finding.type === "CONFLICT")
-    .map((finding) => [`${normalise(finding.subject)}|${normalise(finding.claims[0]?.attribute ?? "")}`, finding.fingerprint]));
+    .map((finding) => [JSON.stringify([normalise(finding.subject), normalise(finding.claims[0]?.attribute ?? ""), finding.phase]), finding.fingerprint]));
   const visible = claims.filter((claim) => view === "all" ? claim.status !== "SUPERSEDED" : view === "replaced" ? claim.status === "SUPERSEDED" : claim.status === "ACTIVE");
-  const grouped = group(visible);
+  const subjects = new Map<string, Map<string, Map<string, KnowledgeValueGroup[]>>>();
+  for (const group of groupKnowledge(visible)) {
+    const attributes = subjects.get(group.subject) ?? new Map();
+    subjects.set(group.subject, attributes);
+    const phases = attributes.get(group.attribute) ?? new Map();
+    attributes.set(group.attribute, phases);
+    const phaseKey = group.phase ?? "";
+    phases.set(phaseKey, [...(phases.get(phaseKey) ?? []), group]);
+  }
   const base = `/initiatives/${slug}/knowledge`;
   return <div className={styles.page}>
     <div className={styles.head}><div><h1>Knowledge</h1><p>Recorded values for this initiative.</p></div>
@@ -57,34 +54,49 @@ export default async function KnowledgePage({ params, searchParams }: {
       <Link href={`${base}?view=all`} aria-current={view === "all" ? "page" : undefined}>All entries</Link>
       <Link href={`${base}?view=replaced`} aria-current={view === "replaced" ? "page" : undefined}>Replaced</Link>
     </nav>
-    {grouped.size ? [...grouped].map(([subject, attributes]) => <section className={styles.subject} key={subject}>
-      <h2>{subject}</h2>{[...attributes].map(([attribute, values]) => <div className={styles.attribute} key={attribute}>
-        <h3>{attribute}</h3>{[...values].map(([key, entries]) => {
-          const first = entries[0]!;
-          const sources = [...new Map(entries.flatMap((entry) => entry.evidence).map((source) => [source.id, source])).values()];
-          return <div className={styles.value} key={key} id={`claim-${first.id}`}>
-            <strong>{first.value}</strong><span>{entries.every((entry) => entry.status === "ACTIVE") ? "Confirmed" : entries.every((entry) => entry.status === "SUPERSEDED") ? "Replaced" : "Not confirmed"}</span>
-            <details><summary>Sources and details</summary>
-              {sources.length ? <ul>{sources.map((source) => <li key={source.id}><Link href={`${base}/sources#source-${source.id}`}>{source.title}</Link></li>)}</ul> : <p>No source linked.</p>}
-              <ul>{entries.map((entry) => <li key={entry.id} id={entry.id === first.id ? undefined : `claim-${entry.id}`}>
-                <Link href={`${base}/${entry.id}/edit`}>Edit Knowledge entry</Link>{entry.status !== "ACTIVE" ? <> · <Link href={`${base}/${entry.id}/confirm`}>Confirm Knowledge</Link></> : null}
-                {states.filter((state) => state.outcome && (state.chosenClaimId === entry.id || state.decisionClaimId === entry.id)).map((state) =>
-                  <p key={state.fingerprint}><Link href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(state.fingerprint)}`}>Chosen in a decision →</Link></p>)}
-                {entry.evidence.map((source) => {
-                  const anchor = entry.anchors.find((item) => item.evidenceId === source.id);
-                  return <div key={source.id} className={styles.provenance}>
-                    <Link href={`${base}/sources#source-${source.id}`}>{source.title}</Link>
-                    {anchor?.locator ? <p>Locator: {anchor.locator}</p> : null}
-                    {anchor?.excerpt ? <p>“{anchor.excerpt}”</p> : null}
-                    {isDemoWriteEnabled ? <EvidenceAnchorForm slug={slug} claimId={entry.id} evidenceId={source.id}
-                      locator={anchor?.locator ?? null} excerpt={anchor?.excerpt ?? null} /> : null}
-                  </div>;
-                })}
-              </li>)}</ul>
-            </details>
-          </div>;
-        })}
-        {values.size > 1 && view !== "replaced" && mismatchItems.has(`${normalise(subject)}|${normalise(attribute)}`) ? <Link className={styles.mismatch} href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(mismatchItems.get(`${normalise(subject)}|${normalise(attribute)}`)!)}`}>Values differ → Decisions</Link> : null}
-      </div>)}</section>) : <p className={styles.empty}>{view === "confirmed" ? "No Confirmed Knowledge entries yet." : "No Knowledge entries in this view."}</p>}
+    {subjects.size ? [...subjects].map(([subject, attributes]) => <section className={styles.subject} key={subject}>
+      <h2>{subject}</h2>{[...attributes].map(([attribute, phases]) => <div className={styles.attribute} key={attribute}>
+        <h3>{attribute}</h3>{[...phases].map(([phaseKey, values]) => <div className={styles.phase} key={phaseKey}>
+          <h4>{phaseKey || "Phase not recorded"}</h4>
+          {values.map(({ value, entries }) => {
+            const first = entries[0]!;
+            const allSameStatus = entries.every((entry) => entry.status === first.status);
+            return <div className={styles.value} key={normalise(value)} id={`claim-${first.id}`}>
+              <strong>{value}</strong><span>{allSameStatus ? CLAIM_STATUS_LABEL[first.status] : "Entry statuses in details"}</span>
+              <details><summary>Sources and details</summary>
+                <ul>{entries.map((entry) => {
+                  const lineage = replacementLineage(entry, claims);
+                  const trust = trustLine(entry);
+                  return <li className={styles.entry} key={entry.id} id={entry.id === first.id ? undefined : `claim-${entry.id}`}>
+                    <p><strong>Knowledge entry</strong> · {CLAIM_STATUS_LABEL[entry.status]}</p>
+                    <p>Type: {CLAIM_TYPE_LABEL[entry.type]} · Phase: {entry.phase ?? "Not recorded"} · Domain: {DOMAIN_LABEL[entry.domain]}</p>
+                    {trust ? <p>{trust}</p> : null}
+                    {entry.verifiedAt ? <p>Basis: {entry.verificationBasis === "DIRECT_KNOWLEDGE" ? "Direct knowledge" : "Linked Source"}{entry.verificationNote ? ` · ${entry.verificationNote}` : ""}</p> : null}
+                    {decisionMarkers(entry, states).map((marker) => <p key={marker.fingerprint}>
+                      {marker.fingerprint ? <Link href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(marker.fingerprint)}`}>
+                        {marker.label} · {marker.resolvedAt ? formatDate(marker.resolvedAt) : "Date not recorded"}
+                      </Link> : <>{marker.label} · {marker.resolvedAt ? formatDate(marker.resolvedAt) : "Date not recorded"}</>}
+                    </p>)}
+                    {lineage.replacedBy ? <p>Replaced by <Link href={`${base}?view=all#claim-${lineage.replacedBy.id}`}>{lineage.replacedBy.value}</Link></p> : null}
+                    {lineage.replaces.map((prior) => <p key={prior.id}>Replaces <Link href={`${base}?view=replaced#claim-${prior.id}`}>{prior.value}</Link></p>)}
+                    {entry.evidence.length ? entry.evidence.map((source) => {
+                      const anchor = entry.anchors.find((item) => item.evidenceId === source.id);
+                      return <div key={source.id} className={styles.provenance}>
+                        <Link href={`${base}/sources#source-${source.id}`}>{source.title}</Link>
+                        {anchor?.locator ? <p>Locator: {anchor.locator}</p> : null}
+                        {anchor?.excerpt ? <p>“{anchor.excerpt}”</p> : null}
+                        {isDemoWriteEnabled ? <EvidenceAnchorForm slug={slug} claimId={entry.id} evidenceId={source.id}
+                          locator={anchor?.locator ?? null} excerpt={anchor?.excerpt ?? null} /> : null}
+                      </div>;
+                    }) : <p>No source linked.</p>}
+                    {isDemoWriteEnabled ? <p><Link href={`${base}/${entry.id}/edit`}>Edit Knowledge entry</Link>{entry.status !== "ACTIVE" ? <> · <Link href={`${base}/${entry.id}/confirm`}>Confirm Knowledge</Link></> : null}</p> : null}
+                  </li>;
+                })}</ul>
+              </details>
+            </div>;
+          })}
+          {values.length > 1 && view !== "replaced" && mismatchItems.has(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null])) ?
+            <Link className={styles.mismatch} href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(mismatchItems.get(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null]))!)}`}>Values differ → Decisions</Link> : null}
+        </div>)}</div>)}</section>) : <p className={styles.empty}>{view === "confirmed" ? "No Confirmed Knowledge entries yet." : "No Knowledge entries in this view."}</p>}
   </div>;
 }

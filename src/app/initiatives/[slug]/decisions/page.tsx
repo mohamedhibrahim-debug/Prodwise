@@ -44,13 +44,15 @@ export default async function DecisionsPage({ params }: { params: Promise<{ slug
   };
 
   return <div className={`${styles.page} ${styles.reviewLayout}`}>
-    <Suspense fallback={null}><DecisionDeepLink /></Suspense>
     <div className={styles.reviewMain}>
+      <Suspense fallback={null}><DecisionDeepLink slug={slug} /></Suspense>
       <div className={styles.tabIntro}><p className={styles.tabIntroText}><strong>Compare recorded values, review their sources, and record a decision.</strong></p></div>
       {DECISION_LANES.map((lane) => <section className={styles.decisionLane} id={`lane-${lane.key}`} key={lane.key}>
         <div className={styles.decisionLaneHead}><div><h2 className={styles.decisionLaneTitle}>{lane.title}</h2><p className={styles.decisionLaneDescription}>{lane.description}</p></div>
           {content[lane.key].count !== undefined ? <span className={styles.decisionLaneCount}>{content[lane.key].count}</span> : null}</div>
-        {content[lane.key].body}
+        {lane.key === "resolved" || lane.key === "history" ?
+          <details><summary>Show {lane.title.toLowerCase()}</summary>{content[lane.key].body}</details> :
+          content[lane.key].body}
       </section>)}
     </div>
     <aside className={styles.reviewContext} aria-label="Initiative context">

@@ -56,5 +56,5 @@ export function trustLine(claim: Pick<MemoryClaim, "status" | keyof ClaimTrust>)
       ? `Confirmed in demo · ${date}`
       : `Confirmed by ${claim.verifiedActorLabel ?? "Recorded actor"} · ${date}`;
   }
-  return claim.origin === "LEGACY" ? "Confirmation history not recorded." : null;
+  return claim.origin === "LEGACY" ? "Verification history not recorded." : null;
 }

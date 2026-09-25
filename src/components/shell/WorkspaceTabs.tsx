@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import styles from "./WorkspaceHeader.module.css";
 
 const TABS = [
@@ -24,7 +24,20 @@ const TABS = [
  */
 export function WorkspaceTabs({ slug }: { slug: string }) {
   const pathname = usePathname();
+  const router = useRouter();
   const base = `/initiatives/${slug}`;
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!event.altKey || event.ctrlKey || event.metaKey || !["1", "2", "3"].includes(event.key)) return;
+      if (event.target instanceof HTMLElement &&
+        event.target.closest("input,textarea,select,[contenteditable]:not([contenteditable=false])")) return;
+      event.preventDefault();
+      const segment = TABS[Number(event.key) - 1]!.segment;
+      router.push(segment ? `${base}/${segment}` : base);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [base, router]);
 
   const scroller = useRef<HTMLElement>(null);
   // Edge fades are driven by measurement, not by breakpoint, so the cue only

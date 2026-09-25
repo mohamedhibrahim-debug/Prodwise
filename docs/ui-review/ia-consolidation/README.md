@@ -1,6 +1,6 @@
 # IA consolidation review
 
-The browser run captures Home, Brief, setup, Knowledge Record, and Sources at 1440px and 375px. The remaining numbered captures cover the Stage 2.2 decision regression, including stale submissions, both outcomes, Reviewed, Resolved, and History.
+The browser run captures Home, Brief, setup, Knowledge Record, and Sources at 1440px and 375px. Remediation captures include `knowledge-expanded-desktop-1440.png`, `corrected-knowledge-expanded-desktop-1440.png`, `decision-deep-link-desktop-1440.png`, `dead-deep-link-desktop-1440.png`, `decisions-mobile-375.png`, and `drawer-mobile-375.png`. The numbered captures cover the Stage 2.2 decision regression, including stale submissions, both outcomes, Reviewed, Resolved, and History.
 
 ## Routes
 
@@ -29,8 +29,8 @@ Static inspection of the Supabase adapter gives the following request counts on 
 | Knowledge Sources | initiative, aggregate snapshot | 2 |
 | Decisions | initiative, claims, sources, source links, decision states | 5 |
 
-The milestone brief names an approved IA query budget but does not provide numeric ceilings. These are inspected counts, not a claim that an unspecified ceiling was met. No per-initiative activity query or portfolio N+1 loop was introduced.
+The remediation audit specifies ceilings relative to the pre-IA screens: Home ≤ base Initiatives + 1, Brief ≤ base Status, Decisions ≤ base Decisions, Knowledge Record ≤ base Memory, and Knowledge Sources ≤ base Sources. The inspected request counts above are unchanged from the audited IA implementation. No extra Knowledge query, per-initiative activity query, or portfolio N+1 loop was introduced.
 
 ## Verification
 
-`npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, and the browser regression pass. The browser run checks visible terminology on portfolio and initiative routes, setup, Decisions, and the create/edit/confirm forms; it also checks the three initiative tabs, 375px overflow, keyboard search, and decision deep-link focus.
+`npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, and the browser regression pass. The browser run checks visible terminology on portfolio and initiative routes, setup, Decisions, and the create/edit/confirm forms. Stored activity summaries and human-entered values are not rewritten to satisfy vocabulary checks. It also checks the three initiative tabs, 375px overflow, Alt+1/2/3, j/k/Enter/Escape, keyboard search, drawer focus cycling and return, and live/dead decision deep links.

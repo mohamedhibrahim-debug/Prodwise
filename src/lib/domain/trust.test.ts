@@ -33,7 +33,7 @@ test("ordinary edits cannot activate a non-active claim", () => {
 
 test("trust copy is scoped and exact", () => {
   const claim = { status: "ACTIVE", origin: "LEGACY", verifiedAt: null, verifiedActorId: null, verifiedActorLabel: null, verificationBasis: null, verificationNote: null } as MemoryClaim;
-  assert.equal(trustLine(claim), "Confirmation history not recorded.");
+  assert.equal(trustLine(claim), "Verification history not recorded.");
   assert.equal(trustLine({ ...claim, origin: "HUMAN_ENTRY", verifiedAt: "2026-09-20T00:00:00Z" }), "Confirmed in demo · Sep 20, 2026");
   assert.equal(trustLine({ ...claim, status: "UNVERIFIED" }), null);
 });

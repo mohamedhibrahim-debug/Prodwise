@@ -515,6 +515,7 @@ export const localRepository: Repository = {
         entityType: "claim",
         entityId: claim.id,
         payload: {
+          subject: claim.subject,
           previousStatus,
           basis: input.basis,
           note: input.note?.trim() || null,
@@ -774,6 +775,7 @@ export const localRepository: Repository = {
       initiativeId,
       "FINDING_RESOLVED",
       `${input.subject} finding marked resolved: ${input.resolution}`,
+      { entityType: "finding", entityId: fingerprint, payload: { subject: input.subject }, actorLabel: "" },
     );
   },
 

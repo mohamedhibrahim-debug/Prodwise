@@ -4,7 +4,7 @@ import { getRepository } from "@/lib/data";
 import { STAGE_LABEL } from "@/lib/domain/labels";
 import { compareFindings } from "@/lib/review/engine";
 import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
-import { activitySummary } from "@/lib/workspace/copy";
+import { activitySummary, attentionSentence } from "@/lib/workspace/copy";
 import styles from "./home.module.css";
 
 export const metadata: Metadata = { title: "Home" };
@@ -21,21 +21,22 @@ export default async function Home() {
     .map((finding) => ({ initiative: row.initiative, finding })));
   const waiting = rows.filter((row) => !row.progress.complete);
   const attention = needsDecision.length
-    ? `${needsDecision.length} ${needsDecision.length === 1 ? "mismatch needs" : "mismatches need"} a decision across ${new Set(needsDecision.map((item) => item.initiative.id)).size} initiatives.`
+    ? `${needsDecision.length} ${needsDecision.length === 1 ? "mismatch needs" : "mismatches need"} a decision across ${new Set(needsDecision.map((item) => item.initiative.id)).size} ${new Set(needsDecision.map((item) => item.initiative.id)).size === 1 ? "initiative" : "initiatives"}.`
     : waiting.length
       ? `${waiting.length} ${waiting.length === 1 ? "initiative needs" : "initiatives need"} setup before checking can start.`
       : "No decisions are waiting under the current checks.";
-  const stages = new Map<string, number>();
-  for (const row of rows) stages.set(STAGE_LABEL[row.initiative.stage], (stages.get(STAGE_LABEL[row.initiative.stage]) ?? 0) + 1);
+  const stages = new Map<string, typeof rows>();
+  for (const row of rows) stages.set(STAGE_LABEL[row.initiative.stage], [...(stages.get(STAGE_LABEL[row.initiative.stage]) ?? []), row]);
 
   return <div className={styles.page}>
     <h1>What needs attention now?</h1>
     <p className={styles.attention}>{attention}</p>
     <section className={styles.section} aria-labelledby="needs-decision">
       <h2 id="needs-decision">Needs a decision</h2>
+      <p>Listed in default order — not prioritised</p>
       {needsDecision.length ? <ul className={styles.list}>{needsDecision.map(({ initiative, finding }) =>
         <li key={`${initiative.id}-${finding.fingerprint}`}><Link href={`/initiatives/${initiative.slug}/decisions?item=${encodeURIComponent(finding.fingerprint)}`}>
-          <strong>{finding.title}</strong><span>{initiative.name} · Values differ</span>
+          <strong>{attentionSentence(finding)}</strong><span>{initiative.name} · Values differ{finding.confirmerLabel ? ` · Confirm with: ${finding.confirmerLabel}` : ""}</span>
         </Link></li>
       )}</ul> : <p>No mismatches need a decision under the current checks.</p>}
     </section>
@@ -53,14 +54,15 @@ export default async function Home() {
         const initiative = byId.get(entry.initiativeId);
         if (!initiative) return null;
         return <li key={entry.id}><Link href={`/initiatives/${initiative.slug}`}>
-          <strong>{activitySummary(entry.summary)}</strong><span>{initiative.name}</span>
+          <strong data-activity-summary>{activitySummary(entry)}</strong><span>{initiative.name} · <time dateTime={entry.occurredAt}>{new Date(entry.occurredAt).toLocaleDateString("en-GB")}</time></span>
         </Link></li>;
       })}</ul> : <p>No recent changes recorded.</p>}
     </section>
     <section className={styles.section} aria-labelledby="stages">
       <h2 id="stages">Stages</h2>
-      {stages.size ? <ul className={styles.stageList}>{[...stages].map(([stage, count]) =>
-        <li key={stage}><span>{stage}</span><span>{count}</span></li>
+      <p>Recorded stage — not a schedule.</p>
+      {stages.size ? <ul className={styles.stageList}>{[...stages].map(([stage, stageRows]) =>
+        <li key={stage}><span>{stage}</span><span>{stageRows.map((row, index) => <span key={row.initiative.id}>{index > 0 ? ", " : ""}<Link href={`/initiatives/${row.initiative.slug}`}>{row.initiative.name}</Link></span>)}</span></li>
       )}</ul> : <p>No initiatives yet.</p>}
       <Link className={styles.allLink} href="/initiatives">View initiatives →</Link>
     </section>

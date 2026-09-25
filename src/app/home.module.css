@@ -10,5 +10,6 @@
 .list a:hover,.list a:focus-visible{background:var(--surface-subtle)}
 .list span{color:var(--ink-500)}
 .stageList{max-width:420px}.stageList li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--rule);font-size:var(--t-sm)}
+.stageList a{color:var(--accent-700)}
 .allLink{display:inline-block;margin-top:16px;font-size:var(--t-sm);color:var(--accent-700)}
 @media(max-width:600px){.list a{flex-direction:column;gap:4px}}

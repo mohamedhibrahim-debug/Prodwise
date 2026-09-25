@@ -196,6 +196,13 @@ export function CommandPalette() {
             : `/initiatives/${currentSlug}`,
         });
       }
+      out.push({
+        id: "knowledge-sources",
+        label: "Knowledge › Sources",
+        keywords: "knowledge sources",
+        group: "This initiative",
+        href: `/initiatives/${currentSlug}/knowledge/sources`,
+      });
       for (const lane of [
         { id: "needs-decision", label: "Needs a decision" },
         { id: "reviewed", label: "Reviewed" },
