@@ -43,11 +43,17 @@ export default async function Home() {
     <section className={styles.section} aria-labelledby="needs-decision">
       <h2 id="needs-decision">Needs a decision</h2>
       <p>Listed in default order — not prioritised</p>
-      {needsDecision.length ? <ul className={styles.list}>{needsDecision.map(({ initiative, finding }) =>
-        <li key={`${initiative.id}-${finding.fingerprint}`}><Link href={`/initiatives/${initiative.slug}/decisions?item=${encodeURIComponent(finding.fingerprint)}`}>
-          <strong>{attentionSentence(finding)}</strong><span>{initiative.name} · Values differ{finding.confirmerLabel ? ` · Confirm with: ${finding.confirmerLabel}` : ""}</span>
-          <span className={styles.comparison}>{finding.claims.map((claim, index) => <span key={claim.claimId}>{index > 0 ? <i aria-hidden="true">vs</i> : null} <b>{claim.value}</b></span>)}</span>
-        </Link></li>
+      {needsDecision.length ? <ul className={styles.decisionList}>{needsDecision.map(({ initiative, finding }) =>
+        <li key={`${initiative.id}-${finding.fingerprint}`}>
+          <div className={styles.decisionBody}><div className={styles.decisionInfo}>
+            <p className={styles.decisionMeta}>{initiative.name} · Values differ{finding.confirmerLabel ? ` · Confirm with: ${finding.confirmerLabel}` : ""}</p>
+            <h3>{attentionSentence(finding)}</h3>
+            <div className={styles.sourceLinks}>{finding.claims.flatMap(claim => claim.evidence.filter(source => source.boundary !== "EXCLUDED").map(source =>
+              <Link key={`${claim.claimId}-${source.evidenceId}`} href={`/initiatives/${initiative.slug}/knowledge/sources#source-${source.evidenceId}`}><strong>{source.title}</strong><span>{source.sourceReference ? `${source.sourceReference} · ` : ""}Records {claim.value}</span></Link>
+            ))}</div>
+          </div><div className={styles.comparison}><span>Recorded values</span><div>{finding.claims.map((claim, index) => <span key={claim.claimId}>{index > 0 ? <i aria-hidden="true">vs</i> : null} <b>{claim.value}</b></span>)}</div><small>Review the sources before choosing.</small></div></div>
+          <div className={styles.decisionFooter}><Link href={`/initiatives/${initiative.slug}/decisions?item=${encodeURIComponent(finding.fingerprint)}`}>Review decision →</Link><span>Open this comparison and its sources.</span></div>
+        </li>
       )}</ul> : <p>No mismatches need a decision under the current checks.</p>}
     </section>
     <section className={styles.section} aria-labelledby="waiting-setup">

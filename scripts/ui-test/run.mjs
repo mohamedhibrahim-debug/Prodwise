@@ -130,6 +130,13 @@ try {
   const mobileShot = async (name) => {
     await cdp("Emulation.setDeviceMetricsOverride", { width: 375, height: 844, deviceScaleFactor: 1, mobile: true });
     assert.equal(await evaluate("document.documentElement.scrollWidth <= window.innerWidth"), true);
+    if (name === "search-375") {
+      assert.equal(await evaluate(`(() => {
+        const input = document.querySelector('[aria-label="Search commands"]');
+        const bounds = input.getBoundingClientRect();
+        return document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + 4) === input;
+      })()`), true, "mobile search input is unobstructed by the header");
+    }
     await shot(name);
     await cdp("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
     await sleep(100);

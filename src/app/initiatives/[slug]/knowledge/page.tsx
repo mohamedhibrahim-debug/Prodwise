@@ -54,6 +54,10 @@ export default async function KnowledgePage({ params, searchParams }: {
       <Link href={`${base}?view=all`} aria-current={view === "all" ? "page" : undefined}>All entries</Link>
       <Link href={`${base}?view=replaced`} aria-current={view === "replaced" ? "page" : undefined}>Replaced</Link>
     </nav>
+    {mismatchItems.size && view !== "replaced" ? <div className={styles.attentionBanner}>
+      <strong>Recorded values differ in {mismatchItems.size} {mismatchItems.size === 1 ? "comparison" : "comparisons"}.</strong>
+      <Link href={`/initiatives/${slug}/decisions${mismatchItems.size === 1 ? `?item=${encodeURIComponent([...mismatchItems.values()][0]!)}` : ""}`}>Review in Decisions →</Link>
+    </div> : null}
     <div className={styles.recordLayout}><div>
     {subjects.size ? [...subjects].map(([subject, attributes]) => <section className={styles.subject} key={subject}>
       <h2>{subject}</h2>{[...attributes].map(([attribute, phases]) => <div className={styles.attribute} key={attribute}>
@@ -84,10 +88,11 @@ export default async function KnowledgePage({ params, searchParams }: {
                       const anchor = entry.anchors.find((item) => item.evidenceId === source.id);
                       return <div key={source.id} className={styles.provenance}>
                         <Link href={`${base}/sources#source-${source.id}`}>{source.title}</Link>
+                        {source.contentSummary ? <p>{source.contentSummary}</p> : null}
                         {anchor?.locator ? <p>Locator: {anchor.locator}</p> : null}
                         {anchor?.excerpt ? <p>“{anchor.excerpt}”</p> : null}
-                        {isDemoWriteEnabled ? <EvidenceAnchorForm slug={slug} claimId={entry.id} evidenceId={source.id}
-                          locator={anchor?.locator ?? null} excerpt={anchor?.excerpt ?? null} /> : null}
+                        {isDemoWriteEnabled ? <details><summary>Edit locator or excerpt</summary><EvidenceAnchorForm slug={slug} claimId={entry.id} evidenceId={source.id}
+                          locator={anchor?.locator ?? null} excerpt={anchor?.excerpt ?? null} /></details> : null}
                       </div>;
                     }) : <p>No source linked.</p>}
                     {isDemoWriteEnabled ? <p><Link href={`${base}/${entry.id}/edit`}>Edit Knowledge entry</Link>{entry.status !== "ACTIVE" ? <> · <Link href={`${base}/${entry.id}/confirm`}>Confirm Knowledge</Link></> : null}</p> : null}

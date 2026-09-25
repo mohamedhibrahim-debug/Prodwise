@@ -110,17 +110,11 @@
   color: var(--ink-500);
 }
 .comparison {
-  display: flex;
-  gap: 12px;
-  align-items: center;
   flex-wrap: wrap;
   background: var(--navy-900);
-  padding: 18px;
-  border-radius: var(--r-md);
   margin-top: 6px;
 }
 .comparison b {
-  font-size: 32px;
   line-height: 1.2;
   color: var(--panel);
   overflow-wrap: anywhere;
@@ -192,5 +186,110 @@
   }
   .list a {
     padding: 16px 18px;
+  }
+}
+.decisionList>li {
+  border-top: 1px solid var(--rule);
+}
+.decisionBody {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 220px;
+}
+.decisionInfo {
+  padding: 22px 24px;
+  min-width: 0;
+}
+.decisionInfo h3 {
+  font-size: 20px;
+  line-height: 1.35;
+  margin-top: 10px;
+}
+.decisionMeta {
+  font-size: 12px;
+  color: var(--ink-500);
+}
+.sourceLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.sourceLinks a {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--surface-subtle);
+  font-size: 12px;
+}
+.sourceLinks a:hover {
+  border-color: var(--accent-500);
+}
+.sourceLinks span {
+  color: var(--ink-500);
+}
+.comparison {
+  border-radius: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  padding: 22px 18px;
+}
+.comparison>span,.comparison small {
+  font-size: 12px;
+  color: var(--navy-ink-dim);
+}
+.comparison>div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+.comparison>div>span {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+.comparison b {
+  font-size: 46px;
+}
+.decisionFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: var(--surface-subtle);
+  border-top: 1px solid var(--rule);
+}
+.decisionFooter a {
+  background: var(--navy-900);
+  color: var(--panel);
+  padding: 10px 16px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 44px;
+}
+.decisionFooter>span {
+  font-size: 12px;
+  color: var(--ink-500);
+}
+@media(max-width:1280px) {
+  .decisionBody {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .comparison {
+    padding: 20px;
+  }
+  .comparison b {
+    font-size: 36px;
   }
 }

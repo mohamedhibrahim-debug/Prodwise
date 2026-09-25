@@ -356,3 +356,22 @@
     align-content: center;
   }
 }
+.attentionBanner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--navy-900);
+  color: var(--panel);
+  padding: 16px 20px;
+  margin-top: 20px;
+  border-radius: var(--r-lg);
+  font-size: 14px;
+}
+.attentionBanner a {
+  color: var(--accent-200);
+  font-weight: 700;
+  min-height: 44px;
+  align-content: center;
+}

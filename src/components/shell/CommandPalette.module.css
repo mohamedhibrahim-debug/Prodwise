@@ -6,7 +6,7 @@
 .layer {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 90;
   display: flex;
   justify-content: center;
   /* High, not centred: the list grows downward and the eye should not have to

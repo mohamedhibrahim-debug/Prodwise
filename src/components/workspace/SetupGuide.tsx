@@ -22,7 +22,7 @@ export function SetupGuide({ progress, slug }: { progress: SetupProgress; slug: 
     <ol className={styles.track}>{progress.steps.map((step, index) => <li key={step.key} data-state={step.state}>
       <span className={styles.number}>{String(index + 1).padStart(2, "0")}</span>
       {step.key === "checking" ? <span>{labels[step.key]}<small>Available after setup</small></span> :
-        <Link href={links[step.key]}>{labels[step.key]}<small>{step.state === "done" ? "Done" : step.state === "current" ? "Next" : "Waiting"}</small></Link>}
+        <Link className={styles.stepLink} href={links[step.key]}>{labels[step.key]}<small>{step.state === "done" ? "Done" : step.state === "current" ? "Next" : "Waiting"}</small></Link>}
     </li>)}</ol>
   </section>;
 }

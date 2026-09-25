@@ -82,7 +82,7 @@
   background: var(--surface-subtle);
   border-radius: var(--r-sm);
 }
-.track a {
+.track .stepLink {
   min-height: 44px;
   display: block;
 }
