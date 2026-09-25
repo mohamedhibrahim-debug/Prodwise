@@ -39,6 +39,8 @@ export interface Repository {
   getInitiativeSnapshot(initiativeId: string): Promise<InitiativeSnapshot | null>;
   getInitiativeBySlug(slug: string): Promise<Initiative | null>;
   listActivity(initiativeId: string, limit?: number): Promise<ActivityEntry[]>;
+  /** Recent activity across the portfolio, ordered newest first. */
+  listRecentActivity(limit?: number): Promise<ActivityEntry[]>;
   createInitiative(input: NewInitiativeInput): Promise<Initiative>;
 
   /* ── Evidence ────────────────────────────────────────────────────────────

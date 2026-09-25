@@ -672,6 +672,12 @@ export const localRepository: Repository = {
     });
   },
 
+  async listRecentActivity(limit = 8) {
+    return [...readStore().activity]
+      .sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt))
+      .slice(0, limit);
+  },
+
   async assignFindingConfirmer(plan) {
     assertWriteAllowed();
     writeStoreAtomic((s) => {

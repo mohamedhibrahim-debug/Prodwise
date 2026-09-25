@@ -849,6 +849,16 @@ export const supabaseRepository: Repository = {
     if (error) throw new Error(`Failed to save finding state: ${error.message}`);
   },
 
+  async listRecentActivity(limit = 8) {
+    const { data, error } = await getClient()
+      .from("activity_log")
+      .select("*")
+      .order("occurred_at", { ascending: false })
+      .limit(limit);
+    if (error) throw new Error(`Failed to load recent activity: ${error.message}`);
+    return (data as ActivityRow[]).map(toActivity);
+  },
+
   async resolveConflict(plan) {
     assertWriteAllowed();
     const { data, error } = await getClient().rpc("resolve_conflict", { p_plan: plan });

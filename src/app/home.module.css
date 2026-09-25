@@ -1,0 +1,14 @@
+.page{max-width:1100px;padding:clamp(24px,4vw,56px) clamp(16px,3vw,44px) 72px}
+.page h1{font-size:var(--t-h1)}
+.attention{margin-top:12px;font-size:var(--t-h2);color:var(--ink-700)}
+.section{margin-top:38px;border-top:1px solid var(--rule);padding-top:18px}
+.section h2{font-size:var(--t-h2);margin-bottom:14px}
+.section p{color:var(--ink-500);font-size:var(--t-sm)}
+.list{border-top:1px solid var(--rule)}
+.list li{border-bottom:1px solid var(--rule)}
+.list a{display:flex;justify-content:space-between;gap:16px;padding:14px 4px;text-decoration:none;color:var(--ink-900);font-size:var(--t-sm)}
+.list a:hover,.list a:focus-visible{background:var(--surface-subtle)}
+.list span{color:var(--ink-500)}
+.stageList{max-width:420px}.stageList li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--rule);font-size:var(--t-sm)}
+.allLink{display:inline-block;margin-top:16px;font-size:var(--t-sm);color:var(--accent-700)}
+@media(max-width:600px){.list a{flex-direction:column;gap:4px}}
