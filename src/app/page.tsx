@@ -29,14 +29,24 @@ export default async function Home() {
   for (const row of rows) stages.set(STAGE_LABEL[row.initiative.stage], [...(stages.get(STAGE_LABEL[row.initiative.stage]) ?? []), row]);
 
   return <div className={styles.page}>
+    <header className={styles.hero}>
+    <p className={styles.eyebrow}>Prodwise · Initiative intelligence</p>
     <h1>What needs attention now?</h1>
     <p className={styles.attention}>{attention}</p>
+    <div className={styles.stats}>
+      <div><b>{rows.length}</b><span>Initiatives</span></div>
+      <div><b>{needsDecision.length}</b><span>Need a decision</span></div>
+      <div><b>{waiting.length}</b><span>Waiting on setup</span></div>
+    </div>
+    </header>
+    <div className={styles.grid}>
     <section className={styles.section} aria-labelledby="needs-decision">
       <h2 id="needs-decision">Needs a decision</h2>
       <p>Listed in default order — not prioritised</p>
       {needsDecision.length ? <ul className={styles.list}>{needsDecision.map(({ initiative, finding }) =>
         <li key={`${initiative.id}-${finding.fingerprint}`}><Link href={`/initiatives/${initiative.slug}/decisions?item=${encodeURIComponent(finding.fingerprint)}`}>
           <strong>{attentionSentence(finding)}</strong><span>{initiative.name} · Values differ{finding.confirmerLabel ? ` · Confirm with: ${finding.confirmerLabel}` : ""}</span>
+          <span className={styles.comparison}>{finding.claims.map((claim, index) => <span key={claim.claimId}>{index > 0 ? <i aria-hidden="true">vs</i> : null} <b>{claim.value}</b></span>)}</span>
         </Link></li>
       )}</ul> : <p>No mismatches need a decision under the current checks.</p>}
     </section>
@@ -45,6 +55,7 @@ export default async function Home() {
       {waiting.length ? <ul className={styles.list}>{waiting.map((row) =>
         <li key={row.initiative.id}><Link href={`/initiatives/${row.initiative.slug}`}>
           <strong>{row.initiative.name}</strong><span>{row.progress.current === "sources" ? "Add sources" : row.progress.current === "record" ? "Record Knowledge" : "Confirm Knowledge"}</span>
+          <span>{row.progress.facts.decisionsOpen ? "Setup incomplete · a decision is available" : "Not assessed yet — setup incomplete"}</span>
         </Link></li>
       )}</ul> : <p>Every initiative has the required setup records.</p>}
     </section>
@@ -66,5 +77,6 @@ export default async function Home() {
       )}</ul> : <p>No initiatives yet.</p>}
       <Link className={styles.allLink} href="/initiatives">View initiatives →</Link>
     </section>
+    </div>
   </div>;
 }

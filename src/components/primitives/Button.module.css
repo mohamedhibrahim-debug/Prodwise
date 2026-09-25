@@ -12,17 +12,14 @@
   border: 1px solid transparent;
   cursor: pointer;
   white-space: nowrap;
-  transition:
-    background-color var(--dur-fast) var(--ease),
+  transition: background-color var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease),
     color var(--dur-fast) var(--ease);
 }
-
 .base:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
-
 /* Primary — the cyan identity accent, used sparingly for the single main
    action on a screen. */
 .primary {
@@ -32,7 +29,6 @@
 .primary:hover:not(:disabled) {
   background: var(--accent-700);
 }
-
 .secondary {
   background: var(--canvas);
   color: var(--ink-700);
@@ -42,7 +38,6 @@
   background: var(--surface-subtle);
   border-color: var(--ink-300);
 }
-
 .ghost {
   background: transparent;
   color: var(--ink-500);
@@ -51,15 +46,26 @@
 .ghost:hover:not(:disabled) {
   color: var(--ink-900);
 }
-
 .lg {
   height: 38px;
   padding: 0 var(--s-5);
   font-size: var(--t-body);
 }
-
 /* Approved elevated presentation. */
-
-.base,.lg {min-height:44px;height:auto;padding:10px 18px;border-radius:var(--r-sm);font-weight:var(--fw-semibold);}
-.primary {background:var(--navy-900);box-shadow:var(--shadow-card);}.primary:hover:not(:disabled) {background:var(--navy-700);}.secondary {background:var(--panel);}
-
+.base,.lg {
+  min-height: 44px;
+  height: auto;
+  padding: 10px 18px;
+  border-radius: var(--r-sm);
+  font-weight: var(--fw-semibold);
+}
+.primary {
+  background: var(--navy-900);
+  box-shadow: var(--shadow-card);
+}
+.primary:hover:not(:disabled) {
+  background: var(--navy-700);
+}
+.secondary {
+  background: var(--panel);
+}

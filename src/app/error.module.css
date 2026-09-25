@@ -2,21 +2,18 @@
   max-width: 62ch;
   padding: var(--s-12) 0;
 }
-
 .title {
   font-size: var(--t-h1);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-tight);
   color: var(--ink-900);
 }
-
 .body {
   margin-top: var(--s-4);
   font-size: var(--t-sm);
   color: var(--ink-500);
   line-height: var(--lh-body);
 }
-
 .retry {
   margin-top: var(--s-6);
   font: inherit;
@@ -29,19 +26,29 @@
   padding: 8px 16px;
   cursor: pointer;
 }
-
 .retry:hover {
   border-color: var(--ink-400);
 }
-
 .retry:focus-visible {
   box-shadow: var(--focus-ring);
   outline-offset: 2px;
 }
-
 .digest {
   margin-top: var(--s-6);
   font-family: var(--font-mono);
   font-size: var(--t-micro);
   color: var(--ink-400);
+}
+.page {
+  margin: 32px auto;
+  padding: 28px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+}
+.retry {
+  min-height: 44px;
+  background: var(--navy-900);
+  color: var(--panel);
 }

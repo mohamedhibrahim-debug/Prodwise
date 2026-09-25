@@ -1,12 +1,10 @@
 /* Shared layout for every workspace tab. Sections are separated by hairline
    rules, never wrapped in cards — this is what keeps the workspace free of
    nested card stacks. */
-
 .page {
-  width:100%;
+  width: 100%;
   padding: 0 clamp(16px,2.5vw,36px) var(--s-16);
 }
-
 /* ── Status: operating view ──────────────────────────────────────────────-
    Decisions lead, change sits beside them. One column below 1000px, with the
    decision queue first because it is the thing that asks something of you. */
@@ -15,18 +13,15 @@
   grid-template-columns: minmax(0, 1fr);
   column-gap: var(--s-10);
 }
-
 .statusMain,
 .statusSide {
   min-width: 0;
 }
-
 @media (min-width: 1000px) {
   .statusColumns {
     grid-template-columns: minmax(0, 57fr) minmax(0, 43fr);
   }
 }
-
 .summaryText {
   font-size: 1.125rem;
   line-height: 1.5;
@@ -35,7 +30,6 @@
   max-width: 74ch;
   font-weight: var(--fw-medium);
 }
-
 /* ── Demo scenario ───────────────────────────────────────────────────────-
    Authored illustration, collapsed and set apart on a sunken surface with a
    dashed edge, so it can never be mistaken for the real surfaces above it. */
@@ -45,7 +39,6 @@
   border-radius: var(--r-md);
   background: var(--surface-subtle);
 }
-
 .demoSummary {
   display: flex;
   flex-wrap: wrap;
@@ -57,17 +50,14 @@
   font-size: var(--t-sm);
   color: var(--ink-500);
 }
-
 .demoSummary::-webkit-details-marker {
   display: none;
 }
-
 .demoSummary:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
   border-radius: var(--r-md);
 }
-
 .demoTag {
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
@@ -75,11 +65,9 @@
   text-transform: uppercase;
   color: var(--ink-700);
 }
-
 .demoBody {
   padding: 0 var(--s-5) var(--s-6);
 }
-
 /* ── Page-level demo banner (Readiness) ──────────────────────────────────- */
 .demoBanner {
   margin-top: var(--s-6);
@@ -91,21 +79,17 @@
   color: var(--ink-500);
   line-height: var(--lh-body);
 }
-
 /* ── Generic structured rows ─────────────────────────────────────────────- */
 .rows {
   border-top: 1px solid var(--rule);
 }
-
 .row {
   padding: var(--s-4) 0;
   border-bottom: 1px solid var(--rule);
 }
-
 .rowFlush {
   padding: var(--s-3) 0;
 }
-
 /* ── Two-column detail grid used inside expanded rows ────────────────────- */
 .detailGrid {
   display: grid;
@@ -113,7 +97,6 @@
   gap: var(--s-4) var(--s-6);
   margin-top: var(--s-4);
 }
-
 .detailTerm {
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
@@ -121,26 +104,22 @@
   text-transform: uppercase;
   color: var(--ink-400);
 }
-
 .detailValue {
   margin-top: var(--s-1);
   font-size: var(--t-sm);
   color: var(--ink-700);
   line-height: 1.5;
 }
-
 /* ── Tab intro line ──────────────────────────────────────────────────────- */
 .tabIntro {
   padding: var(--s-8) 0 0;
 }
-
 .tabIntroText {
   color: var(--ink-500);
   font-size: var(--t-sm);
   max-width: 74ch;
   line-height: var(--lh-body);
 }
-
 /* ── Decisions lanes ─────────────────────────────────────────────────────-
    Four visible sections replace the old mutually exclusive filters. They use
    rules and whitespace so findings keep their existing visual treatment. */
@@ -148,7 +127,6 @@
   padding-top: var(--s-8);
   scroll-margin-top: calc(var(--workspace-header-h) + var(--s-4));
 }
-
 .decisionLaneHead {
   display: flex;
   align-items: flex-start;
@@ -157,14 +135,12 @@
   padding-bottom: var(--s-3);
   border-bottom: 1px solid var(--rule-strong);
 }
-
 .decisionLaneTitle {
   font-size: var(--t-h2);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-tight);
   color: var(--ink-900);
 }
-
 .decisionLaneDescription,
 .decisionLaneEmpty {
   margin-top: var(--s-1);
@@ -173,12 +149,10 @@
   line-height: var(--lh-body);
   color: var(--ink-500);
 }
-
 .decisionLaneEmpty {
   padding: var(--s-5) 0;
   border-bottom: 1px solid var(--rule);
 }
-
 .decisionLaneCount {
   flex: none;
   min-width: var(--s-6);
@@ -188,7 +162,6 @@
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
-
 /* ── Filter strip ────────────────────────────────────────────────────────-
    Scrolls inside itself when it does not fit (Product Memory has five views
    and overflows a 375px viewport). Overflow is contained here so the strip
@@ -204,7 +177,6 @@
   /* Holds the 2px active underline inside the scroll box. */
   padding-bottom: 1px;
 }
-
 /* Sits under the filter strip, explaining why Open + Resolved ≠ All. */
 .filterNote {
   margin-top: var(--s-2);
@@ -212,11 +184,9 @@
   color: var(--ink-500);
   line-height: var(--lh-body);
 }
-
 .filters::-webkit-scrollbar {
   display: none;
 }
-
 .filter {
   padding: var(--s-2) var(--s-3) var(--s-3);
   font-size: var(--t-sm);
@@ -228,32 +198,26 @@
   flex: none;
   white-space: nowrap;
 }
-
 .filter:hover {
   color: var(--ink-900);
 }
-
 .filterActive {
   color: var(--ink-900);
   font-weight: var(--fw-semibold);
   border-bottom-color: var(--accent-500);
 }
-
 .filterCount {
   color: var(--ink-400);
   margin-left: 5px;
   font-variant-numeric: tabular-nums;
 }
-
 .filterActive .filterCount {
   color: var(--ink-400);
 }
-
 /* ── Group heading used on Evidence / Memory ─────────────────────────────- */
 .group {
   padding-top: var(--s-8);
 }
-
 .groupHead {
   display: flex;
   align-items: baseline;
@@ -261,43 +225,36 @@
   padding-bottom: var(--s-3);
   border-bottom: 1px solid var(--rule-strong);
 }
-
 .groupTitle {
   font-size: var(--t-h3);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-tight);
 }
-
 .groupCount {
   font-size: var(--t-xs);
   color: var(--ink-400);
   font-variant-numeric: tabular-nums;
 }
-
 .groupNote {
   margin-top: var(--s-2);
   font-size: var(--t-xs);
   color: var(--ink-400);
   max-width: 74ch;
 }
-
 /* ══ Review: findings + context ═════════════════════════════════════════════
    At 1440px the container is 1160px but the readable content stopped near
    780px, leaving roughly 500px of dead space. That space now carries context
    instead of nothing. Two columns only where there is genuinely room; below
    that the context leads, because on a narrow screen orientation matters more
    than the list. */
-
 .reviewLayout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--s-8);
 }
-
 .reviewMain {
   min-width: 0;
 }
-
 /* Hidden below 1200px, and that is deliberate rather than a fallback.
    The column exists to use horizontal space that only exists on a wide screen.
    Narrow, every part of it duplicates something already on the page — the
@@ -307,7 +264,6 @@
 .reviewContext {
   display: none;
 }
-
 .contextLabel {
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
@@ -316,14 +272,12 @@
   color: var(--ink-400);
   margin-bottom: var(--s-2);
 }
-
 .contextBlock {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--s-1);
 }
-
 .contextCount {
   font-size: var(--t-h1);
   font-weight: var(--fw-semibold);
@@ -331,35 +285,29 @@
   color: var(--ink-900);
   line-height: 1.1;
 }
-
 .contextValue {
   font-size: var(--t-xs);
   color: var(--ink-500);
 }
-
 .contextLink {
   font-size: var(--t-sm);
   color: var(--accent-700);
   padding: 2px 0;
   transition: color var(--dur-fast) var(--ease);
 }
-
 .contextLink:hover {
   color: var(--accent-600);
   text-decoration: underline;
 }
-
 .contextNotice {
   font-size: var(--t-xs);
   color: var(--ink-400);
   line-height: var(--lh-body);
 }
-
 @media (min-width: 1200px) {
   .reviewLayout {
     grid-template-columns: minmax(0, 1fr) 260px;
   }
-
   .reviewContext {
     /* Sticky below the sticky workspace header, so context stays put while a
        long findings list scrolls past it. */
@@ -375,4 +323,32 @@
     border-top: 0;
     border-left: 1px solid var(--rule);
   }
+}
+/* Workbench context uses already-loaded facts; no extra decorative reads. */
+.reviewContext {
+  display: flex;
+  position: static;
+  padding: 20px 12px;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  gap: 18px;
+  flex-direction: column;
+}
+@media(max-width:1000px) {
+  .reviewContext {
+    display: none;
+  }
+}
+@media(max-width:780px) {
+  .page {
+    padding-inline: 16px;
+  }
+  .tabIntro {
+    padding-top: 20px;
+  }
+}
+.pageTitle {
+  font-size: 26px;
+  margin-bottom: 8px;
+  color: var(--navy-900);
 }

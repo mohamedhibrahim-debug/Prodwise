@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { DecisionRecord } from "@/components/initiative/DecisionRecord";
 import { DecisionDeepLink } from "@/components/initiative/DecisionDeepLink";
+import { DecisionWorkbench, type WorkbenchLane } from "@/components/initiative/DecisionWorkbench";
 import { FindingRow } from "@/components/initiative/FindingRow";
 import { getRepository } from "@/lib/data";
 import { STAGE_LABEL } from "@/lib/domain/labels";
@@ -17,8 +18,9 @@ import styles from "../workspace.module.css";
 export const metadata: Metadata = { title: "Decisions" };
 export const dynamic = "force-dynamic";
 
-export default async function DecisionsPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function DecisionsPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ item?: string }> }) {
   const { slug } = await params;
+  const { item } = await searchParams;
   const repo = getRepository();
   const initiative = await repo.getInitiativeBySlug(slug);
   if (!initiative) notFound();
@@ -30,7 +32,7 @@ export default async function DecisionsPage({ params }: { params: Promise<{ slug
   const standing = states.filter((state) => state.outcome && !needsDecision.some((finding) => finding.fingerprint === state.fingerprint));
   const sourceCount = claims.length === 0 ? (await repo.listEvidence(initiative.id)).length : 0;
   const row = (finding: (typeof all)[number], canResolve = isDemoWriteEnabled) =>
-    <FindingRow key={finding.fingerprint} finding={finding} slug={slug} canResolve={canResolve}
+    <FindingRow key={finding.fingerprint} finding={finding} slug={slug} canResolve={canResolve} records={claims}
       previousConfirmedWith={states.find((state) => state.fingerprint === finding.fingerprint)?.confirmedWith} />;
   const content: Record<DecisionLaneKey, { count?: number; body: ReactNode }> = {
     "needs-decision": { count: needsDecision.length, body: needsDecision.length ? <ul>{needsDecision.map((finding) => row(finding))}</ul> :
@@ -43,18 +45,19 @@ export default async function DecisionsPage({ params }: { params: Promise<{ slug
     "not-checked": { body: null },
   };
 
-  return <div className={`${styles.page} ${styles.reviewLayout}`}>
+  const laneItems: Record<DecisionLaneKey, WorkbenchLane["items"]> = {
+    "needs-decision": needsDecision.map(finding => ({ id: finding.fingerprint, title: finding.title, value: finding.claims.map(claim => claim.value).join(" / "), body: row(finding) })),
+    reviewed: reviewed.map(finding => ({ id: finding.fingerprint, title: finding.title, value: "Reviewed — note only", body: row(finding) })),
+    resolved: standing.map(state => ({ id: state.fingerprint, title: `${state.subject} · ${state.attribute}`, value: state.decidedValue ?? "", body: <DecisionRecord state={state} slug={slug} /> })),
+    history: history.map(finding => ({ id: finding.fingerprint, title: finding.title, value: "Replaced information", body: row(finding, false) })),
+    "not-checked": [],
+  };
+
+  return <div className={styles.page}>
     <div className={styles.reviewMain}>
       <Suspense fallback={null}><DecisionDeepLink slug={slug} /></Suspense>
-      <div className={styles.tabIntro}><p className={styles.tabIntroText}><strong>Compare recorded values, review their sources, and record a decision.</strong></p></div>
-      {DECISION_LANES.map((lane) => <section className={styles.decisionLane} id={`lane-${lane.key}`} key={lane.key}>
-        <div className={styles.decisionLaneHead}><div><h2 className={styles.decisionLaneTitle}>{lane.title}</h2><p className={styles.decisionLaneDescription}>{lane.description}</p></div>
-          {content[lane.key].count !== undefined ? <span className={styles.decisionLaneCount}>{content[lane.key].count}</span> : null}</div>
-        {lane.key === "resolved" || lane.key === "history" ?
-          <details><summary>Show {lane.title.toLowerCase()}</summary>{content[lane.key].body}</details> :
-          content[lane.key].body}
-      </section>)}
-    </div>
+      <div className={styles.tabIntro}><h1 className={styles.pageTitle}>Decisions</h1><p className={styles.tabIntroText}>Compare recorded values, review their sources, and record a decision.</p></div>
+      <DecisionWorkbench initialItem={item} lanes={DECISION_LANES.map(lane => ({ ...lane, items: laneItems[lane.key], empty: content[lane.key].body }))}>
     <aside className={styles.reviewContext} aria-label="Initiative context">
       <div className={styles.contextBlock}><div className={styles.contextLabel}>Stage</div><p className={styles.contextValue}>{STAGE_LABEL[initiative.stage]}</p></div>
       <div className={styles.contextBlock}><div className={styles.contextLabel}>Waiting on you</div><p className={styles.contextCount}>{needsDecision.length}</p>
@@ -65,5 +68,7 @@ export default async function DecisionsPage({ params }: { params: Promise<{ slug
         <Link href={`/initiatives/${slug}`} className={styles.contextLink}>Brief →</Link></div>
       {!isDemoWriteEnabled ? <p className={styles.contextNotice}>{WRITE_DISABLED_MESSAGE}</p> : null}
     </aside>
+      </DecisionWorkbench>
+    </div>
   </div>;
 }

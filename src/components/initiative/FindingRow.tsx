@@ -9,7 +9,8 @@ import {
   FINDING_LABEL,
   formatDateTime,
 } from "@/lib/domain/labels";
-import type { FindingClaimRef, ReviewFinding } from "@/lib/domain/types";
+import type { FindingClaimRef, ReviewFinding, ClaimWithEvidence } from "@/lib/domain/types";
+import { trustLine } from "@/lib/domain/trust";
 import { MISMATCH_WHY_RAISED } from "@/lib/workspace/copy";
 import { ResolveFindingForm } from "./ResolveFindingForm";
 import { DecideConflictForm, ConfirmerForm } from "./DecideConflictForm";
@@ -32,16 +33,18 @@ export function FindingRow({
   slug,
   canResolve,
   previousConfirmedWith,
+  records,
 }: {
   finding: ReviewFinding;
   slug: string;
   canResolve: boolean;
   previousConfirmedWith?: string | null;
+  records?: ClaimWithEvidence[];
 }) {
   return finding.type === "SUPERSEDED" ? (
     <SupersededRow finding={finding} slug={slug} />
   ) : (
-    <ConflictRow finding={finding} slug={slug} canResolve={canResolve} previousConfirmedWith={previousConfirmedWith} />
+    <ConflictRow finding={finding} slug={slug} canResolve={canResolve} previousConfirmedWith={previousConfirmedWith} records={records} />
   );
 }
 
@@ -90,16 +93,19 @@ function ConflictRow({
   slug,
   canResolve,
   previousConfirmedWith,
+  records,
 }: {
   finding: ReviewFinding;
   slug: string;
   canResolve: boolean;
   previousConfirmedWith?: string | null;
+  records?: ClaimWithEvidence[];
 }) {
   const resolved = finding.status === "RESOLVED";
 
   return (
     <li id={`item-${finding.fingerprint}`} tabIndex={-1} className={`${styles.conflict} ${resolved ? styles.settled : ""}`}>
+      <div className={styles.comparisonPanel}>
       <div className={styles.head}>
         <span className={styles.kindLabel}>{FINDING_LABEL[finding.type]}</span>
         {resolved ? (
@@ -139,7 +145,7 @@ function ConflictRow({
                 vs
               </span>
             ) : null}
-            <ClaimColumn claim={claim} slug={slug} />
+            <ClaimColumn claim={claim} slug={slug} record={records?.find(record => record.id === claim.claimId)} />
           </div>
         ))}
       </div>
@@ -162,12 +168,16 @@ function ConflictRow({
         <p>Confirmed with: {previousConfirmedWith ?? "Not recorded"}</p>
         <p>{formatDateTime(finding.previousDecision.decidedAt)} UTC</p>
       </details> : null}
+      <ResolutionNote finding={finding} />
+      </div>
+      {finding.actionable ? <aside className={styles.decisionPanel} aria-label="Decision controls">
+      <div className={styles.panelHeading}><span>Your decision</span><h3>{resolved ? "Review record" : "Record a decision"}</h3></div>
       {finding.actionable && !resolved ? <>
         {finding.confirmerLabel ? <p className={styles.facts}>Confirm with: {finding.confirmerLabel}</p> : null}
         {canResolve ? <>
           <ConfirmerForm key={finding.confirmerLabel ?? "unassigned"} finding={finding} slug={slug} />
           <DecideConflictForm finding={finding} slug={slug} />
-        </> : null}
+        </> : <p className={styles.caption}>Changes are disabled in this environment. Review the values and their sources.</p>}
       </> : null}
 
       {finding.actionable && canResolve && !finding.previousDecision ? (
@@ -175,7 +185,7 @@ function ConflictRow({
           contentDigest={finding.contentDigest} resolved={resolved} />
       ) : null}
 
-      <ResolutionNote finding={finding} />
+      </aside> : null}
     </li>
   );
 }
@@ -188,7 +198,7 @@ function ConflictRow({
  * side is emphasised and neither is labelled "current" or "original": the
  * engine knows nothing about chronology, so the layout must not imply it.
  */
-function ClaimColumn({ claim, slug }: { claim: FindingClaimRef; slug: string }) {
+function ClaimColumn({ claim, slug, record }: { claim: FindingClaimRef; slug: string; record?: ClaimWithEvidence }) {
   /* EXCLUDED evidence is not cited as the reference behind a value. The link is
      kept and listed below, tagged — but a record a person removed from the
      boundary must not head the column as if it still backed this. */
@@ -238,7 +248,8 @@ function ClaimColumn({ claim, slug }: { claim: FindingClaimRef; slug: string }) 
           <ul className={styles.evidence}>
             {claim.evidence.map((e) => (
               <li key={e.evidenceId} className={styles.evidenceItem}>
-                <span className={styles.evidenceTitle}>{e.title}</span>
+                <Link href={`/initiatives/${slug}/knowledge/sources#source-${e.evidenceId}`} className={styles.evidenceTitle}>{e.title} →</Link>
+                {record?.evidence.find(source => source.id === e.evidenceId)?.contentSummary ? <p className={styles.sourceSummary}>{record.evidence.find(source => source.id === e.evidenceId)!.contentSummary}</p> : null}
                 <span
                   className={
                     e.boundary === "EXCLUDED"
@@ -260,6 +271,7 @@ function ClaimColumn({ claim, slug }: { claim: FindingClaimRef; slug: string }) 
           Open {primaryRef ?? "this entry"} in Knowledge →
         </Link>
       </div>
+      {record && trustLine(record) ? <p className={styles.trust}>{trustLine(record)}</p> : null}
     </div>
   );
 }

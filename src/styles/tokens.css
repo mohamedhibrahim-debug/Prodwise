@@ -9,7 +9,6 @@
    re-derived rather than copied, so this reads as inspired-by, not cloned.
    See CLAUDE.md §16.
    ========================================================================= */
-
 :root {
   /* ── Structural navy · the navigation rail ──────────────────────────────
      Dark navigation against a light working canvas is the core contrast. */
@@ -27,7 +26,6 @@
      palette surface. */
   --navy-ink-faint: #8398ae;
   --navy-rule: #1b3145;
-
   /* ── Identity accent · cyan / teal ─────────────────────────────────────
      The primary brand accent. Carries identity and interaction, never state. */
   --accent-700: #007489;
@@ -39,7 +37,6 @@
   --accent-200: #9fdce7;
   --accent-100: #cceef4;
   --accent-050: #e2f4f7;
-
   /* ── Secondary brand accent · warm orange ──────────────────────────────
      DECORATION ONLY. Restricted to the arc motif and section numerals.
      It must never carry status meaning — see the semantic scale below. */
@@ -47,7 +44,6 @@
      in the section numerals, so it has to clear AA. Same hue, same role. */
   --brand-orange: #bb5720;
   --brand-orange-soft: #f2ddd0;
-
   /* ── Neutral working surfaces ──────────────────────────────────────────- */
   --canvas: #f2f5f7;
   --panel: #ffffff;
@@ -56,7 +52,6 @@
   --surface-subtle: #f7f8fa;
   --surface-sunken: #f1f3f6;
   --surface-inset: #eceff3;
-
   --ink-900: #0b2133;
   --ink-700: #34495a;
   --ink-500: #586c7c;
@@ -69,10 +64,8 @@
   /* Decorative only - dashes, separators, disclosure glyphs. Never text that
      has to be read; anything meaningful uses --ink-400 or darker. */
   --ink-300: #a9b4bf;
-
   --rule: #e1e8ed;
   --rule-strong: #cfdae2;
-
   /* ── Semantic status ───────────────────────────────────────────────────
      Deliberately independent of the brand palette. AT_RISK is a dark
      yellow-brown, chosen so it can never be confused with the brand's
@@ -82,22 +75,18 @@
   --state-ready-bg: #e6f3ec;
   --state-ready-mark: #2e8b5b;
   --state-ready-edge: #bfe0cd;
-
   --state-at-risk-fg: #8a5800;
   --state-at-risk-bg: #fbf0d9;
   --state-at-risk-mark: #b8811a;
   --state-at-risk-edge: #ecd7a5;
-
   --state-blocked-fg: #a81e16;
   --state-blocked-bg: #fbeae8;
   --state-blocked-mark: #c6342b;
   --state-blocked-edge: #f0c8c4;
-
   --state-unknown-fg: #56626e;
   --state-unknown-bg: #eef1f4;
   --state-unknown-mark: #8493a2;
   --state-unknown-edge: #dbe1e7;
-
   /* ── Finding severity ──────────────────────────────────────────────────
      A separate ramp from status, and orange-free by design. */
   --sev-critical: #a81e16;
@@ -105,7 +94,6 @@
   --sev-medium: #4a6b86;
   /* Darkened alongside --ink-400 for the same AA reason. */
   --sev-low: #67737e;
-
   /* ── Typography ────────────────────────────────────────────────────────
      Inter is the reference deck's own typeface: it honours the visual DNA
      and is simultaneously brand-neutral enterprise-standard. */
@@ -113,35 +101,38 @@
     Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
-
   /* The deck runs 50pt display down to 6pt micro-labels. That dramatic
      range is the hierarchy device we borrow. */
-  --t-display: 2.125rem; /* 34px — initiative name */
-  --t-h1: 2rem; /* 24px — page title */
+  --t-display: 2.125rem;
+  /* 34px — initiative name */
+  --t-h1: 2rem;
+  /* 24px — page title */
   /* 28px — the compared values in a Review conflict. Sits between h1 and
      display because the conflict is the product signature and must dominate
      its content area, while never competing with the initiative name that is
      pinned in the sticky header at --t-display. */
   --t-value: 3.5rem;
-  --t-h2: 1.0625rem; /* 17px — section heading */
-  --t-h3: 0.9375rem; /* 15px — row title */
-  --t-body: 0.875rem; /* 14px — body */
-  --t-sm: 0.8125rem; /* 13px — secondary */
-  --t-xs: 0.75rem; /* 12px — meta */
-  --t-micro: 0.6875rem; /* 11px — the deck's micro-label, our signature */
-
+  --t-h2: 1.0625rem;
+  /* 17px — section heading */
+  --t-h3: 0.9375rem;
+  /* 15px — row title */
+  --t-body: 0.875rem;
+  /* 14px — body */
+  --t-sm: 0.8125rem;
+  /* 13px — secondary */
+  --t-xs: 0.75rem;
+  /* 12px — meta */
+  --t-micro: 0.6875rem;
+  /* 11px — the deck's micro-label, our signature */
   --lh-display: 1.12;
   --lh-tight: 1.25;
   --lh-body: 1.55;
-
   --ls-display: -0.022em;
   --ls-tight: -0.012em;
   --ls-micro: 0.09em;
-
   --fw-regular: 400;
   --fw-medium: 500;
   --fw-semibold: 700;
-
   /* ── Spacing · 4px base ────────────────────────────────────────────────- */
   --s-1: 0.25rem;
   --s-2: 0.5rem;
@@ -153,7 +144,6 @@
   --s-10: 2.5rem;
   --s-12: 3rem;
   --s-16: 4rem;
-
   /* ── Radius · deliberately tight ───────────────────────────────────────
      No giant rounded rectangles. Pills are reserved for status only. */
   --r-xs: 2px;
@@ -161,18 +151,15 @@
   --r-md: 10px;
   --r-lg: 12px;
   --r-pill: 999px;
-
   /* ── Elevation · supporting panels ───────────────────────────────────────────
      Purposeful cards use a light shadow. The stronger
      shadow is reserved for the one genuinely floating surface. */
   --shadow-panel: 0 12px 32px -12px rgb(16 24 32 / 22%),
     0 2px 6px -2px rgb(16 24 32 / 10%);
-
   /* ── Motion ────────────────────────────────────────────────────────────- */
   --dur-fast: 110ms;
   --dur: 170ms;
   --ease: cubic-bezier(0.2, 0, 0.15, 1);
-
   /* ── Layout ────────────────────────────────────────────────────────────- */
   --rail-w: 248px;
   --rail-w-expanded: 248px;
@@ -189,17 +176,14 @@
      opaque bar. Approximate by design — a long initiative name can wrap — so
      it is rounded up rather than down. */
   --workspace-header-h: 152px;
-
   --focus-ring: 0 0 0 2px var(--canvas), 0 0 0 4px var(--accent-500);
 }
-
 @media (max-width: 1100px) {
   :root {
     --rail-w: 76px;
     --gutter: var(--s-6);
   }
 }
-
 @media (max-width: 780px) {
   :root {
     /* Conservative anchor fallback until WorkspaceTabs measures the rendered

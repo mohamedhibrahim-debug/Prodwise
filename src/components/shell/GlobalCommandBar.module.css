@@ -1,6 +1,22 @@
-.bar{height:var(--command-h);display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--rule);background:var(--canvas)}
-.bar strong{font-size:var(--t-sm)}
-@media(max-width:780px){.bar{display:none}}
-
+.bar {
+  height: var(--command-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--canvas);
+}
+.bar strong {
+  font-size: var(--t-sm);
+}
+@media(max-width:780px) {
+  .bar {
+    display: none;
+  }
+}
 /* Approved elevated presentation. */
-.bar {background:var(--panel);padding-inline:36px;}
+.bar {
+  background: var(--panel);
+  padding-inline: 36px;
+}

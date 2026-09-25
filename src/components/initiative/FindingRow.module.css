@@ -6,21 +6,49 @@
    Slice 1 findings carry no severity and faking one here would be a lie the
    engine never told. Structure stays 1px rules and whitespace — no card, no
    fill, no shadow. */
-
 .conflict {
   padding: var(--s-8) 0;
   border-bottom: 1px solid var(--rule);
 }
-
+/* Elevated comparison and existing action forms share one selected record. */
+.comparisonPanel, .decisionPanel {
+  min-width: 0;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+}
+.comparisonPanel {
+  padding: 24px;
+}
+.decisionPanel {
+  padding: 0 20px 20px;
+  align-self: start;
+}
+.panelHeading {
+  margin: 0 -20px 18px;
+  padding: 20px;
+  background: var(--navy-900);
+  color: var(--panel);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.panelHeading span {
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--navy-ink-dim);
+}
+.panelHeading h3 {
+  font-size: 18px;
+  margin-top: 6px;
+}
 /* ── Head: what kind of thing, what it is about, when it last moved ───────── */
-
 .head {
   display: flex;
   align-items: baseline;
   gap: var(--s-3);
   flex-wrap: wrap;
 }
-
 .kindLabel {
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
@@ -28,7 +56,6 @@
   text-transform: uppercase;
   color: var(--ink-900);
 }
-
 /* States what is wanted from the reader — not a severity. Every open conflict
    says exactly the same thing, because the engine ranks nothing. */
 .needsDecision {
@@ -40,7 +67,6 @@
   padding-left: var(--s-3);
   border-left: 1px solid var(--rule-strong);
 }
-
 /* Pushed to the far end so the head reads kind → subject → when, and the
    timestamp never interrupts the title. */
 .headMeta {
@@ -48,7 +74,6 @@
   font-size: var(--t-xs);
   color: var(--ink-400);
 }
-
 .title {
   margin-top: var(--s-3);
   font-size: var(--t-h2);
@@ -57,30 +82,24 @@
   color: var(--ink-900);
   overflow-wrap: anywhere;
 }
-
 .facts {
   margin-top: var(--s-1);
   font-size: var(--t-xs);
   color: var(--ink-500);
 }
-
 .sep {
   color: var(--ink-300);
 }
-
 .settled .value {
   color: var(--ink-700);
 }
-
 /* ── The comparison ──────────────────────────────────────────────────────── */
-
 .compare {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   margin-top: var(--s-6);
   max-width: 860px;
 }
-
 /* Symmetric padding so both values get identical text width. Asymmetric
    padding gave the left value 33px more room and the flush starting edge —
    on the one component whose law is that neither side is endorsed, that
@@ -90,21 +109,17 @@
   min-width: 0;
   padding-inline: var(--s-8);
 }
-
 .side:first-child {
   padding-inline-start: 0;
 }
-
 .side:last-child {
   padding-inline-end: 0;
 }
-
 /* The one structural line in the component, so it carries the heavier
    weight. Everything else here is --rule. */
 .side + .side {
   border-left: 1px solid var(--rule-strong);
 }
-
 /* Sits on the dividing rule, level with the values it separates, so two facts
    read as one question. Decorative and aria-hidden — the comparison is fully
    readable without it. */
@@ -123,11 +138,9 @@
   text-transform: uppercase;
   color: var(--ink-400);
 }
-
 .column {
   min-width: 0;
 }
-
 /* The reason the finding exists, and the largest thing in the content area.
    Deliberately below --t-display: the initiative name is pinned in the sticky
    header at that size, and two 34px elements on screen at once flatten both. */
@@ -140,7 +153,6 @@
   color: var(--ink-900);
   overflow-wrap: anywhere;
 }
-
 /* Provenance hangs off the value on a hairline, so "where did this come from"
    is answered by adjacency rather than by a separate block of metadata. */
 .provenance {
@@ -148,42 +160,35 @@
   padding-left: var(--s-3);
   border-left: 1px solid var(--rule);
 }
-
 .provenanceTop {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s-2);
 }
-
 .claimFacts,
 .noRef {
   font-size: var(--t-xs);
   color: var(--ink-500);
 }
-
 .claimId {
   font-family: var(--font-mono);
   font-size: var(--t-xs);
   color: var(--ink-500);
 }
-
 .noEvidence {
   margin-top: var(--s-2);
   font-size: var(--t-xs);
   color: var(--ink-500);
   line-height: var(--lh-body);
 }
-
 .noEvidenceHint {
   color: var(--ink-400);
 }
-
 .evidence {
   margin-top: var(--s-2);
   list-style: none;
 }
-
 .evidenceItem {
   display: flex;
   align-items: baseline;
@@ -191,13 +196,11 @@
   gap: var(--s-2);
   padding: 3px 0;
 }
-
 .evidenceTitle {
   font-size: var(--t-xs);
   color: var(--ink-700);
   overflow-wrap: anywhere;
 }
-
 .boundaryTag,
 .excludedTag {
   font-size: var(--t-micro);
@@ -213,13 +216,11 @@
   color: var(--ink-500);
   background: var(--surface-subtle);
 }
-
 .excludedTag {
   color: var(--state-blocked-fg);
   background: var(--state-blocked-bg);
   border-color: var(--state-blocked-edge);
 }
-
 /* Cyan carries identity and interaction throughout the product — never state,
    and never readiness. */
 .claimLink {
@@ -229,12 +230,10 @@
   color: var(--accent-700);
   transition: color var(--dur-fast) var(--ease);
 }
-
 .claimLink:hover {
   color: var(--accent-600);
   text-decoration: underline;
 }
-
 /* Read after the comparison it is the conclusion; read before it, a disclaimer
    people skip. */
 .caption {
@@ -242,9 +241,7 @@
   font-size: var(--t-sm);
   color: var(--ink-500);
 }
-
 /* ── Action zone ─────────────────────────────────────────────────────────── */
-
 /* One row: proof on the left, decision on the right. The two things a reader
    can do with a finding sit together rather than at opposite ends of a column. */
 /* Grid, not flex: an opened disclosure used to overflow the track, wrap to a
@@ -259,15 +256,12 @@
   padding-top: var(--s-4);
   border-top: 1px solid var(--rule);
 }
-
 /* ══ Why this was raised ════════════════════════════════════════════════════
    Proof on demand. The engine's own explanation and rule text live here so
    they never compete with the finding they justify. */
-
 .why {
   min-width: 0;
 }
-
 .whySummary {
   display: inline-flex;
   align-items: center;
@@ -279,29 +273,23 @@
   color: var(--ink-500);
   transition: color var(--dur-fast) var(--ease);
 }
-
 .whySummary::-webkit-details-marker {
   display: none;
 }
-
 .whySummary:hover {
   color: var(--ink-900);
 }
-
 .whySummary:focus-visible {
   box-shadow: var(--focus-ring);
   border-radius: var(--r-sm);
 }
-
 .whyChevron {
   color: var(--ink-400);
   transition: transform var(--dur-fast) var(--ease);
 }
-
 .why[open] .whyChevron {
   transform: rotate(90deg);
 }
-
 /* Indent alone. A border here would imitate the provenance bracket, which is
    the signature device and should stay unique to it. */
 .whyBody {
@@ -312,34 +300,28 @@
   line-height: var(--lh-body);
   max-width: 76ch;
 }
-
 .rule {
   margin-top: var(--s-3);
   font-size: var(--t-xs);
   color: var(--ink-400);
 }
-
 /* ══ Resolution ═════════════════════════════════════════════════════════════ */
-
 .resolution {
   margin-top: var(--s-5);
   padding-top: var(--s-3);
   border-top: 1px solid var(--rule);
 }
-
 .resolutionNote {
   font-size: var(--t-xs);
   color: var(--ink-500);
   line-height: var(--lh-body);
 }
-
 .resolutionText {
   margin-top: var(--s-2);
   font-size: var(--t-sm);
   color: var(--ink-900);
   line-height: var(--lh-body);
 }
-
 .resolvedTag {
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
@@ -351,24 +333,20 @@
   border-radius: var(--r-pill);
   padding: 2px 9px;
 }
-
 /* ══ Supersession — lineage, not an alert ═══════════════════════════════════
    Settled history reads as one compact line: what it was, what replaced it.
    No spine, no fill, no alarm colour, and never the comparison grid, because
    nothing here is waiting on anyone. */
-
 .lineage {
   padding: var(--s-4) 0;
   border-bottom: 1px solid var(--rule);
 }
-
 .lineageHead {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: var(--s-3);
 }
-
 .lineageKind {
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
@@ -376,20 +354,17 @@
   text-transform: uppercase;
   color: var(--ink-400);
 }
-
 .lineageTitle {
   font-size: var(--t-sm);
   font-weight: var(--fw-medium);
   color: var(--ink-700);
   overflow-wrap: anywhere;
 }
-
 .lineageDate {
   margin-inline-start: auto;
   font-size: var(--t-xs);
   color: var(--ink-400);
 }
-
 .lineageValues {
   display: flex;
   flex-wrap: wrap;
@@ -399,7 +374,6 @@
   font-size: var(--t-body);
   line-height: 1.5;
 }
-
 /* The replaced value is struck through AND the row is labelled "Superseded" —
    the state is never carried by decoration alone. */
 .wasValue {
@@ -409,32 +383,26 @@
   text-decoration-thickness: 1px;
   overflow-wrap: anywhere;
 }
-
 .arrow {
   color: var(--ink-400);
   font-size: var(--t-sm);
 }
-
 .nowValue {
   font-weight: var(--fw-medium);
   color: var(--ink-900);
   overflow-wrap: anywhere;
 }
-
 .noReplacement {
   font-size: var(--t-sm);
   color: var(--ink-400);
   font-style: italic;
 }
-
 .lineageWhy {
   margin-top: var(--s-3);
 }
-
 /* ══ Resolve ════════════════════════════════════════════════════════════════
    Recording a decision, not editing data. Closed, it is a single quiet button
    in the action row; opened, the note field it needs. */
-
 /* The trigger stays put when the form opens. Without the text-align the
    <details> grows to the width of its form and drags the summary — the
    control the user just clicked — hundreds of pixels to the left. */
@@ -443,14 +411,12 @@
   justify-self: end;
   text-align: right;
 }
-
 .resolveForm {
   margin-top: var(--s-4);
   width: min(46ch, 100%);
   margin-inline-start: auto;
   text-align: left;
 }
-
 .resolveTrigger {
   display: inline-flex;
   align-items: center;
@@ -466,24 +432,19 @@
   color: var(--ink-900);
   background: var(--canvas);
   white-space: nowrap;
-  transition:
-    border-color var(--dur-fast) var(--ease),
+  transition: border-color var(--dur-fast) var(--ease),
     color var(--dur-fast) var(--ease);
 }
-
 .resolveTrigger::-webkit-details-marker {
   display: none;
 }
-
 .resolveTrigger:hover {
   border-color: var(--accent-500);
   color: var(--accent-700);
 }
-
 .resolveTrigger:focus-visible {
   box-shadow: var(--focus-ring);
 }
-
 .resolveLabel {
   display: block;
   font-size: var(--t-micro);
@@ -493,7 +454,6 @@
   color: var(--ink-400);
   margin-bottom: var(--s-2);
 }
-
 .resolveInput {
   display: block;
   width: 100%;
@@ -507,16 +467,13 @@
   resize: vertical;
   transition: border-color var(--dur-fast) var(--ease);
 }
-
 .resolveInput:hover {
   border-color: var(--ink-300);
 }
-
 .resolveInput:focus-visible {
   box-shadow: var(--focus-ring);
   border-color: var(--accent-500);
 }
-
 /* Said BEFORE committing. The post-resolution note says the same thing, but
    delivering the product's central candour only as a receipt lets someone
    close a finding believing they changed the data. They did not. */
@@ -526,7 +483,6 @@
   color: var(--ink-500);
   line-height: var(--lh-body);
 }
-
 .submit {
   margin-top: var(--s-3);
   font: inherit;
@@ -541,61 +497,50 @@
   cursor: pointer;
   transition: background-color var(--dur-fast) var(--ease);
 }
-
 .submit:hover:not(:disabled) {
   background: var(--accent-700);
   border-color: var(--accent-700);
 }
-
 .submit:disabled {
   opacity: 0.55;
   cursor: default;
 }
-
 .error {
   margin-top: var(--s-2);
   font-size: var(--t-xs);
   color: var(--state-blocked-fg);
 }
-
 /* ══ Narrow ════════════════════════════════════════════════════════════════ */
 .decisionForm {
   margin-block: var(--s-4);
   padding-block: var(--s-3);
   border-top: 1px solid var(--rule);
 }
-
 .decisionForm form {
   margin-top: var(--s-4);
   max-width: 100%;
 }
-
 .formFields {
   border: 0;
   padding: 0;
   display: grid;
   gap: var(--s-3);
 }
-
 .formFields legend {
   font-weight: var(--fw-semibold);
   margin-bottom: var(--s-3);
 }
-
 .decisionForm .submit, .decisionForm .resolveTrigger {
   min-height: var(--s-11, 44px);
 }
-
 @media (max-width: 780px) {
   .conflict {
     padding: var(--s-6) 0;
   }
-
   .compare {
     grid-template-columns: 1fr;
     gap: var(--s-5);
   }
-
   /* A vertical rule separates nothing once the columns stack, and the badge
      would float over the wrong edge — so both change axis. */
   .side + .side {
@@ -604,7 +549,6 @@
     border-top: 1px solid var(--rule);
     padding-top: var(--s-5);
   }
-
   .versus {
     position: static;
     display: block;
@@ -612,19 +556,207 @@
     margin-bottom: var(--s-2);
     padding: 0;
   }
-
   .headMeta,
   .lineageDate {
     margin-inline-start: 0;
     flex-basis: 100%;
   }
-
   .actions {
     grid-template-columns: 1fr;
     row-gap: var(--s-4);
   }
-
   .side {
     padding-inline: 0;
   }
+}
+/* Final elevated layout overrides: tablet stacks the action panel. */
+.conflict {
+  padding: 24px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+}
+.conflict:has(.comparisonPanel) {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 300px;
+  gap: 22px;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+.title {
+  font-size: 24px;
+  line-height: 1.25;
+}
+.kindLabel {
+  background: var(--navy-900);
+  color: var(--panel);
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+}
+.needsDecision {
+  border: 1px solid var(--navy-900);
+  color: var(--navy-900);
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+}
+.compare {
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  margin-top: 28px;
+}
+.side,.side:first-child,.side:last-child {
+  padding: 0 18px;
+}
+.value {
+  font-size: clamp(30px,4.5vw,64px);
+  line-height: 1.1;
+  color: var(--navy-900);
+}
+.versus {
+  top: 12px;
+  border: 2px solid var(--orange-geometry);
+  border-radius: 50%;
+  padding: 6px;
+  background: var(--navy-900);
+  color: var(--panel);
+  z-index: 1;
+}
+.provenance {
+  background: var(--surface-subtle);
+  padding: 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  margin-top: 20px;
+}
+.evidenceItem {
+  padding: 10px 0;
+}
+.evidenceTitle {
+  font-size: 13px;
+  color: var(--accent-700);
+}
+.claimFacts {
+  font-size: 12px;
+}
+.claimLink {
+  min-height: 36px;
+  align-content: center;
+}
+.decisionForm {
+  border: 0;
+  padding: 0;
+  margin: 16px 0;
+}
+.resolveInput {
+  background: var(--panel);
+  min-height: 44px;
+}
+.resolveTrigger {
+  min-height: 44px;
+  height: auto;
+  white-space: normal;
+  border-radius: var(--r-sm);
+}
+.submit {
+  background: var(--navy-900);
+  color: var(--panel);
+  border-color: var(--navy-900);
+  min-height: 44px;
+  height: auto;
+  padding: 10px 16px;
+  font-weight: 700;
+}
+.formFields label:has(input[type="radio"]) {
+  padding: 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  font-size: 13px;
+}
+.formFields label:has(input:checked) {
+  background: var(--accent-050);
+  border-color: var(--navy-900);
+}
+.decisionPanel .resolveDisclosure {
+  text-align: left;
+  border-top: 1px solid var(--rule);
+  padding-top: 16px;
+}
+.decisionPanel .resolveForm {
+  width: 100%;
+}
+.lineage {
+  padding: 24px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+}
+.actions {
+  grid-template-columns: 1fr;
+}
+.whySummary {
+  min-height: 36px;
+  font-size: 13px;
+  color: var(--accent-700);
+}
+@media(max-width:1350px) {
+  .conflict:has(.comparisonPanel) {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .decisionPanel {
+    max-width: none;
+  }
+  .comparisonPanel {
+    padding: 22px;
+  }
+}
+@media(max-width:780px) {
+  .comparisonPanel {
+    padding: 20px 16px;
+  }
+  .compare {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .side,.side:first-child,.side:last-child {
+    padding: 0;
+  }
+  .side+.side {
+    padding-top: 24px;
+  }
+  .versus {
+    display: inline-block;
+    margin-bottom: 16px;
+  }
+  .title {
+    font-size: 21px;
+  }
+  .conflict {
+    padding: 20px;
+  }
+  .headMeta {
+    font-size: 12px;
+  }
+  .decisionPanel {
+    padding-bottom: 24px;
+  }
+  .claimLink,.whySummary {
+    min-height: 44px;
+  }
+  .formFields {
+    gap: 14px;
+  }
+}
+.sourceSummary {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-700);
+  padding: 10px;
+  background: var(--panel);
+  border-radius: var(--r-sm);
+}
+.trust {
+  font-size: 12px;
+  color: var(--ink-500);
+  margin-top: 12px;
 }

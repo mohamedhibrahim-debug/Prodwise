@@ -5,7 +5,6 @@
   padding-block: var(--s-8);
   border-top: 1px solid var(--rule);
 }
-
 .head {
   display: flex;
   align-items: baseline;
@@ -13,14 +12,12 @@
   gap: var(--s-4);
   margin-bottom: var(--s-5);
 }
-
 .titleGroup {
   display: flex;
   align-items: baseline;
   gap: var(--s-3);
   min-width: 0;
 }
-
 /* The numeric section marker borrowed from the reference deck's section
    numbering — the one place the secondary brand orange appears. */
 .numeral {
@@ -31,13 +28,11 @@
   flex: none;
   padding-top: 2px;
 }
-
 /* Swapped when a section changes position at the mobile breakpoint, so the
    numerals still read in order down the page. */
 .numMobile {
   display: none;
 }
-
 @media (max-width: 780px) {
   .numDesktop {
     display: none;
@@ -46,26 +41,29 @@
     display: inline;
   }
 }
-
 .title {
   font-size: var(--t-h2);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-tight);
   color: var(--ink-900);
 }
-
 .aside {
   flex: none;
   font-size: var(--t-xs);
   color: var(--ink-400);
 }
-
 .description {
   margin-top: var(--s-1);
   font-size: var(--t-sm);
   color: var(--ink-500);
   max-width: 68ch;
 }
-
 /* Approved elevated presentation. */
-.section {background:var(--panel);border:1px solid var(--rule);border-radius:var(--r-lg);padding:var(--s-6);margin-top:var(--s-6);box-shadow:var(--shadow-card);}
+.section {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  padding: var(--s-6);
+  margin-top: var(--s-6);
+  box-shadow: var(--shadow-card);
+}

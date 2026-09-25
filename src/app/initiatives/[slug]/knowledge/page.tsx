@@ -54,6 +54,7 @@ export default async function KnowledgePage({ params, searchParams }: {
       <Link href={`${base}?view=all`} aria-current={view === "all" ? "page" : undefined}>All entries</Link>
       <Link href={`${base}?view=replaced`} aria-current={view === "replaced" ? "page" : undefined}>Replaced</Link>
     </nav>
+    <div className={styles.recordLayout}><div>
     {subjects.size ? [...subjects].map(([subject, attributes]) => <section className={styles.subject} key={subject}>
       <h2>{subject}</h2>{[...attributes].map(([attribute, phases]) => <div className={styles.attribute} key={attribute}>
         <h3>{attribute}</h3>{[...phases].map(([phaseKey, values]) => <div className={styles.phase} key={phaseKey}>
@@ -98,5 +99,15 @@ export default async function KnowledgePage({ params, searchParams }: {
           {values.length > 1 && view !== "replaced" && mismatchItems.has(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null])) ?
             <Link className={styles.mismatch} href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(mismatchItems.get(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null]))!)}`}>Values differ → Decisions</Link> : null}
         </div>)}</div>)}</section>) : <p className={styles.empty}>{view === "confirmed" ? "No Confirmed Knowledge entries yet." : "No Knowledge entries in this view."}</p>}
+    </div><aside className={styles.recordContext} aria-label="Record context">
+      <h2>Recorded Knowledge</h2>
+      <dl><div><dt>Confirmed entries</dt><dd>{claims.filter(entry => entry.status === "ACTIVE").length}</dd></div>
+        <div><dt>Other current entries</dt><dd>{claims.filter(entry => entry.status !== "ACTIVE" && entry.status !== "SUPERSEDED").length}</dd></div>
+        <div><dt>Replaced entries</dt><dd>{claims.filter(entry => entry.status === "SUPERSEDED").length}</dd></div>
+      </dl>
+      <p>Confirmed records retain their original provenance. Confirmation does not guarantee that a statement is correct.</p>
+      <p>Open Sources and details to inspect each entry’s verification history, phase, domain and replacement lineage.</p>
+      <Link href={`${base}/sources`}>Browse Sources →</Link>
+    </aside></div>
   </div>;
 }

@@ -13,6 +13,7 @@ export function DecisionDeepLink({ slug }: { slug: string }) {
   useEffect(() => {
     if (!item) { requestAnimationFrame(() => setMissing(false)); return; }
     const element = document.getElementById(`item-${item}`);
+    window.dispatchEvent(new CustomEvent("prodwise:reveal-decision", { detail: item }));
     requestAnimationFrame(() => {
       if (!element) { setMissing(true); return; }
       setMissing(false);
@@ -34,9 +35,9 @@ export function DecisionDeepLink({ slug }: { slug: string }) {
         current = current < 0 ? (event.key === "j" ? 0 : items.length - 1) :
           (current + (event.key === "j" ? 1 : -1) + items.length) % items.length;
         const row = items[current]!;
+        window.dispatchEvent(new CustomEvent("prodwise:reveal-decision", { detail: row.id.slice(5) }));
         row.closest("details")?.setAttribute("open", "");
-        row.focus();
-        row.scrollIntoView({ block: "nearest" });
+        requestAnimationFrame(() => { row.focus(); row.scrollIntoView({ block: "nearest" }); });
       } else if (event.key === "Enter") {
         const focused = document.activeElement?.closest<HTMLElement>('[id^="item-"]');
         if (focused && document.activeElement === focused) {

@@ -33,10 +33,6 @@ export default async function BriefPage({ params }: { params: Promise<{ slug: st
     </section>
     {instrument.progress.mode === "setup" ? <SetupGuide progress={instrument.progress} slug={slug} /> : null}
     <section className={styles.section}>
-      <h2>Delivery facts</h2>
-      <p>Delivery dates, owner and squads are not recorded yet.</p>
-    </section>
-    <section className={styles.section}>
       <h2>Needs attention</h2>
       {open.length ? <ul className={styles.list}>{open.map((finding) => <li key={finding.fingerprint}>
         <Link href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(finding.fingerprint)}`}>
@@ -49,6 +45,10 @@ export default async function BriefPage({ params }: { params: Promise<{ slug: st
           <Link href={`/initiatives/${slug}/decisions#lane-history`}>History</Link>
         </div>
       </li>)}</ul> : <p>No mismatches need a decision under the current checks.</p>}
+    </section>
+    <section className={styles.section}>
+      <h2>Delivery facts</h2>
+      <p>Delivery dates, owner and squads are not recorded yet.</p>
     </section>
     <section className={styles.section}>
       <h2>What changed</h2>
