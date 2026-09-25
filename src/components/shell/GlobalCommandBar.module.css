@@ -5,7 +5,6 @@
   justify-content: space-between;
   padding: 0 18px;
   border-bottom: 1px solid var(--rule);
-  background: var(--canvas);
 }
 .bar strong {
   font-size: var(--t-sm);

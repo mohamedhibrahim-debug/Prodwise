@@ -134,6 +134,13 @@ button, a, summary {
   scroll-margin-top: calc(var(--workspace-header-h) + 24px);
 }
 @media (max-width:780px) {
+  main a {
+    min-height: 44px;
+  }
+  main a:not([class]) {
+    display: inline-flex;
+    align-items: center;
+  }
   input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]), select, textarea {
     font-size: 16px;
   }

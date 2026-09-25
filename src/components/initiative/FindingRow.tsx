@@ -170,7 +170,8 @@ function ConflictRow({
       </details> : null}
       <ResolutionNote finding={finding} />
       </div>
-      {finding.actionable ? <aside className={styles.decisionPanel} aria-label="Decision controls">
+      {finding.actionable && !resolved && canResolve ? <a className={styles.mobileDecisionJump} href={`#controls-${finding.fingerprint}`}>Decision controls ↓</a> : null}
+      {finding.actionable ? <aside id={`controls-${finding.fingerprint}`} tabIndex={-1} className={styles.decisionPanel} aria-label="Decision controls">
       <div className={styles.panelHeading}><span>Your decision</span><h3>{resolved ? "Review record" : "Record a decision"}</h3></div>
       {finding.actionable && !resolved ? <>
         {finding.confirmerLabel ? <p className={styles.facts}>Confirm with: {finding.confirmerLabel}</p> : null}

@@ -1,6 +1,5 @@
 .page {
   width: 100%;
-  padding: clamp(24px,4vw,56px) clamp(16px,3vw,44px) 72px;
 }
 .head {
   display: flex;
@@ -16,7 +15,6 @@
 }
 .subtitle {
   margin-top: 6px;
-  color: var(--ink-500);
   font-size: var(--t-sm);
 }
 .columnHead,.row {
@@ -39,8 +37,6 @@
 }
 .row {
   position: relative;
-  min-height: 54px;
-  padding: 10px 12px;
   border-bottom: 1px solid var(--rule);
   font-size: var(--t-xs);
   color: var(--ink-500);
@@ -49,7 +45,6 @@
   background: var(--surface-subtle);
 }
 .name {
-  font-size: var(--t-sm);
   font-weight: 650;
   color: var(--ink-900);
 }
@@ -63,7 +58,6 @@
   color: var(--ink-700);
 }
 .conflict {
-  color: var(--state-blocked-fg);
   font-weight: 650;
 }
 .quiet {

@@ -1,7 +1,6 @@
 .guide {
   margin-top: 28px;
   border-block: 1px solid var(--rule-strong);
-  padding: 18px 0;
 }
 .guide h2 {
   font-size: var(--t-h2);

@@ -23,14 +23,9 @@
 /* Primary — the cyan identity accent, used sparingly for the single main
    action on a screen. */
 .primary {
-  background: var(--accent-600);
   color: #fff;
 }
-.primary:hover:not(:disabled) {
-  background: var(--accent-700);
-}
 .secondary {
-  background: var(--canvas);
   color: var(--ink-700);
   border-color: var(--rule-strong);
 }

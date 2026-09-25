@@ -437,20 +437,22 @@ try {
   });
   const queueIds = await evaluate("[...document.querySelectorAll('#lane-needs-decision li[id^=item-]')].map(e=>e.id)");
   assert.equal(queueIds.length, 2);
+  // The domain's existing comparison order is authoritative, not test insertion order.
+  const secondValues = await evaluate(`document.querySelector('#${queueIds[1]}').textContent.includes('Second comparison')`) ? ["Alpha", "Beta"] : ["27", "30"];
   await click("Make a decision");
   await fill("rationale", "First comparison rationale", `#${queueIds[0]}`);
   await evaluate(`document.querySelector('[aria-label="Decision lanes"] [aria-pressed="false"]').click()`);
   await until(() => evaluate(`!document.querySelector('#${queueIds[1]}').closest('[hidden]')`), "second item selected");
   await evaluate(`document.querySelector('#${queueIds[1]} [name=rationale]').closest('details').open=true`);
   assert.equal(await evaluate(`document.querySelector('#${queueIds[1]} [name=rationale]').value`), "");
-  assert.deepEqual(await evaluate(`Array.from(document.querySelector('#${queueIds[1]} [name=chosenClaimId]').options,o=>o.text)`), ["Select a value", "Alpha", "Beta"]);
+  assert.deepEqual(await evaluate(`Array.from(document.querySelector('#${queueIds[1]} [name=chosenClaimId]').options,o=>o.text)`), ["Select a value", ...secondValues]);
   await fill("rationale", "Second comparison rationale", `#${queueIds[1]}`);
   await shot("multiple-items-1440");
   await evaluate(`document.querySelector('[aria-label="Decision lanes"] [aria-pressed="false"]').click()`);
   assert.equal(await evaluate(`document.querySelector('#${queueIds[0]} [name=rationale]').value`), "First comparison rationale");
   await load(`/decisions?item=${queueIds[1].slice(5)}`);
   await until(() => evaluate(`document.activeElement?.id===${JSON.stringify(queueIds[1])}`), "second item deep link focus");
-  await waitText("Alpha");
+  await waitText(secondValues[0]);
   console.log("Multi-item queue, isolated inputs and second-item deep link passed");
 
   const referencePath = process.env.PRODWISE_DESIGN_REFERENCE;

@@ -261,9 +261,6 @@
    state pill sits in the header, the open count in the filter strip, and the
    tabs are directly above — so stacking it would push the actual finding
    roughly 600px down the page to say nothing new. */
-.reviewContext {
-  display: none;
-}
 .contextLabel {
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
