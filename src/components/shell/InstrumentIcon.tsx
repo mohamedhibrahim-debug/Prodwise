@@ -1,10 +1,11 @@
 import type { SVGProps } from "react";
 
-export type InstrumentIconName = "initiatives" | "reporting" | "search" | "demo" | "menu" | "pin" | "event" | "evidence" | "decision";
+export type InstrumentIconName = "home" | "initiatives" | "reporting" | "search" | "demo" | "menu" | "pin" | "event" | "evidence" | "decision";
 
 export function InstrumentIcon({ name, ...props }: SVGProps<SVGSVGElement> & { name: InstrumentIconName }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   return <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" {...props}>
+    {name === "home" && <><path d="m2.5 9 7.5-6 7.5 6v7.5H2.5z" {...common}/><path d="M8 16.5v-5h4v5" {...common}/></>}
     {name === "initiatives" && <><path d="M3 4.5h14M3 10h14M3 15.5h9" {...common}/><circle cx="15.5" cy="15.5" r="1.5" {...common}/></>}
     {name === "reporting" && <><path d="M3.5 3.5v13h13" {...common}/><path d="m6 13 3-3 2 1.5 4-5" {...common}/></>}
     {name === "search" && <><circle cx="8.5" cy="8.5" r="4.5" {...common}/><path d="m12 12 4.5 4.5" {...common}/></>}

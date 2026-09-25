@@ -31,7 +31,8 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
   }, [mobileOpen]);
 
   const links = [
-    { href: "/initiatives", label: "Initiatives", icon: "initiatives" as const, active: pathname === "/" || pathname.startsWith("/initiatives") },
+    { href: "/", label: "Home", icon: "home" as const, active: pathname === "/" },
+    { href: "/initiatives", label: "Initiatives", icon: "initiatives" as const, active: pathname.startsWith("/initiatives") },
     { href: "/reporting", label: "Reporting", icon: "reporting" as const, active: pathname.startsWith("/reporting") },
   ];
 
@@ -39,7 +40,7 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
     <header className={styles.mobileBar}>
       <button type="button" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><InstrumentIcon name="menu" /></button>
       <Image src="/assets/prodwise-logo-mark.png" alt="" width={24} height={24} unoptimized />
-      <span>Prodwise</span>
+      <span>{pathname === "/" ? "Home" : pathname.startsWith("/initiatives/") ? "Initiative" : pathname.startsWith("/initiatives") ? "Initiatives" : "Reporting"}</span>
       <button type="button" onClick={openPalette} aria-label="Search"><InstrumentIcon name="search" /></button>
       <button type="button" onClick={openDemo} aria-label="Open demo scenario"><InstrumentIcon name="demo" /></button>
     </header>
@@ -53,10 +54,8 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
         {links.map(link => <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className={`${styles.navItem} ${link.active ? styles.active : ""}`} aria-current={link.active ? "page" : undefined}>
           <InstrumentIcon name={link.icon} /><span>{link.label}</span>
         </Link>)}
-        <button type="button" className={styles.navItem} onClick={openPalette}><InstrumentIcon name="search" /><span>Search</span></button>
       </nav>
       <div className={styles.footer}>
-        <button type="button" className={styles.navItem} onClick={openDemo}><InstrumentIcon name="demo" /><span>Demo</span></button>
         <p>{writesEnabled ? `${dataSource} · writes on` : `${dataSource} · read only`}</p>
         <button type="button" className={styles.pin} onClick={() => setExpanded(value => !value)} aria-label={expanded ? "Collapse navigation" : "Pin expanded navigation"} aria-pressed={expanded}>
           <InstrumentIcon name="pin" /><span>{expanded ? "Collapse" : "Expand"}</span>

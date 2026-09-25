@@ -3,13 +3,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: false,
-  /* Legacy workspace routes from before the IA reset (Review → Decisions,
-     Evidence → Sources). Deliberately TEMPORARY (307): the IA is still
-     evolving, and a permanent redirect is cached by browsers and crawlers
-     long after it stops being true. Promote to permanent only once the new
-     IA has proven stable in production. Query strings are carried through. */
   async redirects() {
     return [
+      { source: "/initiatives/:slug/memory", destination: "/initiatives/:slug/knowledge", permanent: true },
+      { source: "/initiatives/:slug/memory/new", destination: "/initiatives/:slug/knowledge/new", permanent: true },
+      { source: "/initiatives/:slug/memory/:claimId/edit", destination: "/initiatives/:slug/knowledge/:claimId/edit", permanent: true },
+      { source: "/initiatives/:slug/memory/:claimId/verify", destination: "/initiatives/:slug/knowledge/:claimId/confirm", permanent: true },
+      { source: "/initiatives/:slug/sources", destination: "/initiatives/:slug/knowledge/sources", permanent: true },
+      { source: "/initiatives/:slug/sources/new", destination: "/initiatives/:slug/knowledge/sources/new", permanent: true },
+      { source: "/initiatives/:slug/sources/:evidenceId/edit", destination: "/initiatives/:slug/knowledge/sources/:evidenceId/edit", permanent: true },
+      { source: "/initiatives/:slug/readiness", destination: "/initiatives/:slug", permanent: true },
       {
         source: "/initiatives/:slug/review",
         destination: "/initiatives/:slug/decisions",

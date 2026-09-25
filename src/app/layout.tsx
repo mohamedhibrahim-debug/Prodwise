@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { NavRail } from "@/components/shell/NavRail";
+import { GlobalCommandBar } from "@/components/shell/GlobalCommandBar";
 import { CommandPalette } from "@/components/shell/CommandPalette";
 import { DemoScenarioSurface } from "@/components/shell/DemoScenarioSurface";
 import { isDemoWriteEnabled, isSupabaseConfigured } from "@/lib/env";
@@ -30,6 +31,7 @@ export default function RootLayout({
           writesEnabled={isDemoWriteEnabled}
         />
         <div className={styles.canvas}>
+          <GlobalCommandBar />
           <main className={styles.main}>{children}</main>
         </div>
         {/* Renders nothing until opened; its data loads on first open only. */}

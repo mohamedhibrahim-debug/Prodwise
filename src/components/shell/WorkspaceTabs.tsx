@@ -6,11 +6,9 @@ import { usePathname } from "next/navigation";
 import styles from "./WorkspaceHeader.module.css";
 
 const TABS = [
-  { segment: "", label: "Status" },
+  { segment: "", label: "Brief" },
   { segment: "decisions", label: "Decisions" },
-  { segment: "readiness", label: "Readiness" },
-  { segment: "memory", label: "Memory" },
-  { segment: "sources", label: "Sources" },
+  { segment: "knowledge", label: "Knowledge" },
 ] as const;
 
 /**
