@@ -161,6 +161,11 @@ interface InitiativeSnapshotRow extends InitiativeRow {
   finding_states: FindingStateRow[];
 }
 
+// Choose the composite ownership relationships explicitly: the legacy ID-only
+// foreign keys remain for compatibility and otherwise make PostgREST embeds
+// ambiguous. These joins retain both initiative/claim and workspace scope.
+const SNAPSHOT_SELECT = "*, evidence!evidence_workspace_owner(*), claims!claims_workspace_owner(*, claim_evidence!links_claim_workspace(evidence_id, locator, excerpt)), finding_states!finding_states_workspace_owner(*)";
+
 let client: SupabaseClient | null = null;
 
 function getClient(): SupabaseClient {
@@ -346,7 +351,7 @@ export const supabaseRepository: Repository = {
   async listInitiativeSnapshots() {
     const { data, error } = await getClient()
       .from("initiatives")
-      .select("*, evidence(*), claims(*, claim_evidence(evidence_id, locator, excerpt)), finding_states(*)")
+      .select(SNAPSHOT_SELECT)
       .order("updated_at", { ascending: false });
 
     if (error)
@@ -357,7 +362,7 @@ export const supabaseRepository: Repository = {
   getInitiativeSnapshot: cache(async (initiativeId: string) => {
     const { data, error } = await getClient()
       .from("initiatives")
-      .select("*, evidence(*), claims(*, claim_evidence(evidence_id, locator, excerpt)), finding_states(*)")
+      .select(SNAPSHOT_SELECT)
       .eq("id", initiativeId)
       .maybeSingle();
 
