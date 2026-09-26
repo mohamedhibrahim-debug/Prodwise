@@ -21,7 +21,7 @@ export default async function VerifyClaimPage({ params }: {
   return (
     <div className={styles.page}>
       <Link href={`/initiatives/${slug}/knowledge?view=all#claim-${claim.id}`} className={styles.back}>← Knowledge</Link>
-      <h1 className={styles.title}>Confirm Knowledge</h1>
+      <h2 className={styles.title}>Confirm Knowledge</h2>
       <p className={styles.intro}><b>{claim.subject} · {claim.attribute}</b><br />{claim.value}</p>
       {!isDemoWriteEnabled ? (
         <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>

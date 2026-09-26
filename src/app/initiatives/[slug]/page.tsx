@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getRepository } from "@/lib/data";
-import { STAGE_LABEL, BUSINESS_LINE_LABEL } from "@/lib/domain/labels";
 import { compareFindings } from "@/lib/review/engine";
 import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
 import { activitySummary, attentionSentence, isStructuredActivity, MISMATCH_WHY_RAISED } from "@/lib/workspace/copy";
@@ -26,10 +25,8 @@ export default async function BriefPage({ params }: { params: Promise<{ slug: st
   const open = instrument.findings.filter(f => f.status === "OPEN" && f.actionable).sort(compareFindings);
   const recorded = instrument.claims.filter((claim) => claim.status === "ACTIVE" && (claim.type === "RISK" || claim.type === "DEPENDENCY"));
   return <div className={styles.page}>
-    <section className={styles.identity}>
-      <h1>{initiative.name}</h1>
+    <section className={styles.description} aria-label="Initiative description">
       {initiative.description ? <p>{initiative.description}</p> : null}
-      <p className={styles.meta}>{STAGE_LABEL[initiative.stage]} · {BUSINESS_LINE_LABEL[initiative.businessLine]}</p>
     </section>
     {instrument.progress.mode === "setup" ? <SetupGuide progress={instrument.progress} slug={slug} /> : null}
     <section className={styles.section}>
@@ -48,7 +45,9 @@ export default async function BriefPage({ params }: { params: Promise<{ slug: st
     </section>
     <section className={styles.section}>
       <h2>Delivery facts</h2>
-      <p>Delivery dates, owner and squads are not recorded yet.</p>
+      <p>Open the delivery record to inspect dates, scope, ownership and their sources.</p>
+      <Link href={`/initiatives/${slug}/delivery`}>View delivery record →</Link>
+      <p><Link href="/roadmap">Open portfolio Roadmap →</Link></p>
     </section>
     <section className={styles.section}>
       <h2>What changed</h2>

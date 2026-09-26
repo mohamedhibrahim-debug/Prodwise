@@ -18,10 +18,10 @@ export default async function InitiativesPage({ searchParams }: { searchParams: 
   const counts = countByBusinessLine(snapshots.map(row => row.initiative.businessLine));
   const rows = snapshots.filter(row => selectedLine === null || row.initiative.businessLine === selectedLine);
   return <div className={styles.page}>
-    <header className={styles.head}><div><h1 className={styles.title}>Initiatives</h1><p className={styles.subtitle}>Recorded stage, foundation and current derived decision pressure.</p></div><DemoWriteLink href="/initiatives/new" variant="primary">Create Initiative</DemoWriteLink></header>
+    <header className={styles.head}><div><h1 className={styles.title}>Initiatives</h1><p className={styles.subtitle}>Your initiative register. Knowledge review is distinct from delivery or release status.</p></div><DemoWriteLink href="/initiatives/new" variant="primary">Create Initiative</DemoWriteLink></header>
     <BusinessLineFilter basePath="/initiatives" selected={selectedLine} counts={counts} total={snapshots.length} />
     {rows.length === 0 ? <EmptyState message={selectedLine ? `No initiatives in ${BUSINESS_LINE_LABEL[selectedLine]}.` : "No initiatives yet."} /> : <>
-      <div className={styles.columnHead}><span>Code</span><span>Initiative</span><span>Recorded stage</span><span>Business line</span><span>Decision pressure</span><span>Scenario</span></div>
+      <div className={styles.columnHead}><span>Initiative</span><span>Recorded stage</span><span>Business line</span><span>Knowledge review</span></div>
       <ul className={styles.list}>{rows.map(row => <InitiativeRow key={row.initiative.id} snapshot={row} />)}</ul>
     </>}
   </div>;

@@ -74,14 +74,16 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
   const links = [
     { href: "/", label: "Home", icon: "home" as const, active: pathname === "/" },
     { href: "/initiatives", label: "Initiatives", icon: "initiatives" as const, active: pathname.startsWith("/initiatives") },
-    { href: "/reporting", label: "Reporting", icon: "reporting" as const, active: pathname.startsWith("/reporting") },
+    { href: "/roadmap", label: "Roadmap", icon: "reporting" as const, active: pathname.startsWith("/roadmap") },
+    { href: "/analysis", label: "Analysis", icon: "reporting" as const, active: pathname.startsWith("/analysis") },
+    { href: "/weekly-review", label: "Weekly Review", icon: "event" as const, active: pathname.startsWith("/weekly-review") },
   ];
 
   return <>
     <header className={styles.mobileBar}>
       <button ref={hamburgerRef} type="button" onClick={() => setMobileOpen(true)} aria-label="Open navigation" aria-expanded={mobileOpen}><InstrumentIcon name="menu" /></button>
       <Image src="/assets/prodwise-logo-mark.png" alt="" width={24} height={24} unoptimized />
-      <span>{/^\/initiatives\/[^/]+$/.test(pathname) && pathname !== "/initiatives/new" ? "Prodwise" : pathname === "/" ? "Home" : pathname.startsWith("/initiatives/") ? mobileTitle : pathname.startsWith("/initiatives") ? "Initiatives" : "Reporting"}</span>
+      <span>{pathname === "/" ? "Home" : pathname.startsWith("/initiatives/") && pathname !== "/initiatives/new" ? mobileTitle : pathname.startsWith("/initiatives") ? "Initiatives" : links.find(link => link.active)?.label ?? "Prodwise"}</span>
       <button type="button" onClick={openPalette} aria-label="Search"><InstrumentIcon name="search" /></button>
       <button type="button" onClick={openDemo} aria-label="Open demo scenario"><InstrumentIcon name="demo" /></button>
     </header>
@@ -92,10 +94,13 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
         <strong>Prodwise</strong>
       </div>
       <nav aria-label="Primary">
-        {links.map(link => <Link key={link.href} href={link.href} onClick={closeDrawer} className={`${styles.navItem} ${link.active ? styles.active : ""}`} aria-current={link.active ? "page" : undefined}>
+        {links.map(link => <Link key={link.href} href={link.href} onClick={closeDrawer} aria-label={link.label} title={link.label} className={`${styles.navItem} ${link.active ? styles.active : ""}`} aria-current={link.active ? "page" : undefined}>
           <InstrumentIcon name={link.icon} /><span>{link.label}</span>
         </Link>)}
       </nav>
+      {pathname.startsWith("/initiatives/") && pathname !== "/initiatives/new" ? <nav className={styles.context} aria-label="Current initiative">
+        <Link href={`/initiatives/${pathname.split("/")[2]}`} className={styles.navItem} aria-label={`Open ${mobileTitle} Brief`} title={mobileTitle}><InstrumentIcon name="initiatives" /><span>{mobileTitle}</span></Link>
+      </nav> : null}
       <div className={styles.footer}>
         <p>{writesEnabled ? `${dataSource} · writes on` : `${dataSource} · read only`}</p>
         <button type="button" className={styles.pin} onClick={() => {

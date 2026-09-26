@@ -41,7 +41,7 @@ export default async function EditClaimPage({
         <Link href={`/initiatives/${slug}/knowledge`} className={styles.back}>
           ← Knowledge
         </Link>
-        <h1 className={styles.title}>Edit Knowledge entry</h1>
+        <h2 className={styles.title}>Edit Knowledge entry</h2>
         <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
       </div>
     );
@@ -53,7 +53,7 @@ export default async function EditClaimPage({
         ← Knowledge
       </Link>
 
-      <h1 className={styles.title}>Edit Knowledge entry</h1>
+      <h2 className={styles.title}>Edit Knowledge entry</h2>
       <p className={styles.intro}>
         Knowledge is corrected here, never deleted. If an entry no longer holds,
         give it the status that says so — replaced, rejected or deferred — so

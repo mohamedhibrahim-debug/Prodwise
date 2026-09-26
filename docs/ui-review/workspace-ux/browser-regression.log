@@ -1,0 +1,192 @@
+Prodwise
+Home
+Initiatives
+Roadmap
+Analysis
+Weekly Review
+Merchant Flex Finance
+
+Local demo data · writes on
+
+Collapse
+Initiatives
+/
+Merchant Flex Finance
+merchant-flex-finance
+Recorded stage: Delivery
+MF
+Updated 03 Sept 2026
+Synthetic demo
+Brief
+Decisions
+Knowledge
+Search
+⌘K
+Demo
+
+Compare recorded values, review their sources, and record a decision.
+
+DECISION QUEUE
+
+Needs a decision
+1
+Mismatches where current values differ.
+Reviewed
+0
+Reviewed — note only. Knowledge was not changed.
+Resolved
+0
+Decisions that changed Knowledge.
+History
+1
+Replaced information kept for history. Nothing here is an open task.
+Not checked yet
+—
+Gaps, unknowns, and risks are not checked here yet.
+STAGE
+
+Delivery
+
+WAITING ON YOU
+
+1
+
+mismatch needs a decision
+
+GO TO
+Knowledge →
+Sources →
+Brief →
+Needs a decision
+
+Mismatches where current values differ.
+
+MISMATCH
+NEEDS A DECISION
+entries changed 21 Aug 2026
+Daily Repayment — Calculation Divisor
+
+Finance · Phase 1
+
+27
+
+MFF-118
+
+Confirmed
+
+30
+
+MFF-133
+
+Confirmed
+
+Sources for 27
+Sources for 30
+
+Values differ. Review the sources before making a decision.
+
+Why raised
+YOUR DECISION
+Record a decision
+Assign confirmer
+Confirm with
+Save confirmer
+
+Confirmer saved.
+
+Make a decision
+How should these values change?
+ Choose existing value
+ Enter corrected value
+Value to keep
+Select a value
+27
+30
+
+The selected value stays current. Competing values will be replaced. No new Knowledge entry is created.
+
+Rationale
+Save decision
+Review with a note only
+[
+  { name: '$ACTION_REF_3', value: '', valid: true },
+  {
+    name: '$ACTION_3:0',
+    value: '{"id":"60e56817d57988b3815e0b96f9fe1bdd34ae2f86e4","bound":"$@1"}',
+    valid: true
+  },
+  { name: '$ACTION_3:1', value: '[{"error":null}]', valid: true },
+  {
+    name: '$ACTION_KEY',
+    value: 'k6cd4285e872c5fec49dbb453e9beb365',
+    valid: true
+  },
+  { name: 'slug', value: 'merchant-flex-finance', valid: true },
+  {
+    name: 'fingerprint',
+    value: 'f2f628a25ea8bcf38ef8db92896bbcc1f61b20e159c3d7635ed85c98dd84f5ca',
+    valid: true
+  },
+  { name: 'label', value: 'Finance owner', valid: true },
+  { name: '$ACTION_REF_4', value: '', valid: true },
+  {
+    name: '$ACTION_4:0',
+    value: '{"id":"6055841138436dffe0f934128c9142c9b971b5689d","bound":"$@1"}',
+    valid: true
+  },
+  { name: '$ACTION_4:1', value: '[{"error":null}]', valid: true },
+  {
+    name: '$ACTION_KEY',
+    value: 'kbeda61ab22d217b745453d89d738469a',
+    valid: true
+  },
+  { name: 'slug', value: 'merchant-flex-finance', valid: true },
+  {
+    name: 'fingerprint',
+    value: 'f2f628a25ea8bcf38ef8db92896bbcc1f61b20e159c3d7635ed85c98dd84f5ca',
+    valid: true
+  },
+  {
+    name: 'contentDigest',
+    value: 'e43b2551bb98dba47dc4bdb0e7f4c3bcc5e06af1394512aded678a44c025ab65',
+    valid: true
+  },
+  { name: 'choice', value: 'existing', valid: true },
+  { name: 'choice', value: 'corrected', valid: true },
+  { name: 'chosenClaimId', value: '', valid: false },
+  { name: 'rationale', value: '', valid: false },
+  { name: '$ACTION_REF_5', value: '', valid: true },
+  {
+    name: '$ACTION_5:0',
+    value: '{"id":"60ee9c07f62e7f901b9da5accc2b262a78841d02ca","bound":"$@1"}',
+    valid: true
+  },
+  { name: '$ACTION_5:1', value: '[{"error":null}]', valid: true },
+  {
+    name: '$ACTION_KEY',
+    value: 'k3cfdadeb6d68196fddcabaaa36232ff1',
+    valid: true
+  },
+  { name: 'slug', value: 'merchant-flex-finance', valid: true },
+  {
+    name: 'fingerprint',
+    value: 'f2f628a25ea8bcf38ef8db92896bbcc1f61b20e159c3d7635ed85c98dd84f5ca',
+    valid: true
+  },
+  {
+    name: 'contentDigest',
+    value: 'e43b2551bb98dba47dc4bdb0e7f4c3bcc5e06af1394512aded678a44c025ab65',
+    valid: true
+  },
+  { name: 'resolution', value: '', valid: false }
+]
+file:///C:/Users/mohamed.hibrahim/.codex/.chatgpt-projects/g-p-6a9c18d9edc481918dfc988bd280765c/execution-2026-09-26/ux/docs/ui-review/workspace-ux/run-regression.mjs:22
+  throw new Error(`Timed out: ${label}`);
+        ^
+
+Error: Timed out: Confirm with: Finance owner
+    at until (file:///C:/Users/mohamed.hibrahim/.codex/.chatgpt-projects/g-p-6a9c18d9edc481918dfc988bd280765c/execution-2026-09-26/ux/docs/ui-review/workspace-ux/run-regression.mjs:22:9)
+    at async waitText (file:///C:/Users/mohamed.hibrahim/.codex/.chatgpt-projects/g-p-6a9c18d9edc481918dfc988bd280765c/execution-2026-09-26/ux/docs/ui-review/workspace-ux/run-regression.mjs:80:11)
+    at async file:///C:/Users/mohamed.hibrahim/.codex/.chatgpt-projects/g-p-6a9c18d9edc481918dfc988bd280765c/execution-2026-09-26/ux/docs/ui-review/workspace-ux/run-regression.mjs:286:3
+
+Node.js v24.20.0

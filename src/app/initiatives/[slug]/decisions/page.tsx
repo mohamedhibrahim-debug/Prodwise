@@ -56,7 +56,7 @@ export default async function DecisionsPage({ params, searchParams }: { params: 
   return <div className={styles.page}>
     <div className={styles.reviewMain}>
       <Suspense fallback={null}><DecisionDeepLink slug={slug} /></Suspense>
-      <div className={styles.tabIntro}><h1 className={styles.pageTitle}>Decisions</h1><p className={styles.tabIntroText}>Compare recorded values, review their sources, and record a decision.</p></div>
+      <div className={styles.tabIntro}><p className={styles.tabIntroText}>Compare recorded values, review their sources, and record a decision.</p></div>
       <DecisionWorkbench initialItem={item} lanes={DECISION_LANES.map(lane => ({ ...lane, items: laneItems[lane.key], empty: content[lane.key].body }))}>
     <aside className={styles.reviewContext} aria-label="Initiative context">
       <div className={styles.contextBlock}><div className={styles.contextLabel}>Stage</div><p className={styles.contextValue}>{STAGE_LABEL[initiative.stage]}</p></div>

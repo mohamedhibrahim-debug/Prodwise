@@ -1,0 +1,134 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Recorded stage — not a schedule/. Input:
+
+'Prodwise\n' +
+  'Home\n' +
+  'Initiatives\n' +
+  'Roadmap\n' +
+  'Analysis\n' +
+  'Weekly Review\n' +
+  '\n' +
+  'Local demo data · writes on\n' +
+  '\n' +
+  'Collapse\n' +
+  'Home\n' +
+  'Search\n' +
+  '⌘K\n' +
+  'Demo\n' +
+  '\n' +
+  'PORTFOLIO ATTENTION\n' +
+  '\n' +
+  'What needs attention now?\n' +
+  '\n' +
+  'Recorded knowledge, decisions and changes across your initiatives.\n' +
+  '\n' +
+  'Prepare weekly review →\n' +
+  '\n' +
+  '4 initiatives · 1 with decisions waiting · 3 with setup incomplete\n' +
+  '\n' +
+  'Needs a decision\n' +
+  'Listed in default order — not prioritised\n' +
+  'Merchant Flex Finance\n' +
+  'Synthetic demo\n' +
+  'Phase 1\n' +
+  'Daily Repayment — Calculation Divisor has two confirmed values: 27 and 30.\n' +
+  '27\n' +
+  'vs\n' +
+  '30\n' +
+  '\n' +
+  'Recorded values differ. Review source context before choosing.\n' +
+  '\n' +
+  'Review decision →\n' +
+  'Recent recorded changes\n' +
+  '\n' +
+  'Latest recorded events. Weekly Review uses its own selected period and finalized baseline.\n' +
+  '\n' +
+  'No recent changes of these types are recorded.\n' +
+  '\n' +
+  'Source detail updates remain visible; the current log may not establish whether the supporting basis changed.\n' +
+  '\n' +
+  'Setup incomplete\n' +
+  'Instant Settlement Payout\n' +
+  'Record Knowledge\n' +
+  'Not assessed yet — setup incomplete\n' +
+  'Collections Reporting Rebuild\n' +
+  'Record Knowledge\n' +
+  'Not assessed yet — setup incomplete\n' +
+  'Merchant KYC Refresh\n' +
+  'Record Knowledge\n' +
+  'Not assessed yet — setup incomplete\n' +
+  'Open initiative register →\n' +
+  '\n' +
+  'Checks compare recorded values and preserve replacement history. Gaps, unknowns, risks and release status are not assessed here.'
+
+    at file:///C:/Users/mohamed.hibrahim/.codex/.chatgpt-projects/g-p-6a9c18d9edc481918dfc988bd280765c/execution-2026-09-26/ux/docs/ui-review/workspace-ux/run-regression.mjs:193:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'Prodwise\n' +
+    'Home\n' +
+    'Initiatives\n' +
+    'Roadmap\n' +
+    'Analysis\n' +
+    'Weekly Review\n' +
+    '\n' +
+    'Local demo data · writes on\n' +
+    '\n' +
+    'Collapse\n' +
+    'Home\n' +
+    'Search\n' +
+    '⌘K\n' +
+    'Demo\n' +
+    '\n' +
+    'PORTFOLIO ATTENTION\n' +
+    '\n' +
+    'What needs attention now?\n' +
+    '\n' +
+    'Recorded knowledge, decisions and changes across your initiatives.\n' +
+    '\n' +
+    'Prepare weekly review →\n' +
+    '\n' +
+    '4 initiatives · 1 with decisions waiting · 3 with setup incomplete\n' +
+    '\n' +
+    'Needs a decision\n' +
+    'Listed in default order — not prioritised\n' +
+    'Merchant Flex Finance\n' +
+    'Synthetic demo\n' +
+    'Phase 1\n' +
+    'Daily Repayment — Calculation Divisor has two confirmed values: 27 and 30.\n' +
+    '27\n' +
+    'vs\n' +
+    '30\n' +
+    '\n' +
+    'Recorded values differ. Review source context before choosing.\n' +
+    '\n' +
+    'Review decision →\n' +
+    'Recent recorded changes\n' +
+    '\n' +
+    'Latest recorded events. Weekly Review uses its own selected period and finalized baseline.\n' +
+    '\n' +
+    'No recent changes of these types are recorded.\n' +
+    '\n' +
+    'Source detail updates remain visible; the current log may not establish whether the supporting basis changed.\n' +
+    '\n' +
+    'Setup incomplete\n' +
+    'Instant Settlement Payout\n' +
+    'Record Knowledge\n' +
+    'Not assessed yet — setup incomplete\n' +
+    'Collections Reporting Rebuild\n' +
+    'Record Knowledge\n' +
+    'Not assessed yet — setup incomplete\n' +
+    'Merchant KYC Refresh\n' +
+    'Record Knowledge\n' +
+    'Not assessed yet — setup incomplete\n' +
+    'Open initiative register →\n' +
+    '\n' +
+    'Checks compare recorded values and preserve replacement history. Gaps, unknowns, risks and release status are not assessed here.',
+  expected: /Recorded stage — not a schedule/,
+  operator: 'match',
+  diff: 'simple'
+}
+
+Node.js v24.20.0

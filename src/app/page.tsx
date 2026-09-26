@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getRepository } from "@/lib/data";
-import { STAGE_LABEL } from "@/lib/domain/labels";
 import { compareFindings } from "@/lib/review/engine";
 import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
 import { activitySummary, attentionSentence, isStructuredActivity } from "@/lib/workspace/copy";
@@ -12,77 +11,57 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const repo = getRepository();
-  const [snapshots, activity] = await Promise.all([repo.listInitiativeSnapshots(), repo.listRecentActivity(6)]);
+  const [snapshots, activity] = await Promise.all([repo.listInitiativeSnapshots(), repo.listRecentActivity(12)]);
   const rows = snapshots.map(deriveInstrumentSnapshot);
-  const byId = new Map(rows.map((row) => [row.initiative.id, row.initiative]));
-  const needsDecision = rows.flatMap((row) => row.findings
-    .filter((finding) => finding.status === "OPEN" && finding.actionable)
-    .sort(compareFindings)
-    .map((finding) => ({ initiative: row.initiative, finding })));
-  const waiting = rows.filter((row) => !row.progress.complete);
-  const attention = needsDecision.length
-    ? `${needsDecision.length} ${needsDecision.length === 1 ? "mismatch needs" : "mismatches need"} a decision across ${new Set(needsDecision.map((item) => item.initiative.id)).size} ${new Set(needsDecision.map((item) => item.initiative.id)).size === 1 ? "initiative" : "initiatives"}.`
-    : waiting.length
-      ? `${waiting.length} ${waiting.length === 1 ? "initiative needs" : "initiatives need"} setup before checking can start.`
-      : "No decisions are waiting under the current checks.";
-  const stages = new Map<string, typeof rows>();
-  for (const row of rows) stages.set(STAGE_LABEL[row.initiative.stage], [...(stages.get(STAGE_LABEL[row.initiative.stage]) ?? []), row]);
-
+  const byId = new Map(rows.map(row => [row.initiative.id, row.initiative]));
+  const decisions = rows.flatMap(row => row.findings.filter(f => f.status === "OPEN" && f.actionable)
+    .sort(compareFindings).map(finding => ({ initiative: row.initiative, finding })));
+  const waiting = rows.filter(row => !row.progress.complete);
+  const knownEvents = new Set(["FINDING_DECIDED", "FINDING_REOPENED", "FINDING_RESOLVED", "FINDING_CONFIRMER_ASSIGNED", "CLAIM_VERIFIED",
+    "CLAIM_ADDED", "CLAIM_VALUE_CHANGED", "CLAIM_STATUS_CHANGED", "CLAIM_SUPERSEDED", "CLAIM_SUPERSESSION_SET",
+    "EVIDENCE_RECLASSIFIED", "CLAIM_EVIDENCE_LINKED", "CLAIM_EVIDENCE_UNLINKED", "CLAIM_EVIDENCE_ANCHOR_UPDATED"]);
+  const changes = activity.filter(entry => byId.has(entry.initiativeId) && knownEvents.has(entry.eventType));
   return <div className={styles.page}>
-    <header className={styles.hero}>
-    <p className={styles.eyebrow}>Prodwise · Initiative intelligence</p>
-    <h1>What needs attention now?</h1>
-    <p className={styles.attention}>{attention}</p>
-    <div className={styles.stats}>
-      <div><b>{rows.length}</b><span>Initiatives</span></div>
-      <div><b>{needsDecision.length}</b><span>Need a decision</span></div>
-      <div><b>{waiting.length}</b><span>Waiting on setup</span></div>
+    <header className={styles.head}><div><p className={styles.eyebrow}>Portfolio attention</p>
+      <h1>What needs attention now?</h1><p className={styles.subtitle}>Recorded knowledge, decisions and changes across your initiatives.</p></div>
+      <Link className={styles.primary} href="/weekly-review">Prepare weekly review →</Link></header>
+    <p className={styles.counts}>{rows.length} initiatives · {new Set(decisions.map(d => d.initiative.id)).size} with decisions waiting · {waiting.length} with setup incomplete</p>
+    <section className={styles.attention} aria-labelledby="needs-decision">
+      <div className={styles.sectionHead}><h2 id="needs-decision">Needs a decision</h2><span>Listed in default order — not prioritised</span></div>
+      {decisions.length ? <ul className={styles.decisionList}>{decisions.map(({initiative, finding}) =>
+        <li key={finding.fingerprint}><div className={styles.decisionMeta}>
+          <Link href={`/initiatives/${initiative.slug}`}>{initiative.name}</Link>
+          {initiative.isDemo ? <span className={styles.demo}>Synthetic demo</span> : null}
+          {finding.phase ? <span>{finding.phase}</span> : null}
+        </div><h3>{attentionSentence(finding)}</h3>
+        <div className={styles.comparison}>{finding.claims.map((claim, index) => <span key={claim.claimId}>
+          {index ? <i aria-hidden="true">vs</i> : null}<b>{claim.value}</b>
+        </span>)}</div>
+        <p className={styles.support}>Recorded values differ. Review source context before choosing.{finding.confirmerLabel ? ` Confirm with: ${finding.confirmerLabel}.` : ""}</p>
+        <Link className={styles.primary} href={`/initiatives/${initiative.slug}/decisions?item=${encodeURIComponent(finding.fingerprint)}`}>Review decision →</Link>
+        </li>)}</ul> : <p className={styles.empty}>No mismatches need a decision under the current checks. This does not establish release status.</p>}
+    </section>
+    <div className={styles.lower}>
+      <section className={styles.section} aria-labelledby="recent-changes"><h2 id="recent-changes">Recent recorded changes</h2>
+        <p className={styles.support}>Latest recorded events. Weekly Review uses its own selected period and finalized baseline.</p>
+        {changes.length ? <ul className={styles.list}>{changes.map(entry => {
+          const initiative = byId.get(entry.initiativeId)!;
+          return <li key={entry.id}><Link href={`/initiatives/${initiative.slug}`}>
+            <strong data-activity-summary data-activity-legacy={!isStructuredActivity(entry) || undefined}>{activitySummary(entry)}</strong>
+            <span>{initiative.name} · <time dateTime={entry.occurredAt}>{new Date(entry.occurredAt).toLocaleDateString("en-GB")}</time></span>
+          </Link></li>;
+        })}</ul> : <p className={styles.empty}>No recent changes of these types are recorded.</p>}
+        <p className={styles.support}>Source detail updates remain visible; the current log may not establish whether the supporting basis changed.</p>
+      </section>
+      <section className={styles.section} aria-labelledby="waiting-setup"><h2 id="waiting-setup">Setup incomplete</h2>
+        {waiting.length ? <ul className={styles.list}>{waiting.map(row => <li key={row.initiative.id}>
+          <Link href={`/initiatives/${row.initiative.slug}`}><strong>{row.initiative.name}</strong>
+          <span>{row.progress.current === "sources" ? "Add sources" : row.progress.current === "record" ? "Record Knowledge" : "Confirm Knowledge"}</span>
+          <span>{row.progress.facts.decisionsOpen ? "Setup incomplete · a decision is available" : "Not assessed yet — setup incomplete"}</span></Link>
+        </li>)}</ul> : <p className={styles.empty}>Every initiative has the required setup records.</p>}
+        <Link className={styles.allLink} href="/initiatives">Open initiative register →</Link>
+      </section>
     </div>
-    </header>
-    <div className={styles.grid}>
-    <section className={styles.section} aria-labelledby="needs-decision">
-      <h2 id="needs-decision">Needs a decision</h2>
-      <p>Listed in default order — not prioritised</p>
-      {needsDecision.length ? <ul className={styles.decisionList}>{needsDecision.map(({ initiative, finding }) =>
-        <li key={`${initiative.id}-${finding.fingerprint}`}>
-          <div className={styles.decisionBody}><div className={styles.decisionInfo}>
-            <p className={styles.decisionMeta}>{initiative.name} · Values differ{finding.confirmerLabel ? ` · Confirm with: ${finding.confirmerLabel}` : ""}</p>
-            <h3>{attentionSentence(finding)}</h3>
-            <div className={styles.sourceLinks}>{finding.claims.flatMap(claim => claim.evidence.filter(source => source.boundary !== "EXCLUDED").map(source =>
-              <Link key={`${claim.claimId}-${source.evidenceId}`} href={`/initiatives/${initiative.slug}/knowledge/sources#source-${source.evidenceId}`}><strong>{source.title}</strong><span>{source.sourceReference ? `${source.sourceReference} · ` : ""}Records {claim.value}</span></Link>
-            ))}</div>
-          </div><div className={styles.comparison}><span>Recorded values</span><div>{finding.claims.map((claim, index) => <span key={claim.claimId}>{index > 0 ? <i aria-hidden="true">vs</i> : null} <b>{claim.value}</b></span>)}</div><small>Review the sources before choosing.</small></div></div>
-          <div className={styles.decisionFooter}><Link href={`/initiatives/${initiative.slug}/decisions?item=${encodeURIComponent(finding.fingerprint)}`}>Review decision →</Link><span>Open this comparison and its sources.</span></div>
-        </li>
-      )}</ul> : <p>No mismatches need a decision under the current checks.</p>}
-    </section>
-    <section className={styles.section} aria-labelledby="waiting-setup">
-      <h2 id="waiting-setup">Waiting on setup</h2>
-      {waiting.length ? <ul className={styles.list}>{waiting.map((row) =>
-        <li key={row.initiative.id}><Link href={`/initiatives/${row.initiative.slug}`}>
-          <strong>{row.initiative.name}</strong><span>{row.progress.current === "sources" ? "Add sources" : row.progress.current === "record" ? "Record Knowledge" : "Confirm Knowledge"}</span>
-          <span>{row.progress.facts.decisionsOpen ? "Setup incomplete · a decision is available" : "Not assessed yet — setup incomplete"}</span>
-        </Link></li>
-      )}</ul> : <p>Every initiative has the required setup records.</p>}
-    </section>
-    <section className={styles.section} aria-labelledby="recent-changes">
-      <h2 id="recent-changes">Recent changes</h2>
-      {activity.length ? <ul className={styles.list}>{activity.map((entry) => {
-        const initiative = byId.get(entry.initiativeId);
-        if (!initiative) return null;
-        return <li key={entry.id}><Link href={`/initiatives/${initiative.slug}`}>
-          <strong data-activity-summary data-activity-legacy={!isStructuredActivity(entry) || undefined}>{activitySummary(entry)}</strong><span>{initiative.name} · <time dateTime={entry.occurredAt}>{new Date(entry.occurredAt).toLocaleDateString("en-GB")}</time></span>
-        </Link></li>;
-      })}</ul> : <p>No recent changes recorded.</p>}
-    </section>
-    <section className={styles.section} aria-labelledby="stages">
-      <h2 id="stages">Stages</h2>
-      <p>Recorded stage — not a schedule.</p>
-      {stages.size ? <ul className={styles.stageList}>{[...stages].map(([stage, stageRows]) =>
-        <li key={stage}><span>{stage}</span><span>{stageRows.map((row, index) => <span key={row.initiative.id}>{index > 0 ? ", " : ""}<Link href={`/initiatives/${row.initiative.slug}`}>{row.initiative.name}</Link></span>)}</span></li>
-      )}</ul> : <p>No initiatives yet.</p>}
-      <Link className={styles.allLink} href="/initiatives">View initiatives →</Link>
-    </section>
-    </div>
+    <p className={styles.support}>Recorded stage — not a schedule. Checks compare recorded values and preserve replacement history. Gaps, unknowns, risks and release status are not assessed here.</p>
   </div>;
 }

@@ -27,7 +27,7 @@
   color: var(--ink-500);
   margin-bottom: 8px;
 }
-.identity strong {
+.identity h1 {
   flex-basis: 100%;
   font-size: 30px;
   line-height: 1.2;
@@ -97,7 +97,7 @@
   .inner {
     padding: 18px 24px 0;
   }
-  .identity strong {
+  .identity h1 {
     font-size: 26px;
   }
   .actions kbd {
@@ -126,3 +126,10 @@
     width: 100%;
   }
 }
+
+/* One initiative identity, shared across all workspace views. */
+.identity h1{flex-basis:100%;font-size:var(--t-display);margin:0;line-height:var(--lh-tight);letter-spacing:var(--ls-tight)}
+.inner{padding-top:var(--s-4)}
+.identity nav{margin-bottom:var(--s-1)}
+.context{margin-top:var(--s-6)}
+@media(max-width:780px){.inner{padding:var(--s-3) var(--s-4) 0}.identity{display:flex;gap:var(--s-1) var(--s-3)}.identity h1{font-size:var(--t-h2)}.identity nav{display:none}.identity .meta{font-size:var(--t-micro)}.identity .meta:first-of-type{display:none}.tabs{margin-top:var(--s-2)}.actions{display:none}}

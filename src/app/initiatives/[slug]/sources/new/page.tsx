@@ -26,7 +26,7 @@ export default async function NewEvidencePage({
         <Link href={`/initiatives/${slug}/knowledge/sources`} className={styles.back}>
           ← Sources
         </Link>
-        <h1 className={styles.title}>Add Source</h1>
+        <h2 className={styles.title}>Add Source</h2>
         <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
       </div>
     );
@@ -38,7 +38,7 @@ export default async function NewEvidencePage({
         ← Sources
       </Link>
 
-      <h1 className={styles.title}>Add Source</h1>
+      <h2 className={styles.title}>Add Source</h2>
       <p className={styles.intro}>
         Record a piece of source material for {initiative.name}. Prodwise stores
         what the source is and where it came from — it does not upload, parse

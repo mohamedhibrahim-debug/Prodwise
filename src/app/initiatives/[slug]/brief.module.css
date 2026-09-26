@@ -137,3 +137,8 @@
     align-items: center;
   }
 }
+
+.description{margin-bottom:var(--s-6);font-size:var(--t-body);line-height:var(--lh-body);color:var(--ink-700)}
+.attentionActions>a,.list>li>a>span{color:var(--accent-700);font-weight:var(--fw-semibold)}
+.section a{color:var(--accent-700)}
+.description{grid-column:1/-1;margin:0}.section:first-of-type{border-top:3px solid var(--accent-500)}.list>li>a>span{display:inline-flex;align-items:center;min-height:var(--s-10)}

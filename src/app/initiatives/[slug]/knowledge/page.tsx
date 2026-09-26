@@ -5,8 +5,9 @@ import { getRepository } from "@/lib/data";
 import { isDemoWriteEnabled } from "@/lib/env";
 import { EvidenceAnchorForm } from "@/components/initiative/EvidenceAnchorForm";
 import { normalise } from "@/lib/review/normalise";
-import { runReview } from "@/lib/review/engine";
-import { CLAIM_STATUS_LABEL, CLAIM_TYPE_LABEL, DOMAIN_LABEL, formatDate } from "@/lib/domain/labels";
+import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
+import { attentionSentence } from "@/lib/workspace/copy";
+import { CLAIM_STATUS_LABEL, CLAIM_TYPE_LABEL, DOMAIN_LABEL, EVIDENCE_SOURCE_TYPE_LABEL, EVIDENCE_RELATION_LABEL, formatDate } from "@/lib/domain/labels";
 import { trustLine } from "@/lib/domain/trust";
 import { decisionMarkers, groupKnowledge, replacementLineage, type KnowledgeValueGroup } from "@/lib/workspace/knowledge";
 import styles from "./knowledge.module.css";
@@ -28,8 +29,8 @@ export default async function KnowledgePage({ params, searchParams }: {
   const snapshot = await repo.getInitiativeSnapshot(initiative.id);
   if (!snapshot) notFound();
   const { claims, findingStates: states } = snapshot;
-  const mismatchItems = new Map(runReview(initiative.id, claims)
-    .filter((finding) => finding.type === "CONFLICT")
+  const mismatches = deriveInstrumentSnapshot(snapshot).findings.filter(finding => finding.type === "CONFLICT" && finding.status === "OPEN" && finding.actionable);
+  const mismatchItems = new Map(mismatches
     .map((finding) => [JSON.stringify([normalise(finding.subject), normalise(finding.claims[0]?.attribute ?? ""), finding.phase]), finding.fingerprint]));
   const visible = claims.filter((claim) => view === "all" ? claim.status !== "SUPERSEDED" : view === "replaced" ? claim.status === "SUPERSEDED" : claim.status === "ACTIVE");
   const subjects = new Map<string, Map<string, Map<string, KnowledgeValueGroup[]>>>();
@@ -43,34 +44,44 @@ export default async function KnowledgePage({ params, searchParams }: {
   }
   const base = `/initiatives/${slug}/knowledge`;
   return <div className={styles.page}>
-    <div className={styles.head}><div><h1>Knowledge</h1><p>Recorded values for this initiative.</p></div>
+    <div className={styles.head}><div><h2>Knowledge record</h2><p>Values, sources and history. Confirmation does not select a winner when values differ.</p></div>
       {isDemoWriteEnabled ? <Link className={styles.action} href={`${base}/new`}>Add Knowledge entry</Link> : null}</div>
     <nav className={styles.views} aria-label="Knowledge views">
       <Link href={base} aria-current={view === "confirmed" ? "page" : undefined}>Record</Link>
       <Link href={`${base}/sources`}>Sources</Link>
     </nav>
     <nav className={styles.filters} aria-label="Record filters">
-      <Link href={base} aria-current={view === "confirmed" ? "page" : undefined}>Confirmed</Link>
-      <Link href={`${base}?view=all`} aria-current={view === "all" ? "page" : undefined}>All entries</Link>
-      <Link href={`${base}?view=replaced`} aria-current={view === "replaced" ? "page" : undefined}>Replaced</Link>
+      <Link href={base} aria-current={view === "confirmed" ? "page" : undefined}>Confirmed ({claims.filter(c => c.status === "ACTIVE").length} entries)</Link>
+      <Link href={`${base}?view=all`} aria-current={view === "all" ? "page" : undefined}>All current ({claims.filter(c => c.status !== "SUPERSEDED").length} entries)</Link>
+      <Link href={`${base}?view=replaced`} aria-current={view === "replaced" ? "page" : undefined}>Replaced ({claims.filter(c => c.status === "SUPERSEDED").length} entries)</Link>
     </nav>
     {mismatchItems.size && view !== "replaced" ? <div className={styles.attentionBanner}>
-      <strong>Recorded values differ in {mismatchItems.size} {mismatchItems.size === 1 ? "comparison" : "comparisons"}.</strong>
+      <strong>{mismatches.length === 1 ? attentionSentence(mismatches[0]!) : `Recorded values differ in ${mismatches.length} comparisons.`}</strong>
       <Link href={`/initiatives/${slug}/decisions${mismatchItems.size === 1 ? `?item=${encodeURIComponent([...mismatchItems.values()][0]!)}` : ""}`}>Review in Decisions →</Link>
     </div> : null}
     <div className={styles.recordLayout}><div>
+    {subjects.size ? <div className={styles.ledgerHead} aria-hidden="true"><span>Attribute · Phase</span><span>Value</span><span>Status · Verification</span><span>Sources</span></div> : null}
     {subjects.size ? [...subjects].map(([subject, attributes]) => <section className={styles.subject} key={subject}>
       <h2>{subject}</h2>{[...attributes].map(([attribute, phases]) => <div className={styles.attribute} key={attribute}>
-        <h3>{attribute}</h3>{[...phases].map(([phaseKey, values]) => <div className={styles.phase} key={phaseKey}>
-          <h4>{phaseKey || "Phase not recorded"}</h4>
+        {[...phases].map(([phaseKey, values]) => <div className={styles.phase} key={phaseKey}>
           {values.map(({ value, entries }) => {
             const first = entries[0]!;
             const allSameStatus = entries.every((entry) => entry.status === first.status);
-            return <div className={styles.value} key={normalise(value)} id={`claim-${first.id}`}>
-              <strong>{value}</strong><span>{allSameStatus ? CLAIM_STATUS_LABEL[first.status] : "Entry statuses in details"}</span>
+            const sources = [...new Map(entries.flatMap(entry => entry.evidence).map(source => [source.id, source])).values()];
+            return <div className={`${styles.value} ${first.status === "SUPERSEDED" ? styles.historical : ""}`} key={normalise(value)} id={`claim-${first.id}`}>
+              <div className={styles.address}><h3>{attribute}</h3><span>{phaseKey || "Phase not recorded"}</span></div>
+              <div className={styles.currentValue}><strong>{value}</strong>
+                {entries.map(entry => { const lineage = replacementLineage(entry, claims); return <div key={entry.id} className={styles.inlineLineage}>
+                  {lineage.replacedBy ? <p>Replaced by <Link href={`${base}?view=${lineage.replacedBy.status === "SUPERSEDED" ? "replaced" : "all"}#claim-${lineage.replacedBy.id}`}>{lineage.replacedBy.value}</Link></p> : entry.status === "SUPERSEDED" ? <p>{entry.supersededByClaimId ? "Recorded replacement unavailable" : "Replacement not recorded"}</p> : null}
+                  {lineage.replaces.map(prior => <p key={prior.id}>Replaces <Link href={`${base}?view=replaced#claim-${prior.id}`}>{prior.value}</Link></p>)}
+                </div>; })}
+              </div>
+              <div className={styles.rowStatus}><span>{allSameStatus ? CLAIM_STATUS_LABEL[first.status] : "Entry statuses in details"}</span>
+                {entries.map(entry => trustLine(entry) ? <p key={entry.id}>{trustLine(entry)}</p> : null)}</div>
+              <div className={styles.sourceIdentity}><span>{sources.length} linked {sources.length === 1 ? "source" : "sources"}</span>
+                {sources.map(source => <Link key={source.id} href={`${base}/sources#source-${source.id}`}>{source.sourceReference ?? source.title}{source.boundary === "EXCLUDED" ? " · Excluded" : ""}</Link>)}</div>
               <details><summary>Sources and details</summary>
                 <ul>{entries.map((entry) => {
-                  const lineage = replacementLineage(entry, claims);
                   const trust = trustLine(entry);
                   return <li className={styles.entry} key={entry.id} id={entry.id === first.id ? undefined : `claim-${entry.id}`}>
                     <p><strong>Knowledge entry</strong> · {CLAIM_STATUS_LABEL[entry.status]}</p>
@@ -82,15 +93,14 @@ export default async function KnowledgePage({ params, searchParams }: {
                         {marker.label} · {marker.resolvedAt ? formatDate(marker.resolvedAt) : "Date not recorded"}
                       </Link> : <>{marker.label} · {marker.resolvedAt ? formatDate(marker.resolvedAt) : "Date not recorded"}</>}
                     </p>)}
-                    {lineage.replacedBy ? <p>Replaced by <Link href={`${base}?view=all#claim-${lineage.replacedBy.id}`}>{lineage.replacedBy.value}</Link></p> : null}
-                    {lineage.replaces.map((prior) => <p key={prior.id}>Replaces <Link href={`${base}?view=replaced#claim-${prior.id}`}>{prior.value}</Link></p>)}
                     {entry.evidence.length ? entry.evidence.map((source) => {
                       const anchor = entry.anchors.find((item) => item.evidenceId === source.id);
                       return <div key={source.id} className={styles.provenance}>
                         <Link href={`${base}/sources#source-${source.id}`}>{source.title}</Link>
-                        {source.contentSummary ? <p>{source.contentSummary}</p> : null}
-                        {anchor?.locator ? <p>Locator: {anchor.locator}</p> : null}
-                        {anchor?.excerpt ? <p>“{anchor.excerpt}”</p> : null}
+                        <p className={styles.sourceMeta}>{source.sourceReference ?? "Reference not recorded"} · {EVIDENCE_SOURCE_TYPE_LABEL[source.sourceType]} · {EVIDENCE_RELATION_LABEL[source.boundary]} · {source.occurredAt ? formatDate(source.occurredAt) : "Source date not recorded"}</p>
+                        {source.contentSummary ? <p><b>Summary:</b> {source.contentSummary}</p> : null}
+                        {anchor?.locator ? <p><b>Locator:</b> {anchor.locator}</p> : null}
+                        {anchor?.excerpt ? <p><b>Supporting excerpt:</b> “{anchor.excerpt}”</p> : null}
                         {isDemoWriteEnabled ? <details><summary>Edit locator or excerpt</summary><EvidenceAnchorForm slug={slug} claimId={entry.id} evidenceId={source.id}
                           locator={anchor?.locator ?? null} excerpt={anchor?.excerpt ?? null} /></details> : null}
                       </div>;

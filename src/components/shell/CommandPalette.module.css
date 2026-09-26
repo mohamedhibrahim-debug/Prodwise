@@ -149,3 +149,7 @@
     max-height: 72vh;
   }
 }
+
+.dialog{height:auto}
+.list{flex:0 1 auto;max-height:60vh}
+.footer button{margin-left:auto;border:1px solid var(--navy-ink-faint);background:transparent;color:var(--navy-ink);border-radius:var(--r-sm);padding:var(--s-2) var(--s-3);min-height:var(--s-10);cursor:pointer}

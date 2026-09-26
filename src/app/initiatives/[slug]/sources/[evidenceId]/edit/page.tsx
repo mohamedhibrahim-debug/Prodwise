@@ -35,7 +35,7 @@ export default async function EditEvidencePage({
         <Link href={`/initiatives/${slug}/knowledge/sources`} className={styles.back}>
           ← Sources
         </Link>
-        <h1 className={styles.title}>Edit Source</h1>
+        <h2 className={styles.title}>Edit Source</h2>
         <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
       </div>
     );
@@ -47,7 +47,7 @@ export default async function EditEvidencePage({
         ← Sources
       </Link>
 
-      <h1 className={styles.title}>Edit Source</h1>
+      <h2 className={styles.title}>Edit Source</h2>
       <p className={styles.intro}>
         Correcting a record here is the same act as correcting it inline — a
         boundary change is recorded in the initiative&rsquo;s activity either way.

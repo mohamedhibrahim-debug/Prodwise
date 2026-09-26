@@ -6,6 +6,7 @@ import {
   CLAIM_TYPE_LABEL,
   DOMAIN_LABEL,
   EVIDENCE_RELATION_LABEL,
+  EVIDENCE_SOURCE_TYPE_LABEL,
   FINDING_LABEL,
   formatDateTime,
 } from "@/lib/domain/labels";
@@ -145,9 +146,17 @@ function ConflictRow({
                 vs
               </span>
             ) : null}
-            <ClaimColumn claim={claim} slug={slug} record={records?.find(record => record.id === claim.claimId)} />
+            <p className={styles.value}>{claim.value}</p>
+            <p className={styles.compactSource}>{claim.evidence.filter(source => source.boundary !== "EXCLUDED").map(source => source.sourceReference ?? source.title).join(" · ") || "No included source reference"}</p>
+            <p className={styles.claimFacts}>{CLAIM_STATUS_LABEL[claim.status]}</p>
           </div>
         ))}
+      </div>
+      <div className={styles.sourceInspectors}>
+        {finding.claims.map(claim => <details className={styles.sourceInspector} key={claim.claimId}>
+          <summary>Sources for {claim.value}</summary>
+          <ClaimColumn claim={claim} slug={slug} record={records?.find(record => record.id === claim.claimId)} />
+        </details>)}
       </div>
 
       <p className={styles.caption}>
@@ -214,7 +223,6 @@ function ClaimColumn({ claim, slug, record }: { claim: FindingClaimRef; slug: st
 
   return (
     <div className={styles.column}>
-      <p className={styles.value}>{claim.value}</p>
 
       <div className={styles.provenance}>
         <div className={styles.provenanceTop}>
@@ -254,7 +262,10 @@ function ClaimColumn({ claim, slug, record }: { claim: FindingClaimRef; slug: st
             {claim.evidence.map((e) => (
               <li key={e.evidenceId} className={styles.evidenceItem}>
                 <Link href={`/initiatives/${slug}/knowledge/sources#source-${e.evidenceId}`} className={styles.evidenceTitle}>{e.title} →</Link>
-                {record?.evidence.find(source => source.id === e.evidenceId)?.contentSummary ? <p className={styles.sourceSummary}>{record.evidence.find(source => source.id === e.evidenceId)!.contentSummary}</p> : null}
+                {record?.evidence.find(source => source.id === e.evidenceId) ? <p className={styles.sourceMeta}>
+                  {EVIDENCE_SOURCE_TYPE_LABEL[record.evidence.find(source => source.id === e.evidenceId)!.sourceType]} · {record.evidence.find(source => source.id === e.evidenceId)!.occurredAt ? formatDateTime(record.evidence.find(source => source.id === e.evidenceId)!.occurredAt!) : "Source date not recorded"}
+                </p> : null}
+                {record?.evidence.find(source => source.id === e.evidenceId)?.contentSummary ? <p className={styles.sourceSummary}><b>Summary:</b> {record.evidence.find(source => source.id === e.evidenceId)!.contentSummary}</p> : null}
                 <span
                   className={
                     e.boundary === "EXCLUDED"

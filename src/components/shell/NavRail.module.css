@@ -173,3 +173,7 @@
     border: 0;
   }
 }
+
+.context{margin-top:var(--s-6);border-top:1px solid var(--navy-rule);padding-top:var(--s-3)}
+.context .navItem span{white-space:normal;overflow-wrap:anywhere;font-size:var(--t-xs)}
+.rail:not(.expanded) .footer p{overflow-wrap:normal;word-break:normal;border:0;font-size:var(--t-micro)}

@@ -109,7 +109,9 @@ export function CommandPalette() {
         close();
       } else if (e.key === "Tab") {
         e.preventDefault();
-        inputRef.current?.focus();
+        const closeButton = document.querySelector<HTMLButtonElement>('[aria-label="Close search"]');
+        if (document.activeElement === inputRef.current && closeButton) closeButton.focus();
+        else inputRef.current?.focus();
       }
     };
     window.addEventListener("keydown", onKey, true);
@@ -236,11 +238,19 @@ export function CommandPalette() {
         href: "/initiatives",
       },
       {
-        id: "go-reporting",
-        label: "Reporting",
-        keywords: "reporting executive portfolio",
+        id: "go-roadmap",
+        label: "Roadmap",
+        keywords: "roadmap delivery timing portfolio",
         group: "Go to",
-        href: "/reporting",
+        href: "/roadmap",
+      },
+      {
+        id: "go-analysis", label: "Analysis", keywords: "outcomes results metrics",
+        group: "Go to", href: "/analysis",
+      },
+      {
+        id: "go-weekly", label: "Weekly Review", keywords: "weekly meeting review",
+        group: "Go to", href: "/weekly-review",
       },
     );
 
@@ -387,6 +397,7 @@ export function CommandPalette() {
         </ul>
 
         <div className={styles.footer}>
+          <button type="button" onClick={close} aria-label="Close search">Close</button>
           <span>
             <kbd className={styles.kbd}>↑</kbd>
             <kbd className={styles.kbd}>↓</kbd> navigate

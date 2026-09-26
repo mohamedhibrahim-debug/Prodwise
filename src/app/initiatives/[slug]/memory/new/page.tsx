@@ -29,7 +29,7 @@ export default async function NewClaimPage({
         <Link href={`/initiatives/${slug}/knowledge`} className={styles.back}>
           ← Knowledge
         </Link>
-        <h1 className={styles.title}>Add Knowledge entry</h1>
+        <h2 className={styles.title}>Add Knowledge entry</h2>
         <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
       </div>
     );
@@ -41,7 +41,7 @@ export default async function NewClaimPage({
         ← Knowledge
       </Link>
 
-      <h1 className={styles.title}>Add Knowledge entry</h1>
+      <h2 className={styles.title}>Add Knowledge entry</h2>
       <p className={styles.intro}>
         Record something known about {initiative.name} as structured knowledge —
         a subject, the attribute in question, and its value. Linking a Source
