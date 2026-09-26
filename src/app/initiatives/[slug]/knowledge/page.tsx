@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getRepository } from "@/lib/data";
-import { isDemoWriteEnabled } from "@/lib/env";
+import { businessWritePresentation } from "@/lib/auth/presentation";
 import { EvidenceAnchorForm } from "@/components/initiative/EvidenceAnchorForm";
 import { normalise } from "@/lib/review/normalise";
 import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
@@ -20,6 +20,7 @@ export default async function KnowledgePage({ params, searchParams }: {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ view?: string }>;
 }) {
+  const { enabled: isDemoWriteEnabled } = await businessWritePresentation();
   const { slug } = await params;
   const { view: rawView } = await searchParams;
   const view: View = rawView === "all" || rawView === "replaced" ? rawView : "confirmed";

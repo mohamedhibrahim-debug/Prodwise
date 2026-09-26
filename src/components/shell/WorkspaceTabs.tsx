@@ -9,6 +9,7 @@ const TABS = [
   { segment: "", label: "Brief" },
   { segment: "decisions", label: "Decisions" },
   { segment: "knowledge", label: "Knowledge" },
+  { segment: "delivery", label: "Delivery" },
 ] as const;
 
 /**
@@ -28,7 +29,7 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
   const base = `/initiatives/${slug}`;
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (!event.altKey || event.ctrlKey || event.metaKey || !["1", "2", "3"].includes(event.key)) return;
+      if (!event.altKey || event.ctrlKey || event.metaKey || !["1", "2", "3", "4"].includes(event.key)) return;
       if (event.target instanceof HTMLElement &&
         event.target.closest("input,textarea,select,[contenteditable]:not([contenteditable=false])")) return;
       event.preventDefault();

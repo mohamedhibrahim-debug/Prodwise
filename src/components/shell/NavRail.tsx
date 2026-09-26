@@ -102,7 +102,7 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
         <Link href={`/initiatives/${pathname.split("/")[2]}`} className={styles.navItem} aria-label={`Open ${mobileTitle} Brief`} title={mobileTitle}><InstrumentIcon name="initiatives" /><span>{mobileTitle}</span></Link>
       </nav> : null}
       <div className={styles.footer}>
-        <p>{writesEnabled ? `${dataSource} · writes on` : `${dataSource} · read only`}</p>
+        <p>{writesEnabled ? `${dataSource} · environment writes on` : `${dataSource} · environment writes off`}</p>
         <button type="button" className={styles.pin} onClick={() => {
           const next = !expanded;
           setExpanded(next);

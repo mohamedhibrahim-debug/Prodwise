@@ -1,10 +1,11 @@
 import type { ComponentProps } from "react";
 
-import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
+import { businessWritePresentation } from "@/lib/auth/presentation";
 import { Button, ButtonLink } from "./Button";
 
 /** Presentation only: every mutation is still guarded in the repository. */
-export function DemoWriteLink(props: ComponentProps<typeof ButtonLink>) {
+export async function DemoWriteLink(props: ComponentProps<typeof ButtonLink>) {
+  const { enabled: isDemoWriteEnabled, message: WRITE_DISABLED_MESSAGE } = await businessWritePresentation();
   if (isDemoWriteEnabled) return <ButtonLink {...props} />;
 
   return (
@@ -16,7 +17,7 @@ export function DemoWriteLink(props: ComponentProps<typeof ButtonLink>) {
       disabled
       title={WRITE_DISABLED_MESSAGE}
     >
-      {props.children} · Demo mode
+      {props.children}
     </Button>
   );
 }

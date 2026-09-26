@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { DemoWriteLink } from "@/components/primitives/DemoWriteLink";
-import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
+import { businessWritePresentation } from "@/lib/auth/presentation";
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { EvidenceRow } from "@/components/initiative/EvidenceRow";
 import { getRepository } from "@/lib/data";
@@ -23,6 +23,7 @@ export default async function EvidencePage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const { enabled: isDemoWriteEnabled, message: WRITE_DISABLED_MESSAGE } = await businessWritePresentation();
   const { slug } = await params;
   const repo = getRepository();
   const initiative = await repo.getInitiativeBySlug(slug);

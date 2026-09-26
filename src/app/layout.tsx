@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-
-import { NavRail } from "@/components/shell/NavRail";
-import { GlobalCommandBar } from "@/components/shell/GlobalCommandBar";
-import { CommandPalette } from "@/components/shell/CommandPalette";
-import { DemoScenarioSurface } from "@/components/shell/DemoScenarioSurface";
+import { ApplicationShell } from "@/components/shell/ApplicationShell";
+import { AccountAccess } from "@/components/auth/AccountAccess";
+import { contextForRequest } from "@/lib/auth/service";
 import { isDemoWriteEnabled, isSupabaseConfigured } from "@/lib/env";
 
 import "@/styles/global.css";
-import styles from "./layout.module.css";
 
 /* Inter is the reference deck's own typeface: it honours the visual DNA while
    remaining brand-neutral enterprise-standard. */
@@ -20,23 +16,20 @@ export const metadata: Metadata = {
   description: "Product Intelligence, from evidence to action.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Public login/invite entries must render without requesting protected data.
+  // The global server proxy and repository guards still authorize every request.
+  const access = await contextForRequest().catch(() => null);
   return (
     <html lang="en">
       <body>
-        <NavRail
+        <ApplicationShell
+          account={access ? <AccountAccess /> : null}
           dataSource={isSupabaseConfigured ? "Supabase" : "Local demo data"}
           writesEnabled={isDemoWriteEnabled}
-        />
-        <div className={styles.canvas}>
-          <GlobalCommandBar />
-          <main className={styles.main}>{children}</main>
-        </div>
-        {/* Renders nothing until opened; its data loads on first open only. */}
-        <CommandPalette />
-        <Suspense fallback={null}><DemoScenarioSurface /></Suspense>
+        >{children}</ApplicationShell>
       </body>
     </html>
   );

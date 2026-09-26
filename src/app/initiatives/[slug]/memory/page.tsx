@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { DemoWriteLink } from "@/components/primitives/DemoWriteLink";
-import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
+import { businessWritePresentation } from "@/lib/auth/presentation";
 import { EmptyState, EMPTY } from "@/components/primitives/EmptyState";
 import { ClaimRow } from "@/components/initiative/ClaimRow";
 import { getRepository } from "@/lib/data";
@@ -41,6 +41,7 @@ export default async function MemoryPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ view?: string }>;
 }) {
+  const { enabled: isDemoWriteEnabled, message: WRITE_DISABLED_MESSAGE } = await businessWritePresentation();
   const { slug } = await params;
   const { view: rawView } = await searchParams;
 

@@ -9,7 +9,7 @@ import { DecisionWorkbench, type WorkbenchLane } from "@/components/initiative/D
 import { FindingRow } from "@/components/initiative/FindingRow";
 import { getRepository } from "@/lib/data";
 import { STAGE_LABEL } from "@/lib/domain/labels";
-import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
+import { businessWritePresentation } from "@/lib/auth/presentation";
 import { compareFindings } from "@/lib/review/engine";
 import { loadDecisions } from "@/lib/workspace/decisions";
 import { DECISION_LANES, type DecisionLaneKey } from "@/lib/workspace/decision-lanes";
@@ -19,6 +19,7 @@ export const metadata: Metadata = { title: "Decisions" };
 export const dynamic = "force-dynamic";
 
 export default async function DecisionsPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ item?: string }> }) {
+  const { enabled: isDemoWriteEnabled, message: WRITE_DISABLED_MESSAGE } = await businessWritePresentation();
   const { slug } = await params;
   const { item } = await searchParams;
   const repo = getRepository();

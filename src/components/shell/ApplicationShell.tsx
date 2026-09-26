@@ -24,7 +24,7 @@ export function ApplicationShell({ children, account, dataSource, writesEnabled 
     <NavRail dataSource={dataSource} writesEnabled={writesEnabled} />
     <div className={styles.canvas}>
       <GlobalCommandBar />
-      {account}
+      {pathname !== "/account" && account}
       <main className={styles.main}>{children}</main>
     </div>
     <CommandPalette />

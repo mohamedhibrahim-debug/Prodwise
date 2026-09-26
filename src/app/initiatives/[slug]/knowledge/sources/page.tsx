@@ -4,13 +4,14 @@ import type { Metadata } from "next";
 import { getRepository } from "@/lib/data";
 import { EVIDENCE_RELATIONS } from "@/lib/domain/types";
 import { EVIDENCE_RELATION_LABEL, EVIDENCE_SOURCE_TYPE_LABEL, formatDate } from "@/lib/domain/labels";
-import { isDemoWriteEnabled } from "@/lib/env";
+import { businessWritePresentation } from "@/lib/auth/presentation";
 import styles from "../knowledge.module.css";
 
 export const metadata: Metadata = { title: "Sources" };
 export const dynamic = "force-dynamic";
 
 export default async function KnowledgeSourcesPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { enabled: isDemoWriteEnabled } = await businessWritePresentation();
   const { slug } = await params;
   const repo = getRepository();
   const initiative = await repo.getInitiativeBySlug(slug);

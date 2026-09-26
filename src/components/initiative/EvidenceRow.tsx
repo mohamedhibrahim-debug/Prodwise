@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
+import { businessWritePresentation } from "@/lib/auth/presentation";
 import { Reference, Timestamp } from "@/components/primitives/Meta";
 import {
   EVIDENCE_SOURCE_TYPE_LABEL,
@@ -24,13 +24,14 @@ import styles from "./EvidenceRow.module.css";
  * sets the boundary — and printing a system-sounding rationale would imply
  * reasoning that does not exist.
  */
-export function EvidenceRow({
+export async function EvidenceRow({
   item,
   slug,
 }: {
   item: EvidenceRecord;
   slug: string;
 }) {
+  const { enabled: isDemoWriteEnabled, message: WRITE_DISABLED_MESSAGE } = await businessWritePresentation();
   return (
     <li className={styles.row}>
       <div className={styles.head}>

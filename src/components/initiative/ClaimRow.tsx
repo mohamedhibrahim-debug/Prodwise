@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
+import { businessWritePresentation } from "@/lib/auth/presentation";
 import { CategoryTag, Reference } from "@/components/primitives/Meta";
 import {
   CLAIM_STATUS_LABEL,
@@ -48,13 +48,14 @@ function identify(claim: MemoryClaim): string {
  * Nothing here asserts a relationship between claims beyond supersession, which
  * a human set. Phase 3 records knowledge; it does not judge it.
  */
-export function ClaimRow({
+export async function ClaimRow({
   claim,
   slug,
   supersededBy,
   supersedes = [],
   decisions = [],
 }: ClaimRowProps) {
+  const { enabled: isDemoWriteEnabled, message: WRITE_DISABLED_MESSAGE } = await businessWritePresentation();
   const statusClass = styles[`status${claim.status}`] ?? "";
   const isSuperseded = claim.status === "SUPERSEDED";
   const trust = trustLine(claim);
