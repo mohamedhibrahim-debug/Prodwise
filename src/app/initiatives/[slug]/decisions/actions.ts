@@ -1,4 +1,5 @@
 "use server";
+import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
 import { revalidatePath } from "next/cache";
 
@@ -14,13 +15,19 @@ function refreshDecisionPages(slug: string) {
 }
 
 export async function decideAction(_prev: DecisionFormState, form: FormData): Promise<DecisionFormState> {
-  return submitDecisionForm(form, { repo: getRepository(), actor: currentActor(),
-    assertWrite: assertWriteAllowed, refresh: refreshDecisionPages }, "decision");
+  try {
+    const ctx=await requireBusinessWriteAccess();
+    return submitDecisionForm(form, { repo: getRepository(), actor: ctx.actor,
+      assertWrite: assertWriteAllowed, refresh: refreshDecisionPages }, "decision");
+  } catch(error) { return {error: decisionError(error)}; }
 }
 
 export async function confirmerAction(_prev: DecisionFormState, form: FormData): Promise<DecisionFormState> {
-  return submitDecisionForm(form, { repo: getRepository(), actor: currentActor(),
-    assertWrite: assertWriteAllowed, refresh: refreshDecisionPages }, "confirmer");
+  try {
+    const ctx=await requireBusinessWriteAccess();
+    return submitDecisionForm(form, { repo: getRepository(), actor: ctx.actor,
+      assertWrite: assertWriteAllowed, refresh: refreshDecisionPages }, "confirmer");
+  } catch(error) { return {error: decisionError(error)}; }
 }
 
 export interface FindingFormState {
@@ -68,7 +75,7 @@ export async function resolveFindingAction(
   }
 
   try {
-    assertWriteAllowed();
+    await requireBusinessWriteAccess();
     const { initiative, finding } = await resolveOwnedFinding(slug, fingerprint);
 
     /* The fingerprint ignores membership, so it cannot serve as a concurrency
@@ -130,12 +137,12 @@ export async function reopenFindingAction(
   const fingerprint = readText(formData.get("fingerprint"));
 
   try {
-    assertWriteAllowed();
+    await requireBusinessWriteAccess();
     const { initiative } = await resolveOwnedFinding(slug, fingerprint);
     await getRepository().reopenFindingState(
       initiative.id,
       fingerprint,
-      currentActor(),
+      await currentActor(),
     );
   } catch (error) {
     if (error instanceof FindingAccessError) return { error: STALE_DECISION_MESSAGE };

@@ -38,6 +38,8 @@ import type {
 import { canOrdinaryUpdateStatus } from "@/lib/domain/trust";
 import { uniqueSlug, type Repository } from "./repository";
 import { partitionEvidenceLinks } from "./claim-evidence-links";
+import { repositoryContext } from "../auth/repository-context";
+import { workspaceClient } from "./workspace-client";
 
 /**
  * Supabase-backed repository.
@@ -162,12 +164,14 @@ interface InitiativeSnapshotRow extends InitiativeRow {
 let client: SupabaseClient | null = null;
 
 function getClient(): SupabaseClient {
+  const ctx = repositoryContext();
+  if (!ctx) throw new Error("Authenticated workspace context is required.");
   if (!client) {
     client = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
   }
-  return client;
+  return workspaceClient(client, ctx);
 }
 
 /** Row → domain. The only place snake_case is allowed to exist. */

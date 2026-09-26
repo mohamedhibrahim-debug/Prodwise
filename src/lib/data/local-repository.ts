@@ -25,6 +25,7 @@ import { runReview } from "../review/engine";
 import { normalise } from "../review/normalise";
 import { uniqueSlug, type Repository } from "./repository";
 import { partitionEvidenceLinks } from "./claim-evidence-links";
+import { repositoryContext } from "../auth/repository-context";
 
 /**
  * Repository used when no Supabase project is configured.
@@ -59,8 +60,8 @@ function logActivity(
     occurredAt: nowIso(),
     entityType: structured?.entityType ?? null,
     entityId: structured?.entityId ?? null,
-    payload: structured?.payload ?? null,
-    actorLabel: structured?.actorLabel ?? null,
+    payload: repositoryContext() ? { ...structured?.payload, actor: repositoryContext()!.actor } : structured?.payload ?? null,
+    actorLabel: repositoryContext()?.actor.label ?? structured?.actorLabel ?? null,
   };
   writeStore((s) => {
     s.activity.push(entry);
@@ -245,7 +246,7 @@ export const localRepository: Repository = {
       // A record has never been re-verified at the moment it is captured.
       // Null means unknown, which is honest; it does not mean stale.
       lastVerifiedAt: null,
-      createdBy: null,
+      createdBy: repositoryContext()?.actor.id ?? null,
       createdAt: now,
       updatedAt: now,
     };
@@ -352,7 +353,7 @@ export const localRepository: Repository = {
       phase: input.phase?.trim() || null,
       confidence: null,
       supersededByClaimId: null,
-      createdBy: null,
+      createdBy: repositoryContext()?.actor.id ?? null,
       createdAt: now,
       updatedAt: now,
       origin: "HUMAN_ENTRY",
@@ -617,7 +618,7 @@ export const localRepository: Repository = {
           id: decisionClaimId, initiativeId: plan.initiativeId,
           type: "DECISION", status: "ACTIVE", subject: plan.subject,
           attribute: plan.attribute, phase: plan.phase, value: decidedValue,
-          domain, confidence: null, supersededByClaimId: null, createdBy: null,
+          domain, confidence: null, supersededByClaimId: null, createdBy: repositoryContext()?.actor.id ?? null,
           createdAt: now, updatedAt: now, origin: "HUMAN_DECISION",
           verifiedAt: now, verifiedActorId: plan.actor.id,
           verifiedActorLabel: plan.actor.label.trim(), verificationBasis: "DIRECT_KNOWLEDGE",

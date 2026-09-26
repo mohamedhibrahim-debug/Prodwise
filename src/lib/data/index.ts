@@ -1,6 +1,9 @@
 import "server-only";
 
-import { isSupabaseConfigured } from "@/lib/env";
+import { isDemoWriteEnabled } from "@/lib/env";
+import { requireWorkspaceAccess } from "@/lib/auth/access";
+import { isLocalAuth } from "@/lib/auth/service";
+import { guardedRepository } from "./guarded-repository";
 import { localRepository } from "./local-repository";
 import { supabaseRepository } from "./supabase-repository";
 import type { Repository } from "./repository";
@@ -13,7 +16,8 @@ import type { Repository } from "./repository";
  * the Repository interface and the domain shapes it returns.
  */
 export function getRepository(): Repository {
-  return isSupabaseConfigured ? supabaseRepository : localRepository;
+  return guardedRepository(requireWorkspaceAccess, () => isLocalAuth() ? localRepository : supabaseRepository,
+    () => isDemoWriteEnabled, isLocalAuth);
 }
 
 export type { Repository } from "./repository";

@@ -3,6 +3,7 @@ export const STALE_DECISION_MESSAGE = "This changed while you were reviewing it.
 export const CHOOSE_EXISTING_MESSAGE = "This matches an existing value. Choose the existing value instead.";
 
 export function decisionError(error: unknown): string {
+  if (error instanceof Error && 'code' in error && ['VIEW_ONLY','ADMIN_REQUIRED','DEACTIVATED','MANAGEMENT_DISABLED'].includes(String(error.code))) return error.message;
   const message = error instanceof Error ? error.message : "";
   const messages: Record<string, string> = {
     FINDING_STALE: STALE_DECISION_MESSAGE,

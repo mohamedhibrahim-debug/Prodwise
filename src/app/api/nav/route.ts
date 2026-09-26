@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getRepository } from "@/lib/data";
+import { contextForRequest } from "@/lib/auth/service";
+import { AccessError } from "@/lib/auth/core";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +20,11 @@ export const dynamic = "force-dynamic";
  * list already renders. No mutation reaches this route.
  */
 export async function GET() {
+  try { await contextForRequest(); }
+  catch (error) {
+    if (error instanceof AccessError) return NextResponse.json({ error: error.message }, { status: error.code === 'UNAUTHENTICATED' ? 401 : 403, headers: { 'Cache-Control': 'no-store' } });
+    throw error;
+  }
   const initiatives = await getRepository().listInitiatives();
 
   return NextResponse.json({
@@ -28,5 +35,5 @@ export async function GET() {
       businessLine: i.businessLine,
       overallState: i.overallState,
     })),
-  });
+  }, { headers: { 'Cache-Control': 'private, no-store' } });
 }

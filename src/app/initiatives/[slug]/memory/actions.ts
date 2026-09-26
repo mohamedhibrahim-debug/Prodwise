@@ -25,7 +25,7 @@ export async function updateEvidenceAnchorAction(
     await getRepository().setEvidenceAnchor(claimId, evidenceId, {
       locator,
       excerpt,
-      actor: currentActor(),
+      actor: await currentActor(),
     });
   } catch (error) {
     if (error instanceof ClaimAccessError || error instanceof WriteDisabledError)

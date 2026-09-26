@@ -16,6 +16,7 @@ import { SEED_ACTIVITY, SEED_INITIATIVES } from "./fixtures/initiatives";
 import { SEED_EVIDENCE, SEED_SOURCES } from "./fixtures/evidence";
 import { SEED_CLAIMS, SEED_CLAIM_EVIDENCE } from "./fixtures/claims";
 import { upgradeStoreShape } from "./store-upgrade";
+import { repositoryContext } from "../auth/repository-context";
 
 /**
  * LOCAL DEMO PERSISTENCE ONLY.
@@ -92,17 +93,25 @@ function seed(): StoreShape {
 }
 
 let cache: StoreShape | null = null;
+function scopeRows(store: StoreShape): StoreShape {
+  const workspaceId = process.env.PRODWISE_WORKSPACE_ID ?? "unconfigured-local-test";
+  for (const collection of Object.values(store)) for (const row of collection) {
+    if (!("workspaceId" in row)) Object.assign(row, { workspaceId });
+  }
+  return store;
+}
 
 function load(): StoreShape {
-  if (cache) return cache;
-
+  // Server actions and rendered pages can load this module in distinct bundles.
+  // Reread the small local fixture file so a successful action is visible to the
+  // next render; an indefinitely cached module copy can show stale Decisions.
   if (existsSync(DATA_FILE)) {
     try {
       const parsed = JSON.parse(readFileSync(DATA_FILE, "utf8")) as Partial<StoreShape>;
       // Tolerate a file written by an older shape rather than crashing the app:
       // any missing collection falls back to its seed.
       const base = seed();
-      cache = upgradeStoreShape({
+      cache = scopeRows(upgradeStoreShape({
         initiatives: parsed.initiatives ?? base.initiatives,
         activity: parsed.activity ?? base.activity,
         evidence: parsed.evidence ?? base.evidence,
@@ -110,7 +119,7 @@ function load(): StoreShape {
         claims: parsed.claims ?? base.claims,
         claimEvidence: parsed.claimEvidence ?? base.claimEvidence,
         findingStates: parsed.findingStates ?? base.findingStates,
-      });
+      }));
       return cache;
     } catch {
       // A corrupt demo store should not take the application down. Fall back to
@@ -119,7 +128,7 @@ function load(): StoreShape {
     }
   }
 
-  cache = seed();
+  cache = scopeRows(seed());
   persist();
   return cache;
 }
@@ -142,13 +151,18 @@ function persist(): void {
 
 /** Read the current state. Callers must not mutate the returned object. */
 export function readStore(): StoreShape {
-  return load();
+  const state = load();
+  const ctx = repositoryContext();
+  if (!ctx) return state; // Internal fixture test harness only; production uses guardedRepository.
+  return Object.fromEntries(Object.entries(state).map(([key, rows]) => [key,
+    rows.filter((row: object) => "workspaceId" in row && row.workspaceId === ctx.workspaceId)])) as unknown as StoreShape;
 }
 
 /** Apply a mutation and flush it to disk. */
 export function writeStore(mutate: (store: StoreShape) => void): void {
   const store = load();
   mutate(store);
+  scopeRows(store);
   persist();
 }
 
@@ -156,6 +170,7 @@ export function writeStore(mutate: (store: StoreShape) => void): void {
 export function writeStoreAtomic<T>(mutate: (store: StoreShape) => T): T {
   const next = structuredClone(load());
   const result = mutate(next);
+  scopeRows(next);
   const temporary = `${DATA_FILE}.${crypto.randomUUID()}.tmp`;
   mkdirSync(dirname(DATA_FILE), { recursive: true });
   try {

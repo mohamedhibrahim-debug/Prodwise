@@ -26,7 +26,7 @@ export async function verifyClaimAction(_state: State, data: FormData): Promise<
       expectedUpdatedAt,
       basis,
       note,
-      actor: currentActor(),
+      actor: await currentActor(),
     });
   } catch (error) {
     if (error instanceof ClaimAccessError || error instanceof WriteDisabledError)
