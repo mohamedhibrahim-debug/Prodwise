@@ -1,0 +1,19 @@
+import Link from "next/link";
+import { readDelivery } from "@/lib/delivery/repository";
+import { factFor, ownerFor, supportChanged } from "@/lib/delivery/model";
+import { memberLabel } from "@/components/delivery/FactEditor";
+import { WriteNotice } from "@/components/delivery/WriteNotice";
+import styles from "@/components/delivery/delivery.module.css";
+export default async function Roadmap({searchParams}:{searchParams:Promise<{businessLine?:string;owner?:string}>}) {
+  const filters=await searchParams; const {ctx,source,state}=await readDelivery(); const facts=state.facts.filter(f=>f.workspaceId===ctx.workspaceId);
+  const snapshots=source.snapshots.filter(s=>(!filters.businessLine || s.initiative.businessLine===filters.businessLine) && (!filters.owner || ownerFor(facts,s.initiative.id)===filters.owner));
+  return <div className={styles.page}><header className={styles.header}><div><h1>Roadmap</h1><p>Confirmed delivery dates for each initiative&apos;s recorded phase or scope.</p></div><nav className={styles.links}><Link href="/initiatives">Initiatives</Link><Link href="/weekly-review">Weekly Review</Link></nav></header>
+    <WriteNotice ctx={ctx}/>
+    <form className={styles.filters}><label className={styles.field}>Business line<select name="businessLine" defaultValue={filters.businessLine ?? ""}><option value="">All business lines</option>{[...new Set(source.snapshots.map(s=>s.initiative.businessLine))].map(line=><option key={line}>{line}</option>)}</select></label><label className={styles.field}>Owner<select name="owner" defaultValue={filters.owner ?? ""}><option value="">All owners</option>{source.members.filter(m=>m.active).map(m=><option key={m.id} value={m.id}>{m.displayName}</option>)}</select></label><button className={styles.button}>Apply filters</button></form>
+    <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Initiative</th><th>Stage / phase</th><th>Owner</th><th>Definition actual</th><th>Development actual</th><th>Target Live planned</th><th>Actual Live</th><th>Target confirmation</th></tr></thead><tbody>{snapshots.map(({initiative,evidence})=>{
+      const id=initiative.id; const target=factFor(facts,id,"TARGET_LIVE"); const actual=factFor(facts,id,"ACTUAL_LIVE"); const scope=factFor(facts,id,"SCOPE");
+      return <tr key={id}><td><Link href={`/initiatives/${initiative.slug}/delivery`}>{initiative.name}</Link><small>{initiative.businessLine}{initiative.isDemo?" · Demo":""}</small></td><td>{initiative.stage.replaceAll("_"," ")}<small>{scope?.value.text ?? "Scope not confirmed"}</small></td><td>{memberLabel(source.members,ownerFor(facts,id))}</td><td>{factFor(facts,id,"SOLUTION_DEFINED")?.value.date ?? <span className={styles.unknown}>Unknown</span>}</td><td>{factFor(facts,id,"DEV_STARTED")?.value.date ?? <span className={styles.unknown}>Unknown</span>}</td><td>{target?.value.date ?? <span className={styles.unknown}>Unknown</span>}</td><td>{actual?.value.date ?? <span className={styles.unknown}>Not recorded</span>}{actual && <small>{actual.value.extent === "PARTIAL" ? `Partial · ${actual.value.text}` : "Full named scope"}</small>}</td><td>{target ? <>{target.basis === "EVIDENCE" ? evidence.find(e=>e.id===target.evidenceId)?.title ?? "Source unavailable" : "Direct knowledge"}<small>{target.confirmedByLabel} · {target.updatedAt}<br/>{target.locator}{supportChanged(target,source) && <span className={styles.warning}>Supporting evidence changed</span>}</small></> : <span className={styles.unknown}>No target confirmation recorded</span>}</td></tr>;
+    })}</tbody></table></div>{!snapshots.length && <p className={styles.notice}>No initiatives match these filters. Change the filters to view the portfolio.</p>}
+    <p className={styles.meta}>Dates describe delivery timing. They do not establish release readiness or business performance. A missing actual date does not prove a missed launch.</p>
+  </div>;
+}

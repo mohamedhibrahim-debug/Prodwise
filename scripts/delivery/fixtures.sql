@@ -1,0 +1,15 @@
+begin;
+insert into auth.users(id,email) values
+ ('20000000-0000-4000-8000-000000000001','admin@delivery-test.invalid'),
+ ('20000000-0000-4000-8000-000000000002','pm@delivery-test.invalid'),
+ ('20000000-0000-4000-8000-000000000003','viewer@delivery-test.invalid');
+insert into public.users(id,auth_user_id,email,display_name) values
+ ('20000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','admin@delivery-test.invalid','Delivery test Admin'),
+ ('20000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000002','pm@delivery-test.invalid','Delivery test PM'),
+ ('20000000-0000-4000-8000-000000000003','20000000-0000-4000-8000-000000000003','viewer@delivery-test.invalid','Delivery test Viewer');
+insert into public.memberships(id,workspace_id,user_id,role,is_product_lead,active) values
+ ('30000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','Admin',false,true),
+ ('30000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002','Member',false,true),
+ ('30000000-0000-4000-8000-000000000003','10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000003','Viewer',false,true);
+update public.workspaces set status='ACTIVE' where id='10000000-0000-4000-8000-000000000001';
+commit;
