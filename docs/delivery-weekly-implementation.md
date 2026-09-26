@@ -47,6 +47,8 @@ Server-only RPCs:
 
 Source and state helpers are also service-only. `delivery_meaningful` excludes irrelevant timestamp metadata from source comparison while actual timestamps remain available for display; supporting content, boundaries, locators/excerpts and trust changes remain material. An independent state conflict can retry once; changed sources and same-section/fact revision conflicts are refused.
 
+The commit RPC independently binds fact confirmation labels, embedded event actors and before/after audit history to the live member. It validates draft creation, source refresh, human section editing, AI draft append and Final transitions separately. Full section changes include hidden review/owner markers. Finalization must transition an existing DRAFT without rewriting its contents, retain the current portfolio/facts/audit snapshot and latest previous Final baseline, include exactly one reviewed section per frozen initiative, and bind the current coordinator and cutoff. Source normalization compares structured records rather than trusting or attempting to reproduce the server's hash. These checks add defense in depth; the application still validates facts and supported AI references before submitting a transition.
+
 Local fallback is `.data/prodwise-delivery-weekly.json`, separate from Auth/main data. Exclusive lock + atomic temporary-file replacement provide single-machine durability and rollback. A short bounded lock retry accommodates simultaneous PM saves. Corrupted files fail explicitly. A crashed process may leave a lock requiring local operator inspection; locks are never guessed stale and deleted automatically. Local source double-read catches changes but is not a distributed/multi-store database snapshot. The hosted path uses the database transaction instead. Local fallback is refused on Vercel.
 
 ## Validation
@@ -66,6 +68,8 @@ Webpack is used because the authorized local dependency junction points outside 
 Checks cover owner/self-assignment and Viewer denial, scope mixing, real/unknown milestone dates, stale revisions, independent PM sections, preserved stale narrative, source changes, immutable finals, chronological ordering, intermediate target movements, unsupported AI statements (Arabic digits/spelled/relative dates/launch/health/foreign refs), mocked provider success and no-key fallback, durable reopen/rollback/concurrency, local PostgreSQL audit/CAS/privileges.
 
 Final validation: 119 regression tests passed, including 24 delivery tests; TypeScript and lint passed. The production webpack build passed. Real disposable PostgreSQL tests passed with the latest Auth 0010 prerequisite: consistent snapshots, typed facts, atomic event audit, stale CAS refusal, Viewer denial, shared Final immutability and service-only privileges. No live provider or hosted database was called.
+
+SQL hardening follow-up: the complete revised 0011 was replayed in the owned disposable test database. Direct privileged payloads with forged actors, a brand-new Final, invalid future weeks, unreviewed/empty portfolios, another PM's hidden markers, changed audit history, stale supporting facts and a newly arrived previous Final were refused. Legitimate AI/template drafting, refresh, editing and finalization still passed. TypeScript and lint passed again; UI/application source did not change in this follow-up.
 
 ## Remaining limits
 
