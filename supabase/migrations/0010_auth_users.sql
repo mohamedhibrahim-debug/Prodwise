@@ -47,9 +47,12 @@ create table public.workspace_sessions(
 );
 do $$ declare t text; begin
   foreach t in array array['initiatives','initiative_sources','evidence','claims','claim_evidence','finding_states','activity_log'] loop
-    execute format('alter table public.%I add column workspace_id uuid references public.workspaces(id)',t);
-    execute format('update public.%I set workspace_id=$1',t) using '10000000-0000-4000-8000-000000000001'::uuid;
+    -- A constant DDL default backfills existing rows without firing UPDATE
+    -- triggers or changing their historical updated_at/decision records.
+    -- Remove it in this same transaction: future writes must supply scope.
+    execute format('alter table public.%I add column workspace_id uuid default %L::uuid references public.workspaces(id)',t,'10000000-0000-4000-8000-000000000001');
     execute format('alter table public.%I alter column workspace_id set not null',t);
+    execute format('alter table public.%I alter column workspace_id drop default',t);
   end loop;
 end $$;
 alter table public.initiatives add constraint initiatives_workspace_key unique(id,workspace_id);

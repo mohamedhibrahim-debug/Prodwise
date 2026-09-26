@@ -58,12 +58,14 @@ try {
   if ($legacy.Count -ne 9) { throw 'Expected the complete ordered 0001–0009 migration set.' }
   foreach ($migration in $legacy) { Invoke-PreflightFile ('supabase/migrations/' + $migration.Name) }
   Invoke-PreflightFile 'supabase/seed.sql'
+  Invoke-PreflightFile 'supabase/tests/workspace-backfill-preservation-before.sql'
   Invoke-PreflightFile 'supabase/migrations/0010_auth_users.sql'
+  Invoke-PreflightFile 'supabase/tests/workspace-backfill-preservation-after.sql'
   Invoke-PreflightFile 'supabase/migrations/0011_delivery_weekly.sql'
   # A deliberately historical frozen record proves 0012 preserves old roles,
   # labels and hashes. It is test-only and never used as application truth.
   Invoke-PreflightSql @'
-create schema preflight;
+create schema if not exists preflight;
 create table preflight.historical_final as
 select jsonb_build_object(
  'id','91000000-0000-4000-8000-000000000001','workspaceId','10000000-0000-4000-8000-000000000001',
@@ -87,6 +89,7 @@ end $$;
   Invoke-PreflightFile 'supabase/migrations/0012_owner_roles.sql'
   Invoke-PreflightFile 'supabase/migrations/0013_demo_workspace_boundaries.sql'
   Invoke-PreflightFile 'supabase/migrations/0014_demo_generation_retirement.sql'
+  Invoke-PreflightFile 'supabase/tests/workspace-backfill-preservation-after.sql'
   Invoke-PreflightSql @'
 do $$ declare snapshot record; current_rows jsonb; begin
  for snapshot in select * from preflight.business_before loop
