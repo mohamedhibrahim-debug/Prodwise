@@ -45,10 +45,10 @@ export default async function KnowledgePage({ params, searchParams }: {
   }
   const base = `/initiatives/${slug}/knowledge`;
   return <div className={styles.page}>
-    <div className={styles.head}><div><h2>Knowledge record</h2><p>Values, sources and history. Confirmation does not select a winner when values differ.</p></div>
+    <div className={styles.head}><div><p className={styles.eyebrow}>Structured ledger</p><h2>Knowledge record</h2><p>What is recorded as true, its context, and the sources behind it.</p></div>
       {isDemoWriteEnabled ? <Link className={styles.action} href={`${base}/new`}>Add Knowledge entry</Link> : null}</div>
     <nav className={styles.views} aria-label="Knowledge views">
-      <Link href={base} aria-current={view === "confirmed" ? "page" : undefined}>Record</Link>
+      <Link href={base} aria-current="page">Record</Link>
       <Link href={`${base}/sources`}>Sources</Link>
     </nav>
     <nav className={styles.filters} aria-label="Record filters">
@@ -61,7 +61,7 @@ export default async function KnowledgePage({ params, searchParams }: {
       <Link href={`/initiatives/${slug}/decisions${mismatchItems.size === 1 ? `?item=${encodeURIComponent([...mismatchItems.values()][0]!)}` : ""}`}>Review in Decisions →</Link>
     </div> : null}
     <div className={styles.recordLayout}><div>
-    {subjects.size ? <div className={styles.ledgerHead} aria-hidden="true"><span>Attribute · Phase</span><span>Value</span><span>Status · Verification</span><span>Sources</span></div> : null}
+    {subjects.size ? <div className={styles.ledgerHead} aria-hidden="true"><span>Attribute / context</span><span>Recorded value</span><span>Confirmation</span><span>Provenance</span><span>Inspect</span></div> : null}
     {subjects.size ? [...subjects].map(([subject, attributes]) => <section className={styles.subject} key={subject}>
       <h2>{subject}</h2>{[...attributes].map(([attribute, phases]) => <div className={styles.attribute} key={attribute}>
         {[...phases].map(([phaseKey, values]) => <div className={styles.phase} key={phaseKey}>
@@ -78,10 +78,10 @@ export default async function KnowledgePage({ params, searchParams }: {
                 </div>; })}
               </div>
               <div className={styles.rowStatus}><span>{allSameStatus ? CLAIM_STATUS_LABEL[first.status] : "Entry statuses in details"}</span>
-                {entries.map(entry => trustLine(entry) ? <p key={entry.id}>{trustLine(entry)}</p> : null)}</div>
+                {entries.map(entry => <p key={entry.id}>{entry.verifiedAt ? `${entry.verifiedActorLabel ?? "Actor not recorded"} · ${formatDate(entry.verifiedAt)}` : "Verification history not recorded"}</p>)}</div>
               <div className={styles.sourceIdentity}><span>{sources.length} linked {sources.length === 1 ? "source" : "sources"}</span>
                 {sources.map(source => <Link key={source.id} href={`${base}/sources#source-${source.id}`}>{source.sourceReference ?? source.title}{source.boundary === "EXCLUDED" ? " · Excluded" : ""}</Link>)}</div>
-              <details><summary>Sources and details</summary>
+              <details><summary>Details</summary>
                 <ul>{entries.map((entry) => {
                   const trust = trustLine(entry);
                   return <li className={styles.entry} key={entry.id} id={entry.id === first.id ? undefined : `claim-${entry.id}`}>

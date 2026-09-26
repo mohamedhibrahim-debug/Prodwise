@@ -10,8 +10,7 @@ export function WorkspaceHeader({ initiative }: { initiative: Initiative }) {
     <div className={styles.inner}><div className={styles.identity}>
       <nav aria-label="Breadcrumb"><Link href="/initiatives">Initiatives</Link><span>/</span></nav>
       <h1 data-workspace-title title={initiative.name}>{initiative.name}</h1>
-      <span className={styles.meta}>{initiative.slug}</span>
-      <span className={styles.meta}>Recorded stage: {STAGE_LABEL[initiative.stage]}</span>
+      <span className={styles.stage}>{STAGE_LABEL[initiative.stage]}</span>
       <span className={styles.meta}>{BUSINESS_LINE_LABEL[initiative.businessLine]}</span>
       <span className={styles.meta}>Updated {formatDate(initiative.updatedAt)}</span>
       {initiative.isDemo ? <span className={styles.meta}>Synthetic demo</span> : null}

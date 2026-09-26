@@ -120,6 +120,7 @@ export function changesSince(input: PortfolioInput, baseline: PortfolioInput | n
     const id=snap.initiative.id;
     if (!baseline.snapshots.some(s=>s.initiative.id===id)) { result.push({ id:`scope:${id}`,initiativeId:id,kind:"SCOPE",label:"New to this review scope.",eventIds:[],days:null,lateRecorded:false }); continue; }
     const prior=baseline.snapshots.find(s=>s.initiative.id===id)!;
+    const scopeChanged=canonical(factFor(baseline.facts,id,"SCOPE")?.value ?? null)!==canonical(factFor(input.facts,id,"SCOPE")?.value ?? null);
     const add=(kind:"KNOWLEDGE"|"DECISION"|"STAGE"|"SUPPORT",ref:string,label:string)=>result.push({id:`change:${id}:${ref}`,initiativeId:id,kind,label,eventIds:[],days:null,lateRecorded:false});
     if (prior.initiative.stage!==snap.initiative.stage) add("STAGE","stage",`Recorded initiative stage: ${prior.initiative.stage} → ${snap.initiative.stage}. This does not infer release readiness.`);
     for (const claim of snap.claims) {
@@ -146,6 +147,10 @@ export function changesSince(input: PortfolioInput, baseline: PortfolioInput | n
       const valueChanged=canonical(before?.value ?? null)!==canonical(after?.value ?? null);
       const intermediate=events.some(e=>canonical(e.before?.value ?? null)!==canonical(e.after.value));
       if (!valueChanged && !intermediate) continue;
+      if (scopeChanged && kind!=="SCOPE" && kind!=="OWNER") {
+        result.push({id:`change:${id}:${kind}`,initiativeId:id,kind,label:`${kind.replaceAll("_"," ").toLowerCase()}: ${after?.value.date ?? after?.value.text ?? "not recorded"} for the changed scope. Earlier scope values remain in history; this is not a like-for-like target movement.`,eventIds:events.map(e=>e.id),days:null,lateRecorded:false});
+        continue;
+      }
       const days=before?.value.date && after?.value.date ? dayDifference(before.value.date,after.value.date) : null;
       const path=events.map(e=>e.after.state === "RETRACTED" ? "Withdrawn" : e.after.value.date ?? e.after.value.text ?? e.after.value.memberId ?? "Unknown");
       const late=Boolean(after?.value.date && after.value.date <= cairoDay(baseline.asOf) && events.length);
@@ -179,7 +184,10 @@ export function referencesFor(input: PortfolioInput, baseline: PortfolioInput | 
 function newSection(input:PortfolioInput,id:string,baseline:PortfolioInput|null):ReviewSection {
   const changes=changesSince(input,baseline).filter(c=>c.initiativeId===id);
   const milestone=factFor(input.facts,id,"NEXT_MILESTONE");
-  return { initiativeId:id,ownerMemberId:ownerFor(input.facts,id),revision:1,headline:"",updates:changes.map(c=>c.label).join("\n"),attention:factFor(input.facts,id,"BLOCKER")?.value.text ?? "",decisionNeeded:"",nextMilestone:milestone ? `${milestone.value.text} — ${milestone.value.date ?? "Date not recorded"}` : "",nextStep:factFor(input.facts,id,"NEXT_STEP")?.value.text ?? "",sourceDigest:sectionDigest(input,id),needsRecheck:false,editedByMemberId:null,editedAt:null,aiOriginal:null };
+  const snapshot=input.snapshots.find(s=>s.initiative.id===id)!;
+  const openDecisions=applyFindingStates(runReview(id,snapshot.claims),snapshot.findingStates).filter(f=>f.actionable && f.status === "OPEN");
+  const scope=factFor(input.facts,id,"SCOPE")?.value.text;
+  return { initiativeId:id,ownerMemberId:ownerFor(input.facts,id),revision:1,headline:`${snapshot.initiative.stage.replaceAll("_"," ")} · ${scope ?? "Scope not confirmed"}`,updates:changes.map(c=>c.label).join("\n") || (baseline ? "No recorded changes since the previous final review." : "First review: current-state inventory. No previous final baseline."),attention:factFor(input.facts,id,"BLOCKER")?.value.text ?? "No blocker recorded; absence does not confirm there are none.",decisionNeeded:openDecisions.length ? openDecisions.map(f=>`Review differing recorded values for ${f.subject}: ${f.claims.map(c=>c.value).join(" / ")}.`).join("\n") : "No decision request recorded.",nextMilestone:milestone ? `${milestone.value.text} — ${milestone.value.date ?? "Date not recorded"}` : "Not recorded",nextStep:factFor(input.facts,id,"NEXT_STEP")?.value.text ?? "Not recorded",sourceDigest:sectionDigest(input,id),needsRecheck:false,editedByMemberId:null,editedAt:null,aiOriginal:null };
 }
 export function createReview(state:DeliveryState,source:PortfolioSource,ctx:WorkspaceAccess,week:string,now:string):DeliveryState {
   assertMember(ctx,source); assertWriter(ctx);

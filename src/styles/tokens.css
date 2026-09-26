@@ -45,13 +45,17 @@
   --brand-orange: #bb5720;
   --brand-orange-soft: #f2ddd0;
   /* ── Neutral working surfaces ──────────────────────────────────────────- */
-  --canvas: #f2f5f7;
+  --canvas: #eaf0f3;
   --panel: #ffffff;
   --orange-geometry: #dc6b2f;
   --shadow-card: 0 1px 2px rgb(0 42 71 / 6%), 0 1px 1px rgb(0 42 71 / 4%);
-  --surface-subtle: #f7f8fa;
-  --surface-sunken: #f1f3f6;
-  --surface-inset: #eceff3;
+  --surface-subtle: #f3f6f8;
+  --surface-sunken: #e5edf2;
+  --surface-inset: #dfe7ed;
+  --attention-fg: #a84d17;
+  --attention-bg: #fff1e7;
+  --attention-rule: #d6783d;
+  --font-display: "Segoe UI", Inter, -apple-system, BlinkMacSystemFont, sans-serif;
   --ink-900: #0b2133;
   --ink-700: #34495a;
   --ink-500: #586c7c;
@@ -147,9 +151,9 @@
   /* ── Radius · deliberately tight ───────────────────────────────────────
      No giant rounded rectangles. Pills are reserved for status only. */
   --r-xs: 2px;
-  --r-sm: 8px;
-  --r-md: 10px;
-  --r-lg: 12px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
   --r-pill: 999px;
   /* ── Elevation · supporting panels ───────────────────────────────────────────
      Purposeful cards use a light shadow. The stronger

@@ -1,0 +1,194 @@
+{
+  "localOnly": true,
+  "at": "2026-09-26T17:15:54.783Z",
+  "checks": [
+    "Pre-provisioned reviewer signs directly into Prodwise Demo without invitation or organization setup",
+    "Guide is dismissible, keyboard operable and resumes the saved chapter",
+    "Ten Demo surfaces render at 390, 768, 1024 and 1440 without horizontal overflow",
+    "Forged organization query cannot change session scope; reviewer cannot enter platform administration",
+    "Real Claude server action succeeds and every accepted statement has an exact supported same-initiative reference",
+    "W38 Final baseline, Oct 1 to Oct 8 +7-day target revision and unknown dates remain correct; AI changes no facts or prior Final",
+    "Template fallback passes missing-config, HTTP 503, transport and invented-output fault injection",
+    "Reviewer can review all four shared sections and finalize an immutable management snapshot with clear approval boundaries",
+    "Baseline selection for the next week uses the newly finalized same-workspace review",
+    "Reviewer can create an initiative; persisted data is stamped with the verified Demo workspace",
+    "A real reviewer confirmation records the signed-in actor and clears synthetic-preparation attribution",
+    "Server rejects a forged foreign-initiative write and preserves all delivery state",
+    "Reviewer can resolve the golden value comparison; replacement history is retained",
+    "All operational and AI tests leave AMAN product records and delivery history unchanged",
+    "Browser console and page runtime are error-free throughout the normal reviewer journey"
+  ],
+  "responsive": [
+    {
+      "surface": "home",
+      "width": 390
+    },
+    {
+      "surface": "initiatives",
+      "width": 390
+    },
+    {
+      "surface": "brief",
+      "width": 390
+    },
+    {
+      "surface": "decisions",
+      "width": 390
+    },
+    {
+      "surface": "knowledge",
+      "width": 390
+    },
+    {
+      "surface": "sources",
+      "width": 390
+    },
+    {
+      "surface": "delivery",
+      "width": 390
+    },
+    {
+      "surface": "roadmap",
+      "width": 390
+    },
+    {
+      "surface": "weekly-review",
+      "width": 390
+    },
+    {
+      "surface": "analysis",
+      "width": 390
+    },
+    {
+      "surface": "home",
+      "width": 768
+    },
+    {
+      "surface": "initiatives",
+      "width": 768
+    },
+    {
+      "surface": "brief",
+      "width": 768
+    },
+    {
+      "surface": "decisions",
+      "width": 768
+    },
+    {
+      "surface": "knowledge",
+      "width": 768
+    },
+    {
+      "surface": "sources",
+      "width": 768
+    },
+    {
+      "surface": "delivery",
+      "width": 768
+    },
+    {
+      "surface": "roadmap",
+      "width": 768
+    },
+    {
+      "surface": "weekly-review",
+      "width": 768
+    },
+    {
+      "surface": "analysis",
+      "width": 768
+    },
+    {
+      "surface": "home",
+      "width": 1024
+    },
+    {
+      "surface": "initiatives",
+      "width": 1024
+    },
+    {
+      "surface": "brief",
+      "width": 1024
+    },
+    {
+      "surface": "decisions",
+      "width": 1024
+    },
+    {
+      "surface": "knowledge",
+      "width": 1024
+    },
+    {
+      "surface": "sources",
+      "width": 1024
+    },
+    {
+      "surface": "delivery",
+      "width": 1024
+    },
+    {
+      "surface": "roadmap",
+      "width": 1024
+    },
+    {
+      "surface": "weekly-review",
+      "width": 1024
+    },
+    {
+      "surface": "analysis",
+      "width": 1024
+    },
+    {
+      "surface": "home",
+      "width": 1440
+    },
+    {
+      "surface": "initiatives",
+      "width": 1440
+    },
+    {
+      "surface": "brief",
+      "width": 1440
+    },
+    {
+      "surface": "decisions",
+      "width": 1440
+    },
+    {
+      "surface": "knowledge",
+      "width": 1440
+    },
+    {
+      "surface": "sources",
+      "width": 1440
+    },
+    {
+      "surface": "delivery",
+      "width": 1440
+    },
+    {
+      "surface": "roadmap",
+      "width": 1440
+    },
+    {
+      "surface": "weekly-review",
+      "width": 1440
+    },
+    {
+      "surface": "analysis",
+      "width": 1440
+    }
+  ],
+  "errors": [],
+  "realClaude": "PASS",
+  "actionHttpStatus": 200,
+  "liveAttempts": 1,
+  "ai": {
+    "mode": "CLAUDE",
+    "model": "claude-sonnet-5",
+    "lineCount": 23,
+    "promptVersion": "WEEKLY_EXTRACTIVE_V2"
+  },
+  "unknownFields": 5
+}

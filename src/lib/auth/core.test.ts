@@ -166,3 +166,48 @@ test('dedicated platform invitations retain resend/revoke and normal org actors 
   const snapshot=store.platformSnapshot(ctx);assert.equal(JSON.stringify(snapshot).includes(hash(second.invitationToken!)),false);assert.ok(snapshot.events.some(x=>x.action==='PLATFORM_INVITATION_RESENT'&&x.reason==='Requested replacement link'));
  }finally{cleanup();}
 });
+
+test('archived workspace or organization refuses existing and new sessions including platform recovery', async () => {
+    for (const archived of ['workspace', 'organization'] as const) {
+        const { store, ctx, cleanup } = await platformFixture();
+        try {
+            const invite = await store.invite(ctx, 'member@aman.eg', 'MEMBER');
+            await store.accept(invite, 'Member', pwd);
+            const memberToken = await store.login('member@aman.eg', pwd);
+            const platformToken = await store.login('owner@aman.eg', pwd);
+            const ownerInvite = await store.platformProvisionMembership(ctx, 'org-a', 'nextowner@aman.eg', 'ORG_OWNER', false, 'Pending synthetic owner invitation');
+            await store.mutate(state => {
+                if (archived === 'workspace') state.workspaces[0]!.status = 'ARCHIVED';
+                else state.organizations[0]!.status = 'ARCHIVED';
+            }, true);
+            assert.throws(() => store.read(), { code: 'ACCESS_DENIED' });
+            for (const token of [memberToken, platformToken]) assert.throws(() => store.session(token), { code: 'ACCESS_DENIED' });
+            for (const email of ['member@aman.eg', 'owner@aman.eg']) await assert.rejects(() => store.login(email, pwd), { code: 'ACCESS_DENIED' });
+            assert.throws(() => store.platformSnapshot(ctx), { code: 'ACCESS_DENIED' });
+            await assert.rejects(() => store.renameWorkspace(ctx, 'Cannot rename archived workspace'), { code: 'ACCESS_DENIED' });
+            assert.throws(() => store.invitation(ownerInvite.invitationToken!), { code: 'INVITE_INVALID' });
+            await assert.rejects(() => store.accept(ownerInvite.invitationToken!, 'New owner', pwd), { code: 'INVITE_INVALID' });
+            await store.logout(platformToken);
+            assert.equal(store.read(true).sessions.some(session => session.tokenHash === hash(platformToken)), false);
+        } finally { cleanup(); }
+    }
+});
+
+test('archived organizations can retain history without active owners while active platform context remains usable', async () => {
+    const { store, ctx, cleanup } = await platformFixture();
+    try {
+        const retired = await store.platformCreateOrganization(ctx, 'Retired generation', { domains: ['demo.example'], exactEmails: [] });
+        const retiredStore = new LocalAuthStore(store.path, retired.workspaceId);
+        const bootstrapToken = await retiredStore.login('owner@aman.eg', pwd);
+        assert.equal(retiredStore.session(bootstrapToken).platformRole, 'PLATFORM_OWNER');
+        await store.mutate(state => {
+            state.organizations.find(org => org.id === retired.organizationId)!.status = 'ARCHIVED';
+            state.workspaces.find(workspace => workspace.id === retired.workspaceId)!.status = 'ARCHIVED';
+        }, true);
+        assert.throws(() => retiredStore.session(bootstrapToken), { code: 'ACCESS_DENIED' });
+        assert.equal(store.platformSnapshot(ctx).organizations.find(org => org.id === retired.organizationId)!.status, 'ARCHIVED');
+        await store.renameWorkspace(ctx, 'Active product workspace');
+        assert.equal(store.read().workspace.name, 'Active product workspace');
+        await assert.rejects(() => store.mutate(state => { state.memberships.find(member => member.id === ctx.memberId)!.active = false; }), { code: 'LAST_ORG_OWNER' });
+    } finally { cleanup(); }
+});

@@ -8,7 +8,6 @@ import { DecisionDeepLink } from "@/components/initiative/DecisionDeepLink";
 import { DecisionWorkbench, type WorkbenchLane } from "@/components/initiative/DecisionWorkbench";
 import { FindingRow } from "@/components/initiative/FindingRow";
 import { getRepository } from "@/lib/data";
-import { STAGE_LABEL } from "@/lib/domain/labels";
 import { businessWritePresentation } from "@/lib/auth/presentation";
 import { compareFindings } from "@/lib/review/engine";
 import { loadDecisions } from "@/lib/workspace/decisions";
@@ -57,12 +56,9 @@ export default async function DecisionsPage({ params, searchParams }: { params: 
   return <div className={styles.page}>
     <div className={styles.reviewMain}>
       <Suspense fallback={null}><DecisionDeepLink slug={slug} /></Suspense>
-      <div className={styles.tabIntro}><p className={styles.tabIntroText}>Compare recorded values, review their sources, and record a decision.</p></div>
+      <div className={styles.tabIntro}><h2 className={styles.pageTitle}>Decisions</h2><p className={styles.tabIntroText}>Compare the record. Inspect the evidence. Resolve what needs a human decision.</p></div>
       <DecisionWorkbench initialItem={item} lanes={DECISION_LANES.map(lane => ({ ...lane, items: laneItems[lane.key], empty: content[lane.key].body }))}>
     <aside className={styles.reviewContext} aria-label="Initiative context">
-      <div className={styles.contextBlock}><div className={styles.contextLabel}>Stage</div><p className={styles.contextValue}>{STAGE_LABEL[initiative.stage]}</p></div>
-      <div className={styles.contextBlock}><div className={styles.contextLabel}>Waiting on you</div><p className={styles.contextCount}>{needsDecision.length}</p>
-        <p className={styles.contextValue}>{needsDecision.length === 1 ? "mismatch needs a decision" : "mismatches need a decision"}</p></div>
       <div className={styles.contextBlock}><div className={styles.contextLabel}>Go to</div>
         <Link href={`/initiatives/${slug}/knowledge`} className={styles.contextLink}>Knowledge →</Link>
         <Link href={`/initiatives/${slug}/knowledge/sources`} className={styles.contextLink}>Sources →</Link>

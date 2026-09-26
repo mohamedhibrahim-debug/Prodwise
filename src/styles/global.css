@@ -39,10 +39,14 @@ h1,
 h2,
 h3,
 h4 {
+  font-family: var(--font-display);
   font-weight: var(--fw-semibold);
   line-height: var(--lh-tight);
   letter-spacing: var(--ls-tight);
 }
+main { min-width: 0; }
+button:disabled { cursor: not-allowed; }
+a:hover { text-underline-offset: 3px; }
 ul,
 ol {
   margin: 0;
@@ -136,10 +140,6 @@ button, a, summary {
 @media (max-width:780px) {
   main a {
     min-height: 44px;
-  }
-  main a:not([class]) {
-    display: inline-flex;
-    align-items: center;
   }
   input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]), select, textarea {
     font-size: 16px;

@@ -10,6 +10,8 @@ export interface DeliveryMember {
 }
 export interface FactValue { date: string | null; text: string | null; memberId: string | null; extent: "PARTIAL" | "FULL" | null; }
 export interface DeliveryFact {
+  /** Operator-prepared synthetic scenario, not a claim that the reviewer confirmed it. */
+  preparedAsFixture?: true;
   id: string; workspaceId: string; initiativeId: string; kind: FactKind; revision: number;
   value: FactValue; state: "SET" | "RETRACTED";
   basis: "EVIDENCE" | "DIRECT_KNOWLEDGE"; note: string; evidenceId: string | null; locator: string | null;
@@ -30,6 +32,8 @@ export interface AiDraft {
   original: { initiativeId: string; lines: NarrativeLine[] }[]; reason: string | null;
 }
 export interface WeeklyReview {
+  /** Seeded Final baseline only; ordinary human finalization does not set this. */
+  preparedAsFixture?: true;
   id: string; workspaceId: string; week: string; status: "DRAFT" | "FINAL"; revision: number;
   baselineReviewId: string | null; input: PortfolioInput; sections: ReviewSection[]; aiDrafts: AiDraft[];
   createdAt: string; createdByMemberId: string | null; createdByUserId?: string; finalizedAt: string | null; finalizedByMemberId: string | null; finalizedByUserId?: string; finalizedByLabel: string | null;

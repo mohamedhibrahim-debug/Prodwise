@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { draftWeeklyWording } from "./ai.ts";
+import { draftWeeklyWording, PROVIDER_TIMEOUT_MS } from "./ai.ts";
 import { EMPTY_STATE, type PortfolioSource, type WorkspaceAccess } from "./types.ts";
-import { createReview, recordFact } from "./model.ts";
+import { createReview, recordFact, referencesFor } from "./model.ts";
 const ctx:WorkspaceAccess={workspaceId:"w",organizationId:"org",platformRole:null,memberId:"a",role:"ADMIN",isProductLead:false,actor:{id:"u",label:"Administrator"}};
 const source:PortfolioSource={members:[{id:"a",workspaceId:"w",displayName:"Administrator",role:"ADMIN",active:true,isProductLead:false}],snapshots:[{initiative:{id:"i",slug:"initiative",name:"Initiative",description:null,knownReferences:null,businessLine:"MF",stage:"DELIVERY",overallState:"UNKNOWN",stateSummary:null,isDemo:true,createdAt:"2026-09-26T00:00:00Z",updatedAt:"2026-09-26T00:00:00Z"},claims:[],evidence:[],findingStates:[]}]};
 function review() {const state=recordFact(structuredClone(EMPTY_STATE),source,ctx,{initiativeId:"i",kind:"SCOPE",expectedRevision:0,value:{date:null,text:"Pilot",extent:null,memberId:null},retract:false,basis:"DIRECT_KNOWLEDGE",note:"Named pilot scope",evidenceId:null,locator:null},"2026-09-26T09:00:00Z"); return createReview(state,source,ctx,"2026-W39","2026-09-26T09:00:00Z").reviews[0]!;}
@@ -30,3 +30,29 @@ test("Mock provider structured extractive response accepted; invented relative d
 const mock:typeof fetch=async(_url,init)=>{const body=JSON.parse(String(init?.body)) as {messages:{content:string}[]};const input=JSON.parse(body.messages[0]!.content) as {permittedStatements:{id:string;initiativeId:string;texts:string[]}[]};const ref=input.permittedStatements[0]!;return Response.json({content:[{type:"text",text:JSON.stringify({sections:[{initiativeId:ref.initiativeId,lines:[{referenceId:ref.id,text:ref.texts[0]}]}]})}]});};
 assert.equal((await draftWeeklyWording(review(),null,ctx,mock)).mode,"CLAUDE");const bad:typeof fetch=async()=>Response.json({content:[{type:"text",text:JSON.stringify({sections:[{initiativeId:"i",lines:[{referenceId:"fact:foreign:1",text:"Launch tomorrow is approved."}]}]})}]});assert.equal((await draftWeeklyWording(review(),null,ctx,bad)).mode,"TEMPLATE");
 }finally{if(oldKey===undefined)delete process.env.ANTHROPIC_API_KEY;else process.env.ANTHROPIC_API_KEY=oldKey;if(oldModel===undefined)delete process.env.ANTHROPIC_MODEL;else process.env.ANTHROPIC_MODEL=oldModel;}});
+
+test("Provider deadline abort returns supported template wording without accepting AI claims",async t=>{
+ const oldKey=process.env.ANTHROPIC_API_KEY,oldModel=process.env.ANTHROPIC_MODEL;
+ process.env.ANTHROPIC_API_KEY="test-not-a-real-key";process.env.ANTHROPIC_MODEL="configured-test-model";
+ const controller=new AbortController();let requestedDeadline:number|undefined;let calls=0;
+ t.mock.method(AbortSignal,"timeout",(milliseconds:number)=>{requestedDeadline=milliseconds;return controller.signal;});
+ const mock:typeof fetch=async(_url,init)=>{
+  calls++;assert.equal(init?.signal,controller.signal);
+  return new Promise<Response>((_resolve,reject)=>{
+   controller.signal.addEventListener("abort",()=>reject(controller.signal.reason),{once:true});
+   queueMicrotask(()=>controller.abort(new DOMException("Synthetic provider deadline elapsed","TimeoutError")));
+  });
+ };
+ try {
+  const prepared=review(),before=structuredClone(prepared),permitted=referencesFor(prepared.input,null);
+  const result=await draftWeeklyWording(prepared,null,ctx,mock);
+  assert.equal(calls,1);assert.equal(requestedDeadline,55_000);assert.equal(requestedDeadline,PROVIDER_TIMEOUT_MS);
+  assert.equal(result.mode,"TEMPLATE");assert.equal(result.model,null);assert.equal(result.inputDigest,prepared.input.digest);
+  assert.match(result.reason!,/took too long.*factual template.*retry/i);
+  assert.ok(result.original.length>0);
+  for(const section of result.original)for(const line of section.lines){
+   assert.ok(permitted.some(ref=>ref.initiativeId===section.initiativeId && ref.id===line.referenceId && ref.texts.includes(line.text)),"timeout fallback must use a supported statement in the same initiative");
+  }
+  assert.deepEqual(prepared,before,"timeout must not alter frozen inputs, human narrative, or AI history");
+ }finally{if(oldKey===undefined)delete process.env.ANTHROPIC_API_KEY;else process.env.ANTHROPIC_API_KEY=oldKey;if(oldModel===undefined)delete process.env.ANTHROPIC_MODEL;else process.env.ANTHROPIC_MODEL=oldModel;}
+});

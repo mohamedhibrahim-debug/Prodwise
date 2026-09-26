@@ -29,14 +29,14 @@ export interface Identity {
 export interface Organization {
     id: string;
     name: string;
-    status: 'BOOTSTRAPPING' | 'ACTIVE';
+    status: 'BOOTSTRAPPING' | 'ACTIVE' | 'ARCHIVED';
     emailPolicy: EmailPolicy;
 }
 export interface Workspace {
     id: string;
     organizationId: string;
     name: string;
-    status: 'BOOTSTRAPPING' | 'ACTIVE';
+    status: 'BOOTSTRAPPING' | 'ACTIVE' | 'ARCHIVED';
 }
 export interface OrganizationMembership {
     id: string;
@@ -168,9 +168,11 @@ export class LocalAuthStore {
         this.ready(state, organization.id); return { ...state, workspace, organization, members: this.members(state, workspace) }; }
     private members(state: AuthState, workspace: Workspace): Member[] { return state.memberships.filter(x => x.organizationId === workspace.organizationId).map(x => { const identity = state.identities.find(i => i.id === x.userId); if (!identity)
         throw new Error('INVALID_IDENTITY_REFERENCE'); return { ...x, active:x.active&&identity.active, role: normalizeLegacyRole(x.role), workspaceId: workspace.id, email: identity.email, displayName: identity.displayName, platformRole: identity.platformRole, authUserId: identity.authUserId }; }); }
-    private ready(state: AuthState, orgId: string) { const org = state.organizations.find(x => x.id === orgId); if (!org || org.status !== 'ACTIVE' || !state.memberships.some(x => x.organizationId === orgId && x.active && x.role === 'ORG_OWNER' && state.identities.some(i => i.id === x.userId && i.active)))
+    private ready(state: AuthState, orgId: string) { const org = state.organizations.find(x => x.id === orgId), workspace = state.workspaces.find(x => x.id === this.workspaceId && x.organizationId === orgId); if (org?.status === 'ARCHIVED' || workspace?.status === 'ARCHIVED')
+        throw new AccessError('ACCESS_DENIED', 'Organization access is unavailable.'); if (!org || !workspace || org.status !== 'ACTIVE' || workspace.status !== 'ACTIVE' || !state.memberships.some(x => x.organizationId === orgId && x.active && x.role === 'ORG_OWNER' && state.identities.some(i => i.id === x.userId && i.active)))
         throw new AccessError('OWNER_BOOTSTRAP_REQUIRED', 'This organization needs owner recovery.'); }
     private context(state: AuthState, userId: string, workspaceId = this.workspaceId, allowRecovery = false): WorkspaceAccess { const identity = state.identities.find(x => x.id === userId && x.active), workspace = state.workspaces.find(x => x.id === workspaceId), org = state.organizations.find(x => x.id === workspace?.organizationId); if (!identity || !workspace || !org)
+        throw new AccessError('ACCESS_DENIED', 'Organization access is unavailable.'); if (!['ACTIVE', 'BOOTSTRAPPING'].includes(workspace.status) || !['ACTIVE', 'BOOTSTRAPPING'].includes(org.status))
         throw new AccessError('ACCESS_DENIED', 'Organization access is unavailable.'); if (!allowRecovery || identity.platformRole !== 'PLATFORM_OWNER')
         this.ready(state, org.id); const member = this.members(state, workspace).find(x => x.userId === userId); if (identity.platformRole === 'PLATFORM_OWNER')
         return { workspaceId, organizationId: org.id, memberId: member?.active ? member.id : null, actor: { id: userId, label: identity.displayName }, platformRole: 'PLATFORM_OWNER', role: member?.active ? member.role : null, isProductLead: member?.active ? member.isProductLead : false }; if (!member)
@@ -244,7 +246,7 @@ export class LocalAuthStore {
     private addInvitation(state: AuthState, ctx: WorkspaceAccess, wid: string, email: string, role: Role, token: string, override: boolean, reason: string | null, provisionedByPlatform=false) { const orgId = state.workspaces.find(x => x.id === wid)!.organizationId; const identity = state.identities.find(x => x.email === email); if (state.memberships.some(x => x.organizationId === orgId && x.userId === identity?.id) || state.invitations.some(x => x.organizationId === orgId && x.email === email && !x.usedAt && !x.revokedAt && Date.parse(x.expiresAt) > Date.now()))
         throw new Error('This email already has organization access or a pending invitation.'); const item: Invitation = { id: randomUUID(), workspaceId: wid, organizationId: orgId, email, role, tokenHash: hash(token), expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(), revokedAt: null, usedAt: null, invitedBy: ctx.actor.id, provisionedByPlatform, policyOverride: override, policyOverrideReason: reason }; state.invitations.push(item); this.event(state, { ...ctx, workspaceId: wid, organizationId: orgId }, item.id, 'INVITED', null, { email, role }, reason ?? undefined, override); }
     invitation(token: string) { const state = this.raw(), item = state.invitations.find(x => x.tokenHash === hash(token)); this.validInvitation(state, item); return { email: item!.email, role: item!.role, expiresAt: item!.expiresAt, workspaceId: item!.workspaceId, organizationId: item!.organizationId }; }
-    private validInvitation(state: AuthState, item: Invitation | undefined) { if (!item || item.workspaceId !== this.workspaceId || item.organizationId !== this.currentOrg(state).id || item.revokedAt || item.usedAt || Date.parse(item.expiresAt) <= Date.now())
+    private validInvitation(state: AuthState, item: Invitation | undefined) { if (!item || item.workspaceId !== this.workspaceId || item.organizationId !== this.currentOrg(state).id || item.revokedAt || item.usedAt || Date.parse(item.expiresAt) <= Date.now() || this.currentOrg(state).status === 'ARCHIVED' || state.workspaces.find(workspace => workspace.id === item.workspaceId)?.status === 'ARCHIVED')
         throw new AccessError('INVITE_INVALID', 'This invitation is expired, revoked or already used.'); if (item.provisionedByPlatform) {
         const inviter = state.identities.find(x => x.id === item.invitedBy && x.active && x.platformRole === 'PLATFORM_OWNER');
         if (!inviter)

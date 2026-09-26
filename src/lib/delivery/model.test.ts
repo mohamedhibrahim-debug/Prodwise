@@ -18,6 +18,16 @@ function set(state:DeliveryState,s:PortfolioSource,kind:"OWNER"|"SCOPE"|"TARGET_
 }
 function configured(s:PortfolioSource,time=now):DeliveryState { let state=structuredClone(EMPTY_STATE); state=set(state,s,"OWNER","pm",time); state=set(state,s,"OWNER","pm2",time,"i2"); state=set(state,s,"SCOPE","Pilot",time); state=set(state,s,"SCOPE","Phase A",time,"i2"); return state; }
 const edit:SectionEdit={headline:"PM reviewed",updates:"",attention:"",decisionNeeded:"",nextMilestone:"",nextStep:""};
+
+test("Changing delivery scope cannot report the new phase target as a like-for-like slip",()=>{
+ const s=source();let state=configured(s,"2026-09-18T10:00:00Z");state=set(state,s,"TARGET_LIVE","2026-10-01","2026-09-18T10:00:00Z");
+ const before=freezeInput(s,state,"w1","2026-09-20T10:00:00Z");
+ const target=state.facts.find(f=>f.kind==="TARGET_LIVE")!;
+ state=recordFact(state,s,admin,{initiativeId:"i1",kind:"TARGET_LIVE",expectedRevision:target.revision,value:target.value,retract:true,basis:"DIRECT_KNOWLEDGE",note:"Archive the completed pilot scope",evidenceId:null,locator:null},"2026-09-21T10:00:00Z");
+ state=set(state,s,"SCOPE","Phase 2","2026-09-22T10:00:00Z");state=set(state,s,"TARGET_LIVE","2026-11-01","2026-09-23T10:00:00Z");
+ const targetChange=changesSince(freezeInput(s,state,"w1",now),before).find(c=>c.kind==="TARGET_LIVE")!;
+ assert.equal(targetChange.days,null);assert.match(targetChange.label,/changed scope/);assert.doesNotMatch(targetChange.label,/31 days later/);
+});
 function reviewed(state:DeliveryState,s:PortfolioSource,id:string,time=now):DeliveryState { let review=state.reviews.find(r=>r.id===id)!; for (const sec of review.sections) { state=editSection(state,s,admin,review.id,review.revision,sec.initiativeId,sec.revision,edit,time); review=state.reviews.find(r=>r.id===id)!; } return state; }
 test("Org Owner has Admin delivery and portfolio review capabilities without a Product Lead flag",()=>{
  const s=source();s.members.push({id:owner.memberId!,workspaceId:owner.workspaceId,role:owner.role!,isProductLead:false,active:true,displayName:owner.actor.label});
@@ -86,3 +96,21 @@ test("Frozen source snapshot cannot alias later Knowledge changes",()=>{const s=
 test("Portfolio deltas include Knowledge value/status/confirmation and recorded stage",()=>{const s=source();s.snapshots[0]!.claims=[claim()];const state=configured(s);const baseline=freezeInput(s,state,"w1","2026-09-19T12:00:00Z");s.snapshots[0]!.claims[0]!.value="30";s.snapshots[0]!.claims[0]!.status="SUPERSEDED";s.snapshots[0]!.claims[0]!.verifiedAt=now;s.snapshots[0]!.claims[0]!.verifiedActorLabel="PM";s.snapshots[0]!.initiative.stage="VALIDATION";const changes=changesSince(freezeInput(s,state,"w1",now),baseline);assert.match(changes.find(c=>c.kind==="KNOWLEDGE")!.label,/27 \(ACTIVE\) → 30 \(SUPERSEDED\)/);assert.match(changes.find(c=>c.kind==="STAGE")!.label,/DELIVERY → VALIDATION/);assert.match(changes.find(c=>c.kind==="KNOWLEDGE")!.label,/PM/);});
 test("Knowledge anchors materially changed are support delta; updatedAt alone is not",()=>{const s=source();const c=claim();c.anchors=[{evidenceId:"e1",locator:"p2",excerpt:"Current divisor 27"}];s.snapshots[0]!.claims=[c];const state=configured(s);const baseline=freezeInput(s,state,"w1",now);c.updatedAt="2026-10-01T12:00:00Z";assert.equal(changesSince(freezeInput(s,state,"w1",now),baseline).filter(change=>change.kind==="KNOWLEDGE"||change.kind==="SUPPORT").length,0);c.anchors[0]!.excerpt="Current divisor 30";assert.match(changesSince(freezeInput(s,state,"w1",now),baseline).find(change=>change.kind==="SUPPORT")!.label,/no automatic invalidation/);});
 test("New Knowledge and recorded decision states are supported portfolio changes",()=>{const s=source();const state=configured(s);const baseline=freezeInput(s,state,"w1",now);s.snapshots[0]!.claims=[claim()];s.snapshots[0]!.findingStates=[{initiativeId:"i1",fingerprint:"fp-test",status:"RESOLVED",subject:"Repayment",outcome:null,resolution:"Reviewed wording",updatedAt:now} as FindingState];const changes=changesSince(freezeInput(s,state,"w1",now),baseline);assert.match(changes.find(c=>c.kind==="KNOWLEDGE")!.label,/record added/);assert.match(changes.find(c=>c.kind==="DECISION")!.label,/not recorded → RESOLVED/);assert.match(changes.find(c=>c.kind==="DECISION")!.id,/fp-test/);});
+
+test("Later weekly review compares only with the previous Final in the same workspace, across skipped weeks",()=>{
+ const s=source();let state=createReview(configured(s,"2026-09-12T12:00:00Z"),s,admin,"2026-W37","2026-09-12T12:00:00Z");
+ const baselineId=state.reviews[0]!.id;state=reviewed(state,s,baselineId,"2026-09-12T12:00:00Z");state=finalizeReview(state,s,admin,baselineId,state.reviews[0]!.revision,"2026-09-12T12:00:00Z");
+ state=createReview(state,s,admin,"2026-W38","2026-09-19T12:00:00Z");
+ state.reviews.push({...structuredClone(state.reviews[0]!),id:"foreign-final",workspaceId:"other-workspace",week:"2026-W38"});
+ state=createReview(state,s,admin,"2026-W39",now);
+ assert.equal(state.reviews.find(r=>r.week==="2026-W39")!.baselineReviewId,baselineId);
+});
+test("Template section has a supported status headline and explicit unknowns without invented health",()=>{
+ const s=source();const state=createReview(configured(s),s,pm,"2026-W39",now),section=state.reviews[0]!.sections[0]!;
+ assert.equal(section.headline,"DELIVERY · Pilot");assert.match(section.updates,/First review/);assert.match(section.attention,/absence does not confirm/);assert.equal(section.nextMilestone,"Not recorded");assert.equal(section.nextStep,"Not recorded");assert.doesNotMatch(section.headline,/on track|healthy|ready/i);
+});
+test("Final snapshot retains unknown dates after later delivery facts are recorded",()=>{
+ const s=source();let state=createReview(configured(s),s,admin,"2026-W39",now);const reviewId=state.reviews[0]!.id;state=reviewed(state,s,reviewId);state=finalizeReview(state,s,admin,reviewId,state.reviews[0]!.revision,now);
+ const frozen=JSON.stringify(state.reviews[0]);state=set(state,s,"TARGET_LIVE","2026-10-08","2026-09-26T13:00:00Z");
+ assert.equal(JSON.stringify(state.reviews[0]),frozen);assert.equal(state.reviews[0]!.input.facts.some(f=>f.kind==="TARGET_LIVE"),false);
+});

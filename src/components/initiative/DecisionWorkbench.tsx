@@ -58,7 +58,7 @@ export function DecisionWorkbench({ lanes, initialItem, children }: {
     </nav>
     <div className={styles.panes}>
       {lanes.map(lane => <section id={`lane-${lane.key}`} key={lane.key} hidden={current.key !== lane.key} aria-label={lane.title}>
-        <div className={styles.heading}><h2>{lane.title}</h2><p>{lane.description}</p></div>
+        {!lane.items.length && <div className={styles.heading}><h2>{lane.title}</h2><p>{lane.description}</p></div>}
         {lane.items.length ? lane.items.map(item => <div key={item.id} hidden={activeId !== item.id}><ul>{item.body}</ul></div>) : <div className={styles.empty}>{lane.empty}</div>}
       </section>)}
     </div>

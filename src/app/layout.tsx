@@ -26,6 +26,7 @@ export default async function RootLayout({
     <html lang="en">
       <body>
         <ApplicationShell
+          guideStorageKey={access ? `${access.workspaceId}:${access.actor.id}` : undefined}
           account={access ? <AccountAccess /> : null}
           dataSource={isSupabaseConfigured ? "Supabase" : "Local demo data"}
           writesEnabled={isDemoWriteEnabled}

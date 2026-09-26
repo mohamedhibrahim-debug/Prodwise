@@ -1,8 +1,10 @@
 import "server-only";
-import { resolve } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { getRepository } from "@/lib/data";
-import { isSupabaseConfigured, supabaseServiceRoleKey, supabaseUrl } from "@/lib/env";
+import { supabaseServiceRoleKey, supabaseUrl } from "@/lib/env";
+import { isLocalAuth, configuredWorkspaceId } from "@/lib/auth/service";
+import { localDeliveryPath } from "./local-path";
+import { workspacePresentation, type WorkspacePresentation } from "@/lib/workspace/context";
 import { LocalDeliveryStore } from "./local-store";
 import { deliveryWorkspaceMembers, requireDeliveryAccess, requireDeliveryWriteAccess } from "./access-adapter";
 import { assertMember, canonical, meaningful } from "./model";
@@ -14,28 +16,29 @@ function camel(value:unknown):unknown {
   if (value && typeof value==="object") return Object.fromEntries(Object.entries(value).map(([key,val])=>[key.replace(/_([a-z])/g,(_,letter:string)=>letter.toUpperCase()),camel(val)]));
   return value;
 }
-export interface DeliveryRead { ctx:WorkspaceAccess; source:PortfolioSource; state:DeliveryState; rawSource:unknown; }
-const local = new LocalDeliveryStore(resolve(process.cwd(),".data","prodwise-delivery-weekly.json"));
+export interface DeliveryRead { ctx:WorkspaceAccess; source:PortfolioSource; state:DeliveryState; rawSource:unknown; presentation:WorkspacePresentation; }
+function localFor(ctx:WorkspaceAccess) { return new LocalDeliveryStore(localDeliveryPath(process.cwd(),ctx.workspaceId,configuredWorkspaceId())); }
 async function readWith(ctx:WorkspaceAccess):Promise<DeliveryRead> {
-  if (isSupabaseConfigured) {
+  const presentation=await workspacePresentation(ctx);
+  if (!isLocalAuth()) {
     const {data,error}=await client().rpc("delivery_read_workspace",{p_workspace_id:ctx.workspaceId,p_member_id:ctx.memberId ?? ctx.actor.id});
     if (error) throw new Error("Delivery data is unavailable. Check that the Auth and delivery migrations are installed locally.");
     const value=data as {source:unknown;state:DeliveryState}; const source=camel(value.source) as PortfolioSource;
     for (const snapshot of source.snapshots) for (const claim of snapshot.claims) {
       if (!claim.updatedAt || !claim.createdAt) throw new Error("Source claim timestamps are unavailable. Repair the snapshot projection before continuing.");
     }
-    assertMember(ctx,source); return {ctx,source,state:value.state,rawSource:value.source};
+    assertMember(ctx,source); return {ctx,source,state:value.state,rawSource:value.source,presentation};
   }
   if (process.env.VERCEL) throw new Error("Durable delivery storage must be configured before this feature can run on a hosted deployment.");
   const repo=getRepository(); const source={snapshots:await repo.listInitiativeSnapshots(),members:await deliveryWorkspaceMembers()};
-  assertMember(ctx,source); return {ctx,source,state:await local.read(),rawSource:meaningful(source)};
+  assertMember(ctx,source); return {ctx,source,state:await localFor(ctx).read(),rawSource:meaningful(source),presentation};
 }
 export async function readDelivery():Promise<DeliveryRead> { return readWith(await requireDeliveryAccess()); }
 export async function mutateDelivery(change:(read:DeliveryRead)=>Promise<DeliveryState>):Promise<DeliveryState> {
   // Every mutation rechecks the real membership and environment write guard.
   const ctx=await requireDeliveryWriteAccess();
-  if (!isSupabaseConfigured) {
-    return local.transaction(async state=>{
+  if (isLocalAuth()) {
+    return localFor(ctx).transaction(async state=>{
       const read=await readWith(ctx); const next=await change({...read,state});
       const latest=await readWith(await requireDeliveryWriteAccess());
       if (canonical(latest.rawSource)!==canonical(read.rawSource)) throw new Error("Workspace inputs changed while saving. Reload and try again.");

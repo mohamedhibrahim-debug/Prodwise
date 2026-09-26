@@ -33,7 +33,7 @@ export async function draftWeeklyReviewAction(_previous:DeliveryActionState,form
     await requireDeliveryWriteAccess(); const read=await readDelivery();
     const review=read.state.reviews.find(r=>r.id===text(form,"reviewId") && r.workspaceId===read.ctx.workspaceId);
     if (!review || review.status!=="DRAFT") throw new Error("Open the current shared draft before requesting wording.");
-    const baseline=read.state.reviews.find(r=>r.id===review.baselineReviewId);
+    const baseline=read.state.reviews.find(r=>r.id===review.baselineReviewId && r.workspaceId===read.ctx.workspaceId && r.status==="FINAL" && r.week<review.week);
     // External generation never holds the local file transaction lock.
     const ai=await draftWeeklyWording(review,baseline?.input ?? null,read.ctx);
     await mutateDelivery(async({ctx,source,state})=>applyAiDraft(state,source,ctx,review.id,revision(form,"revision"),ai,new Date().toISOString()));

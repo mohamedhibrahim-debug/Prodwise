@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { InstrumentIcon } from "./InstrumentIcon";
-import { openDemo, openPalette } from "./events";
+import { openPalette } from "./events";
 import styles from "./NavRail.module.css";
 
 interface NavRailProps {
@@ -76,7 +76,6 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
     { href: "/initiatives", label: "Initiatives", icon: "initiatives" as const, active: pathname.startsWith("/initiatives") },
     { href: "/roadmap", label: "Roadmap", icon: "reporting" as const, active: pathname.startsWith("/roadmap") },
     { href: "/analysis", label: "Analysis", icon: "reporting" as const, active: pathname.startsWith("/analysis") },
-    { href: "/weekly-review", label: "Weekly Review", icon: "event" as const, active: pathname.startsWith("/weekly-review") },
   ];
 
   return <>
@@ -85,7 +84,6 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
       <Image src="/assets/prodwise-logo-mark.png" alt="" width={24} height={24} unoptimized />
       <span>{pathname === "/" ? "Home" : pathname.startsWith("/initiatives/") && pathname !== "/initiatives/new" ? mobileTitle : pathname.startsWith("/initiatives") ? "Initiatives" : links.find(link => link.active)?.label ?? "Prodwise"}</span>
       <button type="button" onClick={openPalette} aria-label="Search"><InstrumentIcon name="search" /></button>
-      <button type="button" onClick={openDemo} aria-label="Open demo scenario"><InstrumentIcon name="demo" /></button>
     </header>
     {mobileOpen && <button className={styles.scrim} aria-label="Close navigation" onClick={closeDrawer} />}
     <aside ref={drawerRef} className={`${styles.rail} ${expanded ? styles.expanded : ""} ${mobileOpen ? styles.mobileOpen : ""}`} role={mobileOpen ? "dialog" : undefined} aria-modal={mobileOpen ? true : undefined} aria-label={mobileOpen ? "Navigation" : undefined}>
@@ -102,7 +100,7 @@ export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
         <Link href={`/initiatives/${pathname.split("/")[2]}`} className={styles.navItem} aria-label={`Open ${mobileTitle} Brief`} title={mobileTitle}><InstrumentIcon name="initiatives" /><span>{mobileTitle}</span></Link>
       </nav> : null}
       <div className={styles.footer}>
-        <p>{writesEnabled ? `${dataSource} · environment writes on` : `${dataSource} · environment writes off`}</p>
+        <p title={writesEnabled ? "Environment permits changes; your role still determines access." : "Environment changes are disabled."}>{dataSource === "Supabase" ? "Connected workspace" : "Local workspace"}<br />{writesEnabled ? "Environment writes on" : "Environment writes off"}</p>
         <button type="button" className={styles.pin} onClick={() => {
           const next = !expanded;
           setExpanded(next);

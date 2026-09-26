@@ -93,8 +93,7 @@ function seed(): StoreShape {
 }
 
 let cache: StoreShape | null = null;
-function scopeRows(store: StoreShape): StoreShape {
-  const workspaceId = process.env.PRODWISE_WORKSPACE_ID ?? "unconfigured-local-test";
+function scopeRows(store: StoreShape, workspaceId = process.env.PRODWISE_WORKSPACE_ID ?? "unconfigured-local-test"): StoreShape {
   for (const collection of Object.values(store)) for (const row of collection) {
     if (!("workspaceId" in row)) Object.assign(row, { workspaceId });
   }
@@ -162,7 +161,9 @@ export function readStore(): StoreShape {
 export function writeStore(mutate: (store: StoreShape) => void): void {
   const store = load();
   mutate(store);
-  scopeRows(store);
+  // Legacy rows are scoped on load. Only newly created rows receive the fresh
+  // server-resolved request scope; a Demo write must never enter AMAN.
+  scopeRows(store, repositoryContext()?.workspaceId);
   persist();
 }
 
@@ -170,7 +171,7 @@ export function writeStore(mutate: (store: StoreShape) => void): void {
 export function writeStoreAtomic<T>(mutate: (store: StoreShape) => T): T {
   const next = structuredClone(load());
   const result = mutate(next);
-  scopeRows(next);
+  scopeRows(next, repositoryContext()?.workspaceId);
   const temporary = `${DATA_FILE}.${crypto.randomUUID()}.tmp`;
   mkdirSync(dirname(DATA_FILE), { recursive: true });
   try {
