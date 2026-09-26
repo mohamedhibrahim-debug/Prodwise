@@ -27,7 +27,7 @@ async function readWith(ctx:WorkspaceAccess):Promise<DeliveryRead> {
     assertMember(ctx,source); return {ctx,source,state:value.state,rawSource:value.source};
   }
   if (process.env.VERCEL) throw new Error("Durable delivery storage must be configured before this feature can run on a hosted deployment.");
-  const repo=await getRepository(); const source={snapshots:await repo.listInitiativeSnapshots(),members:await deliveryWorkspaceMembers()};
+  const repo=getRepository(); const source={snapshots:await repo.listInitiativeSnapshots(),members:await deliveryWorkspaceMembers()};
   assertMember(ctx,source); return {ctx,source,state:await local.read(),rawSource:meaningful(source)};
 }
 export async function readDelivery():Promise<DeliveryRead> { return readWith(await requireDeliveryAccess()); }

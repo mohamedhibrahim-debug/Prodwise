@@ -1,0 +1,18 @@
+{
+  "checks": [
+    "Unauthenticated pages redirect; navigation API returns 401",
+    "Signed-in Admin can inspect Users",
+    "Human facts project onto Roadmap; unknown actual dates remain unknown",
+    "Member cannot manage workspace access",
+    "Viewer has distinct role/environment notice; forged write denied without changing facts",
+    "One shared weekly review; PM can edit only their assigned initiative section",
+    "Designated Product Lead finalizes reviewed shared portfolio",
+    "Target revision history preserves before/after and signed-in actor",
+    "Review compares prior final snapshot; missing key produces explicitly labelled template",
+    "Reviewer direct Viewer account can inspect shared review without invite or AI/write controls",
+    "Authenticated desktop/mobile surfaces have no document overflow"
+  ],
+  "passed": 11,
+  "provider": "Live Anthropic call not tested: user will add API key locally",
+  "at": "2026-09-26T04:20:27.869Z"
+}

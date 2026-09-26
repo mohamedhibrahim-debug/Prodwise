@@ -1,0 +1,38 @@
+(node:22720) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ Missing local API key is explicitly a template, not fake AI (67.7449ms)
+✔ Mock provider structured extractive response accepted; invented relative date rejected to template (62.0919ms)
+(node:16264) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ Durable isolated delivery file survives reopen; failed transaction leaves no partial state (42.4781ms)
+✔ Exclusive local transaction refuses concurrent writer instead of losing data (323.0466ms)
+(node:22240) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ ISO week is based on Cairo local date; rejects nonexistent week 53 (53.7293ms)
+✔ Owner assignment requires coordinator and active member ID (2.5605ms)
+✔ PM cannot update another initiative or self assign it (0.6745ms)
+✔ Date requires explicit scope and invalid/future actual rejected (0.9016ms)
+✔ Concurrent stale target write refused; day-one history persists (0.5774ms)
+✔ Scope cannot silently mix pilot/full and future phase dates (0.3998ms)
+✔ Known next milestone can have unknown date without inventing one (5.4519ms)
+✔ First review is inventory; selected week is not the data cutoff (2.3248ms)
+✔ Two PMs edit independent sections despite old whole-review revision (3.8835ms)
+✔ Refresh preserves edited narrative and marks material fact changes (4.5564ms)
+✔ Viewer lead capability never permits writes/finalization; PM cannot finalize (2.7746ms)
+✔ Final immutable and stale input cannot finalize (4.6052ms)
+✔ Owner revocation and workspace scope additions force refresh (4.1461ms)
+✔ Target intermediate moves that return to same date stay visible (1.635ms)
+✔ Relevant locator/excerpt changes affect support; unrelated timestamp does not (1.3798ms)
+✔ Extractive AI rejects foreign IDs and invented date/launch/health claims (1.0755ms)
+✔ Frozen source snapshot cannot alias later Knowledge changes (1.1631ms)
+✔ Portfolio deltas include Knowledge value/status/confirmation and recorded stage (2.1436ms)
+✔ Knowledge anchors materially changed are support delta; updatedAt alone is not (2.4709ms)
+✔ New Knowledge and recorded decision states are supported portfolio changes (1.5868ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1040.5681

@@ -1,6 +1,8 @@
-.page { max-width: 58rem; margin: var(--s-8) auto; color:var(--ink-900); }
+.page { max-width: 58rem; margin: var(--s-8) auto; padding-inline:var(--gutter); color:var(--ink-900); }
 .card { max-width: 28rem; margin: var(--s-8) auto; padding: var(--s-8); background:var(--panel); border:1px solid var(--rule); border-radius:var(--r-md); }
-.form { display:grid; gap:var(--s-4); }
+.form { display:grid; gap:var(--s-4); min-width:0; }
+.form fieldset { min-width:0; }
+.form input,.form select { max-width:100%; }
 .form label { display:grid; gap:var(--s-2); color:var(--ink-700); }
 .form input,.form select { border:1px solid var(--rule-strong); border-radius:var(--r-sm); padding:var(--s-3); background:var(--panel); color:var(--ink-900); font:inherit; }
 .form input:focus,.form select:focus { outline:2px solid var(--accent-500); outline-offset:2px; }

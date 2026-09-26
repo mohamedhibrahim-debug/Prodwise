@@ -1,5 +1,7 @@
 # Prodwise
 
+The September 26 graduation MVP implementation, local validation, screenshots and provider configuration are recorded in [MVP execution report](docs/MVP-EXECUTION-REPORT.md). The design narrative below includes the earlier product vision; use that report for the implemented scope and remaining acceptance work.
+
 **Product Intelligence, from evidence to action.**
 
 Prodwise gives Product Managers a continuously updated, evidence-backed understanding of where an initiative really stands, what is unresolved, and what should happen next. Its core capability is **Initiative Intelligence**: a structured Product Initiative Workspace that reconstructs scattered product truth — Jira, documents, decisions, approvals — into persistent Product Memory, evidence-backed Current State, Readiness, and one recommended Next Best Action.

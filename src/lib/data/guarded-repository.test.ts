@@ -5,6 +5,13 @@ import type { Repository } from './repository.ts';
 import type { WorkspaceAccess } from '../auth/core.ts';
 import { repositoryContext } from '../auth/repository-context.ts';
 const ctx:WorkspaceAccess={workspaceId:'a',memberId:'m',actor:{id:'real-user',label:'Real PM'},role:'Member',isProductLead:false};
+test('synchronous guarded repository is not assimilated as a Promise',async()=>{
+  let accessChecks=0;
+  const repo=guardedRepository(async()=>{accessChecks++;return ctx;},()=>({} as Repository),()=>true,()=>true);
+  assert.equal(Reflect.get(repo,'then'),undefined);
+  assert.equal(await Promise.resolve(repo),repo);
+  assert.equal(accessChecks,0);
+});
 function fixture(access:()=>Promise<WorkspaceAccess>=async()=>ctx,enabled=true){
   const calls:{name:string,args:unknown[],ctx:unknown}[]=[];
   const raw={listInitiatives:async()=>[{id:'i1',workspaceId:'a'},{id:'i2',workspaceId:'a'},{id:'foreign',workspaceId:'b'}],

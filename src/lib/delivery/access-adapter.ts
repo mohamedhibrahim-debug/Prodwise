@@ -1,17 +1,19 @@
 import "server-only";
 import type { DeliveryMember, WorkspaceAccess } from "./types";
+import { requireWorkspaceAccess, requireBusinessWriteAccess, requireReviewFinalizeAccess } from "@/lib/auth/access";
+import { listWorkspaceMembers } from "@/lib/auth/service";
 
-/** Integration seam. Replace these bodies with the Auth exports after 0010 is merged.
- * Fail closed: there is no demo signed-in actor, public fallback or environment bypass. */
+/** Delivery shares the fresh signed-in identity and independent write guards. */
 export async function requireDeliveryAccess(): Promise<WorkspaceAccess> {
-  throw new Error("Sign-in integration is required before delivery data can be opened.");
+  return requireWorkspaceAccess();
 }
 export async function requireDeliveryWriteAccess(): Promise<WorkspaceAccess> {
-  throw new Error("Sign-in integration is required before delivery changes can be saved.");
+  return requireBusinessWriteAccess();
 }
 export async function requireDeliveryFinalizeAccess(): Promise<WorkspaceAccess> {
-  throw new Error("Sign-in integration is required before a review can be finalized.");
+  return requireReviewFinalizeAccess();
 }
 export async function deliveryWorkspaceMembers(): Promise<DeliveryMember[]> {
-  throw new Error("Sign-in integration is required before owners can be assigned.");
+  return (await listWorkspaceMembers()).map(({id,workspaceId,displayName,role,active,isProductLead}) =>
+    ({id,workspaceId,displayName,role,active,isProductLead}));
 }

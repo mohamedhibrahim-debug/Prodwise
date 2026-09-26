@@ -1,0 +1,60 @@
+
+> prodwise@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.3.4 (webpack)
+- Environments: .env.local
+✓ Running next.config.ts took 57ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 16.5s
+  Running TypeScript ...
+  Finished TypeScript in 6.4s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/8) ...
+  Generating static pages using 7 workers (2/8)
+  Generating static pages using 7 workers (4/8)
+  Generating static pages using 7 workers (6/8)
+✓ Generating static pages using 7 workers (8/8) in 669ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /account
+├ ƒ /analysis
+├ ƒ /api/nav
+├ ○ /apple-icon.png
+├ ○ /icon.png
+├ ƒ /initiatives
+├ ƒ /initiatives/[slug]
+├ ƒ /initiatives/[slug]/decisions
+├ ƒ /initiatives/[slug]/delivery
+├ ƒ /initiatives/[slug]/knowledge
+├ ƒ /initiatives/[slug]/knowledge/[claimId]/confirm
+├ ƒ /initiatives/[slug]/knowledge/[claimId]/edit
+├ ƒ /initiatives/[slug]/knowledge/new
+├ ƒ /initiatives/[slug]/knowledge/sources
+├ ƒ /initiatives/[slug]/knowledge/sources/[evidenceId]/edit
+├ ƒ /initiatives/[slug]/knowledge/sources/new
+├ ƒ /initiatives/[slug]/memory
+├ ƒ /initiatives/[slug]/memory/[claimId]/edit
+├ ƒ /initiatives/[slug]/memory/[claimId]/verify
+├ ƒ /initiatives/[slug]/memory/new
+├ ƒ /initiatives/[slug]/sources
+├ ƒ /initiatives/[slug]/sources/[evidenceId]/edit
+├ ƒ /initiatives/[slug]/sources/new
+├ ƒ /initiatives/new
+├ ƒ /invite/[token]
+├ ƒ /login
+├ ƒ /reporting
+├ ƒ /roadmap
+├ ƒ /users
+└ ƒ /weekly-review
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

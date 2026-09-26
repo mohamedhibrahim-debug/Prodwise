@@ -12,7 +12,9 @@ function workspaceOf(value: unknown): string | undefined {
 export function guardedRepository(resolve: () => Promise<WorkspaceAccess>, rawFor: (ctx: WorkspaceAccess) => Repository,
   writesEnabled: () => boolean, local: () => boolean): Repository {
   return new Proxy({} as Repository, { get(_target, name) {
-    if (typeof name !== 'string') return undefined;
+    // Repository is synchronous; Promise assimilation must not invent a then
+    // operation and leave a server render awaiting an unresolved callback.
+    if (typeof name !== 'string' || name === 'then') return undefined;
     return async (...args: unknown[]) => {
       const ctx = await resolve();
       if (writes.has(name)) authorizeBusiness(ctx, writesEnabled());

@@ -1,0 +1,14 @@
+
+> prodwise@0.1.0 test:stage2-2-local
+> node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/db-test/test-alias.mjs --test supabase/tests/stage2_2/local.test.ts
+
+✔ local adapter decides, audits and retains prior decision through re-emergence (236.2205ms)
+✔ atomic local writer discards claim changes when audit construction fails (2.9789ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 521.8402
