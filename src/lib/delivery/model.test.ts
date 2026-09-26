@@ -4,12 +4,13 @@ import { EMPTY_STATE, type DeliveryState, type PortfolioSource, type WorkspaceAc
 import { changesSince, createReview, editSection, finalizeReview, freezeInput, isoWeek, recordFact, refreshReview, supportChanged, weekValid } from "./model.ts";
 import { validateDraft } from "./ai-validation.ts";
 import type { MemoryClaim, FindingState } from "../domain/types.ts";
-const admin:WorkspaceAccess={workspaceId:"w1",memberId:"admin",actor:{id:"admin-user",label:"Admin"},role:"Admin",isProductLead:false};
-const pm:WorkspaceAccess={workspaceId:"w1",memberId:"pm",actor:{id:"pm-user",label:"PM"},role:"Member",isProductLead:false};
-const pm2:WorkspaceAccess={workspaceId:"w1",memberId:"pm2",actor:{id:"pm2-user",label:"PM2"},role:"Member",isProductLead:false};
-const lead:WorkspaceAccess={workspaceId:"w1",memberId:"lead",actor:{id:"lead-user",label:"Lead"},role:"Member",isProductLead:true};
-const viewer:WorkspaceAccess={workspaceId:"w1",memberId:"viewer",actor:{id:"v-user",label:"Viewer"},role:"Viewer",isProductLead:true};
-function source():PortfolioSource { return {members:[admin,pm,pm2,lead,viewer].map(c=>({id:c.memberId,workspaceId:c.workspaceId,role:c.role,isProductLead:c.isProductLead,active:true,displayName:c.actor.label})),snapshots:["i1","i2"].map(id=>({initiative:{id,slug:id,name:id,description:null,knownReferences:null,businessLine:"MF",stage:"DELIVERY",overallState:"UNKNOWN",stateSummary:null,isDemo:false,createdAt:"2026-09-01T00:00:00Z",updatedAt:"2026-09-01T00:00:00Z"},claims:[],findingStates:[],evidence:[]})) }; }
+const admin:WorkspaceAccess={workspaceId:"w1",organizationId:"org1",platformRole:null,memberId:"admin",actor:{id:"admin-user",label:"ADMIN"},role:"ADMIN",isProductLead:false};
+const owner:WorkspaceAccess={workspaceId:"w1",organizationId:"org1",platformRole:null,memberId:"workspace-owner",actor:{id:"owner-user",label:"Owner"},role:"ORG_OWNER",isProductLead:false};
+const pm:WorkspaceAccess={workspaceId:"w1",organizationId:"org1",platformRole:null,memberId:"pm",actor:{id:"pm-user",label:"PM"},role:"MEMBER",isProductLead:false};
+const pm2:WorkspaceAccess={workspaceId:"w1",organizationId:"org1",platformRole:null,memberId:"pm2",actor:{id:"pm2-user",label:"PM2"},role:"MEMBER",isProductLead:false};
+const lead:WorkspaceAccess={workspaceId:"w1",organizationId:"org1",platformRole:null,memberId:"lead",actor:{id:"lead-user",label:"Lead"},role:"MEMBER",isProductLead:true};
+const viewer:WorkspaceAccess={workspaceId:"w1",organizationId:"org1",platformRole:null,memberId:"viewer",actor:{id:"v-user",label:"VIEWER"},role:"VIEWER",isProductLead:true};
+function source():PortfolioSource { return {members:[admin,pm,pm2,lead,viewer].map(c=>({id:c.memberId!,workspaceId:c.workspaceId,role:c.role!,isProductLead:c.isProductLead,active:true,displayName:c.actor.label})),snapshots:["i1","i2"].map(id=>({initiative:{id,slug:id,name:id,description:null,knownReferences:null,businessLine:"MF",stage:"DELIVERY",overallState:"UNKNOWN",stateSummary:null,isDemo:false,createdAt:"2026-09-01T00:00:00Z",updatedAt:"2026-09-01T00:00:00Z"},claims:[],findingStates:[],evidence:[]})) }; }
 const now="2026-09-26T12:00:00Z";
 function set(state:DeliveryState,s:PortfolioSource,kind:"OWNER"|"SCOPE"|"TARGET_LIVE"|"ACTUAL_LIVE"|"NEXT_MILESTONE",value:string,time=now,id="i1",ctx=admin):DeliveryState {
  const old=state.facts.find(f=>f.initiativeId===id && f.kind===kind);
@@ -18,6 +19,46 @@ function set(state:DeliveryState,s:PortfolioSource,kind:"OWNER"|"SCOPE"|"TARGET_
 function configured(s:PortfolioSource,time=now):DeliveryState { let state=structuredClone(EMPTY_STATE); state=set(state,s,"OWNER","pm",time); state=set(state,s,"OWNER","pm2",time,"i2"); state=set(state,s,"SCOPE","Pilot",time); state=set(state,s,"SCOPE","Phase A",time,"i2"); return state; }
 const edit:SectionEdit={headline:"PM reviewed",updates:"",attention:"",decisionNeeded:"",nextMilestone:"",nextStep:""};
 function reviewed(state:DeliveryState,s:PortfolioSource,id:string,time=now):DeliveryState { let review=state.reviews.find(r=>r.id===id)!; for (const sec of review.sections) { state=editSection(state,s,admin,review.id,review.revision,sec.initiativeId,sec.revision,edit,time); review=state.reviews.find(r=>r.id===id)!; } return state; }
+test("Org Owner has Admin delivery and portfolio review capabilities without a Product Lead flag",()=>{
+ const s=source();s.members.push({id:owner.memberId!,workspaceId:owner.workspaceId,role:owner.role!,isProductLead:false,active:true,displayName:owner.actor.label});
+ let state=set(structuredClone(EMPTY_STATE),s,"OWNER","pm",now,"i1",owner);
+ state=set(state,s,"SCOPE","Pilot",now,"i1",owner);
+ state=set(state,s,"TARGET_LIVE","2026-10-01",now,"i1",owner);
+ state=createReview(state,s,owner,"2026-W39",now);
+ const id=state.reviews[0]!.id;
+ state=refreshReview(state,s,owner,id,state.reviews[0]!.revision,now);
+ for(const section of state.reviews[0]!.sections){
+   const current=state.reviews[0]!;
+   state=editSection(state,s,owner,id,current.revision,section.initiativeId,section.revision,edit,now);
+ }
+ assert.equal(finalizeReview(state,s,owner,id,state.reviews[0]!.revision,now).reviews[0]!.status,"FINAL");
+ assert.equal(state.facts.find(f=>f.kind==="TARGET_LIVE")!.confirmedByMemberId,owner.memberId);
+});
+test("Platform Owner writes and finalizes without a fabricated organization membership",()=>{
+ const s=source();
+ const platform:WorkspaceAccess={...owner,memberId:null,role:null,platformRole:"PLATFORM_OWNER",actor:{id:"global-platform-user",label:"Platform Owner"}};
+ let state=set(structuredClone(EMPTY_STATE),s,"OWNER","pm",now,"i1",platform);
+ state=set(state,s,"SCOPE","Pilot",now,"i1",platform);
+ state=set(state,s,"TARGET_LIVE","2026-10-01",now,"i1",platform);
+ const fact=state.facts.find(f=>f.kind==="TARGET_LIVE")!;
+ assert.equal(fact.confirmedByMemberId,null);assert.equal(fact.confirmedByUserId,platform.actor.id);
+ assert.equal(state.events.at(-1)!.actor.id,platform.actor.id);
+ state=createReview(state,s,platform,"2026-W39",now);
+ const id=state.reviews[0]!.id;
+ for(const section of state.reviews[0]!.sections){
+  const current=state.reviews[0]!;
+  state=editSection(state,s,platform,id,current.revision,section.initiativeId,section.revision,edit,now);
+ }
+ const final=finalizeReview(state,s,platform,id,state.reviews[0]!.revision,now).reviews[0]!;
+ assert.equal(final.status,"FINAL");assert.equal(final.createdByMemberId,null);assert.equal(final.createdByUserId,platform.actor.id);
+ assert.equal(final.finalizedByMemberId,null);assert.equal(final.finalizedByUserId,platform.actor.id);
+ assert.ok(final.sections.every(section=>section.editedByMemberId===null&&section.editedByUserId===platform.actor.id));
+});
+test("Platform authority takes precedence over a Viewer membership without changing its recorded role",()=>{
+ const s=source(),platform:WorkspaceAccess={...viewer,platformRole:"PLATFORM_OWNER"};
+ assert.equal(platform.role,"VIEWER");
+ assert.equal(set(structuredClone(EMPTY_STATE),s,"OWNER","pm",now,"i1",platform).facts.length,1);
+});
 test("ISO week is based on Cairo local date; rejects nonexistent week 53",()=>{assert.equal(isoWeek("2026-09-30T22:30:00Z"),"2026-W40"); assert.equal(weekValid("2026-W53"),true); assert.equal(weekValid("2025-W53"),false);});
 test("Owner assignment requires coordinator and active member ID",()=>{const s=source(); assert.throws(()=>set(structuredClone(EMPTY_STATE),s,"OWNER","pm",now,"i1",pm),/assigns initiative owners/); assert.throws(()=>set(structuredClone(EMPTY_STATE),s,"OWNER","viewer"),/active workspace/); assert.equal(set(structuredClone(EMPTY_STATE),s,"OWNER","pm",now,"i1",lead).facts.length,1);});
 test("PM cannot update another initiative or self assign it",()=>{const s=source(); const state=configured(s); assert.throws(()=>set(state,s,"TARGET_LIVE","2026-10-01",now,"i2",pm),/assigned PM/);});
@@ -28,7 +69,7 @@ test("Known next milestone can have unknown date without inventing one",()=>{con
 test("First review is inventory; selected week is not the data cutoff",()=>{const s=source(); const state=createReview(configured(s),s,pm,"2026-W38",now); const review=state.reviews[0]!; assert.equal(review.input.asOf,now); assert.equal(review.week,"2026-W38"); assert.equal(review.baselineReviewId,null); assert.deepEqual(changesSince(review.input,null),[]);});
 test("Two PMs edit independent sections despite old whole-review revision",()=>{const s=source(); let state=createReview(configured(s),s,pm,"2026-W39",now); const review=state.reviews[0]!; state=editSection(state,s,pm,review.id,1,"i1",1,edit,now); state=editSection(state,s,pm2,review.id,1,"i2",1,edit,now); assert.equal(state.reviews[0]!.sections.every(sec=>Boolean(sec.editedByMemberId)),true); assert.throws(()=>editSection(state,s,pm,review.id,1,"i1",1,edit,now),/PM section changed/);});
 test("Refresh preserves edited narrative and marks material fact changes",()=>{const s=source(); let state=createReview(configured(s),s,pm,"2026-W39",now); const id=state.reviews[0]!.id; state=editSection(state,s,pm,id,1,"i1",1,{...edit,updates:"Keep my PM note"},now); state=set(state,s,"TARGET_LIVE","2026-10-07"); state=refreshReview(state,s,pm,id,state.reviews[0]!.revision,now); assert.equal(state.reviews[0]!.sections[0]!.updates,"Keep my PM note"); assert.equal(state.reviews[0]!.sections[0]!.needsRecheck,true);});
-test("Viewer lead capability never permits writes/finalization; PM cannot finalize",()=>{const s=source(); let state=createReview(configured(s),s,pm,"2026-W39",now); const id=state.reviews[0]!.id; state=reviewed(state,s,id); assert.throws(()=>finalizeReview(state,s,viewer,id,state.reviews[0]!.revision,now),/Viewers/); assert.throws(()=>finalizeReview(state,s,pm,id,state.reviews[0]!.revision,now),/Admin or Product Lead/); assert.equal(finalizeReview(state,s,lead,id,state.reviews[0]!.revision,now).reviews[0]!.status,"FINAL");});
+test("Viewer lead capability never permits writes/finalization; PM cannot finalize",()=>{const s=source(); let state=createReview(configured(s),s,pm,"2026-W39",now); const id=state.reviews[0]!.id; state=reviewed(state,s,id); assert.throws(()=>finalizeReview(state,s,viewer,id,state.reviews[0]!.revision,now),/Viewers/); assert.throws(()=>finalizeReview(state,s,pm,id,state.reviews[0]!.revision,now),/Owner, Admin or Product Lead/); assert.equal(finalizeReview(state,s,lead,id,state.reviews[0]!.revision,now).reviews[0]!.status,"FINAL");});
 test("Final immutable and stale input cannot finalize",()=>{const s=source(); let state=createReview(configured(s),s,pm,"2026-W39",now); const id=state.reviews[0]!.id; state=reviewed(state,s,id); const changed=set(state,s,"TARGET_LIVE","2026-10-07"); assert.throws(()=>finalizeReview(changed,s,admin,id,state.reviews[0]!.revision,now),/Inputs/); const final=finalizeReview(state,s,admin,id,state.reviews[0]!.revision,now); assert.throws(()=>refreshReview(final,s,admin,id,final.reviews[0]!.revision,now),/immutable/); assert.throws(()=>createReview(final,s,admin,"2026-W38",now),/later week/);});
 test("Owner revocation and workspace scope additions force refresh",()=>{const s=source(); let state=createReview(configured(s),s,pm,"2026-W39",now); state=reviewed(state,s,state.reviews[0]!.id); const altered=structuredClone(s); altered.members.find(m=>m.id==="pm")!.active=false; assert.throws(()=>editSection(state,altered,pm,state.reviews[0]!.id,state.reviews[0]!.revision,"i1",state.reviews[0]!.sections[0]!.revision,edit,now),/access changed/); assert.throws(()=>finalizeReview(state,altered,admin,state.reviews[0]!.id,state.reviews[0]!.revision,now),/Inputs/);});
 test("Target intermediate moves that return to same date stay visible",()=>{const s=source(); let state=set(configured(s,"2026-09-19T09:00:00Z"),s,"TARGET_LIVE","2026-09-30","2026-09-19T09:00:00Z"); const baseline=freezeInput(s,state,"w1","2026-09-19T10:00:00Z"); state=set(state,s,"TARGET_LIVE","2026-10-07","2026-09-24T10:00:00Z"); state=set(state,s,"TARGET_LIVE","2026-09-30","2026-09-25T10:00:00Z"); const changes=changesSince(freezeInput(s,state,"w1",now),baseline); assert.equal(changes.filter(c=>c.kind==="TARGET_LIVE").length,1); assert.match(changes[0]!.label,/returned/); assert.equal(changes[0]!.eventIds.length,2);});

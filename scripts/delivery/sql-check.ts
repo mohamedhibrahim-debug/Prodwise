@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import type { DeliveryState, PortfolioSource, WorkspaceAccess } from "../../src/lib/delivery/types.ts";
 const tool=join(process.env.LOCALAPPDATA!,"ProdwiseTools","PostgreSQL","16","bin","psql.exe");
 const workspace="10000000-0000-4000-8000-000000000001"; const member="30000000-0000-4000-8000-000000000001";
-const ctx:WorkspaceAccess={workspaceId:workspace,memberId:member,actor:{id:"20000000-0000-4000-8000-000000000001",label:"Delivery test Admin"},role:"Admin",isProductLead:false};
+const ctx:WorkspaceAccess={workspaceId:workspace,organizationId:workspace,platformRole:null,memberId:member,actor:{id:"20000000-0000-4000-8000-000000000001",label:"Delivery test Admin"},role:"ADMIN",isProductLead:false};
 const now=new Date().toISOString();
 function sql(query:string,expectFailure=false):string {const result=spawnSync(tool,["-X","-h","127.0.0.1","-p","55433","-U","postgres","-d","track_c_test","-v","ON_ERROR_STOP=1","-t","-A","-q"],{input:query,encoding:"utf8"}); if(expectFailure){assert.notEqual(result.status,0);return result.stderr;} if(result.status!==0)throw new Error(result.stderr || String(result.error));return result.stdout.trim();}
 function literal(value:unknown):string{return `'${JSON.stringify(value).replaceAll("'","''")}'::jsonb`;}

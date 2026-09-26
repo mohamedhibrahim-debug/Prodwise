@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { contextForCookie, SESSION_COOKIE } from './lib/auth/service';
 import { AccessError, safeReturnPath } from './lib/auth/core';
+import { canBusinessWrite } from './lib/auth/roles';
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -8,7 +9,7 @@ export async function proxy(request: NextRequest) {
       || pathname.startsWith('/assets/') || /^\/(favicon.ico|icon.png|apple-icon.png)$/.test(pathname)) return NextResponse.next();
   try {
     const ctx=await contextForCookie(request.cookies.get(SESSION_COOKIE)?.value);
-    if(ctx.role==='Viewer'&&(/^\/initiatives\/new\/?$/.test(pathname)||/\/(new|edit|verify|confirm)(\/|$)/.test(pathname))) return NextResponse.redirect(new URL('/account?restricted=viewer',request.url));
+    if(!canBusinessWrite(ctx)&&(/^\/initiatives\/new\/?$/.test(pathname)||/\/(new|edit|verify|confirm)(\/|$)/.test(pathname))) return NextResponse.redirect(new URL('/account?restricted=viewer',request.url));
     return NextResponse.next();
   }
   catch (error) {

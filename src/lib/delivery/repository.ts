@@ -18,7 +18,7 @@ export interface DeliveryRead { ctx:WorkspaceAccess; source:PortfolioSource; sta
 const local = new LocalDeliveryStore(resolve(process.cwd(),".data","prodwise-delivery-weekly.json"));
 async function readWith(ctx:WorkspaceAccess):Promise<DeliveryRead> {
   if (isSupabaseConfigured) {
-    const {data,error}=await client().rpc("delivery_read_workspace",{p_workspace_id:ctx.workspaceId,p_member_id:ctx.memberId});
+    const {data,error}=await client().rpc("delivery_read_workspace",{p_workspace_id:ctx.workspaceId,p_member_id:ctx.memberId ?? ctx.actor.id});
     if (error) throw new Error("Delivery data is unavailable. Check that the Auth and delivery migrations are installed locally.");
     const value=data as {source:unknown;state:DeliveryState}; const source=camel(value.source) as PortfolioSource;
     for (const snapshot of source.snapshots) for (const claim of snapshot.claims) {
@@ -44,7 +44,7 @@ export async function mutateDelivery(change:(read:DeliveryRead)=>Promise<Deliver
   }
   for (let attempt=0;attempt<2;attempt++) {
     const activeCtx=await requireDeliveryWriteAccess(); const read=await readWith(activeCtx); const next=await change(read);
-    const {error}=await client().rpc("delivery_commit_workspace",{p_workspace_id:activeCtx.workspaceId,p_member_id:activeCtx.memberId,p_expected_source:read.rawSource,p_expected_state:read.state,p_next_state:next});
+    const {error}=await client().rpc("delivery_commit_workspace",{p_workspace_id:activeCtx.workspaceId,p_member_id:activeCtx.memberId ?? activeCtx.actor.id,p_expected_source:read.rawSource,p_expected_state:read.state,p_next_state:next});
     if (!error) return next;
     // An independent PM section may commit while this one was saving. Re-read
     // once and rerun the per-fact/per-section revision guard. Never rebase a

@@ -1,0 +1,17 @@
+{
+  "passed": 10,
+  "checks": [
+    "Both approved identities sign in with independent PLATFORM_OWNER and AMAN ORG_OWNER roles",
+    "Normal Admin and Org Owner cannot enter platform administration or assign owner/platform roles",
+    "Normal organization invitation rejects arbitrary Outlook email",
+    "Forged platform server actions by Admin and Org Owner fail without changing state",
+    "Example Bank stores an independent policy and inherits no AMAN domains or exception",
+    "Foreign-org invitation resolves its own organization; Platform Owner enters it without fabricated membership",
+    "Policy override requires an explicit platform checkbox/reason, persists and does not broaden the allowlist",
+    "Viewer remains read-only; role and environment restrictions remain distinct",
+    "Dedicated platform invitation resend/revoke works; normal User Management cannot alter it",
+    "Platform surfaces fit mobile/desktop; delivery facts, Target Live history and finalized Weekly Reviews remain unchanged"
+  ],
+  "at": "2026-09-26T13:59:00.396Z",
+  "scope": "Local integration only; no production/provider changes"
+}

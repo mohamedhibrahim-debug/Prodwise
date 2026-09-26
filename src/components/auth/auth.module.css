@@ -2,10 +2,12 @@
 .card { max-width: 28rem; margin: var(--s-8) auto; padding: var(--s-8); background:var(--panel); border:1px solid var(--rule); border-radius:var(--r-md); }
 .form { display:grid; gap:var(--s-4); min-width:0; }
 .form fieldset { min-width:0; }
-.form input,.form select { max-width:100%; }
+.form input,.form select,.form textarea { max-width:100%; }
 .form label { display:grid; gap:var(--s-2); color:var(--ink-700); }
-.form input,.form select { border:1px solid var(--rule-strong); border-radius:var(--r-sm); padding:var(--s-3); background:var(--panel); color:var(--ink-900); font:inherit; }
-.form input:focus,.form select:focus { outline:2px solid var(--accent-500); outline-offset:2px; }
+.form input,.form select,.form textarea { border:1px solid var(--rule-strong); border-radius:var(--r-sm); padding:var(--s-3); background:var(--panel); color:var(--ink-900); font:inherit; }
+.form textarea { min-height:5rem; resize:vertical; }
+.form input[type=checkbox] { justify-self:start; }
+.form input:focus,.form select:focus,.form textarea:focus { outline:2px solid var(--accent-500); outline-offset:2px; }
 .form button,.account button { border:0; border-radius:var(--r-sm); padding:var(--s-3) var(--s-4); color:var(--panel); background:var(--accent-700); cursor:pointer; font:inherit; }
 .form button:disabled { opacity:.6; cursor:wait; }
 .error { color:var(--state-blocked-fg); background:var(--state-blocked-bg); padding:var(--s-3); }

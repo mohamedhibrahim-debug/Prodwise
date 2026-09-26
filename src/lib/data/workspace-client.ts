@@ -22,7 +22,7 @@ export function workspaceClient(base: SupabaseClient, ctx: WorkspaceAccess): Sup
       } });
     };
     if (property === 'rpc') return (operation: string, args: object) => base.rpc('auth_business_rpc', {
-      p_workspace_id: ctx.workspaceId, p_member_id: ctx.memberId, p_operation: operation, p_args: args,
+      p_workspace_id: ctx.workspaceId, p_member_id: ctx.memberId ?? ctx.actor.id, p_operation: operation, p_args: args,
     });
     const value = Reflect.get(target, property);
     return typeof value === 'function' ? value.bind(target) : value;

@@ -4,7 +4,7 @@ import { guardedRepository } from './guarded-repository.ts';
 import type { Repository } from './repository.ts';
 import type { WorkspaceAccess } from '../auth/core.ts';
 import { repositoryContext } from '../auth/repository-context.ts';
-const ctx:WorkspaceAccess={workspaceId:'a',memberId:'m',actor:{id:'real-user',label:'Real PM'},role:'Member',isProductLead:false};
+const ctx:WorkspaceAccess={workspaceId:'a',organizationId:'org-a',platformRole:null,memberId:'m',actor:{id:'real-user',label:'Real PM'},role:'MEMBER',isProductLead:false};
 test('synchronous guarded repository is not assimilated as a Promise',async()=>{
   let accessChecks=0;
   const repo=guardedRepository(async()=>{accessChecks++;return ctx;},()=>({} as Repository),()=>true,()=>true);
@@ -23,7 +23,7 @@ function fixture(access:()=>Promise<WorkspaceAccess>=async()=>ctx,enabled=true){
   return {calls,repo:guardedRepository(access,()=>raw as unknown as Repository,()=>enabled,()=>true)};
 }
 test('every mutation denies Viewer before environment; unauthorized reads never reach raw store',async()=>{
-  let resolves=0;const {repo,calls}=fixture(async()=>{resolves++;return {...ctx,role:'Viewer'};},false);
+  let resolves=0;const {repo,calls}=fixture(async()=>{resolves++;return {...ctx,role:'VIEWER'};},false);
   for(const name of ['createInitiative','createEvidence','updateEvidence','createClaim','updateClaim','setClaimEvidence','verifyClaim','setEvidenceAnchor','resolveConflict','assignFindingConfirmer','setFindingState','reopenFindingState']){
     await assert.rejects(()=>Reflect.get(repo,name)({initiativeId:'i1'}),{code:'VIEW_ONLY'});
   }
@@ -53,7 +53,7 @@ test('raw reads cannot expose another workspace and actual signed actor override
 });
 test('membership is resolved anew after a previously rendered write form',async()=>{
   let active=ctx;const {repo,calls}=fixture(async()=>active);
-  await repo.createInitiative({name:'Allowed'} as never);active={...ctx,role:'Viewer'};
+  await repo.createInitiative({name:'Allowed'} as never);active={...ctx,role:'VIEWER'};
   await assert.rejects(()=>repo.createInitiative({name:'Denied'} as never),{code:'VIEW_ONLY'});
   assert.equal(calls.length,1);
   await assert.rejects(()=>fixture(undefined,false).repo.createInitiative({name:'Disabled'} as never),{code:'WRITE_DISABLED'});

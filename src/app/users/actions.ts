@@ -2,10 +2,14 @@
 import { authErrorMessage } from '@/lib/auth/errors';
 
 import { revalidatePath } from 'next/cache';
-import { inviteUser,rotateInvitation,changeMembership } from '@/lib/auth/service';
+import { inviteUser,rotateInvitation,changeMembership,renameWorkspace } from '@/lib/auth/service';
 import type { Role } from '@/lib/auth/core';
 import type { AuthFormState } from '@/components/auth/AuthForm';
 const text=(form:FormData,key:string)=>String(form.get(key)??'');
+export async function renameWorkspaceAction(_state:AuthFormState,form:FormData):Promise<AuthFormState> {
+  try {await renameWorkspace(text(form,'name'));revalidatePath('/users');revalidatePath('/');return {error:null,message:'Workspace name updated.'};}
+  catch(error){return {error:authErrorMessage(error,'Could not update workspace configuration.')};}
+}
 export async function inviteAction(_state:AuthFormState,form:FormData):Promise<AuthFormState> {
   try {const token=await inviteUser(text(form,'email'),text(form,'role') as Role);revalidatePath('/users');return {error:null,message:'Invitation created. Email delivery is not configured; share the link privately.',link:`/invite/${token}`};}
   catch(error){return {error:authErrorMessage(error,'Could not invite this person.')};}

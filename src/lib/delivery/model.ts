@@ -1,3 +1,4 @@
+import { hasOrganizationAdminAuthority, isPlatformOwner, canBusinessWrite } from "../auth/roles.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { runReview } from "../review/engine.ts";
 import { applyFindingStates } from "../review/merge.ts";
@@ -19,13 +20,15 @@ export function meaningful(value: unknown): unknown {
   return value;
 }
 export function assertMember(ctx: WorkspaceAccess, source: PortfolioSource): void {
+  // Platform authority is verified freshly at the server boundary.
+  if (isPlatformOwner(ctx)) return;
   const member = source.members.find(m => m.id === ctx.memberId && m.workspaceId === ctx.workspaceId && m.active);
   if (!member || member.role !== ctx.role || member.isProductLead !== ctx.isProductLead) fail("ACCESS_CHANGED", "Your workspace access changed. Sign in again.");
 }
-export function assertWriter(ctx: WorkspaceAccess): void { if (ctx.role === "Viewer") fail("READ_ONLY", "Viewers can read this workspace, but cannot save changes."); }
+export function assertWriter(ctx: WorkspaceAccess): void { if (!canBusinessWrite(ctx)) fail("READ_ONLY", "Viewers can read this workspace, but cannot save changes."); }
 export function assertFinalizer(ctx: WorkspaceAccess): void {
   assertWriter(ctx);
-  if (ctx.role !== "Admin" && !ctx.isProductLead) fail("FINALIZE_ACCESS", "An Admin or Product Lead must finalize the shared review.");
+  if (!hasOrganizationAdminAuthority(ctx) && !ctx.isProductLead) fail("FINALIZE_ACCESS", "An Owner, Admin or Product Lead must finalize the shared review.");
 }
 export function dateValid(value: string): boolean { return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0,10) === value; }
 export function cairoDay(asOf: string): string { return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(asOf)); }
@@ -62,9 +65,9 @@ export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: W
   const old = state.facts.find(f => f.workspaceId === ctx.workspaceId && f.initiativeId === input.initiativeId && f.kind === input.kind);
   if ((old?.revision ?? 0) !== input.expectedRevision) fail("STALE_FACT", "This fact changed while you were editing. Reload before saving.");
   if (input.kind === "OWNER") {
-    if (ctx.role !== "Admin" && !ctx.isProductLead) fail("OWNER_ACCESS", "An Admin or Product Lead assigns initiative owners.");
-    if (!input.retract && !source.members.some(m => m.id === input.value.memberId && m.workspaceId === ctx.workspaceId && m.active && m.role !== "Viewer")) fail("OWNER_MEMBER", "Choose an active workspace Member or Admin.");
-  } else if (ctx.role !== "Admin" && ownerFor(state.facts,input.initiativeId) !== ctx.memberId) fail("SECTION_ACCESS", "Only the assigned PM or an Admin can update this initiative's delivery facts.");
+    if (!hasOrganizationAdminAuthority(ctx) && !ctx.isProductLead) fail("OWNER_ACCESS", "An Owner, Admin or Product Lead assigns initiative owners.");
+    if (!input.retract && !source.members.some(m => m.id === input.value.memberId && m.workspaceId === ctx.workspaceId && m.active && m.role !== "VIEWER")) fail("OWNER_MEMBER", "Choose an active workspace Owner, Admin or Member.");
+  } else if (!hasOrganizationAdminAuthority(ctx) && ownerFor(state.facts,input.initiativeId) !== ctx.memberId) fail("SECTION_ACCESS", "Only the assigned PM, Owner or Admin can update this initiative's delivery facts.");
   if (!input.note.trim() || input.note.length > 2000) fail("CONFIRMATION_NOTE", "Record the confirmation or change reason (up to 2,000 characters).");
   if (input.basis !== "EVIDENCE" && input.basis !== "DIRECT_KNOWLEDGE") fail("BASIS", "Choose how you confirmed this fact.");
   if (input.basis === "EVIDENCE") {
@@ -87,7 +90,7 @@ export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: W
     value:input.retract ? { date:null,text:null,memberId:null,extent:null } : input.value, state:input.retract ? "RETRACTED" : "SET",
     basis:input.basis, note:input.note.trim(), evidenceId:input.basis === "EVIDENCE" ? input.evidenceId : null, locator:input.basis === "EVIDENCE" ? input.locator : null,
     supportDigest:input.basis === "EVIDENCE" ? supportDigest(source,input.initiativeId,input.evidenceId,input.locator) : null,
-    confirmedByMemberId:ctx.memberId, confirmedByLabel:ctx.actor.label, updatedAt:now };
+    confirmedByMemberId:ctx.memberId, confirmedByUserId:ctx.actor.id, confirmedByLabel:ctx.actor.label, updatedAt:now };
   return { ...state, facts:[...state.facts.filter(f => f.id !== fact.id),fact], events:[...state.events,{ id:randomUUID(), workspaceId:ctx.workspaceId, initiativeId:input.initiativeId, occurredAt:now, actor:ctx.actor, before:old ?? null, after:fact }] };
 }
 export function freezeInput(source: PortfolioSource, state: DeliveryState, workspaceId: string, asOf: string): PortfolioInput {
@@ -185,7 +188,7 @@ export function createReview(state:DeliveryState,source:PortfolioSource,ctx:Work
   if (state.reviews.some(r=>r.workspaceId===ctx.workspaceId && r.week===week)) fail("SHARED_REVIEW_EXISTS","The shared review for this week already exists. Open it to continue.");
   if (state.reviews.some(r=>r.workspaceId===ctx.workspaceId && r.status === "FINAL" && r.week>=week)) fail("OUT_OF_ORDER_WEEK","A later week is finalized. Open existing historical reviews or prepare the current week.");
   const input=freezeInput(source,state,ctx.workspaceId,now); const baseline=latestBaseline(state,ctx.workspaceId,week);
-  const review:WeeklyReview={ id:randomUUID(),workspaceId:ctx.workspaceId,week,status:"DRAFT",revision:1,baselineReviewId:baseline?.id ?? null,input,sections:input.snapshots.map(s=>newSection(input,s.initiative.id,baseline?.input ?? null)),aiDrafts:[],createdAt:now,createdByMemberId:ctx.memberId,finalizedAt:null,finalizedByMemberId:null,finalizedByLabel:null };
+  const review:WeeklyReview={ id:randomUUID(),workspaceId:ctx.workspaceId,week,status:"DRAFT",revision:1,baselineReviewId:baseline?.id ?? null,input,sections:input.snapshots.map(s=>newSection(input,s.initiative.id,baseline?.input ?? null)),aiDrafts:[],createdAt:now,createdByMemberId:ctx.memberId,createdByUserId:ctx.actor.id,finalizedAt:null,finalizedByMemberId:null,finalizedByLabel:null };
   return { ...state,reviews:[...state.reviews,review] };
 }
 function draft(state:DeliveryState,ctx:WorkspaceAccess,id:string,revision:number | null):WeeklyReview {
@@ -202,12 +205,12 @@ export function editSection(state:DeliveryState,source:PortfolioSource,ctx:Works
   const section=review.sections.find(s=>s.initiativeId===initiativeId);
   if (!section || !source.snapshots.some(s=>s.initiative.id===initiativeId)) fail("SECTION_ACCESS","This initiative is no longer in the workspace. Refresh the review.");
   const currentOwner=ownerFor(state.facts,initiativeId);
-  if (ctx.role!=="Admin" && !ctx.isProductLead && (currentOwner!==ctx.memberId || section.ownerMemberId!==ctx.memberId)) fail("SECTION_ACCESS","Only the assigned PM or a review coordinator can edit this section.");
+  if (!hasOrganizationAdminAuthority(ctx) && !ctx.isProductLead && (currentOwner!==ctx.memberId || section.ownerMemberId!==ctx.memberId)) fail("SECTION_ACCESS","Only the assigned PM or a review coordinator can edit this section.");
   if (section.revision!==sectionRevision) fail("STALE_SECTION","This PM section changed. Reload before saving.");
   if (Object.values(edit).some(v=>typeof v!=="string" || v.length>4000)) fail("SECTION_TEXT","Keep each section under 4,000 characters.");
   const current=freezeInput(source,state,ctx.workspaceId,now);
   if (section.sourceDigest!==sectionDigest(current,initiativeId)) fail("STALE_SECTION_INPUT","Delivery facts changed. Refresh the shared review before editing this section.");
-  const next={ ...section,...edit,revision:section.revision+1,needsRecheck:false,editedByMemberId:ctx.memberId,editedAt:now };
+  const next={ ...section,...edit,revision:section.revision+1,needsRecheck:false,editedByMemberId:ctx.memberId,editedByUserId:ctx.actor.id,editedByLabel:ctx.actor.label,editedAt:now };
   return replaceReview(state,{ ...review,revision:review.revision+1,sections:review.sections.map(s=>s.initiativeId===initiativeId?next:s) });
 }
 export function refreshReview(state:DeliveryState,source:PortfolioSource,ctx:WorkspaceAccess,id:string,revision:number,now:string):DeliveryState {
@@ -222,15 +225,15 @@ export function finalizeReview(state:DeliveryState,source:PortfolioSource,ctx:Wo
   if (state.reviews.some(r=>r.workspaceId===ctx.workspaceId && r.status === "FINAL" && r.week>review.week)) fail("OUT_OF_ORDER_FINAL","A later week is already finalized. Keep this historical draft for reference; record corrections in the current week's review.");
   const current=freezeInput(source,state,ctx.workspaceId,now); const baseline=latestBaseline(state,ctx.workspaceId,review.week);
   if (current.digest!==review.input.digest || (baseline?.id ?? null)!==review.baselineReviewId) fail("STALE_FINALIZE","Inputs or the previous finalized review changed. Refresh, review the affected PM sections, then finalize.");
-  if (review.sections.some(s=>s.needsRecheck || !s.editedByMemberId)) fail("SECTION_REVIEW_REQUIRED","Every PM section must be reviewed and saved before finalization.");
-  return replaceReview(state,{ ...review,status:"FINAL",revision:review.revision+1,finalizedAt:now,finalizedByMemberId:ctx.memberId,finalizedByLabel:ctx.actor.label });
+  if (review.sections.some(s=>s.needsRecheck || (!s.editedByMemberId && !s.editedByUserId))) fail("SECTION_REVIEW_REQUIRED","Every PM section must be reviewed and saved before finalization.");
+  return replaceReview(state,{ ...review,status:"FINAL",revision:review.revision+1,finalizedAt:now,finalizedByMemberId:ctx.memberId,finalizedByUserId:ctx.actor.id,finalizedByLabel:ctx.actor.label });
 }
 export function applyAiDraft(state:DeliveryState,source:PortfolioSource,ctx:WorkspaceAccess,id:string,revision:number,ai:AiDraft,now:string):DeliveryState {
   assertMember(ctx,source); assertWriter(ctx); const review=draft(state,ctx,id,revision);
   const current=freezeInput(source,state,ctx.workspaceId,now);
   if (current.digest!==review.input.digest || ai.inputDigest!==review.input.digest) fail("STALE_AI","Inputs changed while the draft wording was prepared. Refresh before drafting again.");
   const sections=review.sections.map(section=>{ const block=ai.original.find(b=>b.initiativeId===section.initiativeId); if (!block) return section;
-    if (ctx.role!=="Admin" && !ctx.isProductLead && ownerFor(state.facts,section.initiativeId)!==ctx.memberId) fail("SECTION_ACCESS","You can only draft wording for your assigned initiative sections.");
-    return { ...section,updates:section.editedByMemberId && section.updates ? section.updates : block.lines.map(l=>l.text).join("\n"),aiOriginal:block.lines,revision:section.revision+1,needsRecheck:true }; });
+    if (!hasOrganizationAdminAuthority(ctx) && !ctx.isProductLead && ownerFor(state.facts,section.initiativeId)!==ctx.memberId) fail("SECTION_ACCESS","You can only draft wording for your assigned initiative sections.");
+    return { ...section,updates:(section.editedByMemberId || section.editedByUserId) && section.updates ? section.updates : block.lines.map(l=>l.text).join("\n"),aiOriginal:block.lines,revision:section.revision+1,needsRecheck:true }; });
   return replaceReview(state,{ ...review,revision:review.revision+1,sections,aiDrafts:[...review.aiDrafts,ai] });
 }
