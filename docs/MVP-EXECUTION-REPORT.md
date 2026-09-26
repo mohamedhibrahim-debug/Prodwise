@@ -58,9 +58,9 @@ See [screenshot index](ui-review/mvp-integration/README.md). It includes login, 
 
 Private fictional credentials are in ignored `integration/.data/local-access.json`. The direct reviewer email is `reviewer@prodwise.test`; its randomized password is in that private file. No password, signing secret or provider key is committed or reproduced in this report.
 
-The ignored `integration/.env.local` now has non-empty `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` fields saved by the user. After restarting from the integration root, the actual Weekly Review called Anthropic with `claude-sonnet-5`. The API returned HTTP 400 because this key requires the `anthropic-workspace-id` header. The ID is not configured, and read-only workspace discovery returned HTTP 403. Workspace selection/header support is required before a successful Claude result can be accepted; the key has not been changed or requested again.
+The ignored `integration/.env.local` now has non-empty key/model fields saved by the user, with a new workspace-scoped key. After restarting from the integration root, the actual Weekly Review successfully called `claude-sonnet-5`: HTTP 200, accepted Claude mode, six exact grounded statements with preserved source references and human-review requirements. The earlier workspace-header rejection is resolved by the replacement key. The key was not changed by the agent or requested again.
 
-Currently the UI correctly shows a **factual template** after the real provider refusal. Seven data/baseline/unknown/fallback checks passed on the existing demo. A successful Anthropic generation and model compatibility remain unverified. See [current live-provider result](ui-review/claude-live/README.md).
+The current UI displays the accepted **Claude** result. Eight acceptance checks passed, including previous-final baseline, seven-day Target movement in the actual Claude wording, unknown dates, unchanged delivery truth and immutable Final. Fault-injected missing configuration/provider failures/invented wording continue to return templates. The request now explicitly bounds output to eight prioritized lines per section (prompt V2); the existing twelve-line validator and grounding rules remain intact. Relevant AI/domain tests (23), typecheck and targeted lint passed after this fix. See [current live-provider result](ui-review/claude-live/README.md).
 
 The main combined test command is `npm test`; `test:mvp-db` replays into a fresh database on the owned localhost cluster. The browser scripts use the existing local Playwright/Chromium runtime. Fixture bootstrapping refuses to overwrite an existing checkout. Local Auth intentionally refuses production/hosted execution; use Next development mode for this private preview.
 
@@ -68,7 +68,7 @@ The main combined test command is `npm test`; `test:mvp-db` replays into a fresh
 
 There are no further product decisions blocking this approved local implementation. The following acceptance work remains before a hosted release:
 
-- Select an Anthropic workspace authorized for the existing key and supply its ID in the request header, then demonstrate a real supported Claude draft. Key/model loading is confirmed; workspace configuration currently blocks generation. This is the graduation demo gate.
+- Rehearse the accepted real Claude draft, its source references and PM/Lead human-review flow for the graduation video. The local real-provider gate has passed with the user's workspace-scoped key.
 - Verify real Supabase identity creation, invitation acceptance, session/refresh/revocation and closed public-registration configuration on an approved non-production environment. Provision actual Admin and reviewer identities there only with authorization.
 - Choose whether manual invitation sharing is sufficient for the graduation MVP. Automated invitation email and forgotten-password email recovery are not implemented; own password change is implemented.
 - Validate provider error/rate-limit behavior and operator recovery after partial provider creation. PostgreSQL acceptance is atomic; provider creation and database acceptance cannot share one transaction.

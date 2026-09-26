@@ -1,23 +1,24 @@
-# Local Claude Weekly Review acceptance — 26 September 2026
+# Real Claude Weekly Review gate — PASS
 
-**Current real Claude result: FAIL — provider workspace selection required.** The saved file now loads `ANTHROPIC_API_KEY` (present, length 108) and `ANTHROPIC_MODEL` (present, length 15). The localhost server was restarted from the integration root, and the actual signed-in Weekly Review sent a real Messages API request using `claude-sonnet-5`. Anthropic returned HTTP 400 `invalid_request_error`: the key is not scoped to a workspace and requires an `anthropic-workspace-id` header. No workspace ID is configured. Read-only workspace discovery returned HTTP 403 `permission_error`, so the ID could not be resolved automatically. The key was not changed or requested again.
+On 26 September 2026 the integration server was restarted from its own root using the user's new workspace-scoped key. The key/model fields are present with lengths 108 and 15. The actual signed-in W39 Weekly Review called `claude-sonnet-5` and persisted an accepted **CLAUDE** draft: HTTP **200**, provider model `claude-sonnet-5`, `end_turn`, 8,514 ms, six grounded original statements, prompt `WEEKLY_EXTRACTIVE_V2`. The previous workspace-header blocker is resolved by the user's replacement key.
 
 `.env.local` is ignored by `.gitignore:27` and has no tracked Git entry. The localhost development server was restarted with that file. No key was printed, committed, embedded in a screenshot, or sent to another tool. No production operation was performed.
 
-Seven checks passed using the existing fictional local portfolio and the actual signed-in Weekly Review action:
+Eight checks passed using the existing fictional local portfolio and the actual signed-in Weekly Review action:
 
 - W39 uses the existing W38 Final as its previous-final baseline.
 - Drafting preserves frozen input, confirmed delivery facts, revision events and the complete immutable W38 Final. W39 remains a draft requiring human review.
-- All eight persisted template lines match permitted same-initiative source statements exactly.
+- All six persisted Claude statements match permitted same-initiative source statements exactly; generation metadata and original wording are retained.
 - The target comparison is 2026-10-01 → 2026-10-08: seven days later; current Target revision remains 2.
 - Seven unknown Target/Actual fields remain unknown/not recorded. The known milestone has no invented date.
-- The UI truthfully labels this result a factual template, not AI generation.
+- The UI labels this accepted result as Claude; generated sections require human review.
 - Controlled missing-configuration, HTTP 503, transport-failure and invented-statement injection into the provider adapter all produce supported template wording. These injected failures are not live Anthropic failures.
+- The actual Claude wording explicitly includes the supported seven-day Target Live movement and remains within the requested section limit.
 
-[Structured results](results.json) · [Actual template screenshot](template-weekly-1440.png)
+[Structured results](results.json) · [Actual accepted Claude screenshot](claude-weekly-1440.png) · [Earlier actual fallback screenshot](template-weekly-1440.png)
 
-The real provider refusal exercised the actual UI fallback. No AI wording was generated, so grounding of a successful Claude output and compatibility of the attempted model remain unverified. A workspace ID authorized for this key must be selected and supplied in the request header before rerunning acceptance. The current adapter does not send that optional header. This requires workspace configuration and adapter support, not re-entry or replacement of the key. [Anthropic authentication documentation](https://platform.claude.com/docs/en/manage-claude/authentication) describes this requirement.
+The first response with the new key was HTTP 200 but contained 20 fully grounded lines in one section. The existing validator correctly rejected it because its maximum is 12; the prompt had not communicated that bound. Prompt V2 now asks for at most eight prioritized statements per initiative, with Target changes first. The existing validator, exact-text/same-initiative rules and human finalization requirements remain unchanged. A regression test retains refusal of oversized provider sections even when every statement is grounded. **23 relevant AI/domain tests**, typecheck and targeted lint passed after the fix. The actual oversized-response fallback and controlled fault injection are separately identified.
 
-The earlier empty-file diagnosis in `ENV-DIAGNOSIS.md` is historical; the current saved file has non-empty values. No credential values are included in these reports or screenshots.
+**No blocker remains for this local Claude gate.** This proves one successful configured provider execution against the existing fictional portfolio, not unattended operation or production acceptance. Earlier empty-file and workspace-header diagnoses are historical and resolved by the user's saved key changes. No credential values are included in these reports or screenshots.
 
 The acceptance test intentionally adds one drafting result to the existing W39 draft. It never finalizes, changes confirmed delivery truth, or rewrites the prior Final.

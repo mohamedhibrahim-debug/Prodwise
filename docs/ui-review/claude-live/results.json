@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-26T12:07:28.121Z",
+  "at": "2026-09-26T12:27:56.680Z",
   "localOnly": true,
   "checks": [
     {
@@ -23,24 +23,28 @@
       "status": "PASS"
     },
     {
-      "name": "Actual UI fallback is truthfully labelled as a template, without a Claude success claim",
+      "name": "Real server-side Claude result persisted and visibly marked Claude; original wording retained and human review required",
       "status": "PASS"
     },
     {
       "name": "Missing config, HTTP 503, transport failure and unsupported/invented wording all use factual template fallback (controlled fault injection)",
       "status": "PASS"
+    },
+    {
+      "name": "Accepted Claude wording explicitly includes the grounded seven-day Target Live movement; all generated sections remain within the requested limit and require human review",
+      "status": "PASS"
     }
   ],
-  "realClaude": "FAIL",
-  "blocker": "Provider requires anthropic-workspace-id for this unscoped key; no workspace ID is configured and read-only discovery returned 403.",
+  "realClaude": "PASS",
+  "blocker": null,
   "output": {
-    "mode": "TEMPLATE",
-    "model": null,
-    "promptVersion": "WEEKLY_EXTRACTIVE_V1",
+    "mode": "CLAUDE",
+    "model": "claude-sonnet-5",
+    "promptVersion": "WEEKLY_EXTRACTIVE_V2",
     "inputDigest": "a6e7b147316d874de82817a2ec29872257c3fdd7fa6265e505cb56aab8aa6850",
-    "sectionCount": 4,
-    "lineCount": 8,
-    "reason": "Claude could not prepare the wording. The factual template is available; retry after checking the local API configuration."
+    "sectionCount": 1,
+    "lineCount": 6,
+    "reason": null
   },
   "target": {
     "previous": "2026-10-01",
@@ -51,11 +55,14 @@
   "unknownFieldCount": 7,
   "provider": {
     "requestedModel": "claude-sonnet-5",
-    "httpStatus": 400,
-    "errorType": "invalid_request_error",
-    "generationSucceeded": false,
-    "reason": "This API key is not scoped to a workspace, so this request must include the anthropic-workspace-id header with the ID of the workspace to use. Add the header, or use an API key that is scoped to a workspace.",
-    "workspaceDiscoveryStatus": 403
+    "providerModel": "claude-sonnet-5",
+    "httpStatus": 200,
+    "errorType": null,
+    "generationSucceeded": true,
+    "stopReason": "end_turn",
+    "elapsedMs": 8514,
+    "inputTokens": 3734,
+    "outputTokens": 1012
   },
   "environment": {
     "key": {
@@ -67,5 +74,14 @@
       "length": 15
     },
     "path": "C:\\Users\\mohamed.hibrahim\\.codex\\.chatgpt-projects\\g-p-6a9c18d9edc481918dfc988bd280765c\\execution-2026-09-26\\integration\\.env.local"
+  },
+  "fix": "WEEKLY_EXTRACTIVE_V2 requests at most eight prioritized lines per initiative; existing twelve-line validator and grounding checks remain unchanged.",
+  "revalidation": {
+    "aiAndDeliveryUnitTests": {
+      "passed": 23,
+      "failed": 0
+    },
+    "typecheck": "PASS",
+    "targetedLint": "PASS"
   }
 }
