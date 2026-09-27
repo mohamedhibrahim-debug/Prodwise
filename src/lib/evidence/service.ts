@@ -16,6 +16,7 @@ import {normalizeSubmission,sha256Utf8,verifyAnchor,hasLoneSurrogate} from './an
 import {extractEvidence,EVIDENCE_PROMPT_VERSION} from './extract';
 import {cosmeticPayload,SUPERSEDABLE,type ReadableClaim} from './filter';
 import {reviseQuestion} from '../workspace/questions';
+import {relationshipCandidates} from '../workspace/relationships';
 import type {Submission,EvidenceState,ProposalPayload} from './types';
 
 const now=()=>new Date().toISOString();
@@ -47,7 +48,8 @@ export async function readWithAI(submissionId:string,requestId:string):Promise<v
  const offered:ReadableClaim[]=(d.source.snapshots.find(x=>x.initiative.id===submission.initiativeId)?.claims??[]).filter(c=>SUPERSEDABLE.includes(c.status)&&['REQUIREMENT','BUSINESS_RULE','DECISION','ASSUMPTION','DEPENDENCY'].includes(c.type)).slice(0,40).map((c,n)=>({ref:`K${n+1}`,id:c.id,updatedAt:c.updatedAt,type:c.type,status:c.status,subject:c.subject,attribute:c.attribute,value:c.value,domain:c.domain,phase:c.phase}));
  let output:Awaited<ReturnType<typeof extractEvidence>>|null=null,errorCode:string|null=null;try{output=await extractEvidence(submission.text,fetch,{kind:submission.kind,claims:offered});}catch(e){errorCode=e instanceof Error&&e.name==='TimeoutError'?'TIMED_OUT':e instanceof Error&&e.message==='NOT_CONFIGURED'?'NOT_CONFIGURED':'READING_FAILED';}
  const completionCtx=await requireBusinessWriteAccess();if(completionCtx.workspaceId!==ctx.workspaceId)throw Error('Organization context changed while reading. Your evidence remains saved.');
- const candidates=output?.accepted.map(c=>({...c,baseRevision:c.type==='DELIVERY'?factFor(d.state.facts,submission.initiativeId,c.payload.factKind!)?.revision??0:0}))??[];
+ const accepted=output?[...output.accepted,...relationshipCandidates(output.accepted,d.source.snapshots.filter(x=>!x.initiative.archivedAt).map(x=>x.initiative),submission.initiativeId)]:[];
+ const candidates=accepted.map(c=>({...c,baseRevision:c.type==='DELIVERY'?factFor(d.state.facts,submission.initiativeId,c.payload.factKind!)?.revision??0:0}));
  if(!isLocalAuth()){await rpc('finish_evidence_attempt',{p_attempt_id:attemptId,p_result:{candidates,model:output?.model??null,discardedCount:output?.discarded??0,errorCode}});return;}
  await withRepositoryContext(ctx,async()=>writeStoreAtomic(s=>{scopedInitiative(s,submission.initiativeId,ctx.workspaceId,true);const attempt=s.evidenceAttempts?.find(a=>a.id===attemptId&&a.workspaceId===ctx.workspaceId);if(!attempt||attempt.status!=='READING')return;for(const c of candidates){if(!verifyAnchor(submission.text,c.anchor,submission.textSha256))continue;const anchorId=randomUUID();(s.evidenceAnchors??=[]).push({id:anchorId,workspaceId:ctx.workspaceId,initiativeId:submission.initiativeId,submissionId,...c.anchor});(s.evidenceProposals??=[]).push({id:randomUUID(),workspaceId:ctx.workspaceId,initiativeId:submission.initiativeId,submissionId,attemptId,anchorId,type:c.type,payload:c.payload,version:1,baseRevision:c.baseRevision,status:'PENDING',decidedBy:null,decidedAt:null,reason:null,resultType:null,resultId:null});}attempt.status=errorCode==='TIMED_OUT'?'TIMED_OUT':errorCode?'FAILED':'READY';attempt.endedAt=now();attempt.errorCode=errorCode;attempt.model=output?.model??null;attempt.discardedCount=output?.discarded??0;}));
 }

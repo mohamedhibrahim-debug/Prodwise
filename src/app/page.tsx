@@ -12,19 +12,25 @@ import {canBusinessWrite} from '@/lib/auth/roles';
 import {isDemoGuestSession} from '@/lib/auth/service';
 import {STAGE_LABEL} from '@/lib/domain/labels';
 import {FirstRunOrientation} from '@/components/shell/FirstRunOrientation';
+import {readRelationships} from '@/lib/data/relationships';
+import {readQuestions} from '@/lib/data/questions';
+import {ownerAttention} from '@/lib/workspace/owner-attention';
+import {WaitingOnYou} from '@/components/workspace/WaitingOnYou';
 import styles from './home.module.css';
 export const metadata:Metadata={title:'Home'};
 export const dynamic='force-dynamic';
 export default async function Home({searchParams}:{searchParams:Promise<{organizationChanged?:string}>}){
- const [d,activity,query,guest,management]=await Promise.all([readDelivery(),getRepository().listRecentActivity(100),searchParams,isDemoGuestSession(),readManagement()]);
+ const [d,activity,query,guest,management,rel,qs]=await Promise.all([readDelivery(),getRepository().listRecentActivity(100),searchParams,isDemoGuestSession(),readManagement(),readRelationships(),readQuestions()]);
  const p=buildPortfolioProjection({source:d.source,state:d.state,workspaceId:d.ctx.workspaceId,activity,management,asOf:d.presentation.scenarioAt??new Date().toISOString()});
+ const waiting=ownerAttention({memberId:d.ctx.memberId??null,facts:d.state.facts.filter(f=>f.workspaceId===d.ctx.workspaceId),relationships:rel.relationships,questions:qs.questions,ends:d.source.snapshots.map(x=>({id:x.initiative.id,name:x.initiative.name,slug:x.initiative.slug,archived:Boolean(x.initiative.archivedAt)})),today:p.today});
  const week=isoWeek(d.presentation.scenarioAt??new Date().toISOString());const review=d.state.reviews.find(r=>r.workspaceId===d.ctx.workspaceId&&r.week===week);const writer=canBusinessWrite(d.ctx)&&isDemoWriteEnabled;
  const reviewed=review?.sections.filter(s=>!s.needsRecheck&&(s.editedByMemberId||s.editedByUserId)).length??0;
  const baseline=review?d.state.reviews.find(r=>r.id===review.baselineReviewId):p.baseline;
  const next=review?.status==='FINAL'?nextReviewWeek(review.week):null;
  const nextExists=next?d.state.reviews.some(r=>r.workspaceId===d.ctx.workspaceId&&r.week===next.week):false;
  const nextAvailable=next&&next.week<=isoWeek(new Date().toISOString());
- const newChanges=p.changes.filter(c=>c.sentence==='Added to Prodwise');const changes=p.changes.filter(c=>c.sentence!=='Added to Prodwise').slice(0,6-(newChanges.length?1:0));
+ const newChanges=p.changes.filter(c=>c.sentence==='Added to Prodwise');// One event touching two initiatives (a relationship) is shown once portfolio-wide.
+ const seen=new Set<string>();const changes=p.changes.filter(c=>c.sentence!=='Added to Prodwise').filter(c=>{const key=`${c.sentence}|${c.occurredAt.slice(0,19)}`;if(seen.has(key))return false;seen.add(key);return true;}).slice(0,6-(newChanges.length?1:0));
  return <div className={styles.page}>
  {query.organizationChanged&&<p role="status" className={styles.notice}>You are now working in {d.presentation.organizationName}.</p>}
  <FirstRunOrientation identity={{access:d.ctx,presentation:d.presentation,guest}}/>
@@ -33,7 +39,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{organiz
 {!p.summary.total?<section className={styles.empty}><h2>No initiatives recorded in {d.presentation.organizationName} yet.</h2><p>Record an initiative to build its scope, sources and delivery facts.</p>{writer&&<Link prefetch={false} href="/initiatives/new">Create initiative →</Link>}</section>:<section className={styles.attentionSection} aria-labelledby="attention-heading"><div className={styles.sectionHead}><h2 id="attention-heading">Needs attention</h2><p>{p.summary.attentionInitiatives} initiatives · {p.summary.attentionReasons} reasons</p></div><p className={styles.meta}>Ordered by reason type, then date — not a priority score.</p>
  {p.attentionRows.length?<ul className={styles.attentionList}>{p.attentionRows.slice(0,5).map(r=><li key={r.initiative.id}><div className={styles.identity}><Link prefetch={false} href={`/initiatives/${r.initiative.slug}`}>{r.initiative.name}</Link><span>{STAGE_LABEL[r.initiative.stage]} · {r.ownerLabel}</span></div><ul>{r.attention.map((a,index)=><li key={index}><strong>{a.label}</strong><p>{a.detail}</p><Link prefetch={false} href={a.href}>{a.kind==='DECISION'?'Review decision':'Inspect record'} →</Link></li>)}</ul><p className={styles.next}>Recorded next step: {r.nextStep?.value.text??'Not recorded'}</p></li>)}</ul>:<p className={styles.empty}>{p.summary.setupIncomplete?`No recorded decisions, blockers or past dates. ${p.summary.setupIncomplete} initiatives have setup incomplete, so their record coverage is not complete.`:'Nothing flagged under the current checks. This is not a readiness assessment.'}</p>}
  {p.attentionRows.length>3&&<Link prefetch={false} href="/initiatives?attention=any">View all attention →</Link>}{p.summary.setupIncomplete>0&&<p className={styles.support}>Setup to complete: <Link prefetch={false} href="/initiatives?setup=incomplete">{p.summary.setupIncomplete} initiatives have setup incomplete</Link>.</p>}</section>
- }<CommitmentSummary source={d.source} ctx={d.ctx} facts={d.state.facts}/></div><div className={styles.rightColumn}><section className={styles.weekly} aria-label="Weekly review"><p className={styles.eyebrow}>Weekly Product Review</p><h2>{week.replace(/^\d{4}-/,'')} review · {review?.status==='FINAL'?'Final':review?'Draft':'Not prepared'}</h2>
+ }<WaitingOnYou rows={waiting}/><CommitmentSummary source={d.source} ctx={d.ctx} facts={d.state.facts}/></div><div className={styles.rightColumn}><section className={styles.weekly} aria-label="Weekly review"><p className={styles.eyebrow}>Weekly Product Review</p><h2>{week.replace(/^\d{4}-/,'')} review · {review?.status==='FINAL'?'Final':review?'Draft':'Not prepared'}</h2>
  <p>{review?.status==='DRAFT'?`${reviewed} of ${review.sections.length} sections reviewed`:review?.status==='FINAL'?`Finalized by ${review.finalizedByLabel??'Recorded actor'} · ${displayDate(review.finalizedAt?.slice(0,10))}`:`No review prepared for ${week.replace(/^\d{4}-/,'')}`}</p>
  <p className={styles.meta}>{baseline?`Compared with ${baseline.week.replace(/^\d{4}-/,'')} Final · ${displayDate(baseline.input.asOf.slice(0,10))}`:'First review · no previous Final'}</p>
  {review?.status==='FINAL'&&writer&&next&&!nextAvailable&&!nextExists?<><button className={styles.primary} disabled>Prepare {next.week.replace(/^\d{4}-/,'')} review</button><p className={styles.meta}>{next.week.replace(/^\d{4}-/,'')} starts {displayDate(next.startsOn)}. <Link prefetch={false} href={`/weekly-review?week=${week}`}>Read Final</Link></p></>:<Link prefetch={false} className={styles.primary} href={`/weekly-review?week=${review?.status==='FINAL'&&writer&&next?next.week:week}`}>{review?.status==='DRAFT'?(writer?'Continue review':'Read review'):review?.status==='FINAL'?writer&&next?`${nextExists?'Open':'Prepare'} ${next.week.replace(/^\d{4}-/,'')} review`:'Read Final review':writer?`Prepare ${week.replace(/^\d{4}-/,'')} review`:'Read weekly review'}</Link>}

@@ -9,6 +9,7 @@ import {randomUUID} from 'node:crypto';
 import {resolve,join} from 'node:path';
 import {filterCandidates,SUPERSEDABLE} from '../../src/lib/evidence/filter.ts';
 import {verifyAnchor} from '../../src/lib/evidence/anchor.ts';
+import {relationshipCandidates} from '../../src/lib/workspace/relationships.ts';
 if(process.env.AUTH_MODE!=='local'||process.env.VERCEL||process.env.NODE_ENV==='production')throw new Error('Local fixture checkout only.');
 const [submissionId,candidatesPath]=process.argv.slice(2);if(!submissionId||!candidatesPath)throw new Error('Usage: <submissionId> <candidates.json>');
 const storePath=resolve('.data/prodwise.json');const store=JSON.parse(readFileSync(storePath,'utf8'));
@@ -18,7 +19,8 @@ const claims=store.claims.filter(c=>c.initiativeId===sub.initiativeId&&SUPERSEDA
 const raw=JSON.parse(readFileSync(candidatesPath,'utf8'));
 // Candidates may name a target by subject/attribute instead of ref; resolve to the offered ref.
 for(const c of raw)if(c.type==='CHANGED_REQUIREMENT'&&c.payload.targetSubject){c.payload.target=claims.find(k=>k.subject===c.payload.targetSubject&&k.attribute===c.payload.targetAttribute)?.ref;}
-const {accepted,discarded}=filterCandidates(sub.text,raw,sub.kind==='MEETING_NOTES'?claims:[]);
+const filtered=filterCandidates(sub.text,raw,sub.kind==='MEETING_NOTES'?claims:[]);const discarded=filtered.discarded;
+const accepted=[...filtered.accepted,...relationshipCandidates(filtered.accepted,store.initiatives.filter(i=>i.workspaceId===sub.workspaceId&&!i.archivedAt),sub.initiativeId)];
 const now=new Date().toISOString();const attemptId=randomUUID();
 store.evidenceAttempts.push({id:attemptId,workspaceId:sub.workspaceId,initiativeId:sub.initiativeId,submissionId,requestId:randomUUID(),status:'READY',startedAt:now,endedAt:now,errorCode:null,model:'synthetic-provider-fixture',promptVersion:'ANCHORED_EVIDENCE_V1',discardedCount:discarded});
 for(const c of accepted){if(!verifyAnchor(sub.text,c.anchor,sub.textSha256))throw new Error('Anchor failed verification.');const anchorId=randomUUID();store.evidenceAnchors.push({id:anchorId,workspaceId:sub.workspaceId,initiativeId:sub.initiativeId,submissionId,...c.anchor});

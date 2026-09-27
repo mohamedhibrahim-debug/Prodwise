@@ -61,6 +61,8 @@ export interface StoreShape {
   evidenceProposals?: import('../evidence/types').Proposal[];
   evidenceConfirmations?: import('../evidence/types').Confirmation[];
   meetingNotes?: import('../evidence/types').MeetingNote[];
+  relationships?: import('../workspace/relationships').InitiativeRelationship[];
+  relationshipEvents?: import('../workspace/relationships').RelationshipEvent[];
   openQuestions?: import('../workspace/questions').OpenQuestion[];
   questionEvents?: import('../workspace/questions').QuestionEvent[];
   commitments?: import('../workspace/commitments').Commitment[];
@@ -150,6 +152,8 @@ function load(): StoreShape {
         evidenceConfirmations: parsed.evidenceConfirmations??[],
         contexts: parsed.contexts ?? [],
         meetingNotes: parsed.meetingNotes ?? [],
+        relationships: parsed.relationships ?? [],
+        relationshipEvents: parsed.relationshipEvents ?? [],
         openQuestions: parsed.openQuestions ?? [],
         questionEvents: parsed.questionEvents ?? [],
         commitments: parsed.commitments ?? [],
