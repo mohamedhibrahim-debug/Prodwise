@@ -1,3 +1,4 @@
+import {displayDate} from '../delivery/display.ts';
 import {randomUUID} from 'node:crypto';
 import {canBusinessWrite,hasOrganizationAdminAuthority} from '../auth/roles.ts';
 import type {WorkspaceAccess,DeliveryFact} from '../delivery/types.ts';
@@ -99,7 +100,7 @@ export type Impact=
  * Dependency impact, derived only from recorded delivery facts. Anything
  * unknown, missing or unspecified yields "not assessed" — never risk, never healthy.
  */
-export function dependencyImpact(r:Pick<InitiativeRelationship,'type'|'status'|'fromInitiativeId'|'toInitiativeId'|'providerFactKind'|'neededByFactKind'>,facts:DeliveryFact[],names:{from:string;to:string}):Impact|null{
+export function dependencyImpact(r:Pick<InitiativeRelationship,'type'|'status'|'fromInitiativeId'|'toInitiativeId'|'providerFactKind'|'neededByFactKind'>,facts:DeliveryFact[],names:{from:string;to:string},today?:string):Impact|null{
  if(r.type!=='DEPENDS_ON'||r.status!=='ACTIVE')return null;
  if(!r.providerFactKind||!r.neededByFactKind)return {assessed:false,reason:'which dates matter was not recorded'};
  const live=factFor(facts,r.toInitiativeId,'ACTUAL_LIVE');
@@ -109,6 +110,8 @@ export function dependencyImpact(r:Pick<InitiativeRelationship,'type'|'status'|'
  const missing=describe(provider,FACT_LABEL[r.providerFactKind],names.to)??describe(needed,r.neededByFactKind==='TARGET_LIVE'?'Target Live':'next milestone',names.from);
  if(missing)return {assessed:false,reason:missing};
  const p=provider!.value.date!,n=needed!.value.date!;
+ // A provider date already in the past with no recorded Actual Live proves nothing about when it lands.
+ if(today&&p<today)return {assessed:false,reason:`${names.to} ${FACT_LABEL[r.providerFactKind]} (${displayDate(p)}) has passed without a recorded Actual Live`};
  if(p>n)return {assessed:true,late:true,days:Math.round((Date.parse(p)-Date.parse(n))/86_400_000),providerDate:p,neededDate:n};
  return {assessed:true,late:false,providerDate:p,neededDate:n};
 }

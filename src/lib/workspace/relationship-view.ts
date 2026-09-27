@@ -21,14 +21,14 @@ export function impactSentence(r:InitiativeRelationship,impact:Impact|null,names
  * Relationships seen from one initiative. `ends` holds only initiatives the viewer
  * can read; anything else is shown as "An initiative you can't access".
  */
-export function relationshipsFor(initiativeId:string,all:InitiativeRelationship[],ends:RelationshipEnd[],facts:DeliveryFact[],status:'ACTIVE'|'ENDED'='ACTIVE'):RelationshipRow[]{
+export function relationshipsFor(initiativeId:string,all:InitiativeRelationship[],ends:RelationshipEnd[],facts:DeliveryFact[],status:'ACTIVE'|'ENDED'='ACTIVE',today?:string):RelationshipRow[]{
  const end=(id:string)=>ends.find(e=>e.id===id)??null;const rows:RelationshipRow[]=[];
  for(const r of all){
   if(r.status!==status||(r.fromInitiativeId!==initiativeId&&r.toInitiativeId!==initiativeId))continue;
   const outgoing=r.fromInitiativeId===initiativeId;const group:RelationshipGroup=r.type==='RELATED_TO'?'RELATED_TO':r.type==='DEPENDS_ON'?(outgoing?'DEPENDS_ON':'BLOCKS'):(outgoing?'PART_OF':'CONTAINS');
   const other=end(outgoing?r.toInitiativeId:r.fromInitiativeId);
   const names={from:end(r.fromInitiativeId)?.name??'An initiative you can’t access',to:end(r.toInitiativeId)?.name??'An initiative you can’t access'};
-  const impact=other?dependencyImpact(r,facts,names):null;
+  const impact=other?dependencyImpact(r,facts,names,today):null;
   rows.push({relationship:r,group,other,impact,impactText:impactSentence(r,impact,names),late:Boolean(impact&&impact.assessed&&impact.late)});
  }
  const order:RelationshipGroup[]=['DEPENDS_ON','BLOCKS','PART_OF','CONTAINS','RELATED_TO'];

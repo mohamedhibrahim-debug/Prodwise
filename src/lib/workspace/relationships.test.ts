@@ -31,6 +31,9 @@ test('dependency impact: shown only when both recorded dates are known and the p
  const late=dependencyImpact(r,[fact(B.id,'TARGET_LIVE','2026-10-29'),fact(A.id,'NEXT_MILESTONE','2026-10-22',{text:'Pilot'})],names);assert.deepEqual(late,{assessed:true,late:true,days:7,providerDate:'2026-10-29',neededDate:'2026-10-22'});
  assert.equal((dependencyImpact(r,[fact(B.id,'TARGET_LIVE','2026-10-20'),fact(A.id,'NEXT_MILESTONE','2026-10-22')],names) as {late:boolean}).late,false);
  assert.deepEqual(dependencyImpact(r,[fact(B.id,'TARGET_LIVE',null,{unknown:true}),fact(A.id,'NEXT_MILESTONE','2026-10-22')],names),{assessed:false,reason:'Instant Settlement Payout Target Live is Unknown'});
+ // A provider date already past with no Actual Live is not reassurance: impact is not assessed, with the reason.
+ const stale=dependencyImpact(r,[fact(B.id,'TARGET_LIVE','2026-09-24'),fact(A.id,'NEXT_MILESTONE','2026-10-22')],names,'2026-09-26') as {assessed:boolean;reason:string};assert.equal(stale.assessed,false);assert.match(stale.reason,/passed without a recorded Actual Live/);
+ assert.equal((dependencyImpact(r,[fact(B.id,'TARGET_LIVE','2026-09-24'),fact(A.id,'NEXT_MILESTONE','2026-10-22')],names,'2026-09-20') as {late:boolean}).late,false);
  assert.deepEqual(dependencyImpact(r,[fact(A.id,'NEXT_MILESTONE','2026-10-22')],names),{assessed:false,reason:'Instant Settlement Payout Target Live is not recorded'});
  assert.deepEqual(dependencyImpact({...r,providerFactKind:null,neededByFactKind:null},[],names),{assessed:false,reason:'which dates matter was not recorded'});
  assert.equal((dependencyImpact(r,[fact(B.id,'TARGET_LIVE','2026-10-29'),fact(B.id,'ACTUAL_LIVE','2026-10-01',{extent:'FULL'}),fact(A.id,'NEXT_MILESTONE','2026-10-22')],names) as {delivered?:boolean}).delivered,true);

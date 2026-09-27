@@ -75,7 +75,7 @@ export function buildPortfolioProjection({source,state,workspaceId,activity=[],a
     if(timing.kind==='NEEDS_UPDATE')attention.push({kind:'PAST_TARGET',label:'Past target · update needed',detail:timing.detail,href:`${base}/delivery`,date:target?.value.date??null});
     if(milestone?.value.date&&milestone.value.date<today)attention.push({kind:'PAST_MILESTONE',label:'Past milestone · update needed',detail:`${milestone.value.text} · ${displayDate(milestone.value.date)}. Completion is not inferred.`,href:`${base}/delivery`,date:milestone.value.date});
     // A dependency counts once, everywhere, only when both recorded dates show it landing late.
-    for(const x of relationshipsFor(i.id,relationships,ends,facts).filter(x=>x.late))attention.push({kind:'DEPENDENCY',label:'Dependency date impact',detail:x.impactText??'A dependency lands after the date it is needed.',href:`${base}/manage?section=relationships#relationships`,date:null});
+    for(const x of relationshipsFor(i.id,relationships,ends,facts,'ACTIVE',today).filter(x=>x.late))attention.push({kind:'DEPENDENCY',label:'Dependency date impact',detail:x.impactText??'A dependency lands after the date it is needed.',href:`${base}/manage?section=relationships#relationships`,date:null});
     for(const f of [target,actual])if(f&&supportChanged(f,source))attention.push({kind:'SUPPORT_CHANGED',label:'Supporting evidence changed',detail:`Inspect support for ${factNames[f.kind]}. The recorded value is unchanged.`,href:`${base}/delivery`,date:f.updatedAt.slice(0,10)});
     const move=targetMovements(state.events,workspaceId,i.id).at(-1);
     const ownerId=ownerFor(facts,i.id);const member=source.members.find(m=>m.id===ownerId);
