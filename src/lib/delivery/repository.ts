@@ -1,4 +1,6 @@
 import "server-only";
+import {readStore,writeStoreWithDelivery} from '@/lib/data/store';
+import {withRepositoryContext} from '@/lib/auth/repository-context';
 import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { getRepository } from "@/lib/data";
@@ -20,6 +22,12 @@ function camel(value:unknown):unknown {
 }
 export interface DeliveryRead { ctx:WorkspaceAccess; source:PortfolioSource; state:DeliveryState; rawSource:unknown; presentation:WorkspacePresentation; }
 function localFor(ctx:WorkspaceAccess) { return new LocalDeliveryStore(localDeliveryPath(process.cwd(),ctx.workspaceId,configuredWorkspaceId())); }
+/** Keep ownership stable while a synchronous local product-store edit checks it.
+ * Callbacks must commit synchronously; this is not a cross-file transaction. */
+export async function withLocalOwnerLock<T>(ctx:WorkspaceAccess, change:(state:DeliveryState)=>T):Promise<T> {
+  if(!isLocalAuth())throw new Error('Local ownership lock is unavailable.');
+  return localFor(ctx).withReadLock(change);
+}
 async function readWith(ctx:WorkspaceAccess):Promise<DeliveryRead> {
   const presentationPromise=workspacePresentation(ctx);
   if (!isLocalAuth()) {
@@ -32,7 +40,7 @@ async function readWith(ctx:WorkspaceAccess):Promise<DeliveryRead> {
     assertMember(ctx,source); return {ctx,source,state:value.state,rawSource:value.source,presentation:await presentationPromise};
   }
   if (process.env.VERCEL) throw new Error("Durable delivery storage must be configured before this feature can run on a hosted deployment.");
-  const repo=getRepository(); const source={snapshots:await repo.listInitiativeSnapshots(),members:await deliveryWorkspaceMembers()};
+  const repo=getRepository(); const source={snapshots:await repo.listInitiativeSnapshots(),members:await deliveryWorkspaceMembers(),commitments:await withRepositoryContext(ctx,async()=>readStore().commitments??[])};
   assertMember(ctx,source); return {ctx,source,state:await localFor(ctx).read(),rawSource:meaningful(source),presentation:await presentationPromise};
 }
 const readForRender=cache(async ():Promise<DeliveryRead> => readWith(await requireDeliveryAccess()));
@@ -43,12 +51,12 @@ export async function mutateDelivery(change:(read:DeliveryRead)=>Promise<Deliver
   // Every mutation rechecks the real membership and environment write guard.
   const ctx=await requireDeliveryWriteAccess();
   if (isLocalAuth()) {
-    return localFor(ctx).transaction(async state=>{
+    return withRepositoryContext(ctx,async()=>localFor(ctx).transaction(async state=>{
       const read=await readWith(ctx); const next=await change({...read,state});
       const latest=await readWith(await requireDeliveryWriteAccess());
       if (canonical(latest.rawSource)!==canonical(read.rawSource)) throw new Error("Workspace inputs changed while saving. Reload and try again.");
       return next;
-    });
+    },next=>writeStoreWithDelivery(localFor(ctx).path,next,()=>undefined)));
   }
   for (let attempt=0;attempt<2;attempt++) {
     const activeCtx=await requireDeliveryWriteAccess(); const read=await readWith(activeCtx); const next=await change(read);

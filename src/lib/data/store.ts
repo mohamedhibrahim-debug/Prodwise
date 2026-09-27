@@ -17,6 +17,13 @@ import { SEED_EVIDENCE, SEED_SOURCES } from "./fixtures/evidence";
 import { SEED_CLAIMS, SEED_CLAIM_EVIDENCE } from "./fixtures/claims";
 import { upgradeStoreShape } from "./store-upgrade";
 import { repositoryContext } from "../auth/repository-context";
+import {commitLocalCommand,recoverLocalCommand} from './local-command-journal';
+import {readinessTransition} from '../workspace/readiness-history';
+import {LocalAuthStore} from '../auth/core';
+import {localDeliveryPath} from '../delivery/local-path';
+import type {DeliveryState} from '../delivery/types';
+import type {InitiativeContext} from '../workspace/readiness';
+import type {SourceContainer,SourceItem,SourceMapping} from '../workspace/source-mapping';
 
 /**
  * LOCAL DEMO PERSISTENCE ONLY.
@@ -47,6 +54,13 @@ export interface ClaimEvidenceLink {
 export type StoredClaim = ClaimRecord & ClaimTrust;
 
 export interface StoreShape {
+  commitments?: import('../workspace/commitments').Commitment[];
+  commitmentEvents?: import('../workspace/commitments').CommitmentEvent[];
+  creationCommands?: {workspaceId:string;requestId:string;initiativeId:string;actorId:string;inputDigest:string}[];
+  contexts?: InitiativeContext[];
+  sourceContainers?: SourceContainer[];
+  sourceItems?: SourceItem[];
+  sourceMappings?: SourceMapping[];
   initiatives: Initiative[];
   activity: ActivityEntry[];
   evidence: EvidenceRecord[];
@@ -101,6 +115,7 @@ function scopeRows(store: StoreShape, workspaceId = process.env.PRODWISE_WORKSPA
 }
 
 function load(): StoreShape {
+  recoverLocalCommand(dirname(DATA_FILE));
   // Server actions and rendered pages can load this module in distinct bundles.
   // Reread the small local fixture file so a successful action is visible to the
   // next render; an indefinitely cached module copy can show stale Decisions.
@@ -118,6 +133,13 @@ function load(): StoreShape {
         claims: parsed.claims ?? base.claims,
         claimEvidence: parsed.claimEvidence ?? base.claimEvidence,
         findingStates: parsed.findingStates ?? base.findingStates,
+        contexts: parsed.contexts ?? [],
+        commitments: parsed.commitments ?? [],
+        commitmentEvents: parsed.commitmentEvents ?? [],
+        creationCommands: parsed.creationCommands ?? [],
+        sourceContainers: parsed.sourceContainers ?? [],
+        sourceItems: parsed.sourceItems ?? [],
+        sourceMappings: parsed.sourceMappings ?? [],
       }));
       return cache;
     } catch {
@@ -167,9 +189,11 @@ export function writeStore(mutate: (store: StoreShape) => void): void {
 
 /** Commit all decision effects as one local-store replacement. */
 export function writeStoreAtomic<T>(mutate: (store: StoreShape) => T): T {
-  const next = structuredClone(load());
+  const previous=load();const next = structuredClone(previous);
   const result = mutate(next);
+  assertArchivedRecordsUnchanged(previous,next);
   scopeRows(next, repositoryContext()?.workspaceId);
+  appendReadinessHistory(next);
   const temporary = `${DATA_FILE}.${crypto.randomUUID()}.tmp`;
   mkdirSync(dirname(DATA_FILE), { recursive: true });
   try {
@@ -181,4 +205,32 @@ export function writeStoreAtomic<T>(mutate: (store: StoreShape) => T): T {
     rmSync(temporary, { force: true });
     throw error;
   }
+}
+
+function assertArchivedRecordsUnchanged(before:StoreShape,after:StoreShape):void{
+ const archived=new Set(before.initiatives.filter(i=>i.archivedAt).map(i=>i.id));if(!archived.size)return;
+ for(const i of before.initiatives.filter(i=>archived.has(i.id))){const next=after.initiatives.find(n=>n.id===i.id);if(!next||['name','businessLine','stage','description','currentContextId','knownReferences'].some(key=>JSON.stringify(i[key as keyof Initiative])!==JSON.stringify(next[key as keyof Initiative])))throw new Error('Archived — restore to edit. Nothing was changed.');}
+ const claimScope=new Map(before.claims.map(c=>[c.id,c.initiativeId]));
+ for(const key of ['evidence','claims','claimEvidence','findingStates','sources','contexts','sourceMappings','commitments','commitmentEvents'] as const){
+  const scoped=(rows:unknown[])=>rows.filter(value=>{const row=value as {initiativeId?:string;claimId?:string};return archived.has(row.initiativeId??claimScope.get(row.claimId??'')??'');});
+  if(JSON.stringify(scoped(before[key]??[]))!==JSON.stringify(scoped(after[key]??[])))throw new Error('Archived — restore to edit. Nothing was changed.');
+ }
+}
+
+/** Used only while holding the delivery file lock. The journal makes a new
+ * initiative and its initial OWNER fact visible together after crash recovery. */
+export function writeStoreWithDelivery<T>(deliveryPath:string,deliveryState:unknown,mutate:(store:StoreShape)=>T):T{
+ const previous=load(),next=structuredClone(previous);const result=mutate(next);assertArchivedRecordsUnchanged(previous,next);scopeRows(next,repositoryContext()?.workspaceId);appendReadinessHistory(next,deliveryState as DeliveryState);
+ commitLocalCommand(dirname(DATA_FILE),[{path:deliveryPath,content:JSON.stringify(deliveryState)},{path:DATA_FILE,content:JSON.stringify(next)}]);cache=next;return result;
+}
+
+function appendReadinessHistory(store:StoreShape,delivery?:DeliveryState):void{
+ const ctx=repositoryContext();if(!ctx||!existsSync(join(process.cwd(),'.data','auth.json')))return;
+ const members=new LocalAuthStore(join(process.cwd(),'.data','auth.json'),ctx.workspaceId).read(true).members;
+ const file=localDeliveryPath(process.cwd(),ctx.workspaceId,process.env.PRODWISE_WORKSPACE_ID??'');
+ const facts=delivery?.facts??(existsSync(file)?(JSON.parse(readFileSync(file,'utf8')) as DeliveryState).facts:[]);
+ for(const i of store.initiatives.filter(x=>x.workspaceId===ctx.workspaceId)){
+  const event=readinessTransition({initiative:i,facts,members,claims:store.claims.filter(c=>c.initiativeId===i.id),contexts:store.contexts??[],activeSourceLinks:(store.sourceMappings??[]).filter(m=>m.initiativeId===i.id&&!m.unlinkedAt).length,activity:store.activity,at:new Date().toISOString(),actor:ctx.actor});
+  if(event)store.activity.push(event);
+ }
 }

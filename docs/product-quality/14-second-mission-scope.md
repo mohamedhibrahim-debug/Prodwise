@@ -1,173 +1,762 @@
-# Frozen Second Mission scope
+# Second Mission canonical scope
 
-Status: FROZEN / NOT STARTED. Preserved on 27 September 2026 at the user’s explicit request.
+## Final execution clarifications — binding
 
-This artifact preserves the complete approved Second Mission text below, without reducing it to a summary. The later execution instruction controls timing: close the Current Mission, obtain its acceptance checkpoint and the user’s confirmation, then begin this frozen scope. Do not begin it or deploy from the Current Mission closure task. Earlier instructions below to continue immediately or not stop between missions are superseded only as to timing by that later instruction; the product scope and quality requirements remain preserved.
+1. **Initiative management discoverability.** Editing and setup management must be clearly discoverable. A user must never guess where to edit basics, change owner, update scope/phase, manage delivery facts, manage sources or archive. Claude must define a clear Initiative Settings / Manage Initiative entry point within the initiative experience. No obscure menus or undocumented actions.
+2. **Permissions / authorization.** Every new write respects existing organization-scoped RBAC. Define and test who may create initiatives, edit metadata, assign/change owners, link/unlink sources, archive, create/complete actions, confirm AI proposals, defer/dismiss decisions, confirm dependencies and resolve risks/open questions. Reuse PLATFORM_OWNER / ORG_OWNER / ADMIN / MEMBER / VIEWER; no new RBAC model. Document the final permission matrix. Viewer remains read-only. Enforce authorization server-side, not just by hiding UI.
+3. **Concurrency / safe editing.** Canonical edits must not overwrite newer changes silently. Use appropriate updated_at/version checks, deterministic conflict handling, immutable history and safe concurrent writes. Protect Target Live, ownership, decision state, source mapping, AI confirmation and Action status changes. No silent last-write-wins loss of trusted state.
+4. **Search / cross-navigation.** Integrate new canonical objects with existing navigation/search where useful. Users must move naturally between Source, Initiative, Decision, Action, Weekly Review and History. No dead ends or objects accessible only from their creation screen. Use contextual links/search while preserving focused global navigation.
 
-Source: user attachment 787e9a62-21af-482a-9e98-50bb2df924a9/Pasted text.txt. Preservation instruction: attachment 3b28530b-cc38-417c-abb1-9fa34c3915c2/Pasted text.txt.
+Authoritative execution prompt approved 27 September 2026. Supersedes earlier scope versions. Accepted starting SHA: 4623810ddcb28382e79cbb3dcae8c01b7d966f3e. No deployment until final checkpoint approval.
 
-Approved priority: P0 Ownership → Actions/Commitments → Anchored AI Evidence → Stage 2.3 Queue Completeness → Stage 2.4 Minimum Context; integrated UX review; P1 Meeting Intelligence → Relationships/Dependencies → Initiative History → Canonical Risks/Open Questions.
+PRODWISE — SECOND MISSION EXECUTION PROMPT
+CANONICAL SCOPE + UX GOVERNANCE + CLAUDE APPROVAL + EXECUTION ORDER
 
-Approved operating loop: Evidence → AI Proposal → Human Confirmation → Product Truth → Decision / Attention → Ownership / Action → Delivery / Dependencies → Weekly Review → Initiative History.
+Proceed from the current paused state.
 
-Unknown != Failed. Missing != Zero. Claude leads Product/UX; Codex leads Engineering/Implementation.
+Do NOT wait for another attachment or prompt.
 
-## Complete approved scope (verbatim)
+Use the current stable baseline as the starting point:
 
-SECOND MISSION — COMPLETE THE MISSING CORE PRODWISE OPERATING LOOP
+Stable Current Mission commit:
+4623810ddcb28382e79cbb3dcae8c01b7d966f3e
+
+Current Mission is accepted and CLOSED locally.
+
+Do NOT deploy that commit by itself.
+
+Now prepare and execute the SECOND MISSION.
+
+Before implementation, update the canonical scope file:
+
+docs/product-quality/14-second-mission-scope.md
+
+This file must become the single source of truth for the entire Second Mission.
+
+Do NOT leave important scope only in chat.
+
+==================================================
+CLAUDE APPROVAL AND DATA-SAFETY RULE
 ==================================================
 
-The next objective is NOT to add random features.
+I APPROVE using Claude as Product / UX Design Lead for this mission.
 
-The objective is to complete the missing pieces of the Prodwise operating model.
+You may send Claude ONLY:
 
-The target product loop is:
+- non-secret product/UX specifications
+- relevant UI code snippets
+- architecture / interaction descriptions
+- synthetic Prodwise Demo content
+- synthetic screenshots
+- redacted examples
 
-Evidence
-→ AI proposal
-→ Human confirmation
-→ Product Knowledge / Truth
+DO NOT send Claude:
+
+- real AMAN initiative/business data
+- production customer data
+- passwords
+- API keys
+- auth/session secrets
+- private credentials
+- confidential emails/documents
+- production database contents
+
+If any material contains real AMAN data:
+
+redact it
+or
+replace it with synthetic equivalents
+
+before sending it to Claude.
+
+Claude = Product / UX Design Lead.
+Codex = Engineering / Implementation Lead.
+
+==================================================
+MISSION OBJECTIVE
+==================================================
+
+Complete the missing Prodwise core operating loop.
+
+Target operating model:
+
+Create Initiative
+→ Complete Setup
+→ Connect / Map Sources
+→ AI Proposes Understanding
+→ Human Confirms
+→ Product Truth
 → Attention / Decision
 → Ownership / Action
 → Delivery / Dependencies
 → Weekly Review
 → Initiative History
 
-The product must feel like ONE coherent operating system.
+This mission is NOT about adding random features.
+
+The goal is to make Prodwise a coherent Product Intelligence operating system.
 
 ==================================================
 ABSOLUTE UX/UI RULE
 ==================================================
 
-UX/UI QUALITY IS CRITICAL.
+UX/UI QUALITY IS NON-NEGOTIABLE.
 
-Do NOT implement these capabilities as generic CRUD.
+Do NOT implement generic CRUD.
 
-Do NOT create a series of copied pages with:
+Do NOT create copied pages using the same:
 
-- same heading
-- same white cards
-- same table
-- same drawer
-- same forms
-- same spacing
-- same interaction model
+- title
+- white card
+- table
+- drawer
+- form
+- spacing
+- component hierarchy
 
-for every capability.
+for every new capability.
 
-If the result looks copied/pasted or bolted onto the existing product, it is NOT complete.
+If the UI looks:
 
-A feature is not complete because:
+- copied
+- generic
+- bolted-on
+- developer-designed
+- like an internal admin utility
+- like a form collection
+- visually disconnected from Prodwise
 
-- the DB exists
-- APIs work
-- tests are green
-- buttons technically work
+then the feature is NOT complete.
 
-It is complete only when the user can understand:
-
-- what this area is
-- why it matters
-- what they should do
-- what happens after the action
-- where the resulting information appears later
-
-without needing documentation.
-
-==================================================
-CLAUDE = PRODUCT / UX DESIGN LEAD
-==================================================
-
-For this second mission, Claude is MANDATORY as Product / UX Design Lead.
-
-Codex remains Engineering / Implementation Lead.
+Passing tests does NOT mean UX is accepted.
 
 For every major capability:
 
-1. Research comparable product patterns
-2. Claude defines the UX / interaction model
-3. Freeze the UX contract
+1. Research interaction patterns
+2. Claude defines the UX contract
+3. Freeze the contract
 4. Codex implements it
-5. Render the actual result
+5. Render actual UI
 6. Capture screenshots
-7. Claude reviews the RENDERED UI
-8. Fix all major UX/design issues
+7. Claude reviews rendered UI
+8. Fix major findings
 9. Independent red-team reviews it
-10. Fix blocker/major findings
+10. Fix Blocker / Major findings
 11. Test
-12. Only then consider it complete
+12. Then mark complete
 
-Claude must review screenshots/rendered behavior.
-
-A code review alone does NOT count as UX review.
-
-If the rendered UI looks cheap, repetitive, confusing or copied:
-
-DO NOT SHIP IT.
-
-Rework it.
+Claude must review the RENDERED product, not only code/specs.
 
 ==================================================
-1. INITIATIVE OWNERSHIP
+P0 — 1. INITIATIVE SETUP & LIFECYCLE MANAGEMENT
 ==================================================
 
-Add a real initiative ownership model.
+This is FIRST priority.
+
+The current Initiative Creation / Setup UX is below the required quality bar.
+
+It is too sparse and too developer-oriented.
+
+The redesign must answer:
+
+- What information is required?
+- What is optional?
+- What does “created” mean?
+- Is the initiative ready for intelligence?
+- What setup is missing?
+- How are sources linked?
+- How are Jira / Docs / Emails mapped?
+- How does the user edit the initiative later?
+- How is history preserved?
+- How is the initiative archived?
+
+==================================================
+CREATION != COMPLETE
+==================================================
+
+Do NOT treat:
+
+Fill a few fields
+→ Save
+→ Done
+
+as a valid product model.
+
+Prodwise must distinguish:
+
+A. INITIATIVE CREATED
+
+from
+
+B. INITIATIVE READY FOR INTELLIGENCE
+
+A user may create an initiative with minimum information.
+
+But if critical setup is incomplete:
+
+show:
+
+Setup Incomplete
+
+and guide the user through the remaining work.
+
+==================================================
+MINIMUM FIELDS TO CREATE
+==================================================
+
+Suggested minimum:
+
+- Initiative Name
+- Business Line
+- Primary Owner
+- Lifecycle Stage
+
+Research may refine this.
+
+Do NOT make everything mandatory.
+
+Do NOT force users to enter low-quality data just to satisfy validation.
+
+==================================================
+READY FOR INTELLIGENCE MODEL
+==================================================
+
+Define setup readiness.
+
+Recommended requirements:
+
+- Initiative Name
+- Business Line
+- Primary Owner
+- Lifecycle Stage
+- Objective / Problem Statement
+- Current Scope / Phase
+- at least one linked Source
+- at least one confirmed Knowledge / Fact
+- Target Live:
+  known OR explicitly Unknown
+- Next Milestone:
+  known OR explicitly Unknown
+
+Important:
+
+Unknown must be explicit.
+
+Missing must NOT silently count as complete.
+
+Example:
+
+Setup incomplete
+6 of 9 setup requirements completed
+
+CTA:
+
+Complete setup
+
+==================================================
+SETUP STATUS
+==================================================
+
+At minimum support:
+
+- Setup Incomplete
+- Ready for Intelligence
+- Archived
+
+Do NOT mix:
+
+Lifecycle Stage
+
+with:
+
+Setup Readiness
+
+Example:
+
+Lifecycle Stage:
+Delivery
+
+Setup:
+Incomplete
+
+must be possible.
+
+==================================================
+CREATE INITIATIVE UX
+==================================================
+
+Do NOT build one giant vertical form.
+
+Use progressive setup.
+
+Suggested structure:
+
+STEP 1 — BASICS
+
+- Initiative Name
+- Business Line
+- Primary Owner
+- Lifecycle Stage
+- Objective / Problem Statement
+- Current Scope / Phase
+
+STEP 2 — DELIVERY CONTEXT
+
+- Development Start if known
+- Target Live if known
+- Next Milestone
+- milestone date
+
+Unknown must be explicitly selectable.
+
+STEP 3 — SOURCES
+
+Connect evidence.
+
+STEP 4 — REVIEW SETUP
+
+Show:
+
+- what is complete
+- what remains
+- what the next meaningful action is
+
+Allow:
+
+Save and continue later
+
+Do NOT force full setup before the initiative record can exist.
+
+==================================================
+SOURCE MAPPING — REDESIGN REQUIRED
+==================================================
+
+Do NOT use primitive fields such as:
+
+Jira URL
+Google Docs URL
+Email URL
+
+Sources must be structured product objects.
+
+Use:
+
+Add Source
+
+Then choose source type.
+
+Source types:
+
+- Jira
+- Google Docs / Drive
+- Email
+- Meeting Notes
+- Uploaded / Pasted Evidence
+- Other URL / External Source
+
+==================================================
+SOURCE MODEL
+==================================================
+
+Each source should support structured metadata such as:
+
+- Source Type
+- Source Reference
+- Display Name
+- Initiative mapping
+- Source Role
+- Status
+- Added By
+- Added At
+- Last Checked / Last Synced when applicable
+
+Possible Source Roles:
+
+- Requirements
+- Delivery
+- Decisions
+- Risks
+- Business Rules
+- Research
+- General Evidence
+- Primary
+- Supporting
+
+Research and simplify where appropriate.
+
+Do not create unnecessary taxonomy.
+
+==================================================
+JIRA MAPPING
+==================================================
+
+The UX should be mapping-oriented.
+
+NOT:
+
+paste one Jira URL.
+
+Future-ready interaction:
+
+Select:
+Jira
+
+Then:
+
+- choose/identify workspace/project
+- browse/search when connector exists
+- multi-select one or more mapped items
+- support:
+  Epic
+  Initiative
+  Story
+  Task
+  supported work items
+- optionally assign source role
+
+Example:
+
+Jira
+Project: PAYMENTS
+
+Mapped items:
+✓ PAY-102 Merchant settlement
+✓ PAY-118 Validation readiness
+✓ PAY-131 Production rollout
+
+Role:
+Delivery
+
+The data model must support multiple mapped records.
+
+If there is no live Jira connector:
+
+DO NOT fake one.
+
+Use honest structured manual references / issue keys.
+
+==================================================
+GOOGLE DOCS / DRIVE MAPPING
+==================================================
+
+Same principle.
+
+Do NOT use one Google Doc URL field.
+
+Future-ready behavior:
+
+- browse/search documents if connector exists
+- multi-select documents
+- map to initiative
+- assign role when useful
+
+Examples:
+
+- BRD
+- approved scope
+- decision log
+- meeting notes
+
+Until connector exists:
+
+support structured manual document references.
+
+Do NOT fake Drive integration.
+
+==================================================
+EMAIL MAPPING
+==================================================
+
+Same structured model.
+
+Future-ready behavior:
+
+- select/search thread or message if connector exists
+- multiple email references
+- link to initiative
+- assign context/role
+
+Examples:
+
+- business approval
+- launch confirmation
+- scope clarification
+- stakeholder decision
+
+Until connector exists:
+
+use structured manual evidence/reference.
+
+Do NOT fake mailbox access.
+
+==================================================
+MULTI-SOURCE / MANY-TO-MANY
+==================================================
+
+One initiative can have:
+
+- multiple Jira items
+- multiple Docs
+- multiple email threads
+- multiple meeting notes
+- multiple evidence records
+
+Do NOT assume:
+
+1 Initiative = 1 Jira link = 1 Document
+
+Support many-to-many mapping.
+
+==================================================
+SOURCE-CENTRIC + INITIATIVE-CENTRIC UX
+==================================================
+
+Support both directions.
+
+INITIATIVE-CENTRIC:
+
+Inside initiative:
+
+- Add Source
+- Link Jira work
+- Attach document
+- Add email evidence
+
+SOURCE-CENTRIC:
+
+Inside Sources:
+
+- open source
+- see which initiative(s) it supports
+- map/unmap if authorized
+
+Do not duplicate the same source unnecessarily.
+
+Preserve provenance.
+
+==================================================
+EDIT INITIATIVE
+==================================================
+
+Add proper editing.
+
+Authorized users must be able to edit:
+
+BASICS
+
+- Name
+- Business Line
+- Primary Owner
+- Lifecycle Stage
+- Objective / Problem
+- Scope / Phase
+
+DELIVERY
+
+- Development Start
+- Target Live
+- Actual Live
+- Next Milestone
+- milestone planned date
+
+SOURCES
+
+- add
+- unlink
+- map more records
+- modify role where safe
+
+RELATIONSHIPS
+
+when implemented:
+
+- Part of
+- Depends on
+- Related to
+
+STATUS
+
+- Active
+- Paused if supported
+- Archived
+
+Do NOT put everything into one giant Edit modal.
+
+Claude must design the interaction model.
+
+==================================================
+EDITING MUST PRESERVE HISTORY
+==================================================
+
+Do not destroy canonical history.
+
+Example:
+
+If Target Live changes:
+
+preserve:
+
+- previous value
+- new value
+- changed by
+- changed at
+- rationale if available
+
+If Owner changes:
+preserve meaningful ownership history.
+
+If Lifecycle Stage changes:
+record meaningful timeline event.
+
+If Source is unlinked:
+do not erase historical evidence that already supported confirmed Product Truth without proper safeguards.
+
+==================================================
+ARCHIVE / DELETE
+==================================================
+
+Default lifecycle action:
+
+Archive Initiative
+
+Archive should preserve:
+
+- evidence
+- decisions
+- history
+- Weekly Review references
+- Knowledge
+- dependencies
+- auditability
+
+Hard delete must be heavily restricted.
+
+Research whether hard delete is only allowed when there is no meaningful history.
+
+If hard delete exists:
+
+require:
+- strong confirmation
+- appropriate authority
+
+Do NOT place casual Delete beside Save.
+
+==================================================
+SETUP INTEGRATION
+==================================================
+
+INITIATIVES REGISTER
+
+Clearly distinguish:
+
+- Ready
+- Needs Attention
+- Setup Incomplete
+- Not Assessed
+
+Do NOT show:
+
+0 conflicts
+
+as if the initiative is healthy when setup is incomplete.
+
+HOME
+
+Surface setup gaps only when meaningful.
+
+Example:
+
+Merchant Insights
+Setup incomplete
+Missing source and confirmed product context
+Complete setup →
+
+Do not create fake urgency.
+
+BRIEF
+
+Show:
+
+- owner
+- lifecycle stage
+- current scope/phase
+- delivery context
+- setup status
+- source coverage
+
+Do NOT build a wall of metadata cards.
+
+==================================================
+POST-CREATION NEXT STEP
+==================================================
+
+After creation:
+
+do NOT leave user at:
+
+Saved successfully.
+
+Use a guided next-step model:
+
+Initiative Created
+→ Add Sources
+→ Review / Confirm Initial Knowledge
+→ Ready for Intelligence
+
+User must always understand:
+
+What should I do next?
+
+==================================================
+P0 — 2. INITIATIVE OWNERSHIP
+==================================================
+
+Add a real ownership model.
 
 Minimum:
 
 Primary Owner
 
-This should represent the Product Manager / Product Owner primarily responsible for the initiative.
-
 Optional only if genuinely useful:
 
 Contributors / participating members
 
-Do NOT create a complex HR/team-management product.
+Do NOT build a complex team-management system.
 
-Ownership must integrate naturally with:
+Ownership must integrate with:
 
 - Home
 - Initiatives
 - Brief
 - Weekly Product Review
 - Actions
-- attention items
 - portfolio filtering
+- attention routing
 
 Ownership should answer:
 
 Who is responsible for this initiative?
 
-It should not simply be a random Owner dropdown hidden inside a settings form.
-
-Use ownership to support:
-
-- responsibility
-- Weekly Review sections
-- action defaults
-- portfolio filtering
-- attention routing
-- accountability context
+Do not hide ownership in random settings.
 
 ==================================================
-2. ACTIONS / COMMITMENTS
+P0 — 3. ACTIONS / COMMITMENTS
 ==================================================
 
-Current Next Step text is not enough.
+Next Step text is not enough.
 
 Create a first-class Action / Commitment model.
 
 This is NOT Jira.
 
-Prodwise Actions exist to track commitments emerging from product intelligence.
+Actions track commitments emerging from Product Intelligence.
 
 Minimum fields:
 
 - Title
 - Initiative
 - Owner
-- Due date, optional
+- Due Date optional
 - Status:
   - Open
   - In Progress
@@ -184,65 +773,43 @@ Minimum fields:
 - completed at
 - linked source/evidence when relevant
 
-Example:
-
-Finance to confirm settlement approach
-
-Owner:
-Mariam
-
-Due:
-30 Sep
-
-Status:
-Open
-
-Origin:
-W39 Weekly Review
-
-==================================================
-ACTION INTEGRATION
-==================================================
-
 HOME
 
-Show useful action attention such as:
+Show useful attention such as:
 
-- overdue commitments
+- overdue commitment
 - due soon
-- blocked commitments
+- blocked commitment
 
-Do not turn Home into a task board.
+Do NOT turn Home into task management.
 
 BRIEF
 
-Show relevant open commitments in initiative context.
+Show relevant current commitments in context.
 
 WEEKLY REVIEW
 
-A structured next step must not disappear as review-only text.
+A structured next step must not die as review text.
 
-If a PM records:
+Example:
 
 Finance to confirm settlement approach by Wednesday
 
-Prodwise should support creating/updating the canonical Action after explicit human confirmation.
+should be able to become a canonical Action after explicit confirmation.
 
 NEXT WEEKLY REVIEW
 
-Open actions should carry forward intelligently.
+Open actions carry forward intelligently.
 
-Completed actions should appear as meaningful changes/history where relevant.
+Completed actions appear as meaningful changes/history when useful.
 
 ==================================================
-3. ANCHORED AI EVIDENCE INGESTION
+P0 — 4. ANCHORED AI EVIDENCE INGESTION
 ==================================================
 
 This is a CORE Prodwise AI capability.
 
-Do not reduce AI to Weekly Review summarization.
-
-Build the smallest reliable end-to-end evidence ingestion flow first.
+Do NOT reduce AI to summarization.
 
 Initial input:
 
@@ -251,13 +818,13 @@ Paste evidence / text
 Examples:
 
 - meeting notes
-- stakeholder notes
 - email excerpt
 - BRD text
-- document excerpt
+- stakeholder note
 - product discussion
+- document excerpt
 
-Claude analyzes the evidence and PROPOSES structured records.
+Claude proposes structured records.
 
 Possible proposal types:
 
@@ -270,16 +837,16 @@ Possible proposal types:
 - Action
 - Open Question
 
-Every proposal must be anchored to the evidence that supports it.
+Every proposal must be anchored to supporting evidence.
 
-The user must be able to:
+User actions:
 
-- Show evidence
+- Show Evidence
 - Confirm
 - Reject
-- Add my own entry
+- Add My Own Entry
 
-AI must NOT directly update Product Truth.
+AI must NOT update Product Truth directly.
 
 Required flow:
 
@@ -288,131 +855,65 @@ Evidence
 → Human Confirmation
 → Canonical Product Record
 
-Confirmed proposals then enter the correct domain.
-
 Examples:
 
 Requirement → Knowledge
-
-Decision → Decision Truth
-
-Target Live → Delivery Facts
-
+Decision → Decisions
+Target Live → Delivery
 Action → Actions
-
-Risk → Initiative context
+Risk → Initiative Context
 
 ==================================================
 AI TRUST RULES
 ==================================================
 
-Preserve the approved principle:
-
 AI proposes.
 Humans confirm.
 
-No unconfirmed proposal may become canonical truth.
+No unconfirmed proposal becomes canonical truth.
 
-Do not create vague “AI confidence” as a substitute for evidence.
+Do not use vague confidence as substitute for evidence.
 
-Show the actual supporting evidence.
+Show actual supporting evidence.
 
 ==================================================
 VALUE EDIT SAFETY
 ==================================================
 
-Preserve the previously approved behavior.
+Preserve:
+
+VALUE_EDIT_REQUIRES_NEW_ENTRY
 
 Cosmetic normalization:
 allowed.
 
-Material value editing:
-must NOT silently mutate an AI proposal into a different claim.
+Material value change:
+do NOT mutate proposal silently.
 
-Use the existing principle:
+Use:
 
-VALUE_EDIT_REQUIRES_NEW_ENTRY
+Add My Own Entry
 
-Then:
+This creates:
 
-Add my own entry
+HUMAN_ENTRY / DIRECT_KNOWLEDGE
 
-creates a Human Entry / Direct Knowledge record.
-
-Do not pretend the newly written human value was contained in the original source.
+Do not falsely attach original evidence to a materially different human value.
 
 ==================================================
-4. MEETING INTELLIGENCE
+P0 — 5. STAGE 2.3 QUEUE COMPLETENESS
 ==================================================
 
-Build Meeting Intelligence ON TOP OF the anchored evidence system.
-
-Do NOT build a separate disconnected meeting-summary product.
-
-MVP:
-
-Paste:
-- meeting notes
-or
-- transcript
-
-Claude proposes:
-
-- Decisions
-- Actions
-- Risks
-- Changed requirements
-- Delivery date changes
-- Open questions
-
-Each proposal must show:
-
-the supporting excerpt.
-
-User confirms/rejects individually.
-
-Confirmed items flow into canonical Prodwise domains:
-
-Decision
-→ Decisions
-
-Action
-→ Actions
-
-Risk
-→ Initiative context
-
-Delivery change
-→ Delivery facts
-
-Requirement / business rule
-→ Knowledge
-
-Open question
-→ unresolved attention / initiative context
-
-The original meeting note/transcript remains a Source.
-
-Do not create another data island.
-
-==================================================
-5. TRUST ENGINE COMPLETION — STAGE 2.3
-==================================================
-
-Implement the previously approved Queue Completeness scope.
-
-Decision/review item states:
+Implement:
 
 OPEN
 RESOLVED
 DEFERRED
 DISMISSED
 
-Important:
-
 Deferred and Dismissed are intentional human outcomes.
 
-They must not be treated as equivalent to Resolved.
+Do NOT treat them as generic Closed.
 
 Preserve:
 
@@ -421,29 +922,25 @@ Preserve:
 - re-emergence behavior
 - immutable decision history
 
-UX should clearly communicate the difference between:
+UX must clearly distinguish:
 
 Resolved
 Deferred
 Dismissed
 
-Do not just put all three under “Closed”.
-
 ==================================================
-6. TRUST ENGINE COMPLETION — STAGE 2.4
+P0 — 6. STAGE 2.4 MINIMUM CONTEXT
 ==================================================
 
-Implement Minimum Context.
-
-Add:
+Implement:
 
 - Effective Date
-- controlled Initiative Phase / Context
+- Controlled Initiative Phase / Context
 - chronology where needed
 
 Purpose:
 
-avoid false conflicts between facts applying to different times/scopes/phases.
+avoid false conflicts across different phases/time contexts.
 
 Example:
 
@@ -453,101 +950,133 @@ must not automatically conflict with:
 
 Phase 2 Target Live
 
-if the contexts are different.
+Conflict comparison remains conservative.
 
-Conflict comparison must remain conservative.
-
-Preserve the existing rules:
+Preserve:
 
 same initiative
 same normalized subject
 same normalized attribute
-compatible explicit context
+compatible context
 active claims
 different normalized values
 no supersession
 
 ==================================================
-IMPORTANT DIGEST REQUIREMENT
+DIGEST REQUIREMENT
 ==================================================
 
-Effective Date / context must affect BOTH:
+Effective Date / Context must affect BOTH:
 
 - TypeScript contentDigestOf
 - SQL decision_hash
 
-Do NOT change only one implementation.
+Do NOT update one side only.
 
 Add regression tests.
 
 ==================================================
-7. INITIATIVE RELATIONSHIPS / DEPENDENCIES
+P1 — 7. MEETING INTELLIGENCE
+==================================================
+
+Build on top of Anchored AI Evidence.
+
+Do NOT build a disconnected AI meeting summary app.
+
+MVP:
+
+Paste:
+
+- meeting notes
+or
+- transcript
+
+Claude proposes:
+
+- Decisions
+- Actions
+- Risks
+- Changed Requirements
+- Delivery Date Changes
+- Open Questions
+
+Each proposal must show supporting evidence.
+
+User confirms/rejects individually.
+
+Confirmed items flow into canonical domains:
+
+Decision → Decisions
+Action → Actions
+Risk → Initiative Context
+Delivery Change → Delivery
+Requirement → Knowledge
+Open Question → unresolved context/attention
+
+Meeting note/transcript remains a Source.
+
+Do NOT create another data island.
+
+==================================================
+P1 — 8. INITIATIVE RELATIONSHIPS / DEPENDENCIES
 ==================================================
 
 Add a lightweight relationship model.
 
-Minimum types:
+Minimum:
 
 PART_OF
 DEPENDS_ON
 RELATED_TO
 
-BLOCKS should be derived from DEPENDS_ON where appropriate.
+BLOCKS may be derived as inverse of DEPENDS_ON where appropriate.
 
 Relationship fields:
 
 - From Initiative
 - To Initiative
 - Relationship Type
-- rationale/note
+- rationale
 - created by
 - confirmed by
 - confirmed at
 
-AI may PROPOSE relationships.
+AI may propose relationships.
 
-A human must confirm them before they affect Product Truth.
+Human confirmation required before they affect Product Truth.
 
-==================================================
-RELATIONSHIP INTEGRATION
-==================================================
-
-Integrate naturally into:
+Integrate into:
 
 - Brief
 - Roadmap
 - Home attention
 - future Portfolio Analysis
 
-Do NOT create a complex dependency management product.
+Do NOT build complex dependency management.
 
 ROADMAP
 
-Dependencies should be visually understandable where relevant.
+Show meaningful dependency impact.
 
 Example:
 
-Initiative B depends on Initiative A.
+B depends on A.
 
-If A's delivery moves beyond a meaningful milestone/target for B:
+If A moves beyond a relevant B milestone:
 
-Prodwise may surface the dependency risk.
+surface supported dependency risk.
 
-But:
-
-Do NOT invent scheduling impact when facts are insufficient.
+Do NOT invent impact without evidence.
 
 ==================================================
-8. INITIATIVE HISTORY
+P1 — 9. INITIATIVE HISTORY
 ==================================================
 
-Add a meaningful Initiative History / Timeline.
+Add meaningful Initiative History.
 
-This must NOT be a raw technical audit log.
+Purpose:
 
-The purpose is to answer:
-
-“What happened to this initiative over time?”
+What happened to this initiative over time?
 
 Show meaningful events such as:
 
@@ -560,21 +1089,21 @@ Show meaningful events such as:
 - Action completed
 - Weekly Review finalized
 - scope/phase changed
-- relationship/dependency confirmed
+- relationship confirmed
 
-Keep raw technical audit data separate.
+Do NOT expose raw technical audit logs as product history.
 
-Do not add History as a new global navigation item.
+Do NOT add History as top-level global navigation.
 
-It belongs naturally in the initiative experience.
+Keep it within initiative context.
 
 ==================================================
-9. CANONICAL RISKS / OPEN QUESTIONS
+P1 — 10. CANONICAL RISKS / OPEN QUESTIONS
 ==================================================
 
-Do NOT build a giant separate risk-management application.
+Do NOT build a giant standalone risk system.
 
-But Risks and Open Questions must not remain random free-text paragraphs.
+But Risks and Open Questions must become structured product objects.
 
 RISK minimum:
 
@@ -584,367 +1113,278 @@ RISK minimum:
 - Owner if known
 - Mitigation / Next Action if recorded
 - Source
-- Updated at
+- Updated At
 
 OPEN QUESTION minimum:
 
 - Question
 - Initiative
-- Owner / expected confirmer if known
+- Owner / Expected Confirmer if known
 - Status
-- Source / context
-- Created at
-- Resolved at
+- Source / Context
+- Created At
+- Resolved At
 
-Integrate them into:
+Integrate into:
 
-- Home attention
+- Home
 - Brief
 - Weekly Review
 - Meeting Intelligence
 
-Only create a dedicated register if research strongly proves it is needed.
+Only create a dedicated register if research proves it is necessary.
 
 ==================================================
-10. CONNECT THE WHOLE OPERATING LOOP
+NAVIGATION RULE
 ==================================================
 
-These features must NOT become separate mini-products.
+Do NOT create new global navigation items for:
 
-Do NOT create five new global nav items:
-
-Actions
-Meetings
-Relationships
-Risks
-Questions
-
-Keep global navigation focused.
+- Actions
+- Meetings
+- Relationships
+- Risks
+- Questions
 
 Use:
 
 - initiative context
 - progressive disclosure
-- contextual rails
+- context rails
 - drawers
 - workbenches
-- meaningful cross-links
+- cross-links
 
-based on actual UX research.
-
-The user should experience ONE loop:
-
-SOURCE / EVIDENCE
-
-↓
-AI understands the evidence
-
-↓
-Human confirms
-
-↓
-PRODUCT TRUTH
-
-↓
-Decision / Attention
-
-↓
-Owner / Action
-
-↓
-Delivery / Dependency
-
-↓
-Weekly Review
-
-↓
-History
+Global navigation should remain focused.
 
 ==================================================
-11. VISUAL / INTERACTION QUALITY
+END-TO-END PRODUCT LOOP
 ==================================================
 
-This is NON-NEGOTIABLE.
+The final experience must connect:
 
-Do NOT:
+Create Initiative
+→ Complete Setup
+→ Map Sources
+→ AI Proposal
+→ Human Confirmation
+→ Product Truth
+→ Decision / Attention
+→ Owner / Action
+→ Delivery / Dependency
+→ Weekly Review
+→ History
 
-- clone one page five times
-- use cards everywhere
-- create forms that look like internal admin/debug tools
-- add tables without interaction reasoning
-- stack everything vertically on mobile
-- hide critical actions inside tiny links
-- use Help text to compensate for bad UX
-- create a “functional but ugly” result
-
-Each new capability must have its own appropriate interaction model.
-
-Examples:
-
-Evidence ingestion
-should feel like:
-evidence → proposals → review/confirmation
-
-not:
-textarea + button + giant output paragraph
-
-Actions
-should feel like:
-commitments in product context
-
-not:
-generic task manager
-
-Relationships
-should feel like:
-initiative context/dependency understanding
-
-not:
-From dropdown + To dropdown + Save button as the main UX
-
-History
-should feel like:
-meaningful product evolution
-
-not:
-database audit logs
-
-Meeting Intelligence
-should feel like:
-review extracted product intelligence
-
-not:
-AI summary page
+Nothing should become an isolated data island.
 
 ==================================================
-12. PRODUCT COMPREHENSION TEST
+DEMO INTEGRATION
 ==================================================
 
-For each new capability ask:
-
-Within 10 seconds can a Product Manager answer:
-
-- What is this?
-- Why is it here?
-- What should I do?
-- What happens after I do it?
-- Where will I see this information again?
-
-If not:
-
-the UX is not finished.
-
-==================================================
-13. EXECUTION PRIORITY
-==================================================
-
-Finish the CURRENT active mission first.
-
-Then execute this second mission in this order.
-
-P0 — REQUIRED CORE LOOP
-
-1. Initiative Ownership
-2. Actions / Commitments
-3. Anchored AI Evidence Ingestion
-4. Stage 2.3 Queue Completeness
-5. Stage 2.4 Minimum Context
-
-Then perform an integration / UX review of that loop.
-
-P1 — COMPLETE THE OPERATING MODEL
-
-6. Meeting Intelligence
-7. Initiative Relationships / Dependencies
-8. Initiative History
-9. Canonical Risks / Open Questions
-
-Do not move to broad external integrations until this loop is coherent.
-
-==================================================
-14. DO NOT EXPAND INTO THESE YET
-==================================================
-
-Do NOT turn this mission into:
-
-- full Jira integration
-- Google Drive integration
-- Gmail integration
-- Slack integration
-- Figma sync
-- ClickUp sync
-- generic Notification Center
-- Market Intelligence
-- Product Challenger
-- standalone UAT Calendar
-- complex resource planning
-- generic task/project management
-- broad new RBAC redesign
-
-These remain future scope unless later explicitly requested.
-
-==================================================
-15. DEMO INTEGRATION
-==================================================
-
-Extend the existing coherent Prodwise Demo dataset to demonstrate the new scope.
+Extend Prodwise Demo only.
 
 Do NOT fabricate AMAN data.
 
-Synthetic demo should include enough examples to demonstrate:
+Demo must include enough examples to demonstrate:
 
+- incomplete setup
+- Ready for Intelligence
 - initiative owners
+- multiple linked sources
+- Jira manual structured mapping
+- Docs mapping
+- Email reference
 - open actions
-- one overdue or due-soon commitment
+- due-soon / overdue commitment
 - AI evidence proposals
-- confirmed/rejected proposal examples where useful
-- a meeting-derived decision
-- a meeting-derived action
+- confirmed proposal
+- rejected proposal where useful
+- meeting-derived decision
+- meeting-derived action
 - Deferred or Dismissed decision
 - phase/context example
-- initiative dependency
-- meaningful history
+- dependency
+- meaningful initiative history
 - risk
 - open question
 
-All Demo information must remain:
+All Demo data must be:
 
-- fictional
+- synthetic
 - coherent
 - internally consistent
 - isolated from AMAN
 
-No disconnected hard-coded dashboard data.
+No disconnected hard-coded counts.
 
 ==================================================
-16. END-TO-END CORE PRODUCT TEST
+RESPONSIVE DESIGN
 ==================================================
 
-Test at least one complete story:
-
-1. User pastes evidence
-2. Claude proposes structured understanding
-3. Evidence is visible
-4. Human confirms selected items
-5. Knowledge updates
-6. Decision/attention appears where applicable
-7. Action is created where applicable
-8. Owner is clear
-9. Confirmed delivery change affects delivery truth
-10. Roadmap reflects confirmed delivery facts
-11. Dependency impact appears only when supported
-12. Weekly Review sees the resulting changes
-13. Human finalizes Weekly Review
-14. Next Weekly Review uses it as baseline
-15. Initiative History shows the meaningful events
-
-Verify:
-
-- no duplicate truth
-- no AI proposal changes truth without confirmation
-- no context-incompatible false conflicts
-- Deferred/Dismissed semantics remain correct
-- action carry-over works
-- ownership filtering works
-- relationships remain organization-scoped
-- no cross-org leakage
-- Demo stays coherent
-
-==================================================
-17. RESPONSIVE + ACCESSIBILITY
-==================================================
-
-For every new major interaction test:
+Test:
 
 390
 768
 1024
 1440+
 
-Do NOT build desktop first and merely stack everything on mobile.
+Do NOT build desktop and stack it on mobile.
 
-Use intentional mobile interaction patterns.
+Mobile must be intentionally designed.
+
+Pay particular attention to:
+
+- Create Initiative
+- progressive setup
+- source mapping
+- proposal review
+- actions
+- edit initiative
+- history
+- dependency interactions
+
+No horizontal overflow.
+
+==================================================
+ACCESSIBILITY
+==================================================
 
 Validate:
 
-- keyboard navigation
-- focus
-- forms
+- form grouping
+- required field indication
+- validation errors
+- keyboard flow
+- step navigation
+- source multi-select accessibility
+- dialogs
+- archive confirmation
+- focus restoration
 - proposal review
 - tables/lists
-- drawers
-- dialogs
 - timeline/history
-- action controls
-- relationship controls
+- status not color-only
 - contrast
-- status clarity
 - reduced motion
 
+Fix blockers.
+
 ==================================================
-18. PERFORMANCE
+PERFORMANCE
 ==================================================
 
-Do not undo the performance improvements from the current mission.
-
-Every new capability must preserve the fast-feeling navigation model.
+Do not regress the accepted performance baseline.
 
 Watch for:
 
-- repeated session fetching
-- repeated initiative fetching
+- repeated session fetches
+- repeated initiative fetches
 - serial waterfalls
 - oversized AI payloads
-- unnecessary rerenders
 - route remounts
 - large history payloads
 - slow proposal rendering
 
-Use progressive loading where useful.
+Use progressive loading where appropriate.
 
-Do not block the full page while Claude is processing.
-
-The user should still be able to understand what is happening.
+Do not block entire pages while Claude processes evidence.
 
 ==================================================
-19. CLAUDE FINAL VISUAL REVIEW
+END-TO-END TEST
 ==================================================
 
-Before calling the second mission complete:
+Test at least one full scenario:
 
-Give Claude the actual rendered screenshots / product.
+1. Create initiative
+2. Setup is incomplete
+3. Complete required setup
+4. Add/map sources
+5. Paste evidence
+6. Claude proposes structured understanding
+7. Evidence is visible
+8. Human confirms selected items
+9. Knowledge updates
+10. Decision/attention appears if relevant
+11. Action is created if relevant
+12. Owner is clear
+13. Confirmed delivery change updates canonical delivery fact
+14. Roadmap reflects confirmed fact
+15. Dependency impact appears only if supported
+16. Weekly Review sees the resulting delta
+17. Human finalizes review
+18. Next review uses it as baseline
+19. Initiative History shows meaningful evolution
 
-Require Claude to independently review:
+Verify:
 
-- Initiative ownership
-- Action experience
-- evidence ingestion
-- AI proposal review
+- no duplicate truth
+- no AI proposal changes truth without confirmation
+- no false cross-phase conflicts
+- Deferred/Dismissed semantics survive reevaluation
+- Action carry-over works
+- ownership works
+- relationships stay org-scoped
+- no cross-org leakage
+- Demo stays coherent
+
+==================================================
+CLAUDE FINAL REVIEW
+==================================================
+
+Before completion:
+
+Give Claude actual rendered screenshots.
+
+Required review:
+
+DESKTOP
+- Create Initiative — Basics
+- Create Initiative — Source Mapping
+- Setup Incomplete
+- Ready for Intelligence
+- Edit Initiative
+- Source Management
+- Archive Confirmation
+- Ownership
+- Actions
+- AI Proposal Review
 - Meeting Intelligence
-- Decision states
+- Deferred/Dismissed states
 - context/effective date UX
 - dependencies
 - history
 - risks/open questions
 
-Ask specifically:
+MOBILE
+- Create Initiative
+- Setup State
+- Edit Initiative
+- Source Management
+- AI Proposal Review
+- Actions
 
-Does any part look:
+Claude must explicitly evaluate:
 
-- copied/pasted?
-- generic CRUD?
-- disconnected?
-- developer-designed rather than product-designed?
-- inconsistent with Prodwise?
-- confusing without instructions?
+- Does this feel coherent?
+- Is the next action obvious?
+- Is anything copy/pasted?
+- Is anything generic CRUD?
+- Does source mapping make sense?
+- Is Created vs Ready clear?
+- Is edit discoverable?
+- Is mobile intentional?
+- Does every action clearly explain what happens next?
 
-Fix all major findings.
+If Claude returns REVISE:
+
+fix major findings
+and repeat review.
 
 ==================================================
-20. INDEPENDENT RED TEAM
+INDEPENDENT RED TEAM
 ==================================================
 
-Then use a FRESH independent high-capability reviewer that did NOT design these features.
+Use a fresh independent reviewer after Claude approval.
 
 Test as:
 
@@ -953,171 +1393,172 @@ Test as:
 - first-time user
 - Demo reviewer
 
-Ask them to complete the full evidence-to-action workflow without instructions.
+Require them to complete the full workflow without instructions.
 
-Fix blocker/major usability failures.
-
-==================================================
-21. FINAL DEPLOYMENT
-==================================================
-
-Only deploy after:
-
-- current mission fully complete
-- second mission complete
-- UX contract respected
-- Claude rendered review passed
-- red-team passed
-- tests passed
-- accessibility passed
-- performance remains acceptable
-- Demo consistency passed
-
-Do not deploy half-completed new workflow states.
-
-Deploy the exact tested SHA.
-
-Do not:
-
-- delete production data
-- weaken RBAC
-- expose secrets
-- fabricate AMAN data
-- bypass confirmation rules
+Fix all Blocker / Major findings.
 
 ==================================================
-FINAL REPORT
+EXECUTION ORDER
 ==================================================
 
-Do not return to me between Mission 1 and Mission 2.
+P0:
 
-Return ONE final completion report when both are done.
+1. Initiative Setup & Lifecycle Management
+2. Initiative Ownership
+3. Actions / Commitments
+4. Anchored AI Evidence Ingestion
+5. Stage 2.3 Queue Completeness
+6. Stage 2.4 Minimum Context
+
+Then perform integration review.
+
+P1:
+
+7. Meeting Intelligence
+8. Initiative Relationships / Dependencies
+9. Initiative History
+10. Canonical Risks / Open Questions
+
+Do not move into broad external integrations.
+
+==================================================
+DO NOT ADD YET
+==================================================
+
+Do NOT expand into:
+
+- full Jira connector
+- Google Drive connector
+- Gmail connector
+- Slack connector
+- Figma sync
+- ClickUp sync
+- notification center
+- Market Intelligence
+- Product Challenger
+- standalone UAT Calendar
+- complex resource planning
+- generic task management
+- broad RBAC redesign
+
+These remain future scope unless explicitly requested later.
+
+==================================================
+CANONICAL SCOPE REQUIREMENT
+==================================================
+
+Before implementation:
+
+write ALL of the above into:
+
+docs/product-quality/14-second-mission-scope.md
+
+Do NOT keep important requirements only in chat.
+
+Update the P0/P1 order in the file.
+
+Then continue directly into implementation.
+
+Do NOT pause again merely to confirm the scope was saved.
+
+Only pause if there is a genuine blocker requiring my action.
+
+==================================================
+FINAL PRE-DEPLOYMENT CHECKPOINT
+==================================================
+
+Do NOT deploy automatically.
+
+When the full Second Mission is complete:
+
+stop at a final pre-deployment checkpoint.
 
 Report:
 
-1. CURRENT MISSION COMPLETION
-- what was completed
-- screenshots
-- tests
-- performance
-- deployment
+1. Implemented capabilities
+2. Claude final UX verdict
+3. Red-team verdict
+4. Build result
+5. Unit tests
+6. DB/migration tests
+7. Browser/E2E
+8. Accessibility
+9. Responsive
+10. Performance vs accepted baseline
+11. Demo consistency
+12. Org isolation
+13. AI safety / confirmation behavior
+14. Exact candidate SHA
+15. Working tree status
+16. Migration status
+17. Known remaining non-blocking issues
+18. Whether candidate is ready for Production
 
-2. NEW CORE SCOPE
-- Ownership
-- Actions
-- Anchored AI Evidence
-- Meeting Intelligence
-- Queue Completeness
-- Minimum Context
-- Dependencies
-- History
-- Risks/Open Questions
+Use one final verdict:
 
-3. UX / UI QUALITY
-- Claude UX contracts
-- rendered Claude reviews
-- important changes after critique
-- confirmation that generic CRUD/copy-paste patterns were removed
-
-4. END-TO-END OPERATING LOOP
-Demonstrate:
-
-Evidence
-→ AI Proposal
-→ Human Confirmation
-→ Product Truth
-→ Decision
-→ Action
-→ Delivery
-→ Weekly Review
-→ History
-
-5. DEMO SCENARIO
-- canonical synthetic data
-- consistency results
-
-6. TEST RESULTS
-- unit
-- database
-- browser
-- AI
-- responsive
-- accessibility
-- performance
-- org isolation
-- production smoke
-
-7. RED-TEAM
-- findings
-- fixes
-- remaining non-blockers
-
-8. PRODUCTION
-- URL
-- final SHA
-- deployment ID
-- Ready / Production / Current
-
-9. FINAL VERDICT
-
-Use exactly one:
-
-READY FOR DEMO
+READY FOR PRODUCTION CHECKPOINT
 
 READY WITH ONE MANUAL STEP
 
 BLOCKED — exact blocker
 
+Do NOT deploy until I approve the final checkpoint.
+
 ==================================================
-FINAL WORKING PRINCIPLES
+FINAL PRINCIPLES
 ==================================================
 
 Do not optimize for feature count.
 
-Do not optimize for passing tests.
+Do not optimize for tests only.
 
 Optimize for a coherent Product Intelligence operating system.
 
+Creation is not completion.
+
+Setup must be explicit.
+
+Sources are structured evidence, not random URLs.
+
 AI proposes.
+
 Humans confirm.
 
-Unknown != failed.
-Missing != zero.
+Canonical facts preserve history.
 
-Actions are commitments, not a Jira clone.
+Weekly Review is not a parallel database.
 
-Meeting Intelligence feeds Product Truth; it does not create another data island.
+Actions are commitments, not Jira.
 
-Weekly Review consumes and records Product Truth; it is not a parallel database.
+Meeting Intelligence feeds Product Truth.
 
-History explains product evolution; it is not an audit-log dump.
+Dependencies are evidence-backed.
 
-Dependencies are evidence-backed relationships; do not invent schedule impact.
+History explains product evolution.
 
-UX/UI quality is a hard product requirement.
+Unknown != Failed.
 
-If a feature looks copied/pasted, generic or cheap:
+Missing != Zero.
+
+No fabricated AMAN data.
+
+No generic CRUD.
+
+No copy/paste UI.
+
+If the UI feels cheap or disconnected:
 
 REWORK IT.
 
-Claude owns Product / UX quality.
+Now:
 
-Codex owns engineering quality.
+1. update the canonical Second Mission file
+2. complete Claude UX planning
+3. execute P0
+4. execute P1
+5. complete integration testing
+6. run Claude final rendered review
+7. run independent red-team
+8. stop at final pre-deployment checkpoint
 
-Research
-→ Design
-→ Build
-→ Render
-→ Critique
-→ Fix
-→ Red-team
-→ Test
-→ Deploy.
-
-Continue the work you are currently doing now.
-
-Finish it completely.
-
-Then immediately execute this second mission.
-
-Do not stop between them.
+Do not pause again unless there is a genuine blocker requiring my action.

@@ -8,6 +8,8 @@
 
 ## Active mission checkpoint
 
+27 September 2026: the user accepted Current Mission at `4623810ddcb28382e79cbb3dcae8c01b7d966f3e` and activated Second Mission. Follow the latest amendment in `docs/product-quality/14-second-mission-scope.md` and the execution ledger in `docs/second-mission/01-research-and-execution.md`. Setup & Lifecycle is first P0. Stop at the final pre-deployment checkpoint; no deployment or push during this run. The paragraph below records the previous checkpoint boundary and is superseded as to activation only.
+
 The user’s latest scope and execution instructions take precedence over the historical phase descriptions below. Current Mission closure is documented in `docs/product-quality/15-current-mission-acceptance.md`; its earlier factual checkpoint is `13-current-checkpoint.md`. The complete approved Second Mission is frozen in `14-second-mission-scope.md` and must not begin until the user confirms Current Mission acceptance. Do not deploy or infer authorization to start that next scope from historical continuation text. Preserve all historical product rules that are not explicitly superseded.
 
 ## 1. Identity

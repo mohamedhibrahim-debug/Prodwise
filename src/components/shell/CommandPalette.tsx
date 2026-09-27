@@ -16,6 +16,7 @@ import { OPEN_PALETTE_EVENT } from "./events";
 import styles from "./CommandPalette.module.css";
 
 interface NavInitiative {
+  archivedAt?: string | null;
   slug: string;
   name: string;
   stage: Stage;
@@ -34,10 +35,12 @@ interface Command {
 }
 
 const WORKSPACE_TABS = [
+  { segment: "manage", label: "Manage initiative" },
   { segment: "", label: "Brief" },
   { segment: "decisions", label: "Decisions" },
   { segment: "knowledge", label: "Knowledge" },
   { segment: "sources", label: "Sources" },
+  { segment: "actions", label: "Commitments" },
 ] as const;
 
 /**
@@ -182,7 +185,7 @@ export function CommandPalette({administration=false,canSwitch=false}:{administr
         id: `init-${i.slug}`,
         label: i.name,
         keywords: `${i.name} ${STAGE_LABEL[i.stage]} ${BUSINESS_LINE_LABEL[i.businessLine]}`,
-        hint: `${STAGE_LABEL[i.stage]} · ${BUSINESS_LINE_LABEL[i.businessLine]}`,
+        hint: `${i.archivedAt?"Archived · ":""}${STAGE_LABEL[i.stage]} · ${BUSINESS_LINE_LABEL[i.businessLine]}`,
         group: "Initiatives",
         href: `/initiatives/${i.slug}`,
       });

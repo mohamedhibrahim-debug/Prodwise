@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { EMPTY_STATE, type DeliveryState, type PortfolioSource, type WorkspaceAccess, type SectionEdit } from "./types.ts";
-import { applyFactUpdatesAndRefresh, finalizationChecks, nextReviewWeek, changesSince, createReview, editSection, finalizeReview, freezeInput, isoWeek, recordFact, refreshReview, supportChanged, weekValid } from "./model.ts";
+import { applyFactUpdatesAndRefresh, finalizationChecks, nextReviewWeek, changesSince, referencesFor, createReview, editSection, finalizeReview, freezeInput, isoWeek, recordFact, refreshReview, supportChanged, weekValid } from "./model.ts";
 import { validateDraft } from "./ai-validation.ts";
 import type { MemoryClaim, FindingState } from "../domain/types.ts";
 const admin:WorkspaceAccess={workspaceId:"w1",organizationId:"org1",platformRole:null,memberId:"admin",actor:{id:"admin-user",label:"ADMIN"},role:"ADMIN",isProductLead:false};
@@ -138,4 +138,29 @@ test("Final snapshot retains unknown dates after later delivery facts are record
  const s=source();let state=createReview(configured(s),s,admin,"2026-W39",now);const reviewId=state.reviews[0]!.id;state=reviewed(state,s,reviewId);state=finalizeReview(state,s,admin,reviewId,state.reviews[0]!.revision,now);
  const frozen=JSON.stringify(state.reviews[0]);state=set(state,s,"TARGET_LIVE","2026-10-08","2026-09-26T13:00:00Z");
  assert.equal(JSON.stringify(state.reviews[0]),frozen);assert.equal(state.reviews[0]!.input.facts.some(f=>f.kind==="TARGET_LIVE"),false);
+});
+
+
+test("archive transition appears once, later review omits it, Finals remain immutable",()=>{
+ const s=source();let state=createReview(configured(s),s,admin,"2026-W38","2026-09-20T12:00:00Z");
+ let r=state.reviews[0]!;state=reviewed(state,s,r.id,"2026-09-20T12:00:00Z");r=state.reviews[0]!;
+ state=finalizeReview(state,s,admin,r.id,r.revision,"2026-09-20T12:00:00Z");const first=JSON.stringify(state.reviews[0]);
+ s.snapshots[0]!.initiative.archivedAt="2026-09-23T12:00:00Z";s.snapshots[0]!.initiative.archiveReason="Pilot paused";
+ state=createReview(state,s,admin,"2026-W39",now);r=state.reviews.find(x=>x.week==="2026-W39")!;
+ assert.ok(r.sections.some(x=>x.initiativeId==="i1"));assert.ok(changesSince(r.input,state.reviews[0]!.input).some(x=>x.initiativeId==="i1"&&/archiv/i.test(x.label)));
+ state=reviewed(state,s,r.id);r=state.reviews.find(x=>x.id===r.id)!;state=finalizeReview(state,s,admin,r.id,r.revision,now);
+ const second=JSON.stringify(state.reviews.find(x=>x.week==="2026-W39"));state=createReview(state,s,admin,"2026-W40","2026-10-03T12:00:00Z");
+ assert.ok(!state.reviews.find(x=>x.week==="2026-W40")!.sections.some(x=>x.initiativeId==="i1"));
+ assert.equal(JSON.stringify(state.reviews[0]),first);assert.equal(JSON.stringify(state.reviews.find(x=>x.week==="2026-W39")),second);
+});
+
+test("Commitment changes stale drafts, ground AI inventory, and preserve prior Finals",()=>{
+ const s=source();s.commitments=[];let state=createReview(configured(s),s,admin,"2026-W38","2026-09-20T12:00:00Z");
+ let r=state.reviews[0]!;state=reviewed(state,s,r.id,"2026-09-20T12:00:00Z");r=state.reviews[0]!;state=finalizeReview(state,s,admin,r.id,r.revision,"2026-09-20T12:00:00Z");const frozen=JSON.stringify(state.reviews[0]);
+ state=createReview(state,s,admin,"2026-W39",now);r=state.reviews.find(x=>x.week==="2026-W39")!;state=reviewed(state,s,r.id);
+ s.commitments.push({id:"a1",workspaceId:"w1",initiativeId:"i1",title:"Confirm pilot outcome",assigneeMemberId:null,dueDate:null,status:"OPEN",blockedNote:null,origin:"HUMAN_ENTRY",originRefId:null,originHref:null,evidenceId:null,createdBy:"admin-user",createdAt:now,updatedAt:now,completedAt:null,cancelledAt:null,revision:1});
+ r=state.reviews.find(x=>x.week==="2026-W39")!;assert.throws(()=>finalizeReview(state,s,admin,r.id,r.revision,now),/Inputs/);
+ state=refreshReview(state,s,admin,r.id,r.revision,now);r=state.reviews.find(x=>x.week==="2026-W39")!;assert.equal(r.sections.find(x=>x.initiativeId==="i1")!.needsRecheck,true);
+ const refs=referencesFor(r.input,state.reviews[0]!.input);const ref=refs.find(x=>x.id==="action:a1:1")!;assert.match(ref.texts[0],/date not recorded; assignee not assigned/);assert.equal(validateDraft({sections:[{initiativeId:"i1",lines:[{referenceId:ref.id,text:ref.texts[0]}]}]},refs).length,1);
+ assert.ok(changesSince(r.input,state.reviews[0]!.input).some(x=>x.kind==="COMMITMENT"));assert.equal(JSON.stringify(state.reviews[0]),frozen);
 });

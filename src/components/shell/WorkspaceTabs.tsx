@@ -10,6 +10,7 @@ const TABS = [
   { segment: "decisions", label: "Decisions" },
   { segment: "knowledge", label: "Knowledge" },
   { segment: "sources", label: "Sources" },
+  { segment: "actions", label: "Commitments" },
 ] as const;
 
 /**
@@ -102,7 +103,7 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
   const rest = pathname.startsWith(base) ? pathname.slice(base.length) : "";
   const currentSegment = rest.replace(/^\//, "").split("/")[0] ?? "";
   const activeSegment =
-    rest.startsWith('/knowledge/sources') ? 'sources' : TABS.find((t) => t.segment && t.segment === currentSegment)?.segment ?? "";
+    rest.startsWith('/knowledge/sources') ? 'sources' : TABS.find((t) => t.segment && t.segment === currentSegment)?.segment ?? (currentSegment ? null : "");
 
   return (
     <div

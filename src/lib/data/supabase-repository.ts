@@ -51,6 +51,12 @@ import { workspaceClient } from "./workspace-client";
  */
 
 interface InitiativeRow {
+  workspace_id?: string;
+  archived_at?: string | null;
+  archived_by?: string | null;
+  archive_reason?: string | null;
+  current_context_id?: string | null;
+  created_by?: string | null;
   id: string;
   slug: string;
   name: string;
@@ -182,6 +188,12 @@ function getClient(): SupabaseClient {
 /** Row → domain. The only place snake_case is allowed to exist. */
 function toInitiative(row: InitiativeRow): Initiative {
   return {
+    workspaceId: row.workspace_id,
+    archivedAt: row.archived_at ?? null,
+    archivedBy: row.archived_by ?? null,
+    archiveReason: row.archive_reason ?? null,
+    currentContextId: row.current_context_id ?? null,
+    createdBy: row.created_by ?? null,
     id: row.id,
     slug: row.slug,
     name: row.name,

@@ -28,6 +28,10 @@ export function guardedRepository(resolve: () => Promise<WorkspaceAccess>, rawFo
           const row = kind === 'claim' ? await raw.getClaim(id) : kind === 'evidence' ? await raw.getEvidence(id)
             : (await raw.listInitiatives()).find(item => item.id === id);
           if (!owned(row)) throw new AccessError('ACCESS_DENIED', 'That item could not be found in this workspace.');
+          if (writes.has(name)) {
+            const initiative = kind === 'initiative' ? row : (await raw.listInitiatives()).find(i => i.id === (row as {initiativeId?:string}).initiativeId);
+            if ((initiative as {archivedAt?:string|null})?.archivedAt) throw new AccessError('INITIATIVE_ARCHIVED','Archived — restore to edit. Nothing was changed.');
+          }
         };
         if (writes.has(name)) {
           if (name === 'createEvidence' || name === 'createClaim' || name === 'resolveConflict' || name === 'assignFindingConfirmer') {

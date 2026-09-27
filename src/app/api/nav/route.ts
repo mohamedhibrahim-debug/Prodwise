@@ -33,6 +33,7 @@ export async function GET() {
   return NextResponse.json({
     initiatives: initiatives.map((i) => ({
       slug: i.slug,
+      archivedAt: i.archivedAt ?? null,
       name: i.name,
       stage: i.stage,
       businessLine: i.businessLine,

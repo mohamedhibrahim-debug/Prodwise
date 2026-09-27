@@ -14,3 +14,15 @@ test("Exclusive local transaction refuses concurrent writer instead of losing da
  try {const store=new LocalDeliveryStore(join(root,"isolated.json")); const first=store.transaction(async state=>{started();await gate;return state;}); await entered; await assert.rejects(store.transaction(async state=>state),/Another delivery/); release(); await first;}
  finally {release(); if (!root.startsWith(join(tmpdir(),"prodwise-delivery-test-"))) throw new Error("Unexpected temp path"); await rm(root,{recursive:true,force:true});}
 });
+
+test("Ownership read lock serializes behind delivery writes and never rewrites state",async()=>{
+ const root=await mkdtemp(join(tmpdir(),"prodwise-delivery-test-"));let release:()=>void=()=>{};let entered:()=>void=()=>{};
+ const started=new Promise<void>(r=>{entered=r;}),gate=new Promise<void>(r=>{release=r;});
+ try{const store=new LocalDeliveryStore(join(root,"isolated.json"));
+ const writing=store.transaction(async state=>{entered();await gate;return state;});await started;
+ await assert.rejects(store.withReadLock(()=>true),/Another delivery/);release();await writing;
+ const before=await store.read();assert.equal(await store.withReadLock(s=>s.reviews.length),0);assert.deepEqual(await store.read(),before);
+ await assert.rejects(store.withReadLock(()=>{throw new Error('refused');}),/refused/);
+ assert.equal(await store.withReadLock(s=>s.facts.length),0);
+ }finally{release();if(!root.startsWith(join(tmpdir(),"prodwise-delivery-test-")))throw new Error('Unexpected temp path');await rm(root,{recursive:true,force:true});}
+});

@@ -2,7 +2,7 @@ import "server-only";
 import { requireBusinessWriteAccess } from "@/lib/auth/access";
 import { adminClient, isLocalAuth, configuredWorkspaceId } from "@/lib/auth/service";
 import { withRepositoryContext } from "@/lib/auth/repository-context";
-import { readDeliveryFresh } from "@/lib/delivery/repository";
+import { readDeliveryFresh,withLocalOwnerLock } from "@/lib/delivery/repository";
 import { LocalDeliveryStore } from "@/lib/delivery/local-store";
 import { localDeliveryPath } from "@/lib/delivery/local-path";
 import { ownerFor } from "@/lib/delivery/model";
@@ -18,8 +18,7 @@ export async function updateInitiativeStage(input:StageUpdate):Promise<void> {
   validateStageUpdate(ctx,input,initiative,ownerFor(read.state.facts,input.initiativeId));
   if(isLocalAuth()) {
     const fresh=await requireBusinessWriteAccess();
-    const delivery=await new LocalDeliveryStore(localDeliveryPath(process.cwd(),fresh.workspaceId,configuredWorkspaceId())).read();
-    await withRepositoryContext(fresh,async()=>updateLocalInitiativeStage(fresh,input,ownerFor(delivery.facts,input.initiativeId)));
+    await withRepositoryContext(fresh,async()=>withLocalOwnerLock(fresh,delivery=>updateLocalInitiativeStage(fresh,input,ownerFor(delivery.facts,input.initiativeId))));
     return;
   }
   const {error}=await adminClient().rpc("update_initiative_stage",{

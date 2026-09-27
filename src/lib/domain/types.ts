@@ -186,6 +186,11 @@ export type BusinessLine = (typeof BUSINESS_LINES)[number];
 /* ── Entities ───────────────────────────────────────────────────────────── */
 
 export interface Initiative {
+  archivedAt?: string | null;
+  archivedBy?: string | null;
+  archiveReason?: string | null;
+  currentContextId?: string | null;
+  createdBy?: string | null;
   id: string;
   /** Persisted scope on server/store records; authorization never comes from the client. */
   workspaceId?: string;

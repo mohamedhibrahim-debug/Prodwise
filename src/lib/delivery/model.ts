@@ -61,6 +61,7 @@ export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: W
   assertMember(ctx,source); assertWriter(ctx);
   const snap = source.snapshots.find(s => s.initiative.id === input.initiativeId);
   if (!snap) fail("INITIATIVE_ACCESS", "This initiative is not in your workspace.");
+  if (snap.initiative.archivedAt) fail("INITIATIVE_ARCHIVED", "Archived — restore to edit. Nothing was changed.");
   if (!FACT_KINDS.includes(input.kind)) fail("FACT_KIND", "Choose a delivery field.");
   const old = state.facts.find(f => f.workspaceId === ctx.workspaceId && f.initiativeId === input.initiativeId && f.kind === input.kind);
   if ((old?.revision ?? 0) !== input.expectedRevision) fail("STALE_FACT", "This fact changed while you were editing. Reload before saving.");
@@ -77,10 +78,12 @@ export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: W
   if (input.locator && input.locator.length > 500) fail("LOCATOR", "Keep the source location under 500 characters.");
   if (!input.retract) {
     const v = input.value;
+    if (v.unknown && (!['TARGET_LIVE','NEXT_MILESTONE','DEV_STARTED'].includes(input.kind) || v.date || v.text || v.memberId || v.extent || v.dateUnknown)) fail('UNKNOWN_SHAPE','Unknown must be recorded separately from a known value.');
+    if (v.dateUnknown && (input.kind !== 'NEXT_MILESTONE' || v.date || !v.text?.trim() || v.unknown)) fail('UNKNOWN_DATE','An unknown milestone date requires its recorded name and no date.');
     if (v.date && !dateValid(v.date)) fail("DATE", "Enter a valid calendar date.");
     if (v.text && v.text.length > 2000) fail("TEXT", "Keep the delivery note under 2,000 characters.");
-    if (["SOLUTION_DEFINED","DEV_STARTED","TARGET_LIVE","ACTUAL_LIVE"].includes(input.kind) && !v.date) fail("DATE_REQUIRED", "Record the date or leave this fact unknown.");
-    if (["SCOPE","NEXT_MILESTONE","BLOCKER","NEXT_STEP"].includes(input.kind) && !v.text?.trim()) fail("TEXT_REQUIRED", "Record a descriptive label or note.");
+    if (["SOLUTION_DEFINED","DEV_STARTED","TARGET_LIVE","ACTUAL_LIVE"].includes(input.kind) && !v.date && !v.unknown) fail("DATE_REQUIRED", "Record the date or explicitly mark this fact unknown.");
+    if (["SCOPE","NEXT_MILESTONE","BLOCKER","NEXT_STEP"].includes(input.kind) && !v.text?.trim() && !v.unknown) fail("TEXT_REQUIRED", "Record a descriptive label or note.");
     if (["SOLUTION_DEFINED","DEV_STARTED","ACTUAL_LIVE"].includes(input.kind) && v.date! > cairoDay(now)) fail("FUTURE_ACTUAL", "An actual milestone cannot be in the future.");
     if (input.kind === "ACTUAL_LIVE" && (!v.extent || (v.extent === "PARTIAL" && !v.text?.trim()))) fail("ROLLOUT_SCOPE", "State full or partial launch and describe partial rollout scope.");
     if (input.kind !== "SCOPE" && input.kind !== "OWNER" && !factFor(state.facts,input.initiativeId,"SCOPE")) fail("SCOPE_REQUIRED", "Confirm the delivery phase or scope before recording delivery facts.");
@@ -96,11 +99,11 @@ export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: W
 export function freezeInput(source: PortfolioSource, state: DeliveryState, workspaceId: string, asOf: string): PortfolioInput {
   const facts = structuredClone(state.facts.filter(f => f.workspaceId === workspaceId).sort((a,b) => a.id.localeCompare(b.id)));
   const events = structuredClone(state.events.filter(e => e.workspaceId === workspaceId).sort((a,b) => a.occurredAt.localeCompare(b.occurredAt) || a.id.localeCompare(b.id)));
-  const ordered = structuredClone({ snapshots:[...source.snapshots].sort((a,b) => a.initiative.id.localeCompare(b.initiative.id)), members:[...source.members].sort((a,b) => a.id.localeCompare(b.id)) });
+  const ordered = structuredClone({ ...(source.commitments?{commitments:[...source.commitments].filter(a=>a.workspaceId===workspaceId).sort((a,b)=>a.id.localeCompare(b.id))}:{}), snapshots:[...source.snapshots].sort((a,b) => a.initiative.id.localeCompare(b.initiative.id)), members:[...source.members].sort((a,b) => a.id.localeCompare(b.id)) });
   return { ...ordered, workspaceId,facts,events,asOf,digest:digest({ source:meaningful(ordered), facts }) };
 }
 export function sectionDigest(input: PortfolioInput, initiativeId: string): string {
-  return digest({ source: meaningful(input.snapshots.find(s => s.initiative.id === initiativeId)), facts:input.facts.filter(f => f.initiativeId === initiativeId), members:input.members.map(m=>({ id:m.id,active:m.active,role:m.role })) });
+  return digest({ ...(input.commitments?{commitments:input.commitments.filter(a=>a.initiativeId===initiativeId)}:{}), source: meaningful(input.snapshots.find(s => s.initiative.id === initiativeId)), facts:input.facts.filter(f => f.initiativeId === initiativeId), members:input.members.map(m=>({ id:m.id,active:m.active,role:m.role })) });
 }
 export function latestBaseline(state: DeliveryState, workspaceId: string, week: string): WeeklyReview | null {
   return state.reviews.filter(r=>r.workspaceId === workspaceId && r.status === "FINAL" && r.week < week).sort((a,b)=>b.week.localeCompare(a.week))[0] ?? null;
@@ -122,6 +125,7 @@ export function changesSince(input: PortfolioInput, baseline: PortfolioInput | n
     const prior=baseline.snapshots.find(s=>s.initiative.id===id)!;
     const scopeChanged=canonical(factFor(baseline.facts,id,"SCOPE")?.value ?? null)!==canonical(factFor(input.facts,id,"SCOPE")?.value ?? null);
     const add=(kind:"KNOWLEDGE"|"DECISION"|"STAGE"|"SUPPORT",ref:string,label:string)=>result.push({id:`change:${id}:${ref}`,initiativeId:id,kind,label,eventIds:[],days:null,lateRecorded:false});
+    if((prior.initiative.archivedAt??null)!==(snap.initiative.archivedAt??null))result.push({id:`archive:${id}:${snap.initiative.archivedAt??'restored'}`,initiativeId:id,kind:'SCOPE',label:snap.initiative.archivedAt?'Initiative archived; earlier evidence, decisions and delivery history are preserved.':'Initiative restored to the active portfolio.',eventIds:[],days:null,lateRecorded:false});
     if (prior.initiative.stage!==snap.initiative.stage) add("STAGE","stage",`Recorded initiative stage: ${prior.initiative.stage} → ${snap.initiative.stage}. This does not infer release readiness.`);
     for (const claim of snap.claims) {
       const previous=prior.claims.find(c=>c.id===claim.id);
@@ -148,30 +152,40 @@ export function changesSince(input: PortfolioInput, baseline: PortfolioInput | n
       const intermediate=events.some(e=>canonical(e.before?.value ?? null)!==canonical(e.after.value));
       if (!valueChanged && !intermediate) continue;
       if (scopeChanged && kind!=="SCOPE" && kind!=="OWNER") {
-        result.push({id:`change:${id}:${kind}`,initiativeId:id,kind,label:`${kind.replaceAll("_"," ").toLowerCase()}: ${after?.value.date ?? after?.value.text ?? "not recorded"} for the changed scope. Earlier scope values remain in history; this is not a like-for-like target movement.`,eventIds:events.map(e=>e.id),days:null,lateRecorded:false});
+        result.push({id:`change:${id}:${kind}`,initiativeId:id,kind,label:`${kind.replaceAll("_"," ").toLowerCase()}: ${after?.value.unknown ? "explicitly unknown" : after?.value.date ?? after?.value.text ?? "not recorded"} for the changed scope. Earlier scope values remain in history; this is not a like-for-like target movement.`,eventIds:events.map(e=>e.id),days:null,lateRecorded:false});
         continue;
       }
       const days=before?.value.date && after?.value.date ? dayDifference(before.value.date,after.value.date) : null;
       const path=events.map(e=>e.after.state === "RETRACTED" ? "Withdrawn" : e.after.value.date ?? e.after.value.text ?? e.after.value.memberId ?? "Unknown");
       const late=Boolean(after?.value.date && after.value.date <= cairoDay(baseline.asOf) && events.length);
       const field=kind.replaceAll("_"," ").toLowerCase();
-      const label=!valueChanged ? `${field}: changed and returned to the previous value (${path.join(" → ")}).` : !after ? `${field}: withdrawn; current value unknown.` : !before ? `${field}: recorded ${after.value.date ?? after.value.text ?? "owner assignment"}.` : `${field}: ${before.value.date ?? before.value.text ?? "previous assignment"} → ${after.value.date ?? after.value.text ?? "new assignment"}${days !== null ? ` (${Math.abs(days)} days ${days>=0?"later":"earlier"})` : ""}${path.length>1?`; movement history ${path.join(" → ")}`:""}.`;
+      const label=!valueChanged ? `${field}: changed and returned to the previous value (${path.join(" → ")}).` : !after ? `${field}: withdrawn; current value unknown.` : !before ? `${field}: recorded ${after.value.unknown ? "explicitly unknown" : after.value.date ?? after.value.text ?? "owner assignment"}.` : `${field}: ${before.value.unknown ? "explicitly unknown" : before.value.date ?? before.value.text ?? "previous assignment"} → ${after.value.unknown ? "explicitly unknown" : after.value.date ?? after.value.text ?? "new assignment"}${days !== null ? ` (${Math.abs(days)} days ${days>=0?"later":"earlier"})` : ""}${path.length>1?`; movement history ${path.join(" → ")}`:""}.`;
       result.push({ id:`change:${id}:${kind}`,initiativeId:id,kind,label:label+(late?" Recorded after the previous review for an earlier effective date.":""),eventIds:events.map(e=>e.id),days,lateRecorded:late });
     }
   }
   for (const snap of baseline.snapshots) if (!input.snapshots.some(s=>s.initiative.id===snap.initiative.id)) result.push({ id:`left:${snap.initiative.id}`,initiativeId:snap.initiative.id,kind:"SCOPE",label:`${snap.initiative.name}: left the review scope.`,eventIds:[],days:null,lateRecorded:false });
+  for(const action of input.commitments??[]){const before=baseline.commitments?.find(a=>a.id===action.id);if(!before||canonical(before)!==canonical(action))result.push({id:`commitment:${action.id}:${action.revision}`,initiativeId:action.initiativeId,kind:'COMMITMENT',label:`Commitment ${action.title}: ${before?before.status.toLowerCase().replaceAll('_',' ')+' → ':''}${action.status.toLowerCase().replaceAll('_',' ')}${action.dueDate?`; due ${action.dueDate}`:'; due date not recorded'}.`,eventIds:[],days:null,lateRecorded:false});}
   return result;
+}
+/** Keep an archive transition in one reviewed week, then omit it from active
+ * sections. The full frozen input remains available for audit and comparison. */
+export function weeklySnapshots(input:PortfolioInput,baseline:PortfolioInput|null){
+ return input.snapshots.filter(s=>!s.initiative.archivedAt||baseline?.snapshots.find(b=>b.initiative.id===s.initiative.id)?.initiative.archivedAt!==s.initiative.archivedAt);
 }
 export function referencesFor(input: PortfolioInput, baseline: PortfolioInput | null): Reference[] {
   const refs:Reference[] = changesSince(input,baseline).map(c=>({ id:c.id,initiativeId:c.initiativeId,texts:[c.label,`Recorded change: ${c.label}`] }));
-  for (const snap of input.snapshots) {
+  for (const snap of weeklySnapshots(input,baseline)) {
     const id=snap.initiative.id;
+    for (const action of input.commitments?.filter(a=>a.initiativeId===id)??[]) {
+      const text=`Recorded commitment: ${action.title}; status ${action.status.toLowerCase().replaceAll("_"," ")}; due ${action.dueDate??"date not recorded"}; assignee ${input.members.find(m=>m.id===action.assigneeMemberId)?.displayName??"not assigned"}${action.blockedNote?`; blocked: ${action.blockedNote}`:""}.`;
+      refs.push({id:`action:${action.id}:${action.revision}`,initiativeId:id,texts:[text,`Current record: ${text}`]});
+    }
     for (const claim of snap.claims) {
       const text=`Recorded Knowledge ${claim.subject} · ${claim.attribute}: ${claim.value} (${claim.status}).${claim.verifiedAt ? ` Confirmed by ${claim.verifiedActorLabel ?? "actor not recorded"}.` : " Verification history not recorded."}${sourceLabel(claim)}`;
       refs.push({id:`knowledge:${claim.id}`,initiativeId:id,texts:[text,`Current record: ${text}`]});
     }
     for (const fact of input.facts.filter(f=>f.initiativeId===id && f.state === "SET" && f.kind !== "OWNER")) {
-      const field=fact.kind.replaceAll("_"," ").toLowerCase(); const value=[fact.value.date,fact.value.text].filter(Boolean).join(" — ");
+      const field=fact.kind.replaceAll("_"," ").toLowerCase(); const value=fact.value.unknown?"Explicitly unknown":[fact.value.date,fact.value.text,fact.value.dateUnknown?"Date explicitly unknown":null].filter(Boolean).join(" — ");
       const text=`${field}: ${value}${fact.kind === "ACTUAL_LIVE" ? ` (${fact.value.extent?.toLowerCase()} rollout within the recorded scope)` : ""}.`;
       refs.push({ id:`fact:${fact.id}:${fact.revision}`,initiativeId:id,texts:[text,`Confirmed ${text}`] });
       if (supportChanged(fact,input)) refs.push({ id:`support:${fact.id}`,initiativeId:id,texts:["Supporting evidence changed; the recorded value needs review.","Review changed supporting evidence before relying on this recorded value."] });
@@ -187,7 +201,7 @@ function newSection(input:PortfolioInput,id:string,baseline:PortfolioInput|null)
   const snapshot=input.snapshots.find(s=>s.initiative.id===id)!;
   const openDecisions=applyFindingStates(runReview(id,snapshot.claims),snapshot.findingStates).filter(f=>f.actionable && f.status === "OPEN");
   const scope=factFor(input.facts,id,"SCOPE")?.value.text;
-  return { initiativeId:id,ownerMemberId:ownerFor(input.facts,id),revision:1,headline:`${snapshot.initiative.stage.replaceAll("_"," ")} · ${scope ?? "Scope not confirmed"}`,updates:changes.map(c=>c.label).join("\n") || (baseline ? "No recorded changes since the previous final review." : "First review: current-state inventory. No previous final baseline."),attention:factFor(input.facts,id,"BLOCKER")?.value.text ?? "No blocker recorded; absence does not confirm there are none.",decisionNeeded:openDecisions.length ? openDecisions.map(f=>`Review differing recorded values for ${f.subject}: ${f.claims.map(c=>c.value).join(" / ")}.`).join("\n") : "No decision request recorded.",nextMilestone:milestone ? `${milestone.value.text} — ${milestone.value.date ?? "Date not recorded"}` : "Not recorded",nextStep:factFor(input.facts,id,"NEXT_STEP")?.value.text ?? "Not recorded",sourceDigest:sectionDigest(input,id),needsRecheck:false,editedByMemberId:null,editedAt:null,aiOriginal:null };
+  return { initiativeId:id,ownerMemberId:ownerFor(input.facts,id),revision:1,headline:`${snapshot.initiative.stage.replaceAll("_"," ")} · ${scope ?? "Scope not confirmed"}`,updates:changes.map(c=>c.label).join("\n") || (baseline ? "No recorded changes since the previous final review." : "First review: current-state inventory. No previous final baseline."),attention:factFor(input.facts,id,"BLOCKER")?.value.text ?? "No blocker recorded; absence does not confirm there are none.",decisionNeeded:openDecisions.length ? openDecisions.map(f=>`Review differing recorded values for ${f.subject}: ${f.claims.map(c=>c.value).join(" / ")}.`).join("\n") : "No decision request recorded.",nextMilestone:milestone ? milestone.value.unknown?"Explicitly unknown":`${milestone.value.text} — ${milestone.value.date ?? (milestone.value.dateUnknown?"Date explicitly unknown":"Date not recorded")}` : "Not recorded",nextStep:factFor(input.facts,id,"NEXT_STEP")?.value.text ?? "Not recorded",sourceDigest:sectionDigest(input,id),needsRecheck:false,editedByMemberId:null,editedAt:null,aiOriginal:null };
 }
 export function createReview(state:DeliveryState,source:PortfolioSource,ctx:WorkspaceAccess,week:string,now:string):DeliveryState {
   assertMember(ctx,source); assertWriter(ctx);
@@ -196,7 +210,7 @@ export function createReview(state:DeliveryState,source:PortfolioSource,ctx:Work
   if (state.reviews.some(r=>r.workspaceId===ctx.workspaceId && r.week===week)) fail("SHARED_REVIEW_EXISTS","The shared review for this week already exists. Open it to continue.");
   if (state.reviews.some(r=>r.workspaceId===ctx.workspaceId && r.status === "FINAL" && r.week>=week)) fail("OUT_OF_ORDER_WEEK","A later week is finalized. Open existing historical reviews or prepare the current week.");
   const input=freezeInput(source,state,ctx.workspaceId,now); const baseline=latestBaseline(state,ctx.workspaceId,week);
-  const review:WeeklyReview={ id:randomUUID(),workspaceId:ctx.workspaceId,week,status:"DRAFT",revision:1,baselineReviewId:baseline?.id ?? null,input,sections:input.snapshots.map(s=>newSection(input,s.initiative.id,baseline?.input ?? null)),aiDrafts:[],createdAt:now,createdByMemberId:ctx.memberId,createdByUserId:ctx.actor.id,finalizedAt:null,finalizedByMemberId:null,finalizedByLabel:null };
+  const review:WeeklyReview={ id:randomUUID(),workspaceId:ctx.workspaceId,week,status:"DRAFT",revision:1,baselineReviewId:baseline?.id ?? null,input,sections:weeklySnapshots(input,baseline?.input??null).map(s=>newSection(input,s.initiative.id,baseline?.input ?? null)),aiDrafts:[],createdAt:now,createdByMemberId:ctx.memberId,createdByUserId:ctx.actor.id,finalizedAt:null,finalizedByMemberId:null,finalizedByLabel:null };
   return { ...state,reviews:[...state.reviews,review] };
 }
 function draft(state:DeliveryState,ctx:WorkspaceAccess,id:string,revision:number | null):WeeklyReview {
@@ -224,7 +238,7 @@ export function editSection(state:DeliveryState,source:PortfolioSource,ctx:Works
 export function refreshReview(state:DeliveryState,source:PortfolioSource,ctx:WorkspaceAccess,id:string,revision:number,now:string):DeliveryState {
   assertMember(ctx,source); assertWriter(ctx); const review=draft(state,ctx,id,revision);
   const input=freezeInput(source,state,ctx.workspaceId,now); const baseline=latestBaseline(state,ctx.workspaceId,review.week);
-  const sections=input.snapshots.map(s=>{ const old=review.sections.find(section=>section.initiativeId===s.initiative.id); if (!old) return newSection(input,s.initiative.id,baseline?.input ?? null);
+  const sections=weeklySnapshots(input,baseline?.input??null).map(s=>{ const old=review.sections.find(section=>section.initiativeId===s.initiative.id); if (!old) return newSection(input,s.initiative.id,baseline?.input ?? null);
     return { ...old,ownerMemberId:ownerFor(input.facts,s.initiative.id),sourceDigest:sectionDigest(input,s.initiative.id),revision:old.revision+1,needsRecheck:old.needsRecheck || old.sourceDigest!==sectionDigest(input,s.initiative.id) || review.baselineReviewId!==baseline?.id && Boolean(baseline) }; });
   return replaceReview(state,{ ...review,input,baselineReviewId:baseline?.id ?? null,revision:review.revision+1,sections });
 }
@@ -241,7 +255,7 @@ export function finalizationChecks(state:DeliveryState,source:PortfolioSource,ct
     {id:"inputs",label:"Inputs match the current initiative records",met:current.digest===review.input.digest},
     {id:"baseline",label:"The previous Final baseline is unchanged",met:(baseline?.id??null)===review.baselineReviewId},
     {id:"sections",label:"Every section is saved and reviewed; none needs re-check",met:review.sections.every(s=>!s.needsRecheck&&Boolean(s.editedByMemberId||s.editedByUserId))},
-    {id:"available",label:"Every frozen section is available in this workspace",met:review.sections.every(s=>available.has(s.initiativeId))&&review.sections.length===review.input.snapshots.length},
+    {id:"available",label:"Every frozen section is available in this workspace",met:review.sections.every(s=>available.has(s.initiativeId))&&review.sections.length===weeklySnapshots(review.input,baseline?.input??null).length},
   ];
 }
 /** Facts and the refreshed draft are one delivery transaction. Commentary is preserved. */

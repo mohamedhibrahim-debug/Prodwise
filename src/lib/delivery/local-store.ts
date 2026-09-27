@@ -15,7 +15,22 @@ export class LocalDeliveryStore {
       return data as DeliveryState;
     } catch(error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return structuredClone(EMPTY_STATE); throw error; }
   }
-  async transaction(change:(state:DeliveryState)=>Promise<DeliveryState>):Promise<DeliveryState> {
+  /** Shares the delivery mutex without rewriting delivery state. */
+  async withReadLock<T>(read:(state:DeliveryState)=>T):Promise<T> {
+    await mkdir(dirname(this.path),{recursive:true});
+    const lockPath=`${this.path}.lock`;
+    let lock;
+    for(let attempt=0;attempt<11;attempt++){
+      try{lock=await open(lockPath,"wx");break;}catch(error){
+        if((error as NodeJS.ErrnoException).code!=="EEXIST")throw error;
+        if(attempt===10)throw new DeliveryError("BUSY","Another delivery change is saving. Try again.");
+        await new Promise(resolve=>setTimeout(resolve,25));
+      }
+    }
+    if(!lock)throw new DeliveryError("BUSY","Another delivery change is saving. Try again.");
+    try{return read(await this.read());}finally{await lock.close();await unlink(lockPath);}
+  }
+  async transaction(change:(state:DeliveryState)=>Promise<DeliveryState>,commit?:(next:DeliveryState)=>void):Promise<DeliveryState> {
     await mkdir(dirname(this.path),{recursive:true}); const lockPath=`${this.path}.lock`;
     let lock;
     for (let attempt=0;attempt<11;attempt++) {
@@ -27,7 +42,7 @@ export class LocalDeliveryStore {
     }
     if (!lock) throw new DeliveryError("BUSY","Another delivery change is saving. Try again.");
     const temp=`${this.path}.${randomUUID()}.tmp`;
-    try { const next=await change(await this.read()); const file=await open(temp,"wx");
+    try { const next=await change(await this.read()); if(commit){commit(next);return next;} const file=await open(temp,"wx");
       try { await file.writeFile(JSON.stringify(next),"utf8"); await file.sync(); } finally { await file.close(); }
       await rename(temp,this.path); return next;
     } finally { await unlink(temp).catch(()=>undefined); await lock.close(); await unlink(lockPath); }
