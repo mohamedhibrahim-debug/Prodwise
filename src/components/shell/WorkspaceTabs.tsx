@@ -11,6 +11,8 @@ const TABS = [
   { segment: "knowledge", label: "Knowledge" },
   { segment: "sources", label: "Sources" },
   { segment: "actions", label: "Commitments" },
+  { segment: "context", label: "Risks & questions" },
+  { segment: "history", label: "History" },
 ] as const;
 
 /**
