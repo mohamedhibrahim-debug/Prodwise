@@ -28,7 +28,8 @@
   --navy-rule: #1b3145;
   /* ── Identity accent · cyan / teal ─────────────────────────────────────
      The primary brand accent. Carries identity and interaction, never state. */
-  --accent-700: #007489;
+  /* Darkened from #007489 so link text clears AA (4.8:1) on the deeper canvas. */
+  --accent-700: #00667a;
   /* Darkened from #00849a (4.41:1 with white text) to clear WCAG AA on the
      primary button. The shift is imperceptible; the hue is unchanged. */
   --accent-600: #007d91;
@@ -42,34 +43,37 @@
      It must never carry status meaning — see the semantic scale below. */
   /* Darkened from #d2662b (3.70:1) to 4.67:1 on white. It is rendered as text
      in the section numerals, so it has to clear AA. Same hue, same role. */
-  --brand-orange: #bb5720;
+  --brand-orange: #a04818;
   --brand-orange-soft: #f2ddd0;
   /* ── Neutral working surfaces ──────────────────────────────────────────- */
-  --canvas: #eaf0f3;
+  /* Deeper blue-grey workspace (was #eaf0f3) so white work surfaces and rules
+     separate clearly. Every text token below is re-checked against it. */
+  --canvas: #dde5eb;
   --panel: #ffffff;
   --orange-geometry: #dc6b2f;
   --shadow-card: 0 1px 2px rgb(0 42 71 / 6%), 0 1px 1px rgb(0 42 71 / 4%);
-  --surface-subtle: #f3f6f8;
-  --surface-sunken: #e5edf2;
-  --surface-inset: #dfe7ed;
+  --surface-subtle: #eef2f5;
+  --surface-sunken: #d3dde5;
+  --surface-inset: #cfd9e1;
   --attention-fg: #a3450f;
   --attention-bg: #fff1e7;
   --attention-rule: #d6783d;
   --font-display: "Segoe UI", Inter, -apple-system, BlinkMacSystemFont, sans-serif;
   --ink-900: #0b2133;
   --ink-700: #34495a;
-  --ink-500: #586c7c;
+  /* Darkened from #586c7c: 5.0:1 on the deeper canvas, 6.4:1 on white. */
+  --ink-500: #4b5e6e;
   /* Darkened from #8493a2 (3.15:1). This token carries the micro labels,
      timestamps and meta text, so it has to clear WCAG AA for normal text -
      including on --surface-subtle, which is where the Next Best Action labels
      sit. 4.85:1 on white, 4.57:1 on --surface-subtle. Kept as light as those
      two thresholds allow, to preserve the hierarchy. */
-  --ink-400: #586c7c;
+  --ink-400: #4b5e6e;
   /* Decorative only - dashes, separators, disclosure glyphs. Never text that
      has to be read; anything meaningful uses --ink-400 or darker. */
   --ink-300: #a9b4bf;
-  --rule: #e1e8ed;
-  --rule-strong: #cfdae2;
+  --rule: #c9d4dd;
+  --rule-strong: #aab9c6;
   /* ── Semantic status ───────────────────────────────────────────────────
      Deliberately independent of the brand palette. AT_RISK is a dark
      yellow-brown, chosen so it can never be confused with the brand's

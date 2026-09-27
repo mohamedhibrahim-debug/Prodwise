@@ -47,8 +47,8 @@ export async function confirmRelationshipProposal(input:{proposalId:string;versi
   (s.relationships??=[]).push(r.relationship);if(r.event)(s.relationshipEvents??=[]).push(r.event);
   const at=r.relationship.confirmedAt;Object.assign(p,{status:'CONFIRMED',version:p.version+1,decidedAt:at,decidedBy:ctx.actor.id,reason:input.rationale,resultType:'RELATIONSHIP',resultId:r.relationship.id});
   (s.evidenceConfirmations??=[]).push({proposalId:p.id,workspaceId:ctx.workspaceId,initiativeId:p.initiativeId,proposalVersion:input.version,actorId:ctx.actor.id,actorLabel:ctx.actor.label,at,resultType:'RELATIONSHIP',resultId:r.relationship.id,requestId:input.requestId});
-  const other=s.initiatives.find(i=>i.id===r.relationship.toInitiativeId)?.name??'another initiative';
-  for(const initiativeId of new Set([r.relationship.fromInitiativeId,r.relationship.toInitiativeId]))s.activity.push({id:randomUUID(),workspaceId:ctx.workspaceId,initiativeId,eventType:'RELATIONSHIP_CONFIRMED',summary:`${initiative.name} ${input.type==='DEPENDS_ON'?'depends on':input.type==='PART_OF'?'is part of':'is related to'} ${other} · confirmed from ${sub.title}`,occurredAt:at,entityType:'RELATIONSHIP',entityId:r.relationship.id,actorLabel:ctx.actor.label,payload:{relationshipId:r.relationship.id,proposalId:p.id,submissionId:sub.id}});
+  const nameOf=(id:string)=>s.initiatives.find(i=>i.id===id)?.name??'another initiative';
+  for(const initiativeId of new Set([r.relationship.fromInitiativeId,r.relationship.toInitiativeId]))s.activity.push({id:randomUUID(),workspaceId:ctx.workspaceId,initiativeId,eventType:'RELATIONSHIP_CONFIRMED',summary:`${nameOf(r.relationship.fromInitiativeId)} ${input.type==='DEPENDS_ON'?'depends on':input.type==='PART_OF'?'is part of':'is related to'} ${nameOf(r.relationship.toInitiativeId)} · confirmed from ${sub.title}`,occurredAt:at,entityType:'RELATIONSHIP',entityId:r.relationship.id,actorLabel:ctx.actor.label,payload:{relationshipId:r.relationship.id,proposalId:p.id,submissionId:sub.id}});
   return r.relationship.id;
  })));
 }
