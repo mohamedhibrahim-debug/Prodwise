@@ -244,3 +244,25 @@
   .heading { margin-block-end: var(--s-6); }
   .demoForm { margin-block-start: var(--s-6); }
 }
+
+/* Sign-up: progress, verified identity, the organization being joined. */
+.steps { display: flex; gap: var(--s-2); list-style: none; padding: 0; margin: 0 0 var(--s-6); counter-reset: none; }
+.steps li { flex: 1; display: flex; align-items: center; gap: var(--s-2); padding-block-start: var(--s-2); border-block-start: 3px solid var(--rule); font-size: var(--t-xs); color: var(--ink-500); font-weight: var(--fw-medium); }
+.steps li span { width: 20px; height: 20px; border-radius: var(--r-pill); display: inline-grid; place-items: center; font-size: var(--t-micro); border: 1px solid var(--rule-strong); background: var(--panel); }
+.steps li[aria-current=step] { border-color: var(--navy-900); color: var(--ink-900); font-weight: var(--fw-semibold); }
+.steps li[aria-current=step] span { background: var(--navy-900); border-color: var(--navy-900); color: var(--navy-ink); }
+.steps li[data-done] { border-color: var(--accent-600); color: var(--ink-700); }
+.steps li[data-done] span { background: var(--accent-600); border-color: var(--accent-600); color: var(--panel); }
+.verified { display: inline-flex; align-items: center; gap: var(--s-2); margin-block-end: var(--s-5); font-size: var(--t-sm); color: var(--state-ready-fg); font-weight: var(--fw-medium); overflow-wrap: anywhere; }
+.orgCard { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: var(--s-4); align-items: center; padding: var(--s-4); border: 1px solid var(--navy-900); border-radius: var(--r-sm); background: var(--panel); }
+.orgMark { width: 48px; height: 48px; border-radius: var(--r-sm); display: grid; place-items: center; background: var(--navy-900); color: var(--navy-ink); font-size: var(--t-h2); font-weight: var(--fw-semibold); }
+.orgLabel { font-size: var(--t-xs); color: var(--ink-500); text-transform: uppercase; letter-spacing: var(--ls-micro); font-weight: var(--fw-semibold); }
+.orgName { font-size: var(--t-h2); font-weight: var(--fw-semibold); color: var(--ink-900); }
+.orgNote, .fieldHint { font-size: var(--t-xs); color: var(--ink-500); line-height: var(--lh-body); }
+.orgChoice { border: 1px solid var(--rule-strong); border-radius: var(--r-sm); padding: var(--s-4); margin: 0; display: grid; gap: var(--s-2); }
+.orgChoice legend { font-weight: var(--fw-semibold); color: var(--ink-700); padding: 0 var(--s-2); }
+.orgChoice label { display: flex; align-items: center; gap: var(--s-3); min-height: 44px; font-weight: var(--fw-medium); }
+.orgChoice input { width: 18px; height: 18px; accent-color: var(--navy-900); }
+.switchLink { margin-block-start: var(--s-6); font-size: var(--t-sm); color: var(--ink-700); }
+.switchLink a, .invitationNote a { color: var(--accent-700); font-weight: var(--fw-semibold); text-decoration: underline; text-underline-offset: 3px; }
+.forms > a.primaryButton { text-decoration: none; margin-block-start: var(--s-4); }

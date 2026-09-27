@@ -1,6 +1,8 @@
 import { LoginForm } from '@/components/auth/LoginForm';
 import styles from '@/components/auth/login.module.css';
 import { safeReturnPath } from '@/lib/auth/core';
+import Link from 'next/link';
+import { ProviderReturn } from '@/components/auth/ProviderReturn';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +34,9 @@ export default async function Login({ searchParams }: {
           {query.signedOut && <p className={styles.notice} role="status">You are signed out.</p>}
           {query.access && <p className={styles.error} role="alert">Your workspace access is unavailable. Contact your Admin.</p>}
           <LoginForm returnTo={safeReturnPath(query.returnTo)} />
-          <p className={styles.invitationNote}>Access is invitation-only. Contact your workspace Admin for an invitation or help signing in.</p>
+          <ProviderReturn />
+          <p className={styles.switchLink}>New to Prodwise? <Link href="/signup">Create an account</Link> with your work email.</p>
+          <p className={styles.invitationNote}>Invited by an administrator? Use the link in your invitation email.</p>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use server';
 import {checkAdminScope,refreshAdministration} from '@/components/admin/action-support';
 import {assertReviewedChange} from '@/components/admin/model';
-import { platformCreateOrganization,platformConfigurePolicy,platformProvisionMembership,platformReplaceOrgOwner,grantPlatformOwner,platformRotateInvitation } from '@/lib/auth/service';
+import { platformSetSelfSignup,platformCreateOrganization,platformConfigurePolicy,platformProvisionMembership,platformReplaceOrgOwner,grantPlatformOwner,platformRotateInvitation } from '@/lib/auth/service';
 import { authErrorMessage } from '@/lib/auth/errors';
 import type { Role } from '@/lib/auth/core';
 import type { AuthFormState } from '@/components/auth/AuthForm';
@@ -30,4 +30,8 @@ export async function grantPlatformOwnerAction(_state:AuthFormState,form:FormDat
 export async function platformInvitationAction(_state:AuthFormState,form:FormData):Promise<AuthFormState>{
  try{await checkAdminScope(form);const token=await platformRotateInvitation(value(form,'invitationId'),value(form,'operation')==='revoke',value(form,'reason'));refreshAdministration(form);return {error:null,message:token?'Invitation replaced. The previous link is invalid.':'Platform invitation revoked.',link:token?`/invite/${token}`:undefined};}
  catch(error){return {error:authErrorMessage(error,'Could not update this platform invitation.')};}
+}
+
+export async function selfSignupAction(_state:AuthFormState,form:FormData):Promise<AuthFormState>{
+ try{await checkAdminScope(form);assertReviewedChange(form);await platformSetSelfSignup(value(form,'organizationId'),form.get('enabled')==='on',value(form,'reason'));refreshAdministration(form);return {error:null,message:form.get('enabled')==='on'?'Self sign-up is on for this organization. New members join as Member.':'Self sign-up is off. New people need an invitation.'};}catch(e){return {error:e instanceof Error?e.message:'Self sign-up could not be changed.'};}
 }

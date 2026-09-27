@@ -31,6 +31,8 @@ export interface Organization {
     name: string;
     status: 'BOOTSTRAPPING' | 'ACTIVE' | 'ARCHIVED';
     emailPolicy: EmailPolicy;
+    /** Explicit opt-in: eligible addresses (by this organization's own policy) may self sign-up as MEMBER. */
+    selfSignup?: boolean;
 }
 export interface Workspace {
     id: string;
@@ -47,6 +49,7 @@ export interface OrganizationMembership {
     active: boolean;
     policyOverride: boolean;
     policyOverrideReason: string | null;
+    joinedVia?: 'INVITATION' | 'SELF_SIGNUP' | 'PLATFORM' | null;
 }
 export interface Member extends OrganizationMembership {
     workspaceId: string;
@@ -102,6 +105,9 @@ export interface AuthState {
     invitations: Invitation[];
     sessions: Session[];
     events: AuthEvent[];
+    /** Local fixture only: email-verification tokens and hashed attempts for self sign-up. */
+    signupVerifications?: { tokenHash: string; email: string; expiresAt: string; usedAt: string | null }[];
+    signupAttempts?: { emailHash: string; at: string; eligible: boolean }[];
 }
 export interface AuthProjection extends AuthState {
     workspace: Workspace;
@@ -301,6 +307,20 @@ export class LocalAuthStore {
         for (const w of state.workspaces.filter(x => x.organizationId === membership.organizationId))
             w.status = 'ACTIVE';
     } item!.usedAt = new Date().toISOString(); this.event(state, { workspaceId: this.workspaceId, organizationId: item!.organizationId, memberId: membership.id, actor: { id: identity.id, label: identity.displayName }, platformRole: identity.platformRole, role: membership.role, isProductLead: false }, membership.id, 'INVITATION_ACCEPTED', null, { role: membership.role }, membership.policyOverrideReason ?? undefined, membership.policyOverride); }, true); }
+    /** Self sign-up step 1: yes/no for the typed address only; rate limited; never names an organization. */
+    async checkSelfSignup(email: string): Promise<{ eligible: boolean; token: string | null }> { const e = normalizeEmail(email); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) || e.length > 254)
+        throw new AccessError('EMAIL_INVALID', 'Enter a valid work email.'); const token = opaqueToken(); return this.mutate(state => { const since = Date.now() - 3600000, emailHash = hash(e); state.signupAttempts ??= []; if (state.signupAttempts.filter(a => a.emailHash === emailHash && Date.parse(a.at) > since).length >= 5)
+        throw new AccessError('RATE_LIMITED', 'Too many attempts for this address. Try again in an hour.'); const eligible = state.organizations.some(o => o.status === 'ACTIVE' && o.selfSignup && emailAllowed(e, o.emailPolicy)); state.signupAttempts.push({ emailHash, at: new Date().toISOString(), eligible }); if (!eligible)
+        return { eligible, token: null }; (state.signupVerifications ??= []).push({ tokenHash: hash(token), email: e, expiresAt: new Date(Date.now() + 30 * 60000).toISOString(), usedAt: null }); return { eligible, token }; }, true); }
+    /** Step 2 (local fixture): consuming the emailed link proves ownership of the address. */
+    async verifySignupToken(token: string): Promise<string> { return this.mutate(state => { const v = state.signupVerifications?.find(x => x.tokenHash === hash(token)); if (!v || v.usedAt || Date.parse(v.expiresAt) < Date.now())
+        throw new AccessError('VERIFICATION_INVALID', 'This verification link has expired or was already used. Start again.'); v.usedAt = new Date().toISOString(); return v.email; }, true); }
+    selfSignupOptions(email: string) { const e = normalizeEmail(email), state = this.raw(), identity = state.identities.find(x => x.email === e); return { email: e, existingIdentity: Boolean(identity), organizations: state.organizations.filter(o => o.status === 'ACTIVE' && o.selfSignup && emailAllowed(e, o.emailPolicy)).map(o => ({ organizationId: o.id, name: o.name, workspaceId: state.workspaces.find(w => w.organizationId === o.id && w.status === 'ACTIVE')?.id ?? '', member: Boolean(identity && state.memberships.some(m => m.organizationId === o.id && m.userId === identity.id)) })).filter(o => o.workspaceId) }; }
+    /** Step 3: MEMBER only, never an elevated role; an existing identity is never modified. */
+    async completeSelfSignup(email: string, organizationId: string, displayName: string, password: string): Promise<{ workspaceId: string }> { validatePassword(password); const name = displayName.trim(); if (!name || name.length > 120)
+        throw new AccessError('NAME_REQUIRED', 'Enter your name up to 120 characters.'); const e = normalizeEmail(email); return this.mutate(state => { const org = state.organizations.find(o => o.id === organizationId), workspace = state.workspaces.find(w => w.organizationId === organizationId && w.status === 'ACTIVE'); if (!org || org.status !== 'ACTIVE' || !org.selfSignup || !emailAllowed(e, org.emailPolicy) || !workspace)
+        throw new AccessError('SIGNUP_NOT_ALLOWED', 'This organization does not accept sign-up for your address.'); if (state.identities.some(x => x.email === e))
+        throw new AccessError('ACCOUNT_EXISTS', 'You already have a Prodwise account. Sign in instead.'); const identity: Identity = { id: randomUUID(), email: e, displayName: name, active: true, platformRole: null, passwordHash: passwordHash(password) }; state.identities.push(identity); const membership: OrganizationMembership = { id: randomUUID(), organizationId, userId: identity.id, role: 'MEMBER', active: true, isProductLead: false, policyOverride: false, policyOverrideReason: null, joinedVia: 'SELF_SIGNUP' }; state.memberships.push(membership); this.event(state, { workspaceId: workspace.id, organizationId, memberId: membership.id, actor: { id: identity.id, label: identity.displayName }, platformRole: null, role: 'MEMBER', isProductLead: false }, membership.id, 'SELF_SIGNUP', null, { role: 'MEMBER', email: e }); return { workspaceId: workspace.id }; }, true); }
     async change(ctx: WorkspaceAccess, targetId: string, role: Role, active: boolean, isProductLead: boolean) { await this.mutate(state => { const actor = authorizeManagement(this.fresh(state, ctx), true), target = this.members(state, state.workspaces.find(x => x.id === this.workspaceId)!).find(x => x.id === targetId); if (!target)
         throw new AccessError('ACCESS_DENIED', 'That membership is unavailable.'); authorizeMembershipChange(actor, target, role, active, isProductLead); const stored = state.memberships.find(x => x.id === targetId)!, before = { ...stored }; Object.assign(stored, { role, active, isProductLead }); if (!active)
         state.sessions = state.sessions.filter(x => x.userId !== target.userId || x.organizationId !== target.organizationId); this.event(state, actor, targetId, 'MEMBERSHIP_CHANGED', before, { role, active, isProductLead }); }); }
@@ -321,6 +341,8 @@ export class LocalAuthStore {
         throw new Error('Enter an organization name up to 120 characters.'); return this.mutate(state => { const actor = authorizePlatform(this.fresh(state, ctx, true)), id = randomUUID(), workspaceId = randomUUID(); state.organizations.push({ id, name: name.trim(), status: 'BOOTSTRAPPING', emailPolicy: policy }); state.workspaces.push({ id: workspaceId, organizationId: id, name: name.trim(), status: 'BOOTSTRAPPING' }); this.event(state, { ...actor, workspaceId, organizationId: id }, id, 'ORGANIZATION_CREATED', null, { name, policy }, 'Platform organization creation', false); return { organizationId: id, workspaceId }; }, true); }
     async platformConfigurePolicy(ctx: WorkspaceAccess, orgId: string, policy: EmailPolicy) { policy = validateEmailPolicy(policy); await this.mutate(state => { const actor = authorizePlatform(this.fresh(state, ctx, true)), org = state.organizations.find(x => x.id === orgId); if (!org)
         throw new AccessError('ACCESS_DENIED', 'Organization is unavailable.'); const before = org.emailPolicy; org.emailPolicy = policy; this.event(state, { ...actor, workspaceId: state.workspaces.find(x => x.organizationId === orgId)!.id, organizationId: orgId }, orgId, 'ORGANIZATION_POLICY_CHANGED', before, policy, 'Platform policy update', false); }, true); }
+    async platformSetSelfSignup(ctx: WorkspaceAccess, orgId: string, enabled: boolean, reason: string) { reason = reasonRequired(reason); await this.mutate(state => { const actor = authorizePlatform(this.fresh(state, ctx, true)), org = state.organizations.find(x => x.id === orgId); if (!org)
+        throw new AccessError('ACCESS_DENIED', 'Organization is unavailable.'); const before = Boolean(org.selfSignup); org.selfSignup = enabled; this.event(state, { ...actor, workspaceId: state.workspaces.find(x => x.organizationId === orgId)!.id, organizationId: orgId }, orgId, 'ORGANIZATION_SELF_SIGNUP_CHANGED', { selfSignup: before }, { selfSignup: enabled }, reason, false); }, true); }
     async platformProvisionMembership(ctx: WorkspaceAccess, orgId: string, email: string, role: Role, override: boolean, reason: string) { reason = reasonRequired(reason); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email)))
         throw new Error('INVALID_EMAIL'); if (!['ORG_OWNER', 'ADMIN', 'MEMBER', 'VIEWER'].includes(role) || typeof override !== 'boolean')
         throw new Error('INVALID_MEMBERSHIP'); const token = opaqueToken(); return this.mutate(state => { const actor = authorizePlatform(this.fresh(state, ctx, true)), org = state.organizations.find(x => x.id === orgId), workspace = state.workspaces.find(x => x.organizationId === orgId); if (!org || !workspace)

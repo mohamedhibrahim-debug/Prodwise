@@ -17,7 +17,7 @@ export function configuredWorkspaceId() {
     if (!id || !/^[0-9a-f-]{36}$/i.test(id)) throw new Error('PRODWISE_WORKSPACE_ID must be configured.');
     return id;
 }
-function secret() {
+export function secret() {
     const value = process.env.AUTH_SESSION_SECRET ?? '';
     if (value.length < 32) throw new Error('AUTH_SESSION_SECRET must contain at least 32 characters.');
     return value;
@@ -35,7 +35,7 @@ export function adminClient() {
     if (!supabaseUrl || !supabaseServiceRoleKey) throw new Error('Supabase must be configured for server authentication. No local fallback is allowed.');
     return createClient(supabaseUrl, supabaseServiceRoleKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
 }
-function authClient() {
+export function authClient() {
     const key = process.env.SUPABASE_ANON_KEY?.trim();
     if (!supabaseUrl || !key) throw new Error('SUPABASE_ANON_KEY must be configured for authentication.');
     return createClient(supabaseUrl, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
@@ -46,12 +46,12 @@ interface UserRow {
 }
 interface MemberRow {
     id: string; organization_id: string; user_id: string; role: string; active: boolean;
-    is_product_lead: boolean; policy_override: boolean; policy_override_reason: string | null;
+    is_product_lead: boolean; policy_override: boolean; policy_override_reason: string | null; joined_via?: string | null;
     users: UserRow | UserRow[];
 }
 function memberFromRow(row: MemberRow, workspaceId: string): Member {
     const user = Array.isArray(row.users) ? row.users[0]! : row.users;
-    return { id: row.id, workspaceId, organizationId: row.organization_id, userId: row.user_id, email: user.email, displayName: user.display_name, authUserId: user.auth_user_id, platformRole: user.platform_role, role: normalizeLegacyRole(row.role), active: row.active && user.active, isProductLead: row.is_product_lead, policyOverride: row.policy_override, policyOverrideReason: row.policy_override_reason };
+    return { id: row.id, workspaceId, organizationId: row.organization_id, userId: row.user_id, email: user.email, displayName: user.display_name, authUserId: user.auth_user_id, platformRole: user.platform_role, role: normalizeLegacyRole(row.role), active: row.active && user.active, isProductLead: row.is_product_lead, policyOverride: row.policy_override, policyOverrideReason: row.policy_override_reason, joinedVia: (row.joined_via ?? null) as Member['joinedVia'] };
 }
 async function verifiedHostedUser(authUserId: string, providerEmail: string | undefined): Promise<UserRow> {
     const result = await adminClient().from('users').select('id,email,display_name,auth_user_id,platform_role,active').eq('auth_user_id', authUserId).maybeSingle();
@@ -167,6 +167,8 @@ async function startSession(email: string, password: string, preferredWorkspaceI
     await setSessionCookie(token);
 }
 export async function signIn(email: string, password: string) { await startSession(email, password, configuredWorkspaceId()); }
+/** Sign in straight into a specific organization's workspace (used after self sign-up). */
+export async function signInToWorkspace(email: string, password: string, workspaceId: string) { await startSession(email, password, workspaceId); }
 export async function signOut() {
     const token = await cookieToken();
     if (token) {
@@ -257,7 +259,7 @@ export async function renameWorkspace(name: string) { await denyGuestAdministrat
     throw new Error(error.message); }
 export async function platformSnapshot() { const ctx = authorizePlatform(await contextForRequest()); if (isLocalAuth())
     return localPlatformSnapshot(ctx); const db = adminClient(), [organizations, workspaces, identities, memberships, invitations, events, demos] = await Promise.all([db.from('organizations').select('*'), db.from('workspaces').select('*'), db.from('users').select('id,email,display_name,platform_role,active'), db.from('organization_memberships').select('*'), db.from('workspace_invitations').select('id,workspace_id,organization_id,email,role,expires_at,revoked_at,used_at,invited_by,provisioned_by_platform,policy_override,policy_override_reason').eq('provisioned_by_platform',true), db.from('platform_events').select('*').order('occurred_at', { ascending: false }).limit(100),db.from('demo_scenarios').select('organization_id,workspace_id')]); if (organizations.error || workspaces.error || identities.error || memberships.error || invitations.error || events.error || demos.error)
-    throw new Error('Platform management is unavailable.'); return { capturedAt:Date.now(), organizations: organizations.data.map(x => ({ isDemo:demos.data!.some(d=>d.organization_id===x.id), id: x.id as string, name: x.name as string, status: x.status as 'ACTIVE' | 'BOOTSTRAPPING' | 'ARCHIVED', emailPolicy: { domains: x.allowed_email_domains as string[], exactEmails: x.allowed_exact_emails as string[] } })), workspaces: workspaces.data.map(x => ({ id: x.id as string, organizationId: x.organization_id as string, name: x.name as string, status: x.status as 'ACTIVE' | 'BOOTSTRAPPING' | 'ARCHIVED' })), identities: identities.data.map(x => ({ id: x.id as string, email: x.email as string, displayName: x.display_name as string, platformRole: x.platform_role as PlatformRole, active: x.active as boolean })), memberships: memberships.data.map(x => ({ id: x.id as string, organizationId: x.organization_id as string, userId: x.user_id as string, role: normalizeLegacyRole(x.role as string), active: x.active as boolean, isProductLead: x.is_product_lead as boolean, policyOverride: x.policy_override as boolean, policyOverrideReason: x.policy_override_reason as string | null })), invitations:invitations.data.map(x=>({id:x.id as string,workspaceId:x.workspace_id as string,organizationId:x.organization_id as string,email:x.email as string,role:normalizeLegacyRole(x.role as string),expiresAt:x.expires_at as string,revokedAt:x.revoked_at as string|null,usedAt:x.used_at as string|null,invitedBy:x.invited_by as string,provisionedByPlatform:x.provisioned_by_platform as boolean,policyOverride:x.policy_override as boolean,policyOverrideReason:x.policy_override_reason as string|null})), events: events.data.map(x => ({ id: x.id as string, workspaceId: x.workspace_id as string | null, organizationId: x.organization_id as string | null, actorId: x.actor_id as string, actorLabel: x.actor_label as string, targetId: x.target_id as string, action: x.action as string, at: x.occurred_at as string, before:x.before_state as unknown,after:x.after_state as unknown,reason: x.reason as string, policyOverridden: x.policy_overridden as boolean })) }; }
+    throw new Error('Platform management is unavailable.'); return { capturedAt:Date.now(), organizations: organizations.data.map(x => ({ isDemo:demos.data!.some(d=>d.organization_id===x.id), id: x.id as string, name: x.name as string, status: x.status as 'ACTIVE' | 'BOOTSTRAPPING' | 'ARCHIVED', emailPolicy: { domains: x.allowed_email_domains as string[], exactEmails: x.allowed_exact_emails as string[] }, selfSignup: Boolean(x.self_signup_enabled) })), workspaces: workspaces.data.map(x => ({ id: x.id as string, organizationId: x.organization_id as string, name: x.name as string, status: x.status as 'ACTIVE' | 'BOOTSTRAPPING' | 'ARCHIVED' })), identities: identities.data.map(x => ({ id: x.id as string, email: x.email as string, displayName: x.display_name as string, platformRole: x.platform_role as PlatformRole, active: x.active as boolean })), memberships: memberships.data.map(x => ({ id: x.id as string, organizationId: x.organization_id as string, userId: x.user_id as string, role: normalizeLegacyRole(x.role as string), active: x.active as boolean, isProductLead: x.is_product_lead as boolean, policyOverride: x.policy_override as boolean, policyOverrideReason: x.policy_override_reason as string | null, joinedVia: (x.joined_via ?? null) as Member['joinedVia'] })), invitations:invitations.data.map(x=>({id:x.id as string,workspaceId:x.workspace_id as string,organizationId:x.organization_id as string,email:x.email as string,role:normalizeLegacyRole(x.role as string),expiresAt:x.expires_at as string,revokedAt:x.revoked_at as string|null,usedAt:x.used_at as string|null,invitedBy:x.invited_by as string,provisionedByPlatform:x.provisioned_by_platform as boolean,policyOverride:x.policy_override as boolean,policyOverrideReason:x.policy_override_reason as string|null})), events: events.data.map(x => ({ id: x.id as string, workspaceId: x.workspace_id as string | null, organizationId: x.organization_id as string | null, actorId: x.actor_id as string, actorLabel: x.actor_label as string, targetId: x.target_id as string, action: x.action as string, at: x.occurred_at as string, before:x.before_state as unknown,after:x.after_state as unknown,reason: x.reason as string, policyOverridden: x.policy_overridden as boolean })) }; }
 export async function platformCreateOrganization(name: string, domains: string[], exactEmails: string[]) { const ctx = platformWrites(await freshContextForRequest()), policy = validateEmailPolicy({ domains, exactEmails }); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).platformCreateOrganization(ctx, name, policy); const { data, error } = await adminClient().rpc('platform_create_organization', { p_actor_id: ctx.actor.id, p_name: name, p_domains: policy.domains, p_exact_emails: policy.exactEmails }); if (error)
     throw new Error(error.message); return data as {
@@ -267,6 +269,10 @@ export async function platformCreateOrganization(name: string, domains: string[]
 export async function platformConfigurePolicy(orgId: string, domains: string[], exactEmails: string[]) { const ctx = platformWrites(await freshContextForRequest()), policy = validateEmailPolicy({ domains, exactEmails }); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).platformConfigurePolicy(ctx, orgId, policy); const { error } = await adminClient().rpc('platform_configure_policy', { p_actor_id: ctx.actor.id, p_organization_id: orgId, p_domains: policy.domains, p_exact_emails: policy.exactEmails }); if (error)
     throw new Error(error.message); }
+/** Platform Owner only: whether an organization accepts self sign-up from addresses its own policy allows. */
+export async function platformSetSelfSignup(orgId: string, enabled: boolean, reason: string) { const ctx = platformWrites(await freshContextForRequest()); if (isLocalAuth())
+    return localAuthStore(ctx.workspaceId).platformSetSelfSignup(ctx, orgId, enabled, reason); const { error } = await adminClient().rpc('platform_set_self_signup', { p_actor_id: ctx.actor.id, p_organization_id: orgId, p_enabled: enabled, p_reason: reason }); if (error)
+    throw new Error(error.message.includes('REASON') ? 'Add a reason for this change.' : 'Self sign-up could not be changed.'); }
 export async function platformProvisionMembership(orgId: string, email: string, role: Role, override: boolean, reason: string) { const ctx = platformWrites(await freshContextForRequest()); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).platformProvisionMembership(ctx, orgId, email, role, override, reason); const token = opaqueToken(), { data, error } = await adminClient().rpc('platform_provision_membership', { p_actor_id: ctx.actor.id, p_organization_id: orgId, p_email: normalizeEmail(email), p_role: role, p_policy_override: override, p_reason: reason, p_token_hash: hash(token) }); if (error)
     throw new Error(error.message); return { invitationToken: data?.invitationId ? token : null, memberId: data?.memberId as string | null, userId: data?.userId as string | null, workspaceId: data?.workspaceId as string | undefined }; }
