@@ -26,6 +26,9 @@ export async function GET() {
     throw error;
   }
   const initiatives = await getRepository().listInitiatives();
+  // Non-secret deployment identity for authenticated release verification.
+  const releaseSha = process.env.VERCEL_GIT_COMMIT_SHA ?? '';
+  const releaseHeader: Record<string, string> = /^[a-f0-9]{40}$/i.test(releaseSha) ? { 'X-Prodwise-Commit': releaseSha } : {};
 
   return NextResponse.json({
     initiatives: initiatives.map((i) => ({
@@ -35,5 +38,5 @@ export async function GET() {
       businessLine: i.businessLine,
       overallState: i.overallState,
     })),
-  }, { headers: { 'Cache-Control': 'private, no-store' } });
+  }, { headers: { 'Cache-Control': 'private, no-store', ...releaseHeader } });
 }
