@@ -1,3 +1,4 @@
+import {factDate} from '@/lib/delivery/display';
 import {readRelationships} from '@/lib/data/relationships';
 import Link from 'next/link';
 import {getRepository} from '@/lib/data';
@@ -12,7 +13,7 @@ import {isDemoWriteEnabled} from '@/lib/env';
 import {FilterSheet} from '@/components/shell/FilterSheet';
 import styles from './initiatives.module.css';
 export const dynamic='force-dynamic';
-function Target({row:r}:{row:PortfolioRow}){return <>{r.actual?.value.extent==='FULL'?`Live ${displayDate(r.actual.value.date)} (full)`:r.target?.value.date?displayDate(r.target.value.date):r.target?.value.unknown?'Explicitly unknown':'Not recorded'}{r.targetMovement&&<small>Moved {r.targetMovement.days>0?'+':''}{r.targetMovement.days} d from {displayDate(r.targetMovement.from)}</small>}</>;}
+function Target({row:r}:{row:PortfolioRow}){return <>{r.actual?.value.extent==='FULL'?`Live ${factDate(r.actual)} (full)`:r.target?.value.date?factDate(r.target):r.target?.value.unknown?'Explicitly unknown':'Not recorded'}{r.targetMovement&&<small>Moved {r.targetMovement.days>0?'+':''}{r.targetMovement.days} d from {displayDate(r.targetMovement.from)}</small>}</>;}
 export default async function Initiatives({searchParams}:{searchParams:Promise<PortfolioFilters>}){
  const[d,activity,f,management,rel]=await Promise.all([readDelivery(),getRepository().listRecentActivity(150),searchParams,readManagement(),readRelationships()]);const p=buildPortfolioProjection({source:d.source,state:d.state,workspaceId:d.ctx.workspaceId,activity,management,relationships:rel.relationships,asOf:d.presentation.scenarioAt??new Date().toISOString()});const rows=filterPortfolioRows(p.rows,f,p.today);
  const select=(name:string,label:string,options:{value:string;label:string}[])=> <label>{label}<select name={name} defaultValue={f[name as keyof PortfolioFilters]??''}><option value="">All</option>{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></label>;

@@ -193,7 +193,7 @@ export async function ClaimRow({
                     </span>
                   </span>
                   <span className={styles.evidenceMeta}>
-                    {e.occurredAt ? `Dated ${formatDate(e.occurredAt)}` : "Date unknown"}
+                    {e.occurredAt ? `Dated ${formatDate(e.occurredAt)}` : "Source date not recorded"}
                     <span className={styles.metaSep} aria-hidden="true">
                       ·
                     </span>
