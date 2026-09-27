@@ -33,7 +33,14 @@ export function alreadyRecorded(proposals:Proposal[],r:RecordedFacts):Record<str
  return out;
 }
 
-/** An earlier saved text with identical content, if any (same initiative). */
-export function sameTextAs(submission:Submission,all:Submission[]):Submission|null{
- return all.filter(s=>s.id!==submission.id&&s.initiativeId===submission.initiativeId&&s.textSha256===submission.textSha256&&s.createdAt<=submission.createdAt).sort((a,b)=>a.createdAt.localeCompare(b.createdAt))[0]??null;
+/**
+ * Another saved copy of identical text in the same initiative, if this one is not the copy to use.
+ * The copy to use is the one with the most decided proposals (then the earliest saved), so the
+ * pointer always leads to where the work already is.
+ */
+export function sameTextAs(submission:Submission,all:Submission[],progress:(submissionId:string)=>number=()=>0):Submission|null{
+ const same=all.filter(s=>s.initiativeId===submission.initiativeId&&s.textSha256===submission.textSha256);
+ if(same.length<2)return null;
+ const primary=[...same].sort((a,b)=>progress(b.id)-progress(a.id)||a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id))[0]!;
+ return primary.id===submission.id?null:primary;
 }

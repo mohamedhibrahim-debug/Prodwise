@@ -35,10 +35,13 @@ test('different wording, rejected or cancelled records, and decided proposals ar
  assert.deepEqual(hits,{});
 });
 
-test('same text is reported against the earliest earlier save in the same initiative only',()=>{
+test('same text points to the copy where decisions were already made, else the earliest',()=>{
  const s=(id:string,at:string,sha:string,initiativeId='i1'):Submission=>({id,workspaceId:'w',organizationId:'o',initiativeId,sourceItemId:'x',evidenceId:'e',kind:'PASTED',title:id,text:'',textSha256:sha,charLength:0,createdBy:'u',createdAt:at,requestId:id});
  const all=[s('a','2026-09-20T10:00:00Z','h'),s('b','2026-09-21T10:00:00Z','h'),s('c','2026-09-19T10:00:00Z','h','i2'),s('d','2026-09-22T10:00:00Z','other')];
  assert.equal(sameTextAs(all[1]!,all)?.id,'a');
  assert.equal(sameTextAs(all[0]!,all),null);
  assert.equal(sameTextAs(all[3]!,all),null);
+ const progress=(id:string)=>id==='b'?5:0;
+ assert.equal(sameTextAs(all[0]!,all,progress)?.id,'b');
+ assert.equal(sameTextAs(all[1]!,all,progress),null);
 });
