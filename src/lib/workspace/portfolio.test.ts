@@ -21,3 +21,13 @@ test('archived initiatives retain context but leave active portfolio attention a
  d.source.snapshots.find(s=>s.initiative.id===id)!.initiative.archivedAt='2026-09-27T10:00:00Z';
  const p=projection(d);assert.ok(p.rows.some(r=>r.initiative.id===id));assert.ok(!p.attentionRows.some(r=>r.initiative.id===id));assert.ok(!p.upcoming.some(r=>r.initiativeId===id));assert.equal(filterPortfolioRows(p.rows,{record:'archived'},p.today).length,1);assert.equal(filterPortfolioRows(p.rows,{},p.today).length,before.rows.length-1);
 });
+
+test('a late dependency is one attention reason in the shared model, counted the same everywhere',()=>{
+ const d=fixture();const [a,b]=d.source.snapshots;const base=d.deliveryState.facts.find(f=>f.kind==='TARGET_LIVE')!;
+ const mk=(id:string,kind:'TARGET_LIVE'|'NEXT_MILESTONE',date:string)=>({...base,id:`${id}-${kind}`,initiativeId:id,kind,state:'SET' as const,value:{date,text:kind==='NEXT_MILESTONE'?'Milestone':null,memberId:null,extent:null}});
+ d.deliveryState.facts=[...d.deliveryState.facts.filter(f=>!((f.initiativeId===a!.initiative.id&&f.kind==='NEXT_MILESTONE')||(f.initiativeId===b!.initiative.id&&f.kind==='TARGET_LIVE'))),mk(a!.initiative.id,'NEXT_MILESTONE','2099-01-01'),mk(b!.initiative.id,'TARGET_LIVE','2099-02-01')];
+ const rel={id:'r1',workspaceId:identity.workspaceId,fromInitiativeId:a!.initiative.id,toInitiativeId:b!.initiative.id,type:'DEPENDS_ON' as const,rationale:'x',providerFactKind:'TARGET_LIVE' as const,neededByFactKind:'NEXT_MILESTONE' as const,evidenceId:null,evidenceAnchorId:null,originProposalId:null,originHref:null,status:'ACTIVE' as const,createdBy:'u',confirmedBy:'u',confirmedByLabel:'U',confirmedAt:'2026-01-01',endedBy:null,endedByLabel:null,endedAt:null,endReason:null,updatedAt:'2026-01-01',revision:1};
+ const run=(relationships:typeof rel[])=>buildPortfolioProjection({source:d.source,state:d.deliveryState,workspaceId:identity.workspaceId,activity:d.productStore.activity,asOf:DEMO_CUTOFF,relationships}).rows.find(r=>r.initiative.id===a!.initiative.id)!;
+ const without=run([]),withRel=run([rel]);
+ assert.equal(withRel.attention.filter(x=>x.kind==='DEPENDENCY').length,1);assert.equal(withRel.attention.length,without.attention.length+1);
+});
