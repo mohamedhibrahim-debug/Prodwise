@@ -56,6 +56,9 @@ export async function finishSignup(organizationId:string,displayName:string,pass
  // The organization must be one of the verified address's eligible options; the id alone grants nothing.
  const option=state.organizations.find(o=>o.organizationId===organizationId&&!o.member);if(!option)throw new AccessError('SIGNUP_NOT_ALLOWED','This organization does not accept sign-up for your address.');
  if(password.length<12||password.length>256)throw new AccessError('PASSWORD_INVALID','Use a password between 12 and 256 characters.');
+ // Reject the obvious: a repeated fragment, a password made from the address, or a well-known phrase.
+ const lower=password.toLowerCase(),local=v.email.split('@')[0]!.toLowerCase();
+ if(/^(.{1,6})\1+$/.test(lower)||/^(password|qwerty|123456|prodwise|welcome)/.test(lower)||(local.length>=4&&lower.includes(local)))throw new AccessError('PASSWORD_INVALID','Choose a less predictable password: not a repeated word, a common phrase or your email name.');
  let workspaceId:string;
  if(isLocalAuth())workspaceId=(await localAuthStore().completeSelfSignup(v.email,organizationId,displayName,password)).workspaceId;
  else{const db=adminClient();const set=await db.auth.admin.updateUserById(v.authUserId!,{password});if(set.error)throw new Error('We could not set your password. Try again.');

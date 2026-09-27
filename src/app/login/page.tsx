@@ -18,7 +18,7 @@ export default async function Login({ searchParams }: {
         <div className={styles.identityBody}>
           <p className={styles.statement}>Product intelligence, from evidence to action.</p>
           <ul className={styles.principles}>
-            {['Trusted initiative state', 'Human decisions', 'AI-grounded weekly review'].map(principle =>
+            {['Trusted initiative state', 'Human decisions', 'Evidence-backed weekly review'].map(principle =>
               <li key={principle}><span className={styles.node} aria-hidden="true" /><span>{principle}</span></li>,
             )}
           </ul>
