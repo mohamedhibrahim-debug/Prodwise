@@ -34,3 +34,11 @@ export function isWorkspaceOwner(role: string | null): boolean {
         return false;
     }
 }
+
+/**
+ * A Platform Owner acting in an organization where they hold no membership is named as such on
+ * every record they create, so product history never presents platform authority as a member's.
+ */
+export function platformActorLabel(displayName: string, platformRole: string | null, isMember: boolean): string {
+    return platformRole === 'PLATFORM_OWNER' && !isMember ? `${displayName} (Platform Owner, not a member)` : displayName;
+}

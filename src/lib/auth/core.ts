@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHash, createHmac } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, rmSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { normalizeLegacyRole, hasOrganizationAdminAuthority, hasOrganizationOwnerAuthority, canBusinessWrite, isPlatformOwner, type Role, type PlatformRole } from './roles';
+import { normalizeLegacyRole, platformActorLabel, hasOrganizationAdminAuthority, hasOrganizationOwnerAuthority, canBusinessWrite, isPlatformOwner, type Role, type PlatformRole } from './roles';
 import { emailAllowed, validateEmailPolicy, normalizeEmail, type EmailPolicy } from './email-policy';
 export type { Role, PlatformRole } from './roles';
 export { normalizeEmail } from './email-policy';
@@ -181,7 +181,7 @@ export class LocalAuthStore {
         throw new AccessError('ACCESS_DENIED', 'Organization access is unavailable.'); if (!['ACTIVE', 'BOOTSTRAPPING'].includes(workspace.status) || !['ACTIVE', 'BOOTSTRAPPING'].includes(org.status))
         throw new AccessError('ACCESS_DENIED', 'Organization access is unavailable.'); if (!allowRecovery || identity.platformRole !== 'PLATFORM_OWNER')
         this.ready(state, org.id); const member = this.members(state, workspace).find(x => x.userId === userId); if (identity.platformRole === 'PLATFORM_OWNER')
-        return { workspaceId, organizationId: org.id, memberId: member?.active ? member.id : null, actor: { id: userId, label: identity.displayName }, platformRole: 'PLATFORM_OWNER', role: member?.active ? member.role : null, isProductLead: member?.active ? member.isProductLead : false }; if (!member)
+        return { workspaceId, organizationId: org.id, memberId: member?.active ? member.id : null, actor: { id: userId, label: platformActorLabel(identity.displayName, 'PLATFORM_OWNER', Boolean(member?.active)) }, platformRole: 'PLATFORM_OWNER', role: member?.active ? member.role : null, isProductLead: member?.active ? member.isProductLead : false }; if (!member)
         throw new AccessError('ACCESS_DENIED', 'Organization access is unavailable.'); if (!member.policyOverride)
         assertAllowedEmail(identity.email, org.emailPolicy); return contextForMember(member, workspaceId); }
     private fresh(state: AuthState, ctx: WorkspaceAccess, recovery = false) { if (ctx.workspaceId !== this.workspaceId)

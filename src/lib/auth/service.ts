@@ -1,4 +1,5 @@
 import 'server-only';
+import { platformActorLabel } from './roles';
 import { cache } from 'react';
 import { cookies, headers } from 'next/headers';
 import { createHmac } from 'node:crypto';
@@ -72,7 +73,7 @@ async function hostedContext(authUserId: string, providerEmail: string | undefin
     const mid = member.data?.active ? member.data.id as string : null;
     const { error } = await db.rpc('require_workspace_member', { p_workspace_id: workspaceId, p_member_id: mid ?? user.id, p_admin: false, p_write: false });
     if (error) throw new AccessError('ACCESS_DENIED', 'Organization access is unavailable.');
-    return { workspaceId, organizationId: orgId, memberId: mid, actor: { id: user.id, label: user.display_name }, platformRole: user.platform_role ?? null, role: mid ? normalizeLegacyRole(member.data!.role as string) : null, isProductLead: mid ? member.data!.is_product_lead as boolean : false };
+    return { workspaceId, organizationId: orgId, memberId: mid, actor: { id: user.id, label: platformActorLabel(user.display_name, user.platform_role ?? null, Boolean(mid)) }, platformRole: user.platform_role ?? null, role: mid ? normalizeLegacyRole(member.data!.role as string) : null, isProductLead: mid ? member.data!.is_product_lead as boolean : false };
 }
 async function selectHostedContext(authUserId: string, providerEmail: string | undefined, preferredWorkspaceId: string): Promise<WorkspaceAccess> {
     const user = await verifiedHostedUser(authUserId, providerEmail), db = adminClient();
