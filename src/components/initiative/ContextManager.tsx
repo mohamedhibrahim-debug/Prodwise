@@ -13,7 +13,7 @@ export function ContextManager({slug,updatedAt,currentId,contexts,editable,legac
  const begin=(operation:Edit['operation'],context?:InitiativeContext,label?:string)=>setEdit({operation,context,expectedUpdatedAt:updatedAt,label});
  const current=contexts.find(c=>c.id===currentId&&!c.retiredAt);
  return <div><p><strong>Current context: {current?.label??'None selected'}</strong></p><p className={styles.muted}>Name the phase, pilot or release boundary this initiative currently covers. Retiring a context keeps its evidence and history.</p>
- {legacy&&<p className={styles.muted}>Legacy scope (read-only): “{legacy}” (not a controlled context). {editable&&!edit&&!contexts.some(c=>!c.retiredAt&&c.label.trim().toLowerCase()===legacy.trim().toLowerCase())&&<button type="button" onClick={()=>begin('CREATE',undefined,legacy)}>Create context from this</button>}</p>}
+ {legacy&&!contexts.some(c=>!c.retiredAt&&c.label.trim().toLowerCase()===legacy.trim().toLowerCase())&&<p className={styles.muted}>Earlier scope text: “{legacy}”. Create a scope from it to use it for dates and Knowledge. {editable&&!edit&&<button type="button" onClick={()=>begin('CREATE',undefined,legacy)}>Create scope from this</button>}</p>}
  {state.message&&<p role="status">{state.message}</p>}
  {edit?<form action={action} className={styles.form}>
   <ScopeField/><input type="hidden" name="slug" value={slug}/><input type="hidden" name="operation" value={edit.operation}/><input type="hidden" name="expectedUpdatedAt" value={edit.expectedUpdatedAt}/><input type="hidden" name="contextId" value={edit.context?.id??''}/><input type="hidden" name="expectedRevision" value={edit.context?.revision??''}/>

@@ -1,3 +1,4 @@
+import { displayLocator } from "@/lib/delivery/display";
 import Link from "next/link";
 
 import { businessWritePresentation } from "@/lib/auth/presentation";
@@ -199,7 +200,7 @@ export async function ClaimRow({
                     </span>
                     {formatVerified(e.lastVerifiedAt)}
                   </span>
-                  {anchor?.locator ? <span className={styles.evidenceMeta}>Locator: {anchor.locator}</span> : null}
+                  {displayLocator(anchor?.locator) ? <span className={styles.evidenceMeta}>Where: {displayLocator(anchor?.locator)}</span> : null}
                   {anchor?.excerpt ? <span className={styles.detailMuted}>“{anchor.excerpt}”</span> : null}
                   {isDemoWriteEnabled ? (
                     <EvidenceAnchorForm

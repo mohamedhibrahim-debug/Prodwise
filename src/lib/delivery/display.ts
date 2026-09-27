@@ -9,3 +9,8 @@ export function factDate(fact:{state?:string;value:{date:string|null;unknown?:tr
  if(fact.value.date)return displayDate(fact.value.date);
  return fact.value.unknown||fact.value.dateUnknown?"Unknown":"Not recorded";
 }
+/** Evidence locators as people read them; system character offsets become a plain phrase. */
+export function displayLocator(locator:string|null|undefined):string|null{
+ if(!locator)return null;
+ return /^UTF16 \d+\D\d+$/.test(locator.trim())?"quoted passage in the saved text":locator;
+}
