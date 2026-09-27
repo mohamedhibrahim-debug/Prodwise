@@ -132,3 +132,17 @@
 @media(prefers-reduced-motion:reduce){.card{scroll-behavior:auto}}
 .relType{border:0;padding:0;margin:var(--s-3) 0 0;display:grid;gap:var(--s-1)}.relType legend{font-size:var(--t-sm);font-weight:var(--fw-medium);margin-bottom:var(--s-2)}.relType label,.inlineCheck{display:flex;align-items:center;gap:var(--s-2);min-height:44px;font-size:var(--t-sm)}.relType input,.inlineCheck input{width:20px!important;height:20px;min-height:20px!important;accent-color:var(--navy-900)}
 .page .tertiary{border-color:transparent;background:none;color:var(--ink-700);text-decoration:underline;text-underline-offset:3px;padding-inline:0}
+/* Group identity + index: the review stays navigable, not one long form. */
+.groupGlyph{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:var(--r-pill);background:var(--navy-900);color:var(--navy-ink);font-size:var(--t-micro);margin-inline-end:var(--s-1)}
+.group[data-group=risks] .groupGlyph,.group[data-group=dates] .groupGlyph{background:var(--attention-fg)}
+.group[data-group=questions] .groupGlyph{background:var(--accent-700)}
+.group h4{align-items:center}
+.selectGroup{margin-inline-start:auto;min-height:32px!important;padding:0 var(--s-3)!important;font-size:var(--t-xs)!important;text-transform:none;letter-spacing:0;font-weight:var(--fw-semibold)!important;color:var(--navy-900)!important}
+.groupIndex{position:sticky;top:calc(var(--workspace-header-h,160px) + var(--s-2));z-index:4;display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:center;padding:var(--s-3);margin-bottom:var(--s-5);background:var(--panel);border:1px solid var(--rule-strong);border-radius:var(--r-sm);box-shadow:var(--shadow-card)}
+.groupIndex a{display:inline-flex;align-items:center;gap:var(--s-2);min-height:36px;padding:0 var(--s-3);border:1px solid var(--rule-strong);border-radius:var(--r-pill);font-size:var(--t-sm);color:var(--ink-900);background:var(--surface-subtle)}
+.groupIndex a b{font-variant-numeric:tabular-nums;font-size:var(--t-xs);color:var(--panel);background:var(--navy-900);border-radius:var(--r-pill);min-width:20px;height:20px;display:inline-grid;place-items:center;padding:0 5px}
+.groupIndex a[data-done] b{background:var(--state-ready-mark)}
+.groupIndex a:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.batchHint{font-size:var(--t-xs);color:var(--ink-500);margin-inline-start:auto}
+.group{scroll-margin-top:calc(var(--workspace-header-h,160px) + 90px)}
+@media(max-width:767px){.groupIndex{position:static;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:var(--s-2);margin-inline:0}.groupIndex a{flex:0 0 auto}.batchHint{display:none}}

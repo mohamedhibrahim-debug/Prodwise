@@ -2,3 +2,4 @@
 .axis>div{min-width:0;padding-right:var(--s-4)}.axis>span:last-child{padding-left:var(--s-4)}.axis p{flex-wrap:wrap}.axis p>span{font-weight:400}
 .axis>div{padding-right:0;width:calc(100% - var(--s-4))}
 .dependencyMarker{position:absolute;top:calc(50% - 6px);width:12px;height:12px;transform:translateX(-50%) rotate(45deg);border:2px solid var(--attention-rule);background:var(--panel)}.dependencyKey{width:9px;height:9px;transform:rotate(45deg);border:2px solid var(--attention-rule);display:inline-block}.dependency{color:var(--ink-700)}
+.filters select,.filters input{width:100%;min-width:0;max-width:100%}.filters label{min-width:0}

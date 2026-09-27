@@ -53,6 +53,7 @@ def:=replace(def,'g.phase_key]||vals;', 'g.phase_key]||vals||public.context_part
 def:=replace(def,'c.phase];claim_revisions', 'c.phase]||public.context_parts(c.context_id,c.effective_date);claim_revisions');execute def;end$$;
 -- Nullable applicability is omitted from source digest normalization, preserving historic null baselines.
 do $$declare def text;begin select pg_get_functiondef('public.delivery_meaningful(jsonb)'::regprocedure) into def;
+if position($literal$if v_key not in ($literal$ in def)=0 then raise exception 'PATCH_TARGET_MISSING delivery_meaningful';end if;
 def:=replace(def,$literal$if v_key not in ($literal$, $literal$if not (v_item='null'::jsonb and v_key in ('context_id','effective_date','contextId','effectiveDate','contextName','evidence_submission_id','evidence_anchor_id','evidenceSubmissionId','evidenceAnchorId')) and v_key not in ($literal$);execute def;end$$;
 revoke all on function public.context_parts(uuid,date),public.revise_claim_applicability(uuid,uuid,uuid,timestamptz,jsonb) from public,anon,authenticated;
 grant execute on function public.context_parts(uuid,date),public.revise_claim_applicability(uuid,uuid,uuid,timestamptz,jsonb) to service_role;
