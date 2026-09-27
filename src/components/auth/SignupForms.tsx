@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import {useActionState,useEffect,useId,useRef,useState} from 'react';
+import {useActionState,useEffect,useId,useRef,useState,useCallback} from 'react';
 import {useRouter} from 'next/navigation';
 import {startSignupAction,finishSignupAction,verifySignupAction,type SignupFormState} from '@/app/signup/actions';
 import styles from './login.module.css';
@@ -38,13 +38,19 @@ export function SignupAccount({email,organizations}:{email:string;organizations:
 
 /** The provider returns proof in the URL fragment (never sent to the server); forward it for server-side verification. */
 export function VerifySignup({localToken}:{localToken:string|null}){
- const router=useRouter();const [error,setError]=useState<string|null>(null);const started=useRef(false);
- useEffect(()=>{if(started.current)return;started.current=true;// A verification link is single-use: run it exactly once.
+ const router=useRouter();const [error,setError]=useState<string|null>(null);const [pending,setPending]=useState(false);
+ const [input,setInput]=useState<Parameters<typeof verifySignupAction>[0]|null|undefined>(undefined);const started=useRef(false);
+ const run=useCallback(async(value:Parameters<typeof verifySignupAction>[0])=>{setPending(true);const result=await verifySignupAction(value);setPending(false);if(result.error)setError(result.error);else router.replace('/signup');},[router]);
+ useEffect(()=>{if(started.current)return;started.current=true;
   const hash=new URLSearchParams(window.location.hash.slice(1)),query=new URLSearchParams(window.location.search);
-  const input=localToken?{localToken}:hash.get('access_token')?{accessToken:hash.get('access_token')!}:query.get('token_hash')?{tokenHash:query.get('token_hash')!,type:query.get('type')??undefined}:null;
+  const found=localToken?{localToken}:hash.get('access_token')?{accessToken:hash.get('access_token')!}:query.get('token_hash')?{tokenHash:query.get('token_hash')!,type:query.get('type')??undefined}:null;
   const providerError=hash.get('error_description')??query.get('error_description');
   history.replaceState(null,'',window.location.pathname);
-  void (async()=>{const result=input?await verifySignupAction(input):{error:providerError??'This verification link is incomplete. Start again.'};if(result.error)setError(result.error);else router.replace('/signup');})();
- },[localToken,router]);
- return <div className={styles.forms}><SignupSteps step={2}/>{error?<><p className={styles.error} role="alert">{error}</p><Link className={styles.primaryButton} href="/signup">Start again</Link></>:<p className={styles.notice} role="status">Verifying your email…</p>}</div>;
+  if(!found){setError(providerError??'This verification link is incomplete. Start again.');return;}
+  // A session returned by the provider can be read more than once; a one-time token is used only
+  // when the person presses Confirm, so link scanners and previews cannot use it up.
+  if('accessToken' in found)void run(found);else setInput(found);
+ },[localToken,run]);
+ return <div className={styles.forms}><SignupSteps step={2}/>{error?<><p className={styles.error} role="alert">{error}</p><Link className={styles.primaryButton} href="/signup">Start again</Link></>:input?<><p className={styles.notice}>Confirm that this is your email address to continue.</p><button type="button" className={styles.primaryButton} disabled={pending} onClick={()=>void run(input)}>{pending?'Confirming…':'Confirm my email'}</button></>:<p className={styles.notice} role="status">Verifying your email…</p>}</div>;
 }
+
