@@ -33,5 +33,24 @@ export async function platformInvitationAction(_state:AuthFormState,form:FormDat
 }
 
 export async function selfSignupAction(_state:AuthFormState,form:FormData):Promise<AuthFormState>{
- try{await checkAdminScope(form);assertReviewedChange(form);await platformSetSelfSignup(value(form,'organizationId'),form.get('enabled')==='on',value(form,'reason'));refreshAdministration(form);return {error:null,message:form.get('enabled')==='on'?'Self sign-up is on for this organization. New members join as Member.':'Self sign-up is off. New people need an invitation.'};}catch(e){return {error:e instanceof Error?e.message:'Self sign-up could not be changed.'};}
+ try{await checkAdminScope(form);assertReviewedChange(form);await platformSetSelfSignup(value(form,'organizationId'),form.get('enabled')==='on',value(form,'reason'));refreshAdministration(form);return {error:null,message:form.get('enabled')==='on'?'Self sign-up is on for this organization. New members join as Member.':'Self sign-up is off. New people need an invitation.'};}catch(e){return {error:authErrorMessage(e,'Self sign-up could not be changed. Nothing was saved; try again.')};}
+}
+
+/** One reviewed change for an organization's access policy: allowed addresses and self sign-up together. */
+export async function accessPolicyAction(_state:AuthFormState,form:FormData):Promise<AuthFormState>{
+ try{
+  await checkAdminScope(form);assertReviewedChange(form);
+  const organizationId=value(form,'organizationId'),domains=entries(form,'domains'),exactEmails=entries(form,'exactEmails');
+  const enabled=form.get('enabled')==='on',wasEnabled=form.get('currentSelfSignup')==='on';
+  const policyChanged=domains.join('\n')!==String(form.get('currentDomains')??'')||exactEmails.join('\n')!==String(form.get('currentExactEmails')??'');
+  if(!policyChanged&&enabled===wasEnabled)return {error:'Nothing changed. Edit the addresses or the self sign-up setting first.'};
+  if(enabled!==wasEnabled&&!value(form,'reason').trim())return {error:'Add a reason for changing self sign-up. It is recorded in platform history.'};
+  if(policyChanged)await platformConfigurePolicy(organizationId,domains,exactEmails);
+  if(enabled!==wasEnabled){
+   try{await platformSetSelfSignup(organizationId,enabled,value(form,'reason'));}
+   catch(error){refreshAdministration(form);return {error:(policyChanged?'The allowed addresses were saved, but self sign-up was not changed. ':'')+authErrorMessage(error,'Self sign-up could not be changed. Try again.')};}
+  }
+  refreshAdministration(form);
+  return {error:null,message:[policyChanged&&'Allowed addresses updated.',enabled!==wasEnabled&&(enabled?'Self sign-up is on; new people join as Member.':'Self sign-up is off; new people need an invitation.')].filter(Boolean).join(' ')};
+ }catch(error){return {error:authErrorMessage(error,'Could not update this access policy. Nothing was saved; try again.')};}
 }

@@ -20,6 +20,7 @@ const messages: Record<string, string> = {
     ADMIN_REQUIRED: 'Only an Admin can manage workspace access.',
     INVALID_INVITATION: 'Enter a valid email and role.',
     INVALID_MEMBERSHIP: 'Choose a valid role and access setting.',
+    REASON_REQUIRED: 'Add a reason for this change. It is recorded in history.',
     INVITATION_IDENTITY_MISMATCH: 'Account setup could not complete. Contact your Admin.',
 };
 export function authErrorMessage(error: unknown, fallback: string) {
