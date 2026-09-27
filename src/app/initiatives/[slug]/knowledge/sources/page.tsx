@@ -19,8 +19,11 @@ export default async function KnowledgeSourcesPage({ params }: { params: Promise
   if (!snapshot) notFound();
   const { evidence, claims } = snapshot;
   const base = `/initiatives/${slug}/knowledge`;
+  // Same title on the same day is flagged, never merged: people decide whether it is a duplicate.
+  const sameKey = (e: (typeof evidence)[number]) => `${e.title.trim().toLowerCase()}|${e.occurredAt?.slice(0, 10) ?? ''}`;
+  const keyCount = new Map<string, number>(); for (const e of evidence) keyCount.set(sameKey(e), (keyCount.get(sameKey(e)) ?? 0) + 1);
   return <div className={styles.page}>
-    <header className={styles.head}><div><p className={styles.eyebrow}>Evidence library</p><h2>Sources</h2><p>Inspect source material and the Knowledge it supports.</p></div><Link prefetch={false} className={styles.action} href={`/initiatives/${slug}/evidence`}>AI evidence workbench</Link>{writesEnabled && <Link prefetch={false} className={styles.action} href={`${base}/sources/new`}>Add source</Link>}</header>
+    <header className={styles.head}><div><p className={styles.eyebrow}>Evidence library</p><h2>Sources</h2><p>Inspect source material and the Knowledge it supports.</p></div><Link prefetch={false} className={styles.quietAction} href={`/initiatives/${slug}/evidence`}>Saved evidence & meeting notes</Link>{writesEnabled && <Link prefetch={false} className={styles.action} href={`${base}/sources/new`}>Add source</Link>}</header>
 
     <div className={styles.librarySummary}><strong>{evidence.length} recorded sources</strong><span>Grouped by relationship to the initiative</span></div>
     {evidence.length ? <div className={styles.sourceTableWrap}><table className={styles.sourceTable}><caption className="visually-hidden">Sources grouped by relationship to this initiative</caption><thead><tr><th scope="col">Source</th><th scope="col">Reference</th><th scope="col">Type</th><th scope="col">Source date</th><th scope="col">Linked entries</th></tr></thead>{EVIDENCE_RELATIONS.map(boundary => {
@@ -28,7 +31,7 @@ export default async function KnowledgeSourcesPage({ params }: { params: Promise
       if (!items.length) return null;
       return <tbody key={boundary}><tr className={styles.boundaryBand}><th colSpan={5} scope="rowgroup">{EVIDENCE_RELATION_LABEL[boundary]} <span>{items.length}</span></th></tr>{items.map(source => {
         const linked = claims.filter(entry => entry.evidence.some(link => link.id === source.id));
-        return <tr key={source.id} id={`source-${source.id}`}><td data-label="Source"><strong className={styles.sourceTitle}>{source.title}</strong><details className={styles.sourceDisclosure}><summary aria-label={`View source details for ${source.title}`}>View source details</summary>
+        return <tr key={source.id} id={`source-${source.id}`}><td data-label="Source"><strong className={styles.sourceTitle}>{source.title}</strong>{(keyCount.get(sameKey(source)) ?? 0) > 1 && <p className={styles.possibleDuplicate}>⚠ Possible duplicate — another source has the same title and date.</p>}<details className={styles.sourceDisclosure}><summary aria-label={`Details for ${source.title}`}>Details</summary>
           {source.contentSummary ? <p>{source.contentSummary}</p> : <p>No source summary recorded.</p>}
           {source.sourceUrl && <p><a href={source.sourceUrl} target="_blank" rel="noreferrer">Open original source ↗</a></p>}
           {writesEnabled && <p><Link prefetch={false} href={`${base}/sources/${source.id}/edit`}>Edit source</Link></p>}

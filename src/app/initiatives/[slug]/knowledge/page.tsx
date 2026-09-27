@@ -62,22 +62,22 @@ export default async function KnowledgePage({ params, searchParams }: {
     </div> : null}
     <div className={styles.recordLayout}><div>
     {subjects.size ? <div className={styles.ledgerHead}><span>Attribute / context</span><span>Recorded value</span><span>Confirmation</span><span>Provenance</span><span>Inspect</span></div> : null}
-    {subjects.size ? [...subjects].map(([subject, attributes]) => <section className={styles.subject} key={subject}>
-      <h2>{subject}</h2>{[...attributes].map(([attribute, phases]) => <div className={styles.attribute} key={attribute}>
+    {subjects.size ? [...subjects].map(([subject, attributes]) => { const single = [...attributes.values()].reduce((n, phases) => n + [...phases.values()].reduce((m, values) => m + values.length, 0), 0) === 1; return <section className={styles.subject} data-single={single || undefined} key={subject}>
+      <h2 className={single ? styles.srOnly : undefined}>{subject}</h2>{[...attributes].map(([attribute, phases]) => <div className={styles.attribute} key={attribute}>
         {[...phases].map(([phaseKey, values]) => <div className={styles.phase} key={phaseKey}>
           {values.map(({ value, entries }) => {
             const first = entries[0]!;
             const allSameStatus = entries.every((entry) => entry.status === first.status);
             const sources = [...new Map(entries.flatMap(entry => entry.evidence).map(source => [source.id, source])).values()];
             return <div role="group" aria-label={`${subject} · ${attribute} · ${phaseKey || 'Phase not recorded'} · ${value}`} className={`${styles.value} ${first.status === "SUPERSEDED" ? styles.historical : ""}`} key={normalise(value)} id={`claim-${first.id}`}>
-              <div className={styles.address}><h3>{attribute}</h3><span>{phaseKey || "Phase not recorded"}</span></div>
+              <div className={styles.address}><h3>{single ? <><span className={styles.inlineSubject}>{subject}</span> · {attribute}</> : attribute}</h3><span>{phaseKey || "Phase not recorded"}</span></div>
               <div role="group" aria-label="Recorded value" className={styles.currentValue}><strong>{value}</strong>
                 {entries.map(entry => { const lineage = replacementLineage(entry, claims); return <div key={entry.id} className={styles.inlineLineage}>
                   {lineage.replacedBy ? <p>Replaced by <Link prefetch={false} href={`${base}?view=${lineage.replacedBy.status === "SUPERSEDED" ? "replaced" : "all"}#claim-${lineage.replacedBy.id}`}>{lineage.replacedBy.value}</Link></p> : entry.status === "SUPERSEDED" ? <p>{entry.supersededByClaimId ? "Recorded replacement unavailable" : "Replacement not recorded"}</p> : null}
                   {lineage.replaces.map(prior => <p key={prior.id}>Replaces <Link prefetch={false} href={`${base}?view=replaced#claim-${prior.id}`}>{prior.value}</Link></p>)}
                 </div>; })}
               </div>
-              <div role="group" aria-label="Confirmation" className={styles.rowStatus}><span>{allSameStatus ? CLAIM_STATUS_LABEL[first.status] : "Entry statuses in details"}</span>
+              <div role="group" aria-label="Confirmation" className={styles.rowStatus}><span data-status={allSameStatus ? first.status : undefined}>{allSameStatus ? `${first.status === "ACTIVE" ? "✓ " : first.status === "SUPERSEDED" ? "↻ " : "○ "}${CLAIM_STATUS_LABEL[first.status]}` : "Entry statuses in details"}</span>
                 {entries.map(entry => <p key={entry.id}>{entry.verifiedAt ? `${entry.verifiedActorLabel ?? "Actor not recorded"} · ${formatDate(entry.verifiedAt)}` : "Verification history not recorded"}</p>)}</div>
               <div role="group" aria-label="Provenance" className={styles.sourceIdentity}><span>{sources.length} linked {sources.length === 1 ? "source" : "sources"}</span>
                 {sources.map(source => <Link prefetch={false} key={source.id} href={`/initiatives/${slug}/sources#source-${source.id}`}>{displaySourceReference(source.sourceReference) ?? source.title}{source.boundary === "EXCLUDED" ? " · Excluded" : ""}</Link>)}</div>
@@ -113,8 +113,8 @@ export default async function KnowledgePage({ params, searchParams }: {
             </div>;
           })}
           {values.length > 1 && view !== "replaced" && mismatchItems.has(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null])) ?
-            <Link prefetch={false} className={styles.mismatch} href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(mismatchItems.get(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null]))!)}`}>Values differ → Decisions</Link> : null}
-        </div>)}</div>)}</section>) : <p className={styles.empty}>{view === "confirmed" ? "No Confirmed Knowledge entries yet." : "No Knowledge entries in this view."}</p>}
+            <Link prefetch={false} className={styles.mismatch} href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(mismatchItems.get(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null]))!)}`}><span aria-hidden="true">⚠</span> Values differ in this phase — compare them in Decisions →</Link> : null}
+        </div>)}</div>)}</section>; }) : <p className={styles.empty}>{view === "confirmed" ? "No Confirmed Knowledge entries yet." : "No Knowledge entries in this view."}</p>}
     </div><aside className={styles.recordContext} aria-label="Record context">
       <h2>Recorded Knowledge</h2>
       <dl><div><dt>Confirmed entries</dt><dd>{claims.filter(entry => entry.status === "ACTIVE").length}</dd></div>
