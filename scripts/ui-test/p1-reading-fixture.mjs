@@ -1,7 +1,7 @@
 // LOCAL TEST FIXTURE ONLY. Plays the reader for a saved submission when no
 // Anthropic key exists, so rendered and E2E checks can exercise the real
 // confirmation paths. The attempt is labelled model 'synthetic-provider-fixture'
-// (the Workbench says "a synthetic test fixture (not Claude)"), and every
+// (the Workbench says "a local test reading (not Claude)"), and every
 // candidate passes through the same server-side filter as Claude output.
 // Usage: node … p1-reading-fixture.mjs <submissionId> <candidates.json>
 import {readFileSync,writeFileSync,renameSync,existsSync} from 'node:fs';
