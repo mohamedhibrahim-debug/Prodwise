@@ -45,7 +45,7 @@ export function DecisionWorkbench({ lanes, initialItem, children }: {
       {lanes.map(lane => <div key={lane.key}>
         <button type="button" className={styles.lane} aria-current={current.key === lane.key ? "true" : undefined}
           aria-controls={`lane-${lane.key}`} onClick={() => setSelection({ lane: lane.key, id: lane.items[0]?.id })}>
-          <strong>{lane.title}</strong><b>{lane.key === "not-checked" ? "—" : lane.items.length}</b><span>{lane.description}</span>
+          <strong>{lane.title}</strong><b>{lane.items.length}</b><span>{lane.description}</span>
         </button>
         {current.key === lane.key && lane.items.length > 1 ? <ul className={styles.items}>{lane.items.map(item => <li key={item.id}>
           <button type="button" aria-pressed={activeId === item.id} onClick={() => {

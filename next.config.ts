@@ -16,8 +16,8 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
-        source: "/initiatives/:slug/evidence/:path*",
-        destination: "/initiatives/:slug/sources/:path*",
+        source: "/initiatives/:slug/evidence/:evidenceId/edit",
+        destination: "/initiatives/:slug/sources/:evidenceId/edit",
         permanent: false,
       },
     ];

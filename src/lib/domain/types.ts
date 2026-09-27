@@ -105,6 +105,8 @@ export const VERIFICATION_BASES = ["EVIDENCE", "DIRECT_KNOWLEDGE"] as const;
 export type VerificationBasis = (typeof VERIFICATION_BASES)[number];
 
 export interface ClaimTrust {
+  evidenceSubmissionId?: string|null;
+  evidenceAnchorId?: string|null;
   origin: ClaimOrigin;
   verifiedAt: string | null;
   verifiedActorId: string | null;
@@ -304,6 +306,8 @@ export interface NewEvidenceInput {
  * judge it. Conflict detection belongs to a later phase.
  */
 export interface ClaimRecord {
+  contextId?: string | null;
+  effectiveDate?: string | null;
   id: string;
   initiativeId: string;
   type: ClaimType;
@@ -355,6 +359,8 @@ export interface EvidenceAnchorInput {
 }
 
 export interface NewClaimInput {
+  contextId?: string | null;
+  effectiveDate?: string | null;
   initiativeId: string;
   type: ClaimType;
   subject: string;
@@ -367,6 +373,9 @@ export interface NewClaimInput {
 /** Fields an editor may change. Confidence is not among them: it is displayed
  *  where a migrated record has it, never assigned by hand in this phase. */
 export interface ClaimPatch {
+  expectedUpdatedAt?: string;
+  contextId?: string | null;
+  effectiveDate?: string | null;
   type?: ClaimType;
   status?: ClaimStatus;
   subject?: string;
@@ -438,6 +447,8 @@ export type ReviewRuleId = (typeof REVIEW_RULES)[number];
 
 /** A real, resolvable pointer to a claim — never a copied display string. */
 export interface FindingClaimRef {
+  contextId?: string | null;
+  effectiveDate?: string | null;
   claimId: string;
   subject: string;
   attribute: string;

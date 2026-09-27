@@ -1,3 +1,5 @@
+import {projectQueue} from "../review/dispositions.ts";
+import {validateApplicability} from "../review/applicability.ts";
 import { hasOrganizationAdminAuthority, isPlatformOwner, canBusinessWrite } from "../auth/roles.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { runReview } from "../review/engine.ts";
@@ -16,7 +18,7 @@ export function digest(value: unknown): string { return createHash("sha256").upd
 const metadata = new Set(["createdAt", "updatedAt", "capturedAt", "occurredAt", "lastVerifiedAt", "detectedOn"]);
 export function meaningful(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(meaningful);
-  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).filter(([k]) => !metadata.has(k)).map(([k,v]) => [k,meaningful(v)]));
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).filter(([k,v]) => !metadata.has(k)&&k!=='contexts'&&!(v==null&&['contextId','effectiveDate','contextName','context_id','effective_date','evidenceSubmissionId','evidenceAnchorId','evidence_submission_id','evidence_anchor_id'].includes(k))).map(([k,v]) => [k,meaningful(v)]));
   return value;
 }
 export function assertMember(ctx: WorkspaceAccess, source: PortfolioSource): void {
@@ -56,7 +58,7 @@ export function supportDigest(source: PortfolioSource, initiativeId: string, evi
 export function supportChanged(fact: DeliveryFact, source: PortfolioSource): boolean {
   return fact.basis === "EVIDENCE" && fact.supportDigest !== supportDigest(source,fact.initiativeId,fact.evidenceId,fact.locator);
 }
-export interface RecordFactInput { initiativeId: string; kind: FactKind; expectedRevision: number; value: FactValue; retract: boolean; basis: "EVIDENCE" | "DIRECT_KNOWLEDGE"; note: string; evidenceId: string | null; locator: string | null; }
+export interface RecordFactInput { contextId?:string|null;effectiveDate?:string|null; initiativeId: string; kind: FactKind; expectedRevision: number; value: FactValue; retract: boolean; basis: "EVIDENCE" | "DIRECT_KNOWLEDGE"; note: string; evidenceId: string | null; locator: string | null; }
 export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: WorkspaceAccess, input: RecordFactInput, now: string): DeliveryState {
   assertMember(ctx,source); assertWriter(ctx);
   const snap = source.snapshots.find(s => s.initiative.id === input.initiativeId);
@@ -89,7 +91,8 @@ export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: W
     if (input.kind !== "SCOPE" && input.kind !== "OWNER" && !factFor(state.facts,input.initiativeId,"SCOPE")) fail("SCOPE_REQUIRED", "Confirm the delivery phase or scope before recording delivery facts.");
     if (input.kind === "SCOPE" && old?.value.text !== v.text && state.facts.some(f => f.initiativeId === input.initiativeId && f.state === "SET" && !["SCOPE","OWNER"].includes(f.kind))) fail("SCOPE_HAS_FACTS", "Retract dates and delivery facts from the earlier scope before changing the scope label.");
   } else if (input.kind === "SCOPE" && state.facts.some(f => f.initiativeId === input.initiativeId && f.state === "SET" && !["SCOPE","OWNER"].includes(f.kind))) fail("SCOPE_HAS_FACTS", "Retract the scoped delivery facts before withdrawing their scope.");
-  const fact: DeliveryFact = { id:old?.id ?? randomUUID(), workspaceId:ctx.workspaceId, initiativeId:input.initiativeId, kind:input.kind, revision:(old?.revision ?? 0)+1,
+  const applies=validateApplicability({contextId:input.contextId===undefined?old?.contextId:input.contextId,effectiveDate:input.effectiveDate===undefined?old?.effectiveDate:input.effectiveDate},source.contexts??[],ctx.workspaceId,input.initiativeId,old);
+  const fact: DeliveryFact = {...applies, id:old?.id ?? randomUUID(), workspaceId:ctx.workspaceId, initiativeId:input.initiativeId, kind:input.kind, revision:(old?.revision ?? 0)+1,
     value:input.retract ? { date:null,text:null,memberId:null,extent:null } : input.value, state:input.retract ? "RETRACTED" : "SET",
     basis:input.basis, note:input.note.trim(), evidenceId:input.basis === "EVIDENCE" ? input.evidenceId : null, locator:input.basis === "EVIDENCE" ? input.locator : null,
     supportDigest:input.basis === "EVIDENCE" ? supportDigest(source,input.initiativeId,input.evidenceId,input.locator) : null,
@@ -99,11 +102,12 @@ export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: W
 export function freezeInput(source: PortfolioSource, state: DeliveryState, workspaceId: string, asOf: string): PortfolioInput {
   const facts = structuredClone(state.facts.filter(f => f.workspaceId === workspaceId).sort((a,b) => a.id.localeCompare(b.id)));
   const events = structuredClone(state.events.filter(e => e.workspaceId === workspaceId).sort((a,b) => a.occurredAt.localeCompare(b.occurredAt) || a.id.localeCompare(b.id)));
-  const ordered = structuredClone({ ...(source.commitments?{commitments:[...source.commitments].filter(a=>a.workspaceId===workspaceId).sort((a,b)=>a.id.localeCompare(b.id))}:{}), snapshots:[...source.snapshots].sort((a,b) => a.initiative.id.localeCompare(b.initiative.id)), members:[...source.members].sort((a,b) => a.id.localeCompare(b.id)) });
-  return { ...ordered, workspaceId,facts,events,asOf,digest:digest({ source:meaningful(ordered), facts }) };
+  const ordered = structuredClone({ ...(source.findingDispositions?.length?{findingDispositions:source.findingDispositions.filter(d=>d.workspaceId===workspaceId).sort((a,b)=>a.id.localeCompare(b.id)),queueFinalizations:[...(source.queueFinalizations??[])].filter(f=>f.workspaceId===workspaceId).sort((a,b)=>a.id.localeCompare(b.id))}:{}), ...(source.commitments?{commitments:[...source.commitments].filter(a=>a.workspaceId===workspaceId).sort((a,b)=>a.id.localeCompare(b.id))}:{}), snapshots:[...source.snapshots].map(s=>({...s,claims:s.claims.map(c=>c.contextId?{...c,contextName:source.contexts?.find(x=>x.id===c.contextId)?.label??null}:c)})).sort((a,b) => a.initiative.id.localeCompare(b.initiative.id)), members:[...source.members].sort((a,b) => a.id.localeCompare(b.id)) });
+  const queueProjection=ordered.findingDispositions?.length?ordered.snapshots.map(s=>({initiativeId:s.initiative.id,counts:projectQueue(applyFindingStates(runReview(s.initiative.id,s.claims),s.findingStates),ordered.findingDispositions!.filter(d=>d.initiativeId===s.initiative.id),ordered.queueFinalizations??[],asOf,s.findingStates).counts})):null;
+  return { ...ordered, workspaceId,facts,events,asOf,digest:digest({ source:meaningful(ordered), facts,...(queueProjection?{queueProjection}:{}) }) };
 }
 export function sectionDigest(input: PortfolioInput, initiativeId: string): string {
-  return digest({ ...(input.commitments?{commitments:input.commitments.filter(a=>a.initiativeId===initiativeId)}:{}), source: meaningful(input.snapshots.find(s => s.initiative.id === initiativeId)), facts:input.facts.filter(f => f.initiativeId === initiativeId), members:input.members.map(m=>({ id:m.id,active:m.active,role:m.role })) });
+  return digest({ ...(input.findingDispositions?.length?{findingDispositions:input.findingDispositions.filter(d=>d.initiativeId===initiativeId),queueLanes:queueForInput(input,initiativeId).counts}:{}), ...(input.commitments?{commitments:input.commitments.filter(a=>a.initiativeId===initiativeId)}:{}), source: meaningful(input.snapshots.find(s => s.initiative.id === initiativeId)), facts:input.facts.filter(f => f.initiativeId === initiativeId), members:input.members.map(m=>({ id:m.id,active:m.active,role:m.role })) });
 }
 export function latestBaseline(state: DeliveryState, workspaceId: string, week: string): WeeklyReview | null {
   return state.reviews.filter(r=>r.workspaceId === workspaceId && r.status === "FINAL" && r.week < week).sort((a,b)=>b.week.localeCompare(a.week))[0] ?? null;
@@ -190,7 +194,7 @@ export function referencesFor(input: PortfolioInput, baseline: PortfolioInput | 
       refs.push({ id:`fact:${fact.id}:${fact.revision}`,initiativeId:id,texts:[text,`Confirmed ${text}`] });
       if (supportChanged(fact,input)) refs.push({ id:`support:${fact.id}`,initiativeId:id,texts:["Supporting evidence changed; the recorded value needs review.","Review changed supporting evidence before relying on this recorded value."] });
     }
-    const findings=applyFindingStates(runReview(id,snap.claims),snap.findingStates).filter(f=>f.actionable && f.status === "OPEN");
+    const findings=queueForInput(input,id).lanes.open.map(i=>i.finding);
     for (const finding of findings) { const text=`Recorded mismatch: ${finding.subject}, ${finding.claims[0]?.attribute ?? "values"} — ${finding.claims.map(c=>c.value).join(" / ")}. Business impact is not assessed.`; refs.push({ id:`finding:${finding.fingerprint}`,initiativeId:id,texts:[text,`Review the ${text}`] }); }
   }
   return refs;
@@ -199,7 +203,7 @@ function newSection(input:PortfolioInput,id:string,baseline:PortfolioInput|null)
   const changes=changesSince(input,baseline).filter(c=>c.initiativeId===id);
   const milestone=factFor(input.facts,id,"NEXT_MILESTONE");
   const snapshot=input.snapshots.find(s=>s.initiative.id===id)!;
-  const openDecisions=applyFindingStates(runReview(id,snapshot.claims),snapshot.findingStates).filter(f=>f.actionable && f.status === "OPEN");
+  const openDecisions=queueForInput(input,id).lanes.open.map(i=>i.finding);
   const scope=factFor(input.facts,id,"SCOPE")?.value.text;
   return { initiativeId:id,ownerMemberId:ownerFor(input.facts,id),revision:1,headline:`${snapshot.initiative.stage.replaceAll("_"," ")} · ${scope ?? "Scope not confirmed"}`,updates:changes.map(c=>c.label).join("\n") || (baseline ? "No recorded changes since the previous final review." : "First review: current-state inventory. No previous final baseline."),attention:factFor(input.facts,id,"BLOCKER")?.value.text ?? "No blocker recorded; absence does not confirm there are none.",decisionNeeded:openDecisions.length ? openDecisions.map(f=>`Review differing recorded values for ${f.subject}: ${f.claims.map(c=>c.value).join(" / ")}.`).join("\n") : "No decision request recorded.",nextMilestone:milestone ? milestone.value.unknown?"Explicitly unknown":`${milestone.value.text} — ${milestone.value.date ?? (milestone.value.dateUnknown?"Date explicitly unknown":"Date not recorded")}` : "Not recorded",nextStep:factFor(input.facts,id,"NEXT_STEP")?.value.text ?? "Not recorded",sourceDigest:sectionDigest(input,id),needsRecheck:false,editedByMemberId:null,editedAt:null,aiOriginal:null };
 }
@@ -290,3 +294,6 @@ export function applyAiDraft(state:DeliveryState,source:PortfolioSource,ctx:Work
     return { ...section,updates:(section.editedByMemberId || section.editedByUserId) && section.updates ? section.updates : block.lines.map(l=>l.text).join("\n"),aiOriginal:block.lines,revision:section.revision+1,needsRecheck:true }; });
   return replaceReview(state,{ ...review,revision:review.revision+1,sections,aiDrafts:[...review.aiDrafts,ai] });
 }
+
+export function queueForInput(input:PortfolioInput,initiativeId:string){const snap=input.snapshots.find(s=>s.initiative.id===initiativeId);return projectQueue(snap?applyFindingStates(runReview(initiativeId,snap.claims),snap.findingStates):[],(input.findingDispositions??[]).filter(d=>d.initiativeId===initiativeId),input.queueFinalizations??[],input.asOf,snap?.findingStates??[]);}
+export function weeklyDispositionCounts(input:PortfolioInput,baseline:PortfolioInput|null,initiativeId?:string){const rows=(input.findingDispositions??[]).filter(d=>(!initiativeId||d.initiativeId===initiativeId)&&Date.parse(d.at)>(baseline?Date.parse(baseline.asOf):-Infinity)&&Date.parse(d.at)<=Date.parse(input.asOf));return {deferred:rows.filter(r=>r.kind==="DEFERRED").length,dismissed:rows.filter(r=>r.kind==="DISMISSED").length};}

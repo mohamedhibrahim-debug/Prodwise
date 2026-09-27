@@ -1,4 +1,6 @@
 "use client";
+import { ApplicabilityFields } from "./ApplicabilityFields";
+import type {InitiativeContext} from "@/lib/workspace/readiness";
 import { ScopeField } from "@/components/auth/WorkspaceScope";
 
 import { useActionState } from "react";
@@ -28,6 +30,7 @@ interface FormState {
 }
 
 interface ClaimFormProps {
+  contexts?:InitiativeContext[];currentContextId?:string|null;
   slug: string;
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
   submitLabel: string;
@@ -63,7 +66,7 @@ export function ClaimForm({
   submitLabel,
   evidence,
   claim,
-  replacementOptions = [],
+  replacementOptions = [], contexts=[],currentContextId=null,
 }: ClaimFormProps) {
   const [state, formAction] = useActionState(action, initialState);
   const isEdit = Boolean(claim);
@@ -78,8 +81,10 @@ export function ClaimForm({
   );
 
   return (
-    <form action={formAction} className={styles.form}>
+    <form action={formAction} className={styles.form} onReset={e=>e.preventDefault()}>
       <ScopeField />
+      <ApplicabilityFields contexts={contexts} contextId={claim?(claim.contextId??null):currentContextId} effectiveDate={claim?.effectiveDate??null} slug={slug}/>
+      {claim&&<><input type="hidden" name="expectedUpdatedAt" value={claim.updatedAt}/><label>Reason if applicability changes<input name="applicabilityReason" maxLength={2000}/></label><p>Changing applicability creates a new unverified revision and preserves this record and evidence for re-verification.</p></>}
       <input type="hidden" name="slug" value={slug} />
       {claim ? <input type="hidden" name="claimId" value={claim.id} /> : null}
 

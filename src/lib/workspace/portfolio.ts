@@ -1,3 +1,4 @@
+import {projectQueue} from "../review/dispositions.ts";
 import type { ActivityEntry, Initiative, InitiativeSnapshot } from '../domain/types.ts';
 import type { DeliveryFact, DeliveryState, PortfolioSource, WeeklyReview } from '../delivery/types.ts';
 import { cairoDay, changesSince, dayDifference, factFor, freezeInput, ownerFor, supportChanged } from '../delivery/model.ts';
@@ -60,7 +61,7 @@ export function buildPortfolioProjection({source,state,workspaceId,activity=[],a
   const rows:PortfolioRow[]=source.snapshots.map(snapshot=>{
     const i=snapshot.initiative; const base=`/initiatives/${i.slug}`;
     const findings=applyFindingStates(runReview(i.id,snapshot.claims),snapshot.findingStates);
-    const open=findings.filter(f=>f.type==='CONFLICT'&&f.actionable&&f.status==='OPEN');
+    const open=projectQueue(findings,(source.findingDispositions??[]).filter(d=>d.initiativeId===i.id),source.queueFinalizations??[],asOf,snapshot.findingStates).lanes.open.map(item=>item.finding);
     const setup=deriveSetup({evidence:snapshot.evidence,claims:snapshot.claims,findings});
     const unconfirmed=snapshot.claims.filter(c=>['UNVERIFIED','DRAFT','UNKNOWN'].includes(c.status)).length;
     const coverageLabel=!setup.complete?`Evidence coverage incomplete · ${setup.current==='sources'?'no in-scope source':setup.current==='record'?'no Knowledge recorded':'nothing confirmed'}`:`Checked · ${open.length?`${open.length} open ${open.length===1?'difference':'differences'}`:'no open differences'}`;

@@ -1,3 +1,4 @@
+import { applicabilityParts } from "./applicability.ts";
 import { DOMAINS } from "../domain/types.ts";
 import { fingerprint } from "./fingerprint.ts";
 import type {
@@ -42,6 +43,7 @@ export function toClaimRef(claim: ClaimWithEvidence): FindingClaimRef {
     status: claim.status,
     domain: claim.domain,
     phase: claim.phase,
+    ...(claim.contextId ? {contextId:claim.contextId}:{}), ...(claim.effectiveDate ? {effectiveDate:claim.effectiveDate}:{}),
     evidence: toEvidenceRefs(claim),
   };
 }
@@ -107,6 +109,7 @@ export function contentDigestOf(
 
   for (const claim of [...claims].sort(byClaimId)) {
     parts.push(claim.id, claim.value, claim.status, claim.phase);
+    parts.push(...applicabilityParts(claim));
     for (const e of toEvidenceRefs(claim)) {
       parts.push(e.evidenceId, e.boundary, e.sourceReference);
     }

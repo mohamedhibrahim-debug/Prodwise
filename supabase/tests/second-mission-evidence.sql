@@ -1,0 +1,32 @@
+\set ON_ERROR_STOP on
+do $$begin if current_database() !~ '^prodwise_second_[0-9a-f]{32}$' then raise exception 'DISPOSABLE_LOCAL_DATABASE_REQUIRED';end if;end$$;
+begin;
+insert into auth.users(id,email,email_confirmed_at) values('e3100000-0000-4000-8000-000000000001','evidence-viewer@synthetic.test',now());
+insert into public.users(id,email,display_name,auth_user_id,active,is_system) values('e3100000-0000-4000-8000-000000000002','evidence-viewer@synthetic.test','Synthetic evidence Viewer','e3100000-0000-4000-8000-000000000001',true,false);
+insert into public.organization_memberships(id,organization_id,user_id,role,active,is_product_lead,policy_override,policy_override_reason) values('e3100000-0000-4000-8000-000000000003','d2000000-0000-4000-8000-000000000001','e3100000-0000-4000-8000-000000000002','VIEWER',true,false,true,'Disposable synthetic negative-test fixture');
+set local role service_role;
+do $$declare w uuid:='d2000000-0000-4000-8000-000000000002';m uuid:='d2000000-0000-4000-8000-000000000003';new_slug text;iid uuid;sid uuid;aid uuid;pid uuid;payload jsonb;response jsonb;command jsonb;text_value text:='A😀 Keep receipt';begin
+new_slug:=public.create_managed_initiative(w,m,jsonb_build_object('requestId',gen_random_uuid(),'name','Synthetic anchored evidence SQL','businessLine','FS','stage','DISCOVERY','ownerMemberId',m));select id into iid from public.initiatives where workspace_id=w and initiatives.slug=new_slug;
+payload:=jsonb_build_object('initiativeId',iid,'requestId',gen_random_uuid(),'title','Synthetic note','text',text_value,'textSha256',encode(sha256(convert_to(text_value,'UTF8')),'hex'),'charLength',16);
+begin perform public.submit_anchored_evidence(w,'e3100000-0000-4000-8000-000000000003',payload);raise exception 'VIEWER_WRITE_ACCEPTED';exception when others then if sqlerrm='VIEWER_WRITE_ACCEPTED' then raise;end if;end;
+sid:=public.submit_anchored_evidence(w,m,payload);if public.submit_anchored_evidence(w,m,payload)<>sid then raise exception 'SUBMISSION_RETRY_DUPLICATED';end if;
+response:=public.start_evidence_attempt(w,m,sid,gen_random_uuid());aid:=(response->>'attemptId')::uuid;
+perform public.finish_evidence_attempt(w,m,aid,jsonb_build_object('model','synthetic-provider-fixture','discardedCount',0,'errorCode',null,'candidates',jsonb_build_array(jsonb_build_object('type','REQUIREMENT','payload',jsonb_build_object('subject','Receipt','attribute','behavior','value','Keep receipt','domain','PRODUCT','phase',null),'anchor',jsonb_build_object('start',4,'end',16,'quote','Keep receipt'),'baseRevision',0))));
+select id into pid from public.evidence_proposals where submission_id=sid;
+if exists(select 1 from public.claims where evidence_submission_id=sid) then raise exception 'AUTONOMOUS_TRUTH';end if;
+command:=jsonb_build_object('id',pid,'version',1,'operation','CONFIRM','requestId',gen_random_uuid(),'reason','Reviewed synthetic exact quote');response:=public.decide_evidence_proposal(w,m,command);
+if public.decide_evidence_proposal(w,m,command)<>response then raise exception 'CONFIRM_RETRY_DUPLICATED';end if;
+if (select status from public.claims where id=(response->>'id')::uuid)<>'UNVERIFIED' then raise exception 'AUTO_ACTIVATION';end if;
+if (select count(*) from public.evidence_confirmations where proposal_id=pid)<>1 then raise exception 'MULTIPLE_RECEIPTS';end if;
+begin update public.evidence_submissions set data=data||'{"text":"tampered"}' where id=sid;raise exception 'MUTABLE_TEXT';exception when insufficient_privilege then null;end;
+if public.evidence_utf16_slice(text_value,1,2) is not null then raise exception 'SPLIT_SURROGATE';end if;
+response:=public.start_evidence_attempt(w,m,sid,gen_random_uuid());aid:=(response->>'attemptId')::uuid;
+perform public.finish_evidence_attempt(w,m,aid,jsonb_build_object('model','synthetic-provider-fixture','discardedCount',0,'errorCode',null,'candidates',jsonb_build_array(jsonb_build_object('type','ACTION','payload',jsonb_build_object('subject','Receipt','attribute','follow-up','value','Keep receipt','domain','PRODUCT','phase',null),'anchor',jsonb_build_object('start',4,'end',16,'quote','Keep receipt'),'baseRevision',0))));
+select id into pid from public.evidence_proposals where attempt_id=aid;command:=jsonb_build_object('id',pid,'version',1,'operation','CONFIRM','requestId',gen_random_uuid(),'reason','Explicit synthetic action confirmation');response:=public.decide_evidence_proposal(w,m,command);
+if (select data->>'origin' from public.actions where id=(response->>'id')::uuid)<>'CONFIRMED_AI_PROPOSAL' or (select data->>'assigneeMemberId' from public.actions where id=(response->>'id')::uuid) is not null then raise exception 'ACTION_PROVENANCE_OR_INFERRED_OWNER';end if;
+response:=public.start_evidence_attempt(w,m,sid,gen_random_uuid());aid:=(response->>'attemptId')::uuid;
+perform public.finish_evidence_attempt(w,m,aid,jsonb_build_object('model','synthetic-provider-fixture','discardedCount',0,'errorCode',null,'candidates',jsonb_build_array(jsonb_build_object('type','RISK','payload',jsonb_build_object('subject','Receipt','attribute','risk','value','Keep receipt','domain','PRODUCT','phase',null),'anchor',jsonb_build_object('start',4,'end',16,'quote','Keep receipt'),'baseRevision',0))));
+select id into pid from public.evidence_proposals where attempt_id=aid;command:=jsonb_build_object('id',pid,'version',1,'operation','HUMAN_ENTRY','requestId',gen_random_uuid(),'reason','My separate human interpretation','payload',jsonb_build_object('subject','Receipt','attribute','risk','value','Human synthetic alternate interpretation','domain','PRODUCT','phase',null));response:=public.decide_evidence_proposal(w,m,command);
+if (select data->>'status' from public.evidence_proposals where id=pid)<>'SUPERSEDED_BY_HUMAN_ENTRY' or exists(select 1 from public.claim_evidence where claim_id=(response->>'id')::uuid) or (select evidence_anchor_id from public.claims where id=(response->>'id')::uuid) is not null then raise exception 'HUMAN_PROVENANCE_FORGED';end if;
+raise notice 'PASS: save-before-AI, exact emoji-aware anchors, no autonomous claim, confirmation retry, unverified Knowledge, immutable text, Action provenance, human replacement without AI anchor';
+end$$;set constraints all immediate;reset role;rollback;

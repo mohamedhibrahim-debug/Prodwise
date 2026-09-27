@@ -1,6 +1,7 @@
 import "server-only";
 import {readStore,writeStoreWithDelivery} from '@/lib/data/store';
 import {withRepositoryContext} from '@/lib/auth/repository-context';
+import {readManagement} from "../data/management-read";
 import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { getRepository } from "@/lib/data";
@@ -33,15 +34,17 @@ async function readWith(ctx:WorkspaceAccess):Promise<DeliveryRead> {
   if (!isLocalAuth()) {
     const {data,error}=await client().rpc("delivery_read_workspace",{p_workspace_id:ctx.workspaceId,p_member_id:ctx.memberId ?? ctx.actor.id});
     if (error) throw new Error("Delivery data is unavailable. Check that the Auth and delivery migrations are installed locally.");
-    const value=data as {source:unknown;state:DeliveryState}; const source=camel(value.source) as PortfolioSource;
+    const value=data as {source:unknown;state:DeliveryState}; const source=camel(value.source) as PortfolioSource; source.contexts=(await readManagement()).contexts;
     for (const snapshot of source.snapshots) for (const claim of snapshot.claims) {
       if (!claim.updatedAt || !claim.createdAt) throw new Error("Source claim timestamps are unavailable. Repair the snapshot projection before continuing.");
     }
     assertMember(ctx,source); return {ctx,source,state:value.state,rawSource:value.source,presentation:await presentationPromise};
   }
   if (process.env.VERCEL) throw new Error("Durable delivery storage must be configured before this feature can run on a hosted deployment.");
-  const repo=getRepository(); const source={snapshots:await repo.listInitiativeSnapshots(),members:await deliveryWorkspaceMembers(),commitments:await withRepositoryContext(ctx,async()=>readStore().commitments??[])};
-  assertMember(ctx,source); return {ctx,source,state:await localFor(ctx).read(),rawSource:meaningful(source),presentation:await presentationPromise};
+  const repo=getRepository(); const management=await readManagement(); const source={contexts:management.contexts,snapshots:await repo.listInitiativeSnapshots(),members:await deliveryWorkspaceMembers(),commitments:await withRepositoryContext(ctx,async()=>readStore().commitments??[])};
+  const state=await localFor(ctx).read(); const rows=await withRepositoryContext(ctx,async()=>readStore().findingDispositions??[]);
+  const queueSource={...source,...(rows.length?{findingDispositions:rows,queueFinalizations:state.reviews.filter(r=>r.status==='FINAL'&&r.finalizedAt).map(r=>({id:r.id,workspaceId:r.workspaceId,finalizedAt:r.finalizedAt!}))}:{})};
+  assertMember(ctx,queueSource); return {ctx,source:queueSource,state,rawSource:meaningful(queueSource),presentation:await presentationPromise};
 }
 const readForRender=cache(async ():Promise<DeliveryRead> => readWith(await requireDeliveryAccess()));
 export async function readDelivery():Promise<DeliveryRead> { return readForRender(); }

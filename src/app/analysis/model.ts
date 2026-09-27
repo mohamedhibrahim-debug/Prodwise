@@ -1,3 +1,4 @@
+import {projectQueue} from "../../lib/review/dispositions.ts";
 import { STAGES } from "../../lib/domain/types.ts";
 import type { PortfolioSource, DeliveryState } from "../../lib/delivery/types.ts";
 import { factFor, cairoDay, dayDifference } from "../../lib/delivery/model.ts";
@@ -15,7 +16,7 @@ export function portfolioAnalysis(source:PortfolioSource,state:DeliveryState,wor
     const actual=factFor(facts,id,"ACTUAL_LIVE");
     const days=target?.value.date ? dayDifference(today,target.value.date) : null;
     const fullActual=actual?.value.extent==="FULL";
-    const decisions=applyFindingStates(runReview(id,snapshot.claims),snapshot.findingStates).filter(f=>f.actionable && f.status==="OPEN").length;
+    const decisions=projectQueue(applyFindingStates(runReview(id,snapshot.claims),snapshot.findingStates),(source.findingDispositions??[]).filter(d=>d.initiativeId===id),source.queueFinalizations??[],asOf,snapshot.findingStates).counts.open;
     return {initiative:snapshot.initiative,targetDate:target?.value.date ?? null,actualDate:actual?.value.date ?? null,
       targetNeedsConfirmation:days!==null && days<0 && !fullActual,
       upcoming:days!==null && days>=0 && days<=28 && !fullActual,

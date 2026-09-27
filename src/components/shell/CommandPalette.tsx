@@ -41,6 +41,7 @@ const WORKSPACE_TABS = [
   { segment: "knowledge", label: "Knowledge" },
   { segment: "sources", label: "Sources" },
   { segment: "actions", label: "Commitments" },
+  { segment: "evidence", label: "AI evidence workbench" },
 ] as const;
 
 /**

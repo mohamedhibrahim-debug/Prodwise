@@ -1,4 +1,6 @@
 import Link from "next/link";
+import {DispositionControls} from "./DispositionControls";
+import {friendlyDay,type EffectiveDisposition} from "@/lib/review/dispositions";
 
 import { Reference, Timestamp } from "@/components/primitives/Meta";
 import {
@@ -35,17 +37,19 @@ export function FindingRow({
   canResolve,
   previousConfirmedWith,
   records,
+  queue,
 }: {
   finding: ReviewFinding;
   slug: string;
   canResolve: boolean;
   previousConfirmedWith?: string | null;
   records?: ClaimWithEvidence[];
+  queue?: EffectiveDisposition;
 }) {
   return finding.type === "SUPERSEDED" ? (
     <SupersededRow finding={finding} slug={slug} />
   ) : (
-    <ConflictRow finding={finding} slug={slug} canResolve={canResolve} previousConfirmedWith={previousConfirmedWith} records={records} />
+    <ConflictRow finding={finding} slug={slug} canResolve={canResolve} previousConfirmedWith={previousConfirmedWith} records={records} queue={queue} />
   );
 }
 
@@ -95,12 +99,14 @@ function ConflictRow({
   canResolve,
   previousConfirmedWith,
   records,
+  queue,
 }: {
   finding: ReviewFinding;
   slug: string;
   canResolve: boolean;
   previousConfirmedWith?: string | null;
   records?: ClaimWithEvidence[];
+  queue?: EffectiveDisposition;
 }) {
   const resolved = finding.status === "RESOLVED";
 
@@ -112,7 +118,7 @@ function ConflictRow({
         {resolved ? (
           <span className={styles.resolvedTag}>Reviewed — note only</span>
         ) : (
-          <span className={styles.needsDecision}>Needs a decision</span>
+          <span className={styles.needsDecision}>{queue?.lane==="deferred"?`⏸ Deferred ${queue.activeRow?.deferUntil?`until ${friendlyDay(queue.activeRow.deferUntil)}`:"until next Weekly Review"}`:queue?.lane==="dismissed"?`⊘ Dismissed · ${friendlyDay(queue.activeRow!.at)}`:"Needs a decision"}</span>
         )}
         <span className={styles.headMeta}>
           <Timestamp iso={finding.detectedOn} prefix="entries changed" />
@@ -120,6 +126,7 @@ function ConflictRow({
       </div>
 
       <h3 className={styles.title}>{finding.title}</h3>
+      {queue?.reopenReason&&<p className={styles.caption}>Reopened: {queue.reopenReason}. <Link href={`/initiatives/${slug}/knowledge?view=all#claim-${finding.claims[0]?.claimId}`}>Inspect changed claim revision</Link></p>}
 
       <p className={styles.facts}>
         {finding.domains.map((d, i) => (
@@ -195,6 +202,7 @@ function ConflictRow({
           contentDigest={finding.contentDigest} resolved={resolved} />
       ) : null}
 
+      {canResolve&&!resolved&&queue&&<DispositionControls finding={finding} effective={queue} slug={slug}/>}
       </aside> : null}
     </li>
   );

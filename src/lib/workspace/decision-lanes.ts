@@ -1,9 +1,8 @@
-export const DECISION_LANES = [
-  { key: "needs-decision", title: "Needs a decision", description: "Mismatches where current values differ." },
-  { key: "reviewed", title: "Reviewed", description: "Reviewed — note only. Knowledge was not changed." },
-  { key: "resolved", title: "Resolved", description: "Decisions that changed Knowledge." },
-  { key: "history", title: "History", description: "Replaced information kept for history. Nothing here is an open task." },
-  { key: "not-checked", title: "Not checked yet", description: "Gaps, unknowns, and risks are not checked here yet." },
+export const DECISION_LANES=[
+ {key:"open",title:"Open",description:"Current differences requiring a decision."},
+ {key:"deferred",title:"Deferred",description:"Returns when its end condition occurs or evidence changes."},
+ {key:"dismissed",title:"Dismissed",description:"Dismissed for these exact compared claims."},
+ {key:"resolved",title:"Resolved",description:"Decision records and reviewed notes; notes do not change Knowledge."},
+ {key:"history",title:"History",description:"Replaced information and append-only queue history."},
 ] as const;
-
-export type DecisionLaneKey = (typeof DECISION_LANES)[number]["key"];
+export type DecisionLaneKey=(typeof DECISION_LANES)[number]["key"];

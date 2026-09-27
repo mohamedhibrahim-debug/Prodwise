@@ -2,6 +2,8 @@
 import { assertFormWorkspace } from "@/lib/auth/scope";
 import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
+import {reviseClaimApplicability} from "@/lib/data/applicability-revision";
+import {sameApplicability} from "@/lib/review/applicability";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
@@ -86,7 +88,10 @@ export async function updateClaimAction(
       evidenceIds,
     );
 
-    await getRepository().updateClaim(claimId, {
+    const applicability={contextId:readText(formData.get("contextId"))||null,effectiveDate:readText(formData.get("effectiveDate"))||null};
+    if(!sameApplicability(claim,applicability)){await reviseClaimApplicability(claimId,readText(formData.get("expectedUpdatedAt")),{initiativeId:initiative.id,type,subject,attribute,value,domain,phase:phase||null,...applicability},readText(formData.get("applicabilityReason")),links);}
+    else {await getRepository().updateClaim(claimId, {
+      expectedUpdatedAt:readText(formData.get("expectedUpdatedAt")),
       type,
       status,
       subject,
@@ -96,7 +101,7 @@ export async function updateClaimAction(
       phase: phase || null,
       supersededByClaimId: replacement,
     });
-    await getRepository().setClaimEvidence(claimId, links);
+    await getRepository().setClaimEvidence(claimId, links);}
   } catch (error) {
     if (error instanceof ClaimAccessError) return { error: error.message };
     if (error instanceof EvidenceAccessError) return { error: error.message };

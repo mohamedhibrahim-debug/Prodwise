@@ -1,5 +1,6 @@
 import "server-only";
 
+import {validateApplicability} from "../review/applicability";
 import { assertWriteAllowed } from "@/lib/env";
 import {
   CLAIM_STATUS_LABEL,
@@ -351,6 +352,7 @@ export const localRepository: Repository = {
       value: input.value.trim(),
       domain: input.domain,
       phase: input.phase?.trim() || null,
+      contextId:input.contextId??null,effectiveDate:input.effectiveDate??null,
       confidence: null,
       supersededByClaimId: null,
       createdBy: repositoryContext()?.actor.id ?? null,
@@ -365,6 +367,10 @@ export const localRepository: Repository = {
     };
 
     writeStore((s) => {
+      const initiative=s.initiatives.find(i=>i.id===input.initiativeId);
+      if(!initiative)throw Error("Initiative unavailable.");
+      const applicability=validateApplicability(input,s.contexts??[],initiative.workspaceId??"",input.initiativeId);
+      Object.assign(created,{contextId:applicability.contextId,effectiveDate:applicability.effectiveDate});
       s.claims.push(created);
     });
     logActivity(
@@ -380,7 +386,9 @@ export const localRepository: Repository = {
     assertWriteAllowed();
 
     const existing = readStore().claims.find((c) => c.id === id);
+    if(existing&&((patch.contextId!==undefined&&(patch.contextId??null)!==(existing.contextId??null))||(patch.effectiveDate!==undefined&&(patch.effectiveDate??null)!==(existing.effectiveDate??null))))throw Error("Applicability changes require a new Knowledge revision.");
     if (!existing) throw new Error(`Claim ${id} was not found.`);
+    if(patch.expectedUpdatedAt!==undefined&&patch.expectedUpdatedAt!==existing.updatedAt)throw Error("This Knowledge entry changed. Reload before saving.");
     if (
       patch.status !== undefined &&
       !canOrdinaryUpdateStatus(existing.status, patch.status)
@@ -415,6 +423,7 @@ export const localRepository: Repository = {
 
     writeStore((s) => {
       const i = s.claims.findIndex((c) => c.id === id);
+      if(patch.expectedUpdatedAt!==undefined&&s.claims[i]?.updatedAt!==patch.expectedUpdatedAt)throw Error("This Knowledge entry changed. Reload before saving.");
       if (i >= 0) s.claims[i] = merged;
     });
 
@@ -617,7 +626,7 @@ export const localRepository: Repository = {
         s.claims.push({
           id: decisionClaimId, initiativeId: plan.initiativeId,
           type: "DECISION", status: "ACTIVE", subject: plan.subject,
-          attribute: plan.attribute, phase: plan.phase, value: decidedValue,
+          attribute: plan.attribute, phase: plan.phase,contextId:members[0]?.contextId??null,effectiveDate:members[0]?.effectiveDate??null, value: decidedValue,
           domain, confidence: null, supersededByClaimId: null, createdBy: repositoryContext()?.actor.id ?? null,
           createdAt: now, updatedAt: now, origin: "HUMAN_DECISION",
           verifiedAt: now, verifiedActorId: plan.actor.id,

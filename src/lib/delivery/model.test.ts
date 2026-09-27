@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { EMPTY_STATE, type DeliveryState, type PortfolioSource, type WorkspaceAccess, type SectionEdit } from "./types.ts";
-import { applyFactUpdatesAndRefresh, finalizationChecks, nextReviewWeek, changesSince, referencesFor, createReview, editSection, finalizeReview, freezeInput, isoWeek, recordFact, refreshReview, supportChanged, weekValid } from "./model.ts";
+import { applyFactUpdatesAndRefresh, finalizationChecks, nextReviewWeek, changesSince, referencesFor, meaningful, createReview, editSection, finalizeReview, freezeInput, isoWeek, recordFact, refreshReview, supportChanged, weekValid } from "./model.ts";
 import { validateDraft } from "./ai-validation.ts";
 import type { MemoryClaim, FindingState } from "../domain/types.ts";
 const admin:WorkspaceAccess={workspaceId:"w1",organizationId:"org1",platformRole:null,memberId:"admin",actor:{id:"admin-user",label:"ADMIN"},role:"ADMIN",isProductLead:false};
@@ -164,3 +164,5 @@ test("Commitment changes stale drafts, ground AI inventory, and preserve prior F
  const refs=referencesFor(r.input,state.reviews[0]!.input);const ref=refs.find(x=>x.id==="action:a1:1")!;assert.match(ref.texts[0],/date not recorded; assignee not assigned/);assert.equal(validateDraft({sections:[{initiativeId:"i1",lines:[{referenceId:ref.id,text:ref.texts[0]}]}]},refs).length,1);
  assert.ok(changesSince(r.input,state.reviews[0]!.input).some(x=>x.kind==="COMMITMENT"));assert.equal(JSON.stringify(state.reviews[0]),frozen);
 });
+
+test("Nullable evidence provenance does not invent a portfolio change",()=>{assert.deepEqual(meaningful({id:'legacy',value:'27',evidenceSubmissionId:null,evidenceAnchorId:null}),meaningful({id:'legacy',value:'27'}));assert.notDeepEqual(meaningful({id:'new',value:'27',evidenceSubmissionId:'submission'}),meaningful({id:'new',value:'27'}));});

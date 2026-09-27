@@ -20,7 +20,7 @@ export default async function KnowledgeSourcesPage({ params }: { params: Promise
   const { evidence, claims } = snapshot;
   const base = `/initiatives/${slug}/knowledge`;
   return <div className={styles.page}>
-    <header className={styles.head}><div><p className={styles.eyebrow}>Evidence library</p><h2>Sources</h2><p>Inspect source material and the Knowledge it supports.</p></div>{writesEnabled && <Link prefetch={false} className={styles.action} href={`${base}/sources/new`}>Add source</Link>}</header>
+    <header className={styles.head}><div><p className={styles.eyebrow}>Evidence library</p><h2>Sources</h2><p>Inspect source material and the Knowledge it supports.</p></div><Link prefetch={false} className={styles.action} href={`/initiatives/${slug}/evidence`}>AI evidence workbench</Link>{writesEnabled && <Link prefetch={false} className={styles.action} href={`${base}/sources/new`}>Add source</Link>}</header>
 
     <div className={styles.librarySummary}><strong>{evidence.length} recorded sources</strong><span>Grouped by relationship to the initiative</span></div>
     {evidence.length ? <div className={styles.sourceTableWrap}><table className={styles.sourceTable}><caption className="visually-hidden">Sources grouped by relationship to this initiative</caption><thead><tr><th scope="col">Source</th><th scope="col">Reference</th><th scope="col">Type</th><th scope="col">Source date</th><th scope="col">Linked entries</th></tr></thead>{EVIDENCE_RELATIONS.map(boundary => {

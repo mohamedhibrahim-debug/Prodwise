@@ -54,6 +54,12 @@ export interface ClaimEvidenceLink {
 export type StoredClaim = ClaimRecord & ClaimTrust;
 
 export interface StoreShape {
+  findingDispositions?: import('../review/dispositions').FindingDisposition[];
+  evidenceSubmissions?: import('../evidence/types').Submission[];
+  evidenceAttempts?: import('../evidence/types').ReadingAttempt[];
+  evidenceAnchors?: import('../evidence/types').Anchor[];
+  evidenceProposals?: import('../evidence/types').Proposal[];
+  evidenceConfirmations?: import('../evidence/types').Confirmation[];
   commitments?: import('../workspace/commitments').Commitment[];
   commitmentEvents?: import('../workspace/commitments').CommitmentEvent[];
   creationCommands?: {workspaceId:string;requestId:string;initiativeId:string;actorId:string;inputDigest:string}[];
@@ -133,6 +139,12 @@ function load(): StoreShape {
         claims: parsed.claims ?? base.claims,
         claimEvidence: parsed.claimEvidence ?? base.claimEvidence,
         findingStates: parsed.findingStates ?? base.findingStates,
+        findingDispositions: parsed.findingDispositions ?? [],
+        evidenceSubmissions: parsed.evidenceSubmissions??[],
+        evidenceAttempts: parsed.evidenceAttempts??[],
+        evidenceAnchors: parsed.evidenceAnchors??[],
+        evidenceProposals: parsed.evidenceProposals??[],
+        evidenceConfirmations: parsed.evidenceConfirmations??[],
         contexts: parsed.contexts ?? [],
         commitments: parsed.commitments ?? [],
         commitmentEvents: parsed.commitmentEvents ?? [],
@@ -191,7 +203,7 @@ export function writeStore(mutate: (store: StoreShape) => void): void {
 export function writeStoreAtomic<T>(mutate: (store: StoreShape) => T): T {
   const previous=load();const next = structuredClone(previous);
   const result = mutate(next);
-  assertArchivedRecordsUnchanged(previous,next);
+  assertArchivedRecordsUnchanged(previous,next);assertDispositionHistoryUnchanged(previous,next);
   scopeRows(next, repositoryContext()?.workspaceId);
   appendReadinessHistory(next);
   const temporary = `${DATA_FILE}.${crypto.randomUUID()}.tmp`;
@@ -207,11 +219,16 @@ export function writeStoreAtomic<T>(mutate: (store: StoreShape) => T): T {
   }
 }
 
+function assertDispositionHistoryUnchanged(before:StoreShape,after:StoreShape):void{
+ const prior=before.findingDispositions??[],next=after.findingDispositions??[];if(next.length<prior.length||JSON.stringify(next.slice(0,prior.length))!==JSON.stringify(prior))throw new Error('Queue dispositions are append-only.');
+ const requests=new Set<string>();for(const row of next){const key=`${row.organizationId}:${row.clientRequestId}`;if(requests.has(key))throw new Error('Duplicate queue request.');requests.add(key);}
+}
+
 function assertArchivedRecordsUnchanged(before:StoreShape,after:StoreShape):void{
  const archived=new Set(before.initiatives.filter(i=>i.archivedAt).map(i=>i.id));if(!archived.size)return;
  for(const i of before.initiatives.filter(i=>archived.has(i.id))){const next=after.initiatives.find(n=>n.id===i.id);if(!next||['name','businessLine','stage','description','currentContextId','knownReferences'].some(key=>JSON.stringify(i[key as keyof Initiative])!==JSON.stringify(next[key as keyof Initiative])))throw new Error('Archived — restore to edit. Nothing was changed.');}
  const claimScope=new Map(before.claims.map(c=>[c.id,c.initiativeId]));
- for(const key of ['evidence','claims','claimEvidence','findingStates','sources','contexts','sourceMappings','commitments','commitmentEvents'] as const){
+ for(const key of ['evidence','claims','claimEvidence','findingStates','findingDispositions','sources','contexts','sourceMappings','commitments','commitmentEvents','evidenceSubmissions','evidenceAttempts','evidenceAnchors','evidenceProposals','evidenceConfirmations'] as const){
   const scoped=(rows:unknown[])=>rows.filter(value=>{const row=value as {initiativeId?:string;claimId?:string};return archived.has(row.initiativeId??claimScope.get(row.claimId??'')??'');});
   if(JSON.stringify(scoped(before[key]??[]))!==JSON.stringify(scoped(after[key]??[])))throw new Error('Archived — restore to edit. Nothing was changed.');
  }
@@ -220,7 +237,7 @@ function assertArchivedRecordsUnchanged(before:StoreShape,after:StoreShape):void
 /** Used only while holding the delivery file lock. The journal makes a new
  * initiative and its initial OWNER fact visible together after crash recovery. */
 export function writeStoreWithDelivery<T>(deliveryPath:string,deliveryState:unknown,mutate:(store:StoreShape)=>T):T{
- const previous=load(),next=structuredClone(previous);const result=mutate(next);assertArchivedRecordsUnchanged(previous,next);scopeRows(next,repositoryContext()?.workspaceId);appendReadinessHistory(next,deliveryState as DeliveryState);
+ const previous=load(),next=structuredClone(previous);const result=mutate(next);assertArchivedRecordsUnchanged(previous,next);assertDispositionHistoryUnchanged(previous,next);scopeRows(next,repositoryContext()?.workspaceId);appendReadinessHistory(next,deliveryState as DeliveryState);
  commitLocalCommand(dirname(DATA_FILE),[{path:deliveryPath,content:JSON.stringify(deliveryState)},{path:DATA_FILE,content:JSON.stringify(next)}]);cache=next;return result;
 }
 

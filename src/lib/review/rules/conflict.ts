@@ -1,3 +1,4 @@
+import { applicabilityParts } from "../applicability.ts";
 import type { ClaimWithEvidence, ReviewFinding } from "../../domain/types.ts";
 import { contextKey, isBlank, normalise } from "../normalise.ts";
 import { fingerprint, sortStable } from "../fingerprint.ts";
@@ -71,6 +72,7 @@ export function detectConflicts(
       normalise(claim.subject),
       normalise(claim.attribute),
       context,
+      ...applicabilityParts(claim),
     ]);
     const bucket = groups.get(key);
     if (bucket) bucket.push(claim);
@@ -111,6 +113,7 @@ export function detectConflicts(
       normalise(display.attribute),
       context,
       ...distinct,
+      ...applicabilityParts(display),
     ]);
 
     findings.push({

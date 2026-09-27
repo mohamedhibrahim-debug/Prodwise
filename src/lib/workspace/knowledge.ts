@@ -13,7 +13,7 @@ export interface KnowledgeValueGroup {
 export function groupKnowledge(claims: MemoryClaim[]): KnowledgeValueGroup[] {
   const groups = new Map<string, KnowledgeValueGroup>();
   for (const entry of claims) {
-    const key = JSON.stringify([entry.subject, entry.attribute, entry.phase, normalise(entry.value)]);
+    const key = JSON.stringify([entry.subject, entry.attribute, entry.phase,entry.contextId??null,entry.effectiveDate??null, normalise(entry.value)]);
     const group = groups.get(key);
     if (group) group.entries.push(entry);
     else groups.set(key, { subject: entry.subject, attribute: entry.attribute,

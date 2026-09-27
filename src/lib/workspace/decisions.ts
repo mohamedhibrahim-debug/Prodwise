@@ -1,4 +1,6 @@
 import "server-only";
+import {readQueue} from "@/lib/review/dispositions-service";
+import {projectQueue} from "@/lib/review/dispositions";
 
 import { getRepository } from "@/lib/data";
 import { runReview } from "@/lib/review/engine";
@@ -17,16 +19,21 @@ export async function loadDecisions(initiativeId: string): Promise<{
   claims: ClaimWithEvidence[];
   findings: ReviewFinding[];
   states: FindingState[];
+  queue: ReturnType<typeof projectQueue>;
 }> {
   const repo = getRepository();
-  const [claims, states] = await Promise.all([
+  const asOf=new Date().toISOString();
+  const [claims, states,queueData] = await Promise.all([
     repo.listClaims(initiativeId),
     repo.listFindingStates(initiativeId),
+    readQueue(initiativeId,asOf),
   ]);
 
+  const findings=applyFindingStates(runReview(initiativeId,claims),states);
   return {
     claims,
     states,
-    findings: applyFindingStates(runReview(initiativeId, claims), states),
+    findings,
+    queue:projectQueue(findings,queueData.dispositions,queueData.finalizations,asOf,states),
   };
 }

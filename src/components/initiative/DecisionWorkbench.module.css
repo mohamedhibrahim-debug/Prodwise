@@ -186,3 +186,5 @@
 @media(max-width:1100px) and (min-width:1001px){.workbench{grid-template-columns:168px minmax(0,1fr)}}
 @media(max-width:1000px){.workbench{grid-template-columns:1fr}.queue{grid-template-columns:repeat(5,minmax(0,1fr));padding:var(--s-2) 0}.label{grid-column:1/-1}.lane span{display:none}.lane{height:100%;padding:var(--s-3) var(--s-2)}}
 @media(max-width:600px){.queue{display:flex;padding:0;gap:0}.queue>div{max-width:200px}.lane{border-left:0;border-bottom:3px solid transparent;min-height:44px}.lane[aria-current]{border-bottom-color:var(--accent-600)}.label{display:none}}
+
+@media(max-width:600px){.queue{mask-image:linear-gradient(to right,#000 calc(100% - 18px),transparent);padding-right:18px}.queue>div{scroll-snap-align:start}.queue{scroll-snap-type:x proximity}}

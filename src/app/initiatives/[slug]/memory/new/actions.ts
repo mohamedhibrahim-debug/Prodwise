@@ -59,7 +59,7 @@ export async function createClaimAction(
       attribute,
       value,
       domain,
-      phase: phase || null,
+      phase: phase || null,contextId:readText(formData.get("contextId"))||null,effectiveDate:readText(formData.get("effectiveDate"))||null,
     });
     createdId = created.id;
 

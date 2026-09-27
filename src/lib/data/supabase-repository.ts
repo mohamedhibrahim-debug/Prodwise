@@ -102,6 +102,7 @@ interface EvidenceRow {
 }
 
 interface ClaimRow {
+  context_id?: string|null; effective_date?: string|null;
   id: string;
   initiative_id: string;
   type: ClaimType;
@@ -267,6 +268,7 @@ function toClaim(row: ClaimRow): ClaimRecord & ClaimTrust {
     value: row.value,
     domain: row.domain,
     phase: row.phase,
+    contextId:row.context_id??null,effectiveDate:row.effective_date??null,
     confidence: row.confidence,
     supersededByClaimId: row.superseded_by_claim_id,
     createdBy: row.created_by,
@@ -532,7 +534,7 @@ export const supabaseRepository: Repository = {
       .from("evidence")
       .update(row)
       .eq("id", id)
-      .select("*")
+            .select("*")
       .single();
 
     if (error) throw new Error(`Failed to update evidence: ${error.message}`);
@@ -669,6 +671,7 @@ export const supabaseRepository: Repository = {
         value: input.value.trim(),
         domain: input.domain,
         phase: input.phase?.trim() || null,
+        context_id:input.contextId??null,effective_date:input.effectiveDate??null,
         confidence: null,
         superseded_by_claim_id: null,
       })
@@ -699,6 +702,8 @@ export const supabaseRepository: Repository = {
     if (!existingRow) throw new Error(`Claim ${id} was not found.`);
 
     const existing = toClaim(existingRow as ClaimRow);
+    if(existing&&((patch.contextId!==undefined&&(patch.contextId??null)!==(existing.contextId??null))||(patch.effectiveDate!==undefined&&(patch.effectiveDate??null)!==(existing.effectiveDate??null))))throw Error("Applicability changes require a new Knowledge revision.");
+    if(patch.expectedUpdatedAt!==undefined&&patch.expectedUpdatedAt!==existing.updatedAt)throw Error("This Knowledge entry changed. Reload before saving.");
     if (patch.status !== undefined && !canOrdinaryUpdateStatus(existing.status, patch.status)) {
       throw new Error("Verify this claim to make it active.");
     }
@@ -725,6 +730,7 @@ export const supabaseRepository: Repository = {
       .from("claims")
       .update(row)
       .eq("id", id)
+      .eq("updated_at",patch.expectedUpdatedAt??existing.updatedAt)
       .select("*")
       .single();
 

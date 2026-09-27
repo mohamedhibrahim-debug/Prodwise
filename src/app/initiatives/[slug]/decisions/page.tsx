@@ -9,7 +9,7 @@ import { DecisionWorkbench, type WorkbenchLane } from "@/components/initiative/D
 import { FindingRow } from "@/components/initiative/FindingRow";
 import { getRepository } from "@/lib/data";
 import { businessWritePresentation } from "@/lib/auth/presentation";
-import { compareFindings } from "@/lib/review/engine";
+import {friendlyDay} from "@/lib/review/dispositions";
 import { loadDecisions } from "@/lib/workspace/decisions";
 import { DECISION_LANES, type DecisionLaneKey } from "@/lib/workspace/decision-lanes";
 import styles from "../workspace.module.css";
@@ -24,40 +24,25 @@ export default async function DecisionsPage({ params, searchParams }: { params: 
   const repo = getRepository();
   const initiative = await repo.getInitiativeBySlug(slug);
   if (!initiative) notFound();
-  const { claims, findings: all, states } = await loadDecisions(initiative.id);
-  const needsDecision = all.filter((finding) => finding.status === "OPEN" && finding.actionable).sort(compareFindings);
-  const reviewed = all.filter((finding) => finding.status === "RESOLVED" && finding.type !== "SUPERSEDED" &&
-    states.some((state) => state.fingerprint === finding.fingerprint && state.status === "RESOLVED" && state.outcome === null)).sort(compareFindings);
-  const history = all.filter((finding) => finding.type === "SUPERSEDED").sort(compareFindings);
-  const standing = states.filter((state) => state.outcome && !needsDecision.some((finding) => finding.fingerprint === state.fingerprint));
+  const { claims, queue } = await loadDecisions(initiative.id);
   const sourceCount = claims.length === 0 ? (await repo.listEvidence(initiative.id)).length : 0;
-  const row = (finding: (typeof all)[number], canResolve = isDemoWriteEnabled) =>
-    <FindingRow key={finding.fingerprint} finding={finding} slug={slug} canResolve={canResolve} records={claims}
-      previousConfirmedWith={states.find((state) => state.fingerprint === finding.fingerprint)?.confirmedWith} />;
-  const content: Record<DecisionLaneKey, { count?: number; body: ReactNode }> = {
-    "needs-decision": { count: needsDecision.length, body: needsDecision.length ? <ul>{needsDecision.map((finding) => row(finding))}</ul> :
-      claims.length === 0 ? <EmptyState message={EMPTY.reviewNoClaims}
-        hint={sourceCount === 0 ? "No sources or Knowledge entries have been recorded for comparison." : "Record Knowledge entries before values can be compared."} /> :
-      <p className={styles.decisionLaneEmpty}>{EMPTY.reviewNothingOpen}</p> },
-    reviewed: { count: reviewed.length, body: reviewed.length ? <ul>{reviewed.map((finding) => row(finding))}</ul> : <p className={styles.decisionLaneEmpty}>No reviewed notes yet.</p> },
-    resolved: { count: standing.length, body: standing.length ? <ul>{standing.map((state) => <DecisionRecord key={state.fingerprint} state={state} slug={slug} />)}</ul> : <p className={styles.decisionLaneEmpty}>No decision records yet.</p> },
-    history: { count: history.length, body: history.length ? <ul>{history.map((finding) => row(finding, false))}</ul> : <p className={styles.decisionLaneEmpty}>No replaced values are recorded.</p> },
-    "not-checked": { body: null },
+  const row=(item:(typeof queue.lanes.open)[number])=><FindingRow key={item.finding.fingerprint} finding={item.finding} slug={slug} canResolve={isDemoWriteEnabled} records={claims} queue={item.effective}/>;
+  const historyBody=(entry:(typeof queue.history)[number])=><li key={entry.id}><h3>{entry.reopenReason?`Reopened: ${entry.reopenReason}`:entry.row.kind==='WITHDRAWN'?'Returned to Open':entry.row.kind==='DEFERRED'?'Deferred':'Dismissed'}</h3><p>{entry.row.reason||'No additional reason recorded.'} · {entry.row.actor.label} · {new Date(entry.row.at).toLocaleString('en-GB',{timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'})} Cairo</p><p>Bound to the exact compared claims and supporting evidence.</p>{entry.row.claimIds.map(id=><Link prefetch={false} key={id} href={`/initiatives/${slug}/knowledge?view=all#claim-${id}`}>Knowledge entry → </Link>)}{entry.row.evidenceIds.map(id=><Link prefetch={false} key={id} href={`/initiatives/${slug}/knowledge/sources#source-${id}`}>Supporting source → </Link>)}</li>;
+  const emptyOpen=claims.length===0?<EmptyState message={EMPTY.reviewNoClaims} hint={sourceCount===0?'No sources or Knowledge entries have been recorded for comparison.':'Record Knowledge entries before values can be compared.'}/>:<p className={styles.decisionLaneEmpty}>{EMPTY.reviewNothingOpen}</p>;
+  const laneItems:Record<DecisionLaneKey,WorkbenchLane['items']>={
+    open:queue.lanes.open.map(i=>({id:i.finding.fingerprint,title:i.finding.title,value:i.finding.claims.map(c=>c.value).join(' / '),body:row(i)})),
+    deferred:queue.lanes.deferred.map(i=>({id:i.finding.fingerprint,title:i.finding.title,value:i.effective.activeRow?.deferUntil?`Deferred until ${friendlyDay(i.effective.activeRow.deferUntil)}`:'Deferred until next Weekly Review',body:row(i)})),
+    dismissed:queue.lanes.dismissed.map(i=>({id:i.finding.fingerprint,title:i.finding.title,value:'Dismissed for these exact claims',body:row(i)})),
+    resolved:[...queue.lanes.resolved.map(i=>({id:i.finding.fingerprint,title:i.finding.title,value:'Reviewed — note only',body:row(i)})),...queue.standing.map(state=>({id:state.fingerprint,title:`${state.subject} · ${state.attribute}`,value:state.decidedValue??'',body:<DecisionRecord state={state} slug={slug}/>}))],
+    history:[...queue.history.map(e=>({id:e.id,title:e.reopenReason?'Reopened':e.row.kind==='WITHDRAWN'?'Returned to Open':e.row.kind==='DEFERRED'?'Deferred':'Dismissed',value:e.row.reason,body:historyBody(e)})),...queue.replaced.map(f=>({id:f.fingerprint,title:f.title,value:'Replaced information',body:<FindingRow finding={f} slug={slug} canResolve={false} records={claims}/>}))],
   };
-
-  const laneItems: Record<DecisionLaneKey, WorkbenchLane["items"]> = {
-    "needs-decision": needsDecision.map(finding => ({ id: finding.fingerprint, title: finding.title, value: finding.claims.map(claim => claim.value).join(" / "), body: row(finding) })),
-    reviewed: reviewed.map(finding => ({ id: finding.fingerprint, title: finding.title, value: "Reviewed — note only", body: row(finding) })),
-    resolved: standing.map(state => ({ id: state.fingerprint, title: `${state.subject} · ${state.attribute}`, value: state.decidedValue ?? "", body: <DecisionRecord state={state} slug={slug} /> })),
-    history: history.map(finding => ({ id: finding.fingerprint, title: finding.title, value: "Replaced information", body: row(finding, false) })),
-    "not-checked": [],
-  };
+  const empty:Record<DecisionLaneKey,ReactNode>={open:emptyOpen,deferred:<p>Nothing deferred.</p>,dismissed:<p>Nothing dismissed.</p>,resolved:<p>No decision records or reviewed notes yet.</p>,history:<p>No queue dispositions or replaced values recorded.</p>};
 
   return <div className={styles.page}>
     <div className={styles.reviewMain}>
       <Suspense fallback={null}><DecisionDeepLink slug={slug} /></Suspense>
       <div className={styles.tabIntro}><h2 className={styles.pageTitle}>Decisions</h2><p className={styles.tabIntroText}>Compare the record. Inspect the evidence. Resolve what needs a human decision.</p></div>
-      <DecisionWorkbench initialItem={item} lanes={DECISION_LANES.map(lane => ({ ...lane, items: laneItems[lane.key], empty: content[lane.key].body }))}>
+      <DecisionWorkbench initialItem={item} lanes={DECISION_LANES.map(lane => ({ ...lane, items: laneItems[lane.key], empty: empty[lane.key] }))}>
     <aside className={styles.reviewContext} aria-label="Initiative context">
       <div className={styles.contextBlock}><div className={styles.contextLabel}>Go to</div>
         <Link prefetch={false} href={`/initiatives/${slug}/knowledge`} className={styles.contextLink}>Knowledge →</Link>

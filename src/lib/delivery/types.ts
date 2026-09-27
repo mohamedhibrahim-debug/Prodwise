@@ -10,6 +10,7 @@ export interface DeliveryMember {
 }
 export interface FactValue { date: string | null; text: string | null; memberId: string | null; extent: "PARTIAL" | "FULL" | null; unknown?: true; dateUnknown?: true; }
 export interface DeliveryFact {
+  contextId?: string | null; effectiveDate?: string | null; contextName?: string | null;
   /** Operator-prepared synthetic scenario, not a claim that the reviewer confirmed it. */
   preparedAsFixture?: true;
   id: string; workspaceId: string; initiativeId: string; kind: FactKind; revision: number;
@@ -18,7 +19,7 @@ export interface DeliveryFact {
   supportDigest: string | null; confirmedByMemberId: string | null; confirmedByUserId?: string; confirmedByLabel: string; updatedAt: string;
 }
 export interface DeliveryEvent { id: string; workspaceId: string; initiativeId: string; occurredAt: string; actor: WorkspaceAccess["actor"]; before: DeliveryFact | null; after: DeliveryFact; }
-export interface PortfolioSource { commitments?: import('../workspace/commitments.ts').Commitment[]; snapshots: InitiativeSnapshot[]; members: DeliveryMember[]; }
+export interface PortfolioSource { findingDispositions?: import("../review/dispositions.ts").FindingDisposition[]; queueFinalizations?: import("../review/dispositions.ts").QueueFinalization[]; contexts?: import("../workspace/readiness.ts").InitiativeContext[]; commitments?: import('../workspace/commitments.ts').Commitment[]; snapshots: InitiativeSnapshot[]; members: DeliveryMember[]; }
 export interface PortfolioInput extends PortfolioSource { workspaceId: string; facts: DeliveryFact[]; events: DeliveryEvent[]; asOf: string; digest: string; }
 export interface NarrativeLine { referenceId: string; text: string; }
 export interface ReviewSection {

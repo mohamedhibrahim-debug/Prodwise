@@ -1,3 +1,4 @@
+import {readManagement} from "@/lib/data/management-read";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -23,6 +24,7 @@ export default async function NewClaimPage({
 
   const evidence = await repo.listEvidence(initiative.id);
 
+  const management=await readManagement();
   if (!isDemoWriteEnabled) {
     return (
       <div className={styles.page}>
@@ -49,6 +51,7 @@ export default async function NewClaimPage({
       </p>
 
       <ClaimForm
+        contexts={management.contexts.filter(c=>c.initiativeId===initiative.id)} currentContextId={initiative.currentContextId??null}
         slug={slug}
         action={createClaimAction}
         submitLabel="Add Knowledge entry"

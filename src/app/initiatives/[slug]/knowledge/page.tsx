@@ -1,3 +1,5 @@
+import {notCompared} from "@/lib/review/applicability";
+import {readManagement} from "@/lib/data/management-read";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -18,22 +20,22 @@ type View = "confirmed" | "all" | "replaced";
 
 export default async function KnowledgePage({ params, searchParams }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string;contextId?:string }>;
 }) {
   const { enabled: isDemoWriteEnabled } = await businessWritePresentation();
   const { slug } = await params;
-  const { view: rawView } = await searchParams;
+  const { view: rawView,contextId:requestedContext } = await searchParams;
   const view: View = rawView === "all" || rawView === "replaced" ? rawView : "confirmed";
   const repo = getRepository();
   const initiative = await repo.getInitiativeBySlug(slug);
   if (!initiative) notFound();
   const snapshot = await repo.getInitiativeSnapshot(initiative.id);
   if (!snapshot) notFound();
-  const { claims, findingStates: states } = snapshot;
+  const { claims, findingStates: states } = snapshot;const skipped=notCompared(claims);const contexts=(await readManagement()).contexts;
   const mismatches = deriveInstrumentSnapshot(snapshot).findings.filter(finding => finding.type === "CONFLICT" && finding.status === "OPEN" && finding.actionable);
   const mismatchItems = new Map(mismatches
     .map((finding) => [JSON.stringify([normalise(finding.subject), normalise(finding.claims[0]?.attribute ?? ""), finding.phase]), finding.fingerprint]));
-  const visible = claims.filter((claim) => view === "all" ? claim.status !== "SUPERSEDED" : view === "replaced" ? claim.status === "SUPERSEDED" : claim.status === "ACTIVE");
+  const visible = claims.filter(c=>requestedContext===undefined||c.contextId===requestedContext).filter((claim) => view === "all" ? claim.status !== "SUPERSEDED" : view === "replaced" ? claim.status === "SUPERSEDED" : claim.status === "ACTIVE");
   const subjects = new Map<string, Map<string, Map<string, KnowledgeValueGroup[]>>>();
   for (const group of groupKnowledge(visible)) {
     const attributes = subjects.get(group.subject) ?? new Map();
@@ -47,6 +49,8 @@ export default async function KnowledgePage({ params, searchParams }: {
   return <div className={styles.page}>
     <div className={styles.head}><div><p className={styles.eyebrow}>Structured ledger</p><h2>Knowledge record</h2><p>What is recorded as true, its context, and the sources behind it.</p></div>
       {isDemoWriteEnabled ? <Link prefetch={false} className={styles.action} href={`${base}/new`}>Add Knowledge entry</Link> : null}</div>
+    {skipped.length>0&&<aside className={styles.attentionBanner}>{skipped.map(pair=><p key={pair.claimIds.join('-')}>Claims about {pair.attribute} weren't compared: applicability differs or isn't recorded. <Link prefetch={false} href={`${base}?view=all#claim-${pair.claimIds[0]}`}>Review applicability</Link></p>)}</aside>}
+    {claims.filter(c=>c.contextId||c.effectiveDate).map(c=><p key={c.id}><Link href={`${base}?view=all&contextId=${c.contextId??''}#claim-${c.id}`}>{c.subject}: {contexts.find(x=>x.id===c.contextId)?.label??'Context not recorded'}{c.effectiveDate?` · from ${c.effectiveDate}`:''}</Link></p>)}
     <nav className={styles.filters} aria-label="Record filters">
       <Link prefetch={false} href={base} aria-current={view === "confirmed" ? "page" : undefined}>Confirmed ({claims.filter(c => c.status === "ACTIVE").length} {claims.filter(c=>c.status==='ACTIVE').length===1?'entry':'entries'})</Link>
       <Link prefetch={false} href={`${base}?view=all`} aria-current={view === "all" ? "page" : undefined}>All current ({claims.filter(c => c.status !== "SUPERSEDED").length} {claims.filter(c=>c.status!=='SUPERSEDED').length===1?'entry':'entries'})</Link>
