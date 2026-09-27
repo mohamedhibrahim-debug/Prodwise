@@ -8,6 +8,7 @@ import { LocalAuthStore, contextForMember, passwordMatches } from '../../src/lib
 import { LocalDeliveryStore } from '../../src/lib/delivery/local-store.ts';
 import { canonicalDemoData, assertDemoResetTarget, DEMO_ORGANIZATION_NAME, DEMO_CANONICAL_VERSION, DEMO_CUTOFF } from '../../src/lib/demo/canonical.ts';
 import { canonical } from '../../src/lib/delivery/model.ts';
+import { canonicalDemoDataV3, DEMO_V3_VERSION } from '../../src/lib/demo/scenario-v3.ts';
 
 const require=createRequire(import.meta.url);
 require('@next/env').loadEnvConfig(process.cwd(),true,{info(){},error(){}});
@@ -56,6 +57,17 @@ function preserveExisting(){
  assert.equal(fileHash(envPath),environmentBefore,'Environment configuration changed.');
  assert.equal(fileHash(legacyDeliveryPath),legacyBefore,'Existing workspace delivery bytes changed.');
 }
+/** Fictional Demo personas: members who own and act on work. No password, so they can never sign in. */
+function writePersonas(access,personas){
+ const raw=JSON.parse(readFileSync(authPath,'utf8'));
+ for(const p of personas){
+  if(raw.identities.some(x=>x.email===p.email&&x.id!==p.userId))throw new Error('A persona address is already used by another identity.');
+  if(!raw.identities.some(x=>x.id===p.userId))raw.identities.push({id:p.userId,email:p.email,displayName:p.displayName,active:true,platformRole:null});
+  raw.memberships=raw.memberships.filter(m=>m.id!==p.memberId);
+  raw.memberships.push({id:p.memberId,organizationId:access.organizationId,userId:p.userId,role:p.role,isProductLead:p.isProductLead,active:true,policyOverride:true,policyOverrideReason:'Synthetic Demo persona; cannot sign in.',joinedVia:'PLATFORM'});
+ }
+ privateWrite(authPath,raw);
+}
 function createBackup(label,access){
  const dir=join(privateRoot,'demo-backups',new Date().toISOString().replaceAll(':','-')+'-'+randomUUID());
  mkdirSync(dir,{recursive:true});
@@ -65,11 +77,14 @@ function createBackup(label,access){
 }
 async function restore(access,label){
  const target=guard(access),foreignBefore=canonical(foreignRows(target.rows,access.workspaceId));
- const demo=canonicalDemoData(access),deliveryPath=join(privateRoot,'delivery',access.workspaceId+'.json');
+ const demo=canonicalDemoDataV3(access),deliveryPath=join(privateRoot,'delivery',access.workspaceId+'.json');
  const previous=existsSync(deliveryPath)?JSON.parse(readFileSync(deliveryPath,'utf8')):null;
  if(previous && ['facts','events','reviews'].some(key=>previous[key].some(row=>row.workspaceId!==access.workspaceId))) throw new Error('Demo delivery file contains foreign workspace records.');
  const backup=createBackup(label,access),productBefore=fileHash(productPath);
- const next=Object.fromEntries(Object.entries(target.rows).map(([key,rows])=>[key,[...rows.filter(row=>row.workspaceId!==access.workspaceId),...demo.productStore[key]]]));
+ // Every collection is replaced for this workspace only: v3 includes the P1 collections too.
+ const keys=[...new Set([...Object.keys(target.rows),...Object.keys(demo.productStore)])];
+ const next=Object.fromEntries(keys.map(key=>[key,[...(target.rows[key]??[]).filter(row=>row.workspaceId!==access.workspaceId),...(demo.productStore[key]??[])]]));
+ writePersonas(access,demo.personas);
  assert.equal(canonical(foreignRows(next,access.workspaceId)),foreignBefore);
  const deliveryStore=new LocalDeliveryStore(deliveryPath);
  let replacedProduct=false;
@@ -86,10 +101,10 @@ async function restore(access,label){
  preserveExisting();
  const actualDelivery=JSON.parse(readFileSync(deliveryPath,'utf8'));
  assert.equal(canonical(actualDelivery),canonical(demo.deliveryState),'Demo delivery did not restore canonically.');
- const actualRows=Object.fromEntries(Object.entries(product()).map(([key,rows])=>[key,rows.filter(row=>row.workspaceId===access.workspaceId)]));
+ const actualRows=Object.fromEntries(Object.keys(demo.productStore).map(key=>[key,(product()[key]??[]).filter(row=>row.workspaceId===access.workspaceId)]));
  assert.equal(canonical(actualRows),canonical(demo.productStore),'Demo product records did not restore canonically.');
  const auditPath=join(privateRoot,'demo-reset-audit.json'),audit=existsSync(auditPath)?JSON.parse(readFileSync(auditPath,'utf8')):[];
- audit.push({action:label,actorId:actor.actor.id,organizationId:access.organizationId,workspaceId:access.workspaceId,fixtureVersion:DEMO_CANONICAL_VERSION,at:new Date().toISOString(),backup,foreignProductUnchanged:true,legacyDeliveryUnchanged:true,environmentUnchanged:true});
+ audit.push({action:label,actorId:actor.actor.id,organizationId:access.organizationId,workspaceId:access.workspaceId,fixtureVersion:DEMO_V3_VERSION,at:new Date().toISOString(),backup,foreignProductUnchanged:true,legacyDeliveryUnchanged:true,environmentUnchanged:true});
  privateWrite(auditPath,audit);
  return demo;
 }
