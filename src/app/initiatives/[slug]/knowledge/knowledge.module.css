@@ -19,3 +19,4 @@
 .rowStatus>span[data-status=ACTIVE]{color:var(--state-ready-fg);font-weight:var(--fw-semibold)}
 .quietAction{display:inline-flex;align-items:center;min-height:44px;padding:var(--s-3) var(--s-4);border:1px solid var(--rule-strong);border-radius:var(--r-sm);background:var(--panel);color:var(--ink-900);font-size:var(--t-sm);font-weight:600}
 .possibleDuplicate{margin-top:var(--s-1);font-size:var(--t-xs);color:var(--state-at-risk-fg)}
+.awaiting{margin:var(--s-3) 0;padding:var(--s-3) var(--s-4);border-inline-start:3px solid var(--state-at-risk-edge);background:var(--state-at-risk-bg);font-size:var(--t-sm);line-height:var(--lh-body)}.awaiting a{color:var(--accent-700);font-weight:var(--fw-semibold)}

@@ -61,6 +61,7 @@ export default async function KnowledgePage({ params, searchParams }: {
       <Link prefetch={false} href={`/initiatives/${slug}/decisions${mismatchItems.size === 1 ? `?item=${encodeURIComponent([...mismatchItems.values()][0]!)}` : ""}`}>Review in Decisions →</Link>
     </div> : null}
     <div className={styles.recordLayout}><div>
+    {view === "confirmed" && claims.some(c => c.status === "UNVERIFIED" || c.status === "DRAFT") && <p className={styles.awaiting} role="note"><strong>{claims.filter(c => c.status === "UNVERIFIED" || c.status === "DRAFT").length} {claims.filter(c => c.status === "UNVERIFIED" || c.status === "DRAFT").length === 1 ? "entry is" : "entries are"} waiting for verification.</strong> Accepted proposals and new entries start here. <Link prefetch={false} href={`${base}?view=all`}>Review them in All current →</Link></p>}
     {subjects.size ? <div className={styles.ledgerHead}><span>Attribute / context</span><span>Recorded value</span><span>Confirmation</span><span>Provenance</span><span>Inspect</span></div> : null}
     {subjects.size ? [...subjects].map(([subject, attributes]) => { const single = [...attributes.values()].reduce((n, phases) => n + [...phases.values()].reduce((m, values) => m + values.length, 0), 0) === 1; return <section className={styles.subject} data-single={single || undefined} key={subject}>
       <h2 className={single ? styles.srOnly : undefined}>{subject}</h2>{[...attributes].map(([attribute, phases]) => <div className={styles.attribute} key={attribute}>
@@ -114,7 +115,7 @@ export default async function KnowledgePage({ params, searchParams }: {
           })}
           {values.length > 1 && view !== "replaced" && mismatchItems.has(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null])) ?
             <Link prefetch={false} className={styles.mismatch} href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(mismatchItems.get(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null]))!)}`}><span aria-hidden="true">⚠</span> Values differ in this phase — compare them in Decisions →</Link> : null}
-        </div>)}</div>)}</section>; }) : <p className={styles.empty}>{view === "confirmed" ? "No Confirmed Knowledge entries yet." : "No Knowledge entries in this view."}</p>}
+        </div>)}</div>)}</section>; }) : <p className={styles.empty}>{view === "confirmed" ? "No verified Knowledge entries yet." : "No Knowledge entries in this view."}</p>}
     </div><aside className={styles.recordContext} aria-label="Record context">
       <h2>Recorded Knowledge</h2>
       <dl><div><dt>Confirmed entries</dt><dd>{claims.filter(entry => entry.status === "ACTIVE").length}</dd></div>
