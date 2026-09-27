@@ -1,5 +1,6 @@
 import 'server-only';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
+import { createHmac } from 'node:crypto';
 import { join } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseUrl, supabaseServiceRoleKey } from '@/lib/env';
@@ -7,6 +8,7 @@ import { LocalAuthStore, AccessError, hash, opaqueToken, signToken, unsignedToke
 import { normalizeLegacyRole, hasOrganizationAdminAuthority, type PlatformRole } from './roles';
 import { validateEmailPolicy } from './email-policy';
 import { localContextForToken, selectLoginWorkspace, startLocalLogin } from './login-scope';
+import { DEMO_TOKEN_PREFIX, DEMO_SESSION_SECONDS, demoEntryContext, verifyDemoProvider } from './demo-session';
 export const SESSION_COOKIE = 'prodwise_session';
 export function configuredWorkspaceId() {
     const id = process.env.PRODWISE_WORKSPACE_ID?.trim();
@@ -80,13 +82,51 @@ async function selectHostedContext(authUserId: string, providerEmail: string | u
         workspaceId => hostedContext(authUserId, providerEmail, workspaceId));
 }
 async function cookieToken() { return unsignedToken((await cookies()).get(SESSION_COOKIE)?.value, secret()); }
-async function setSessionCookie(token: string) {
-    (await cookies()).set(SESSION_COOKIE, signToken(token, secret()), { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 8 * 3600 });
+async function setSessionCookie(token: string, maxAge = 8 * 3600) {
+    (await cookies()).set(SESSION_COOKIE, signToken(token, secret()), { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge });
+}
+/** The subtype is covered by the cookie HMAC; a request cannot pick its scope. */
+export async function isDemoGuestSession() { return (await cookieToken())?.startsWith(DEMO_TOKEN_PREFIX) ?? false; }
+async function verifiedDemoContext(data: unknown): Promise<WorkspaceAccess> {
+    const { entry, context } = demoEntryContext(data);
+    const provider = await adminClient().auth.admin.getUserById(entry.authUserId);
+    if (provider.error) throw new AccessError('ACCESS_DENIED', 'Demo access is unavailable.');
+    verifyDemoProvider(entry, provider.data.user);
+    return context;
+}
+export async function startDemoSession() {
+    if (isLocalAuth()) throw new AccessError('ACCESS_DENIED', 'Demo access is unavailable in this environment.');
+    const previous = (await cookies()).get(SESSION_COOKIE)?.value;
+    if (unsignedToken(previous, secret())?.startsWith(DEMO_TOKEN_PREFIX)) {
+        try { await contextForCookie(previous); return; } catch { /* Re-enter only through the full pinned guard. */ }
+    }
+    const request = await headers();
+    // Abuse budget only, never authorization. Hash client address; do not store it.
+    const address = (request.get('x-real-ip') ?? request.get('x-forwarded-for') ?? 'local').split(',')[0]!.trim();
+    const requestHash = createHmac('sha256', secret()).update('demo-entry:' + address).digest('hex');
+    const token = DEMO_TOKEN_PREFIX + opaqueToken();
+    const db = adminClient();
+    const result = await db.rpc('create_demo_session', { p_token_hash: hash(token), p_request_hash: requestHash });
+    if (result.error) throw new AccessError('ACCESS_DENIED', result.error.message === 'DEMO_RATE_LIMIT'
+        ? 'Demo is busy. Please try again in a minute.' : 'Demo is temporarily unavailable. Please try again shortly.');
+    try {
+        await verifiedDemoContext(result.data);
+        await setSessionCookie(token, DEMO_SESSION_SECONDS);
+    } catch {
+        await db.from('demo_sessions').update({ revoked_at: new Date().toISOString() }).eq('token_hash', hash(token));
+        throw new AccessError('ACCESS_DENIED', 'Demo is temporarily unavailable. Please try again shortly.');
+    }
 }
 export async function contextForRequest(): Promise<WorkspaceAccess> { return contextForCookie((await cookies()).get(SESSION_COOKIE)?.value); }
 export async function contextForCookie(cookieValue: string | undefined): Promise<WorkspaceAccess> {
     const token = unsignedToken(cookieValue, secret());
     if (!token) throw new AccessError('UNAUTHENTICATED', 'Sign in to continue.');
+    if (token.startsWith(DEMO_TOKEN_PREFIX)) {
+        if (isLocalAuth()) throw new AccessError('UNAUTHENTICATED', 'Your demo session expired.');
+        const result = await adminClient().rpc('read_demo_session', { p_token_hash: hash(token) });
+        if (result.error) throw new AccessError('UNAUTHENTICATED', 'Your demo session expired. Explore Demo to start again.');
+        return verifiedDemoContext(result.data);
+    }
     if (isLocalAuth()) return localContextForToken(localAuthStore(), token);
     const db = adminClient();
     const { data: session, error } = await db.from('workspace_sessions').select('*').eq('token_hash', hash(token)).gt('expires_at', new Date().toISOString()).maybeSingle();
@@ -124,7 +164,9 @@ export async function signIn(email: string, password: string) { await startSessi
 export async function signOut() {
     const token = await cookieToken();
     if (token) {
-        if (isLocalAuth()) {
+        if (token.startsWith(DEMO_TOKEN_PREFIX)) {
+            if (!isLocalAuth()) await adminClient().from('demo_sessions').update({ revoked_at: new Date().toISOString() }).eq('token_hash', hash(token));
+        } else if (isLocalAuth()) {
             const store = localAuthStore();
             // Expired or deactivated access must not prevent signing out.
             const session = store.read(true).sessions.find(item => item.tokenHash === hash(token));
@@ -138,6 +180,7 @@ export async function signOut() {
     (await cookies()).delete(SESSION_COOKIE);
 }
 export async function changeOwnPassword(currentPassword: string, nextPassword: string) {
+    if (await isDemoGuestSession()) throw new AccessError('ACCESS_DENIED', 'Sign in with your own account to change a password.');
     const ctx = await contextForRequest(); validatePassword(nextPassword); let email: string;
     if (isLocalAuth()) {
         const store = localAuthStore(ctx.workspaceId);

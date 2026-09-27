@@ -104,6 +104,8 @@ end $$;
   Invoke-PreflightFile 'supabase/tests/delivery-read-transaction-before.sql'
   Invoke-PreflightFile 'supabase/migrations/0015_delivery_read_rpc_transaction.sql'
   Invoke-PreflightFile 'supabase/tests/delivery-read-transaction-after.sql'
+  Invoke-PreflightFile 'supabase/migrations/0016_demo_entry_sessions.sql'
+  Invoke-PreflightFile 'supabase/tests/demo-entry-sessions.sql'
   # Both transactions hold the same organization lock. Only one downgrade
   # may commit; the second must see the remaining owner and roll back.
   $downgradeA = @'
@@ -142,7 +144,7 @@ select preflight.assert((select count(*)=2 from public.platform_events where org
 select preflight.assert((select data from preflight.historical_final)=(select data from public.weekly_reviews where id='91000000-0000-4000-8000-000000000001'),'historical Final survives concurrent authority changes unchanged');
 '@
   Write-Output 'PASS: simultaneous owner downgrades and atomic replacements serialize safely.'
-  Write-Output "PASS: ordered 0001–0015 replay and platform/organization/demo retirement/RPC transaction preflight. Disposable local database: $dbName"
+  Write-Output "PASS: ordered 0001–0016 replay and platform/organization/demo entry/retirement/RPC transaction preflight. Disposable local database: $dbName"
   Write-Output 'Provider identities are fictional FK/email stand-ins. Real provider transport and hosted state were not tested or changed.'
 } finally {
   if ($created -and -not $KeepDatabase) {
