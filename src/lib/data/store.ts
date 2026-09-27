@@ -60,6 +60,9 @@ export interface StoreShape {
   evidenceAnchors?: import('../evidence/types').Anchor[];
   evidenceProposals?: import('../evidence/types').Proposal[];
   evidenceConfirmations?: import('../evidence/types').Confirmation[];
+  meetingNotes?: import('../evidence/types').MeetingNote[];
+  openQuestions?: import('../workspace/questions').OpenQuestion[];
+  questionEvents?: import('../workspace/questions').QuestionEvent[];
   commitments?: import('../workspace/commitments').Commitment[];
   commitmentEvents?: import('../workspace/commitments').CommitmentEvent[];
   creationCommands?: {workspaceId:string;requestId:string;initiativeId:string;actorId:string;inputDigest:string}[];
@@ -146,6 +149,9 @@ function load(): StoreShape {
         evidenceProposals: parsed.evidenceProposals??[],
         evidenceConfirmations: parsed.evidenceConfirmations??[],
         contexts: parsed.contexts ?? [],
+        meetingNotes: parsed.meetingNotes ?? [],
+        openQuestions: parsed.openQuestions ?? [],
+        questionEvents: parsed.questionEvents ?? [],
         commitments: parsed.commitments ?? [],
         commitmentEvents: parsed.commitmentEvents ?? [],
         creationCommands: parsed.creationCommands ?? [],
@@ -228,7 +234,7 @@ function assertArchivedRecordsUnchanged(before:StoreShape,after:StoreShape):void
  const archived=new Set(before.initiatives.filter(i=>i.archivedAt).map(i=>i.id));if(!archived.size)return;
  for(const i of before.initiatives.filter(i=>archived.has(i.id))){const next=after.initiatives.find(n=>n.id===i.id);if(!next||['name','businessLine','stage','description','currentContextId','knownReferences'].some(key=>JSON.stringify(i[key as keyof Initiative])!==JSON.stringify(next[key as keyof Initiative])))throw new Error('Archived — restore to edit. Nothing was changed.');}
  const claimScope=new Map(before.claims.map(c=>[c.id,c.initiativeId]));
- for(const key of ['evidence','claims','claimEvidence','findingStates','findingDispositions','sources','contexts','sourceMappings','commitments','commitmentEvents','evidenceSubmissions','evidenceAttempts','evidenceAnchors','evidenceProposals','evidenceConfirmations'] as const){
+ for(const key of ['evidence','claims','claimEvidence','findingStates','findingDispositions','sources','contexts','sourceMappings','commitments','commitmentEvents','evidenceSubmissions','evidenceAttempts','evidenceAnchors','evidenceProposals','evidenceConfirmations','meetingNotes','openQuestions','questionEvents'] as const){
   const scoped=(rows:unknown[])=>rows.filter(value=>{const row=value as {initiativeId?:string;claimId?:string};return archived.has(row.initiativeId??claimScope.get(row.claimId??'')??'');});
   if(JSON.stringify(scoped(before[key]??[]))!==JSON.stringify(scoped(after[key]??[])))throw new Error('Archived — restore to edit. Nothing was changed.');
  }

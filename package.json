@@ -14,7 +14,8 @@
     "test:stage2-2-ui": "node scripts/ui-test/run.mjs",
     "test:stage2-2-final": "pwsh -NoProfile -File scripts/db-test/run-stage2-2-final.ps1",
     "test:mvp-ui": "node scripts/ui-test/mvp-acceptance.mjs",
-    "test:mvp-db": "pwsh -NoProfile -File scripts/db-test/run-mvp-preflight.ps1"
+    "test:mvp-db": "pwsh -NoProfile -File scripts/db-test/run-mvp-preflight.ps1",
+    "test:db-linux": "bash scripts/db-test/replay-linux.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.58.0",

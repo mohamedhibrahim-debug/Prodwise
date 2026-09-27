@@ -27,3 +27,16 @@
 .signal{display:inline-flex;align-items:center;min-height:44px;font-size:var(--t-xs);color:var(--ink-900);border-bottom:1px solid var(--rule-strong)}
 
 .tabsViewport{position:relative}.tabsViewport[data-fade-end=true]::after{content:"";position:absolute;right:0;top:0;bottom:0;width:var(--s-6);background:linear-gradient(to right,transparent,var(--surface-sunken));pointer-events:none}.tabsViewport[data-fade-start=true]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--s-6);background:linear-gradient(to left,transparent,var(--surface-sunken));pointer-events:none}.tabs{scroll-snap-type:x proximity}.tab{scroll-snap-align:start}
+
+/* Header actions: Add evidence is the primary contextual action beside Manage. */
+.headerActions { display: inline-flex; align-items: center; gap: var(--s-2); margin-inline-start: auto; }
+.addMenu { position: relative; }
+.addMenu > summary { list-style: none; display: inline-flex; align-items: center; gap: var(--s-2); min-height: 44px; padding: var(--s-2) var(--s-4); border-radius: var(--r-sm); background: var(--navy-900); color: var(--navy-ink); font-size: var(--t-sm); font-weight: var(--fw-semibold); cursor: pointer; }
+.addMenu > summary::-webkit-details-marker { display: none; }
+.addMenu > summary::after { content: "▾"; font-size: var(--t-xs); }
+.addMenu > summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.addMenu > div { position: absolute; inset-inline-end: 0; top: calc(100% + var(--s-2)); z-index: 30; width: 300px; display: grid; background: var(--panel); border: 1px solid var(--rule-strong); box-shadow: var(--shadow-panel); border-radius: var(--r-sm); padding: var(--s-2) 0; }
+.addMenu > div a { display: grid; gap: 2px; padding: var(--s-3) var(--s-4); min-height: 44px; color: var(--ink-900); font-size: var(--t-sm); font-weight: var(--fw-semibold); }
+.addMenu > div a small { font-weight: var(--fw-regular); color: var(--ink-500); font-size: var(--t-xs); }
+.addMenu > div a:hover, .addMenu > div a:focus-visible { background: var(--surface-subtle); outline: none; }
+@media (max-width: 780px) { .headerActions { margin-inline-start: 0; width: 100%; } .addMenu { flex: 1; } .addMenu > summary { width: 100%; justify-content: center; } .addMenu > div { inset-inline: 0; width: auto; } }
