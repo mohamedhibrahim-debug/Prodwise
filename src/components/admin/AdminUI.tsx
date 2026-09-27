@@ -1,3 +1,4 @@
+import {formatDateTime} from "@/lib/domain/labels";
 import Link from "next/link";
 import type {ReactNode} from "react";
 import styles from "./admin.module.css";
@@ -14,4 +15,7 @@ export function DataTable({caption,columns,rows,empty="No records match this vie
 }
 export function Section({title,children,action}:{title:string;children:ReactNode;action?:ReactNode}){return <section className={styles.section}><div className={styles.sectionHead}><h2>{title}</h2>{action}</div>{children}</section>;}
 export function Badge({children}:{children:ReactNode}){return <span className={styles.badge}>{children}</span>;}
-export function History({events}:{events:{id:string;at:string;action:string;actorLabel?:string;reason?:string;policyOverridden?:boolean}[]}){return <ol className={styles.history}>{events.length?events.slice(0,50).map(e=><li key={e.id}><strong>{e.action.toLowerCase().replaceAll("_"," ")}</strong><p>{e.actorLabel??"Recorded operator"} · {new Date(e.at).toLocaleString("en-GB",{timeZone:"Africa/Cairo"})}</p>{e.reason&&<p>{e.reason}</p>}{e.policyOverridden&&<p>Organization email policy overridden</p>}</li>):<li>No recorded access events for this selection.</li>}</ol>;}
+const ACCESS_EVENT_LABEL:Record<string,string>={SELF_SIGNUP:"Joined through self sign-up",ORGANIZATION_SELF_SIGNUP_CHANGED:"Self sign-up setting changed",INVITATION_ACCEPTED:"Invitation accepted",INVITATION_CREATED:"Invitation sent",INVITATION_REVOKED:"Invitation withdrawn",ROLE_CHANGED:"Role changed",MEMBER_DEACTIVATED:"Access removed",MEMBER_REACTIVATED:"Access restored"};
+/** Access events read as sentences, never as stored codes. */
+export function accessEventLabel(action:string){const known=ACCESS_EVENT_LABEL[action];if(known)return known;const words=action.toLowerCase().replaceAll("_"," ");return words.charAt(0).toUpperCase()+words.slice(1);}
+export function History({events}:{events:{id:string;at:string;action:string;actorLabel?:string;reason?:string;policyOverridden?:boolean}[]}){return <ol className={styles.history}>{events.length?events.slice(0,50).map(e=><li key={e.id}><strong>{accessEventLabel(e.action)}</strong><p>{e.actorLabel??"Recorded operator"} · {formatDateTime(e.at)} Cairo time</p>{e.reason&&<p>{e.reason}</p>}{e.policyOverridden&&<p>Organization email policy overridden</p>}</li>):<li>No recorded access events for this selection.</li>}</ol>;}

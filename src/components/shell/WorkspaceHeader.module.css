@@ -24,7 +24,7 @@
 
 .owner{font-size:var(--t-body);font-weight:var(--fw-semibold);color:var(--ink-900)}
 
-.signal{display:inline-flex;align-items:center;min-height:44px;font-size:var(--t-xs);color:var(--ink-900);border-bottom:1px solid var(--rule-strong)}
+.signal{display:inline-flex;align-items:center;gap:var(--s-1);min-height:28px;padding:0 var(--s-3);font-size:var(--t-xs);font-weight:var(--fw-semibold);color:var(--ink-700);border:1px solid var(--rule-strong);border-radius:var(--r-pill);background:var(--panel);text-decoration:none;position:relative}.signal::after{content:"";position:absolute;inset:-8px 0}.signal[data-tone=attention]{color:var(--attention-fg);border-color:var(--attention-rule);background:var(--attention-bg,var(--panel))}.signal[data-tone=ok]{color:var(--state-ready-fg);border-color:var(--state-ready-edge)}
 
 .tabsViewport{position:relative}.tabsViewport[data-fade-end=true]::after{content:"";position:absolute;right:0;top:0;bottom:0;width:var(--s-6);background:linear-gradient(to right,transparent,var(--surface-sunken));pointer-events:none}.tabsViewport[data-fade-start=true]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--s-6);background:linear-gradient(to left,transparent,var(--surface-sunken));pointer-events:none}.tabs{scroll-snap-type:x proximity}.tab{scroll-snap-align:start}
 
@@ -40,3 +40,5 @@
 .addMenu > div a small { font-weight: var(--fw-regular); color: var(--ink-500); font-size: var(--t-xs); }
 .addMenu > div a:hover, .addMenu > div a:focus-visible { background: var(--surface-subtle); outline: none; }
 @media (max-width: 780px) { .headerActions { margin-inline-start: 0; width: 100%; } .addMenu { flex: 1; } .addMenu > summary { width: 100%; justify-content: center; } .addMenu > div { inset-inline: 0; width: auto; } }
+
+@media(max-width:780px){.header[data-condensed=true] :is(.headerOrg,nav[aria-label=Breadcrumb],.stage,.meta,.owner,.signal,.headerActions){display:none}.header[data-condensed=true] .identity h1{font-size:var(--t-h2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.header[data-condensed=true] .tabs{margin-top:var(--s-1)}}

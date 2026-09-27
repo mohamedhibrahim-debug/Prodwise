@@ -68,7 +68,18 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
     measureHeader();
     const observer = new ResizeObserver(measureHeader);
     observer.observe(header);
+    // On a phone the header condenses to title + tabs once the page scrolls,
+    // so the working area is not permanently covered.
+    const condense = () => {
+      const was = header.dataset.condensed === "true";
+      // Hysteresis: the header shrinking moves content, so leave it condensed until near the top.
+      const on = window.matchMedia("(max-width: 780px)").matches && (was ? window.scrollY > 24 : window.scrollY > 160);
+      if (was !== on) header.dataset.condensed = on ? "true" : "false";
+    };
+    condense();
+    window.addEventListener("scroll", condense, { passive: true });
     return () => {
+      window.removeEventListener("scroll", condense);
       observer.disconnect();
       root.style.removeProperty("--workspace-header-h");
     };
