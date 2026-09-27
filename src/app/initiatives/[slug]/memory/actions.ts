@@ -1,4 +1,6 @@
 "use server";
+import { assertFormWorkspace } from "@/lib/auth/scope";
+import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
 import { revalidatePath } from "next/cache";
 import { getRepository } from "@/lib/data";
@@ -19,6 +21,7 @@ export async function updateEvidenceAnchorAction(
   const locator = text(data.get("locator")) || null;
   const excerpt = text(data.get("excerpt")) || null;
   try {
+    assertFormWorkspace(data,await requireBusinessWriteAccess());
     const { claim } = await resolveOwnedClaim(slug, claimId);
     if (!claim.evidence.some((e) => e.id === evidenceId))
       return { error: "That Source is no longer linked to this Knowledge entry." };

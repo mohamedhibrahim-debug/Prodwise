@@ -37,6 +37,7 @@ const WORKSPACE_TABS = [
   { segment: "", label: "Brief" },
   { segment: "decisions", label: "Decisions" },
   { segment: "knowledge", label: "Knowledge" },
+  { segment: "sources", label: "Sources" },
 ] as const;
 
 /**
@@ -49,7 +50,7 @@ const WORKSPACE_TABS = [
  * Data is loaded lazily on first open (see app/api/nav/route.ts) and kept for
  * the session, so it costs nothing on a page render and nothing on reopen.
  */
-export function CommandPalette() {
+export function CommandPalette({administration=false,canSwitch=false}:{administration?:boolean;canSwitch?:boolean}) {
   const router = useRouter();
   const pathname = usePathname();
   const listId = useId();
@@ -63,6 +64,7 @@ export function CommandPalette() {
   const requested = useRef(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   /** Restored on close, so keyboard users are not dumped at the top of the page. */
   const returnFocus = useRef<HTMLElement | null>(null);
 
@@ -169,7 +171,7 @@ export function CommandPalette() {
   }, [open]);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus();
+    if (open) { dialogRef.current?.showModal(); inputRef.current?.focus(); }
   }, [open]);
 
   const commands = useMemo<Command[]>(() => {
@@ -198,13 +200,6 @@ export function CommandPalette() {
             : `/initiatives/${currentSlug}`,
         });
       }
-      out.push({
-        id: "knowledge-sources",
-        label: "Knowledge › Sources",
-        keywords: "knowledge sources",
-        group: "This initiative",
-        href: `/initiatives/${currentSlug}/knowledge/sources`,
-      });
       for (const lane of [
         { id: "needs-decision", label: "Needs a decision" },
         { id: "reviewed", label: "Reviewed" },
@@ -246,7 +241,7 @@ export function CommandPalette() {
       },
       {
         id: "go-analysis", label: "Analysis", keywords: "outcomes results metrics",
-        group: "Go to", href: "/analysis",
+        group: "Go to", href: "/analysis/portfolio",
       },
       {
         id: "go-weekly", label: "Weekly Review", keywords: "weekly meeting review",
@@ -254,8 +249,10 @@ export function CommandPalette() {
       },
     );
 
+    if(administration)out.push({id:'administration',label:'Administration',keywords:'users organization access policy',group:'Utilities',href:'/administration'});
+    if(canSwitch)out.push({id:'switch-organization',label:'Switch organization…',keywords:'organization scope workspace',group:'Utilities',href:'#switch-organization'});
     return out;
-  }, [initiatives, currentSlug]);
+  }, [initiatives, currentSlug, administration, canSwitch]);
 
   /* Plain case-insensitive substring matching. Nothing semantic, nothing fuzzy:
      a navigation aid that guesses is worse than one that does not. */
@@ -271,6 +268,9 @@ export function CommandPalette() {
     (cmd: Command | undefined) => {
       if (!cmd) return;
       close();
+      if(cmd.href==='#switch-organization'){
+        requestAnimationFrame(()=>{const trigger=[...document.querySelectorAll<HTMLButtonElement>('button[aria-label^="Current organization:"]')].find(el=>el.getClientRects().length);trigger?.click();});return;
+      }
       router.push(cmd.href);
     },
     [close, router],
@@ -317,16 +317,13 @@ export function CommandPalette() {
   let lastGroup = "";
 
   return (
-    <div className={styles.layer}>
+    <dialog ref={dialogRef} className={styles.layer} aria-label="Command palette" onCancel={close}>
       {/* Not a button: a backdrop is not an action, and announcing one to a
           screen reader adds a control that does nothing Escape does not. */}
       <div className={styles.scrim} onClick={close} aria-hidden="true" />
 
       <div
         className={styles.dialog}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Command palette"
         onKeyDown={onKeyDown}
       >
         <input
@@ -410,6 +407,6 @@ export function CommandPalette() {
           </span>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

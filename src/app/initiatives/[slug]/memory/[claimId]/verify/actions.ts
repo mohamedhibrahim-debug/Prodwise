@@ -1,4 +1,6 @@
 "use server";
+import { assertFormWorkspace } from "@/lib/auth/scope";
+import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -21,6 +23,7 @@ export async function verifyClaimAction(_state: State, data: FormData): Promise<
   const note = text(data.get("note")) || null;
   if (!basis) return { error: "Select a confirmation basis." };
   try {
+    assertFormWorkspace(data,await requireBusinessWriteAccess());
     await resolveOwnedClaim(slug, claimId);
     await getRepository().verifyClaim(claimId, {
       expectedUpdatedAt,

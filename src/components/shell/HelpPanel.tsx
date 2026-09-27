@@ -1,0 +1,13 @@
+'use client';
+import { useEffect, useRef } from 'react';
+import { usePathname,useRouter } from 'next/navigation';
+import { RESTART_ORIENTATION,orientationStorageKey } from './FirstRunOrientation';
+import type {ShellIdentity} from './ShellIdentity';
+import styles from './HelpPanel.module.css';
+export const OPEN_HELP='prodwise:help';
+export function HelpPanel({identity}:{identity:ShellIdentity}){const dialog=useRef<HTMLDialogElement>(null);const origin=useRef<HTMLElement|null>(null);const path=usePathname();const router=useRouter();
+ useEffect(()=>{function open(){origin.current=document.activeElement as HTMLElement;dialog.current?.showModal();}window.addEventListener(OPEN_HELP,open);return()=>window.removeEventListener(OPEN_HELP,open);},[]);
+ function close(){dialog.current?.close();origin.current?.focus();}
+ const about=path.includes('weekly-review')?'A draft compares current initiative records with the previous Final. Commentary stays in the review; confirmed record updates change initiative truth. A human Final preserves a meeting snapshot.':path.includes('administration')?'Administration changes access within the named scope. Platform authority is global; organization membership is scoped.':path.includes('analysis')?'Portfolio analysis describes recorded delivery facts. Project measurements require definitions and observations; missing data is not zero.':path.includes('/initiatives/')?'Brief gives current context. Decisions compares differing confirmed values. Knowledge retains provenance and history. Sources contains supporting material.':'Home shows recorded attention. Initiatives is your register. Roadmap compares confirmed dates. Analysis explains supporting records.';
+ return <dialog ref={dialog} className={styles.dialog} aria-label="Prodwise Help" onCancel={()=>origin.current?.focus()}><header><h2>Prodwise Help</h2><button onClick={close} aria-label="Close Help">Close ×</button></header><section><h3>About this page</h3><p>{about}</p></section><section><h3>Concepts</h3><p>One initiative record feeds your portfolio and weekly review. Confirmations retain their sources and human actor. Unknown dates and unrecorded facts remain unknown. Checks compare recorded values; they do not assess release readiness.</p></section><section><h3>Keyboard shortcuts</h3><dl><dt>Ctrl / ⌘ K</dt><dd>Search</dd><dt>Alt 1–4</dt><dd>Initiative sections</dd><dt>Escape</dt><dd>Close a dialog</dd></dl></section><button onClick={()=>{try{localStorage.removeItem(orientationStorageKey(identity));}catch{}window.dispatchEvent(new Event(RESTART_ORIENTATION));close();if(path!=='/')router.push('/');}}>Restart Home orientation</button></dialog>;
+}

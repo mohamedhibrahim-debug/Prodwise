@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { getRepository } from "@/lib/data";
 import { WriteDisabledError } from "@/lib/env";
 import { BUSINESS_LINES, type BusinessLine } from "@/lib/domain/types";
+import {requireWorkspaceAccess} from '@/lib/auth/access';
+import {assertFormWorkspace} from '@/lib/auth/scope';
 
 export interface CreateInitiativeState {
   error: string | null;
@@ -22,6 +24,8 @@ export async function createInitiativeAction(
   _prev: CreateInitiativeState,
   formData: FormData,
 ): Promise<CreateInitiativeState> {
+  try { assertFormWorkspace(formData,await requireWorkspaceAccess()); }
+  catch(error){return {error:error instanceof Error?error.message:'Reload before saving.'};}
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const knownReferences = String(formData.get("knownReferences") ?? "").trim();

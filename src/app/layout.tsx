@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { ApplicationShell } from "@/components/shell/ApplicationShell";
-import { AccountAccess } from "@/components/auth/AccountAccess";
-import { contextForRequest } from "@/lib/auth/service";
-import { isDemoWriteEnabled, isSupabaseConfigured } from "@/lib/env";
+import { contextForRequest, isDemoGuestSession } from "@/lib/auth/service";
+import { workspacePresentation } from "@/lib/workspace/context";
+import { isDemoWriteEnabled } from "@/lib/env";
 
 import "@/styles/global.css";
 
@@ -22,13 +22,12 @@ export default async function RootLayout({
   // Public login/invite entries must render without requesting protected data.
   // The global server proxy and repository guards still authorize every request.
   const access = await contextForRequest().catch(() => null);
+  const identity = access ? { access, presentation: await workspacePresentation(access), guest: await isDemoGuestSession() } : null;
   return (
     <html lang="en">
       <body>
         <ApplicationShell
-          guideStorageKey={access ? `${access.workspaceId}:${access.actor.id}` : undefined}
-          account={access ? <AccountAccess /> : null}
-          dataSource={isSupabaseConfigured ? "Supabase" : "Local demo data"}
+          identity={identity}
           writesEnabled={isDemoWriteEnabled}
         >{children}</ApplicationShell>
       </body>

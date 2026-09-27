@@ -185,8 +185,8 @@ function ConflictRow({
       {finding.actionable && !resolved ? <>
         {finding.confirmerLabel ? <p className={styles.facts}>Confirm with: {finding.confirmerLabel}</p> : null}
         {canResolve ? <>
-          <ConfirmerForm key={finding.confirmerLabel ?? "unassigned"} finding={finding} slug={slug} />
           <DecideConflictForm finding={finding} slug={slug} />
+          <ConfirmerForm key={finding.confirmerLabel ?? "unassigned"} finding={finding} slug={slug} />
         </> : <p className={styles.caption}>This view is read-only. Review the values and their sources; the access notice explains the restriction.</p>}
       </> : null}
 

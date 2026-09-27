@@ -10,13 +10,13 @@ function workspaceOf(value: unknown): string | undefined {
 /** One production data entry point. Every method rechecks current membership,
  * even a direct server action or a previously rendered form. */
 export function guardedRepository(resolve: () => Promise<WorkspaceAccess>, rawFor: (ctx: WorkspaceAccess) => Repository,
-  writesEnabled: () => boolean, local: () => boolean): Repository {
+  writesEnabled: () => boolean, local: () => boolean, resolveWrite = resolve): Repository {
   return new Proxy({} as Repository, { get(_target, name) {
     // Repository is synchronous; Promise assimilation must not invent a then
     // operation and leave a server render awaiting an unresolved callback.
     if (typeof name !== 'string' || name === 'then') return undefined;
     return async (...args: unknown[]) => {
-      const ctx = await resolve();
+      const ctx = await (writes.has(name) ? resolveWrite() : resolve());
       if (writes.has(name)) authorizeBusiness(ctx, writesEnabled());
       const raw = rawFor(ctx);
       const method = Reflect.get(raw, name) as (...values: unknown[]) => Promise<unknown>;

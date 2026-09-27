@@ -1,4 +1,6 @@
 "use server";
+import { assertFormWorkspace } from "@/lib/auth/scope";
+import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -36,6 +38,7 @@ export async function createClaimAction(
 
   let createdId: string;
   try {
+    assertFormWorkspace(formData,await requireBusinessWriteAccess());
     const repo = getRepository();
     const initiative = await repo.getInitiativeBySlug(slug);
     if (!initiative) return { error: "That initiative no longer exists." };

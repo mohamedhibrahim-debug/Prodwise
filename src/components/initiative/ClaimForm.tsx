@@ -1,4 +1,5 @@
 "use client";
+import { ScopeField } from "@/components/auth/WorkspaceScope";
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
@@ -78,6 +79,7 @@ export function ClaimForm({
 
   return (
     <form action={formAction} className={styles.form}>
+      <ScopeField />
       <input type="hidden" name="slug" value={slug} />
       {claim ? <input type="hidden" name="claimId" value={claim.id} /> : null}
 

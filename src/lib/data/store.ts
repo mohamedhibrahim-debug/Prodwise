@@ -159,12 +159,10 @@ export function readStore(): StoreShape {
 
 /** Apply a mutation and flush it to disk. */
 export function writeStore(mutate: (store: StoreShape) => void): void {
-  const store = load();
-  mutate(store);
-  // Legacy rows are scoped on load. Only newly created rows receive the fresh
-  // server-resolved request scope; a Demo write must never enter AMAN.
-  scopeRows(store, repositoryContext()?.workspaceId);
-  persist();
+  // A mutation may perform a nested read (for example projecting verified
+  // evidence). That read reloads the module cache, so persist the explicit
+  // transaction value, never whichever object a nested read left in cache.
+  writeStoreAtomic(mutate);
 }
 
 /** Commit all decision effects as one local-store replacement. */

@@ -238,6 +238,34 @@ export class LocalAuthStore {
         throw new AccessError('UNAUTHENTICATED', 'Sign in to continue.'); const ctx = this.context(state, session.userId, this.workspaceId, true); if (ctx.organizationId !== session.organizationId)
         throw new AccessError('ACCESS_DENIED', 'Session organization mismatch.'); return ctx; }
     async logout(token: string) { await this.mutate(state => { state.sessions = state.sessions.filter(x => x.tokenHash !== hash(token) || x.workspaceId !== this.workspaceId); }, true); }
+    authorizedContexts(ctx: WorkspaceAccess) {
+        const state=this.raw(); this.fresh(state,ctx,true);
+        return state.workspaces.filter(w=>w.status==='ACTIVE').flatMap(w=>{
+            const org=state.organizations.find(o=>o.id===w.organizationId&&o.status==='ACTIVE');
+            if(!org)return [];
+            try {
+                const access=new LocalAuthStore(this.path,w.id).context(state,ctx.actor.id,w.id);
+                return [{organizationId:org.id,workspaceId:w.id,organizationName:org.name,workspaceName:w.name,
+                    role:access.role,platformRole:access.platformRole,current:w.id===ctx.workspaceId,isDemo:false}];
+            } catch(error) { if(error instanceof AccessError)return [];throw error; }
+        });
+    }
+    async switchSession(token:string, targetWorkspaceId:string, expectedWorkspaceId:string) {
+        const replacement=opaqueToken();
+        return this.mutate(state=>{
+            const session=state.sessions.find(s=>s.tokenHash===hash(token)&&Date.parse(s.expiresAt)>Date.now());
+            if(!session)throw new AccessError('UNAUTHENTICATED','Sign in to continue.');
+            if(session.workspaceId!==expectedWorkspaceId)throw new AccessError('SCOPE_CHANGED','Your organization changed. Reload before switching.');
+            const source=new LocalAuthStore(this.path,session.workspaceId).context(state,session.userId,session.workspaceId,true);
+            const target=new LocalAuthStore(this.path,targetWorkspaceId).context(state,session.userId,targetWorkspaceId);
+            const before={workspaceId:source.workspaceId,organizationId:source.organizationId};
+            const after={workspaceId:target.workspaceId,organizationId:target.organizationId};
+            state.sessions=state.sessions.filter(s=>s.tokenHash!==hash(token));
+            state.sessions.push({...session,tokenHash:hash(replacement),...after});
+            this.event(state,target,target.organizationId,'ORGANIZATION_CONTEXT_SWITCHED',before,after);
+            return {token:replacement,maxAge:Math.max(1,Math.floor((Date.parse(session.expiresAt)-Date.now())/1000))};
+        },true);
+    }
     async changePassword(ctx: WorkspaceAccess, currentPassword: string, nextPassword: string) { const saved = passwordHash(nextPassword); await this.mutate(state => { const actor = this.fresh(state, ctx, true), identity = state.identities.find(x => x.id === actor.actor.id)!; if (!identity.passwordHash || !passwordMatches(currentPassword, identity.passwordHash))
         throw new AccessError('INVALID_CREDENTIALS', 'Current password is incorrect.'); identity.passwordHash = saved; state.sessions = state.sessions.filter(x => x.userId !== identity.id); this.event(state, actor, identity.id, 'PASSWORD_CHANGED', null, null); }, true); }
     private currentOrg(state: AuthState) { return state.organizations.find(x => x.id === state.workspaces.find(w => w.id === this.workspaceId)?.organizationId)!; }

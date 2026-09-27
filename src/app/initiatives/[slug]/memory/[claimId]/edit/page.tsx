@@ -38,7 +38,7 @@ export default async function EditClaimPage({
   if (!isDemoWriteEnabled) {
     return (
       <div className={styles.page}>
-        <Link href={`/initiatives/${slug}/knowledge`} className={styles.back}>
+        <Link prefetch={false} href={`/initiatives/${slug}/knowledge`} className={styles.back}>
           ← Knowledge
         </Link>
         <h2 className={styles.title}>Edit Knowledge entry</h2>
@@ -49,7 +49,7 @@ export default async function EditClaimPage({
 
   return (
     <div className={styles.page}>
-      <Link href={`/initiatives/${slug}/knowledge`} className={styles.back}>
+      <Link prefetch={false} href={`/initiatives/${slug}/knowledge`} className={styles.back}>
         ← Knowledge
       </Link>
 

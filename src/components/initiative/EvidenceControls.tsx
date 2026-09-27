@@ -1,4 +1,5 @@
 "use client";
+import { useWorkspaceScope } from "@/components/auth/WorkspaceScope";
 
 import { useState, useTransition } from "react";
 
@@ -33,6 +34,7 @@ export function EvidenceControls({
   boundary,
   title,
 }: EvidenceControlsProps) {
+  const scopeWorkspaceId=useWorkspaceScope();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   // Optimistic local value so the select does not snap back while the server
@@ -46,8 +48,8 @@ export function EvidenceControls({
     startTransition(async () => {
       const result =
         next === "EXCLUDED"
-          ? await excludeEvidenceAction(evidenceId, slug)
-          : await reclassifyEvidenceAction(evidenceId, slug, next);
+          ? await excludeEvidenceAction(evidenceId, slug,scopeWorkspaceId)
+          : await reclassifyEvidenceAction(evidenceId, slug, next,scopeWorkspaceId);
       if (result.error) {
         setValue(previous);
         setError(result.error);

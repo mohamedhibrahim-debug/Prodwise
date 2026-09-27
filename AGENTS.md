@@ -1,0 +1,554 @@
+# PRODWISE — Project Memory & Product Constitution
+
+> **This file is the persistent context for every Codex session in this repository.**
+> Read it fully before making product, UX, data-model or architecture decisions.
+> It outranks convenience, habit, and anything you infer from the reference files in the repo root.
+
+---
+
+## Active mission checkpoint
+
+The user’s latest scope and execution instructions take precedence over the historical phase descriptions below. Current Mission closure is documented in `docs/product-quality/15-current-mission-acceptance.md`; its earlier factual checkpoint is `13-current-checkpoint.md`. The complete approved Second Mission is frozen in `14-second-mission-scope.md` and must not begin until the user confirms Current Mission acceptance. Do not deploy or infer authorization to start that next scope from historical continuation text. Preserve all historical product rules that are not explicitly superseded.
+
+## 1. Identity
+
+| | |
+|---|---|
+| **Product name** | **Prodwise** |
+| **Tagline** | Product Intelligence, from evidence to action. |
+| **Core capability** | **Initiative Intelligence** — the engine concept, *not* the product name |
+
+**Initiative Intelligence** is the reasoning capability: a structured Product Initiative Workspace that reconstructs scattered product truth across Jira, documents, decisions and approvals into persistent Product Memory, evidence-backed Current State, Readiness, and one recommended Next Best Action.
+
+All user-facing branding, page metadata, `package.json`, and documentation say **Prodwise**. "Initiative Intelligence" may be used to describe the capability, never as the product's name.
+
+### Vision
+
+Give Product Managers a continuously updated, evidence-backed understanding of where an initiative really stands, what is unresolved, and what should happen next.
+
+### Job To Be Done
+
+> "Tell me the current evidence-backed state of this initiative, show me what needs my attention, and recommend the most important next action."
+
+### Prodwise is not a chatbot
+
+The primary experience is a **structured Product Initiative Workspace**. AI reasoning surfaces through:
+
+- Current State
+- Product Memory
+- Review Findings
+- Evidence
+- Readiness
+- Next Best Action
+
+An **AI Consultant** may exist later as a secondary side panel only. **Chat must never become the main product experience, and there must never be a chat homepage.**
+
+---
+
+## 2. The problem
+
+Product truth is fragmented across Jira, requirement documents, meeting notes, decisions, approvals, future phases and implementation work.
+
+A Jira status alone does not tell a Product Manager whether a product is actually **Defined, Approved, Built, Tested, Release Ready, Live or Healthy**.
+
+Prodwise reconstructs that scattered evidence into persistent **Product Memory** and a **Current Product State**.
+
+---
+
+## 3. Target user
+
+**Primary:** Product Manager / Product Owner in complex enterprise environments.
+
+**Best fit:** Fintech · Banking · Enterprise Software · Regulated Products.
+
+**Typical characteristics:** multiple teams; multiple stakeholders; Jira-based delivery; business/product documentation; Finance / Security / Compliance / Risk dependencies; multiple phases and releases.
+
+**Do not optimise the MVP for small startup teams.**
+
+---
+
+## 4. Core differentiation
+
+The differentiation is **not** "multiple AI personalities". It is:
+
+1. Persistent Product Memory
+2. Initiative Reconstruction
+3. Cross-Artifact Consistency
+4. Evidence-Based Readiness
+5. Multi-Dimensional Product State
+6. Human-Correctable AI Reasoning
+7. Next Best Action
+
+All reasoning must operate over the **same persistent Product Context**.
+
+---
+
+## 5. Golden user flow
+
+Every MVP feature must support this workflow:
+
+```
+Create Initiative
+ → Add / Discover Evidence
+ → System identifies potentially related artifacts
+ → User confirms Initiative Boundary
+ → System reconstructs Product Context
+ → System extracts structured Product Memory
+ → System detects material conflicts, gaps, unknowns and superseded information
+ → System evaluates readiness
+ → System determines Current State
+ → System recommends ONE primary Next Best Action
+ → User resolves or corrects findings
+ → Product Memory updates → Readiness updates → Next Best Action updates
+```
+
+---
+
+## 6. Scope
+
+### MVP scope (the eventual whole — built in phases, not now)
+
+1. Initiative Workspace
+2. Evidence Management
+3. Jira Evidence
+4. Google Drive Evidence
+5. Initiative Boundary / Evidence Classification
+6. Structured Product Memory
+7. Product Review Engine
+8. Current State
+9. Readiness Engine
+10. Next Best Action
+11. Human Override / Resolution
+12. Secondary AI Consultant
+
+### Strictly out of scope — do not add without explicit approval
+
+Figma integration · GitHub semantic implementation analysis · Gmail · Slack · Microsoft Teams · meeting recording · meeting transcription · production monitoring integration · BI integrations · Jira automatic write-back · autonomous multi-agent conversations · portfolio analytics · complex workflow automation · graph database · microservices · Kafka or complex event infrastructure.
+
+> **Do not silently add features because they seem useful.** If something feels missing, say so and ask. Scaling scope up is the user's call, not yours.
+
+---
+
+## 7. Product lifecycle
+
+```
+DISCOVERY · DEFINITION · ALIGNMENT · DELIVERY · VALIDATION
+RELEASE_PREPARATION · LIVE_VALIDATION · MONITORING
+```
+
+**Do not implement this as a rigid waterfall wizard.** An initiative may move backward, reopen, split into phases, contain multiple delivery streams, or have technical implementation complete while release remains blocked.
+
+---
+
+## 8. Product truth rules
+
+These are the product's conscience. Violating one is a defect, not a style choice.
+
+**RULE 1 — Jira is a System of Execution, not the whole Product Truth.**
+A Jira item marked *Done* or *Ready For Deployment* does not automatically mean Approved, Release Ready, Live, or Healthy.
+
+**RULE 2 — Backlog Scope is not Release Scope.**
+An unfinished Jira item only blocks the current release when it belongs to the **active release scope**.
+
+**RULE 3 — UNKNOWN is a valid state.**
+If evidence is insufficient, say `UNKNOWN`. Never manufacture certainty.
+
+**RULE 4 — Absence of evidence is not evidence of absence.**
+Never write *"Compliance approval is missing."* when the system only knows *"No Compliance approval evidence was found in connected sources."* This distinction must survive into UI copy.
+
+**RULE 5 — Historical information stays available.**
+If a requirement changes, do not delete the old one. Mark it `SUPERSEDED` when appropriate.
+
+**RULE 6 — AI conclusions must be human-correctable.**
+Users must eventually be able to correct: Initiative Boundary · Evidence classification · Phase · Conflict classification · Supersession · Readiness assumptions. Corrections become structured Product Memory.
+
+**RULE 7 — Conflict detection must be conservative.**
+Different values may mean true contradiction, supersession, a different phase, environment, customer segment or channel, draft vs approved, or simply historical information. **Do not flood the user with false conflicts.**
+
+**RULE 8 — AI should feel native.**
+Do not scatter "Analyze with AI" buttons. The application itself is already intelligent. No AI-sparkle iconography.
+
+---
+
+## 9. Initiative resolution
+
+**Do not assume Initiative = Jira Epic.** A single business initiative may contain a Portfolio Item, Jira Epic, Change Request, Story, Bug, Requirement Document, Meeting Note, Decision, or Future Phase.
+
+Resolution may eventually use exact references, Jira relationships, aliases, semantics, shared systems, dates and terminology. **The user must always be able to confirm the Initiative Boundary.**
+
+**Evidence relationship classifications:**
+`CURRENT_SCOPE` · `FUTURE_PHASE` · `HISTORICAL` · `RELATED` · `EXCLUDED`
+
+---
+
+## 10. Product Memory
+
+Structured knowledge extracted from evidence.
+
+**Claim types:** `REQUIREMENT` · `DECISION` · `BUSINESS_RULE` · `RISK` · `DEPENDENCY` · `ASSUMPTION`
+
+**Claim statuses:** `ACTIVE` · `SUPERSEDED` · `DRAFT` · `REJECTED` · `DEFERRED` · `UNKNOWN` · `UNVERIFIED`
+
+A claim should eventually support: subject · attribute · value · domain · source · source date · effective date · phase · status · confidence · relationships.
+
+```
+Subject: Daily Repayment   Attribute: Calculation Divisor   Value: 27
+Domain: Finance            Phase: Phase 2                   Status: ACTIVE
+```
+
+Product Memory must read as **structured knowledge, not a document browser**.
+
+---
+
+## 11. Review engine
+
+**Finding types — exactly these five. Do not grow the taxonomy.**
+`CONFLICT` · `GAP` · `UNKNOWN` · `SUPERSEDED` · `RISK`
+
+As of Phase 4 only **`CONFLICT` and `SUPERSEDED`** are implemented. The other three are not detected at all — which is not the same as none being present, and no screen may let their absence read as an all-clear.
+
+A `CONFLICT` is only raised after establishing **all** of: same subject · same attribute · same relevant context · same phase, or none recorded on either · all claims active · **different recorded values**. The engine establishes that the recorded values *differ*; it never establishes that they are incompatible — free text carries no type or unit, so one value may simply elaborate another. Always evaluate possible supersession or scope difference **first** (Rule 7).
+
+---
+
+## 12. Product state
+
+State is **multi-dimensional**. Possible domains: Product · Technical · Delivery · QA · Finance · Security · Compliance · Risk · Operations · Data · External Partner · Release.
+
+**Only relevant domains appear.** Do not render every possible domain for every initiative.
+
+**Assessment states:** `READY` · `AT_RISK` · `BLOCKED` · `UNKNOWN`
+
+**Never generate arbitrary percentage readiness** such as "83% Ready". Factual gate counts are acceptable.
+
+### Initial domain activation
+
+| Archetype | Domains |
+|---|---|
+| **Lending** | Product · Technical · QA · Finance · Risk · Compliance · Operations |
+| **Payments / Wallet** | Product · Technical · QA · Finance · Security · Operations |
+| **Internal tool** | Product · Technical · QA · Operations |
+| **Reporting** | Product · Data · QA · Finance *(only if financially relevant)* |
+
+---
+
+## 13. Readiness
+
+Readiness must be **evidence-backed, not checkbox theater**. Finance readiness may depend on fund flow, settlement, reconciliation, fees, repayment, reversals, accounting, exception handling and reporting.
+
+Each domain presents: **Status · Evidence Satisfied · Open Issues · Unknown · What Would Make This Ready.**
+
+**Approval and readiness are not always the same thing.**
+
+---
+
+## 14. Next Best Action
+
+Recommend **ONE** primary next action.
+
+**Ranking:** 1. Critical blocker → 2. Mandatory unresolved unknown → 3. High material risk → 4. Blocking dependency → 5. Improvement.
+
+Every recommendation explains: **Action · Why Now · Evidence · Impact if Ignored · Suggested Owner / Domain · Confidence.**
+
+Avoid generic advice such as *"Align with stakeholders."*
+
+---
+
+## 15. Information architecture
+
+```
+Initiatives  (main level)
+└── Initiative Workspace
+    ├── Overview
+    ├── Review
+    ├── Product Memory
+    ├── Evidence
+    └── Readiness
+
+AI Consultant — secondary side panel only
+```
+
+**Never create Chat as the primary screen.**
+
+---
+
+## 16. Design law
+
+### Reference material
+
+`Aman - Presentation Deck 3.0 (1).pptx` in the repo root is **visual inspiration only** — never a brand template. `Codex-palybook final.html` is a **development workflow / skills reference only**. Neither overrides this constitution. **Never move, rename, overwrite or delete either file.**
+
+Extracted from the deck (source palette, for inspiration): navy `#002A47` / `#091A33`, cyan `#00AEC7`, light cyan `#99DBE9`, pale `#CAE1E8`, orange `#DC6B2F`; typeface **Inter**; a dramatic 50pt→6pt type range; thin rule dividers; numeric section markers; `blockArc` / `pie` / `ellipse` geometry.
+
+### The 30 / 70 rule
+
+Approximately **30% AMAN visual DNA, 70% brand-neutral enterprise Product Intelligence design.** Prodwise must work inside AMAN, outside AMAN, and for other fintechs, banks and enterprises.
+
+**Retain as inspiration:** deep navy structural surfaces · bright cyan/teal identity accent · restrained warm orange accent · clean white working surfaces · strong typography · generous whitespace · thin separators · bold section hierarchy · rounded status pills · dark navigation against a light working canvas · subtle circle / arc / ring geometry.
+
+**Never use:** the AMAN logo · the Raya logo · AMAN proprietary marks · merchant/POS photography as product identity · AMAN layouts copied directly · any treatment that makes Prodwise look like an AMAN internal portal.
+
+### Colour: brand identity and semantic status are different concepts
+
+| Role | Value |
+|---|---|
+| Primary brand accent | cyan / teal `--accent-500` |
+| Secondary brand accent | warm orange — **decoration only** |
+| `READY` | green |
+| `AT_RISK` | amber |
+| `BLOCKED` | red |
+| `UNKNOWN` | neutral grey |
+
+**Brand orange never carries status meaning.** It is restricted to non-semantic decoration (the arc motif, section numerals). The `AT_RISK` amber is deliberately a different hue from the brand orange so the two are never confused. **Status must be legible independently of branding**, and never encoded by colour alone — always colour + text (+ severity glyph).
+
+### The Initiative Arc — original visual signature
+
+A thin concentric ring of eight segments, one per lifecycle stage; the current stage in cyan, the remainder in rule-grey. It reinterprets the deck's arc geometry as something *information-bearing*.
+
+It is a **subtle supporting lifecycle/brand motif**. It must **never** compete visually with Current State, Needs Your Attention or Next Best Action, and must **never** become a hero graphic. Maximum ~28px in the workspace header, 16px as the nav-rail product mark, plus one faint oversized arc bleeding off the rail footer. **It must never resemble the AMAN logo.**
+
+### UX character
+
+Should feel: Enterprise · Intelligent · Calm · Confident · Modern · Distinctive · Trustworthy · Information-rich without clutter.
+
+Should **not** feel like: Jira · Power BI · a generic admin dashboard template · a generic AI chatbot · a startup marketing landing page · an AMAN internal portal.
+
+### Layout principles
+
+**Prefer:** dark navy navigation rail · light primary workspace · typography-led hierarchy · large clean working surfaces · structured rows · thin dividers · restrained use of cards · progressive disclosure · compact evidence components · strong information hierarchy · subtle micro-interactions.
+
+**Avoid:** card inside card inside card · giant rounded rectangles everywhere · excessive shadows · excessive gradients · glassmorphism · AI sparkle iconography · excessive dashboards · unnecessary charts.
+
+Structure is carried by **1px rules and whitespace, not cards**.
+
+### The five-second test
+
+The Overview must answer, within about five seconds:
+1. Where is this initiative? 2. What needs attention? 3. Why? 4. What should I do next?
+
+### Empty-state language
+
+Careful, honest wording — this is Rule 4 made visible:
+
+| Situation | Copy |
+|---|---|
+| No evidence | "No related evidence has been confirmed yet." |
+| No findings *(Overview only)* | "No material review issues were detected in the currently connected evidence." |
+| Review — no claims to reason over | "No claims have been recorded yet, so there is nothing to review." |
+| Review — claims exist, no rule fired | "No conflicts or superseded claims were found in this initiative's Product Memory." *(hint must name what is **not** checked)* |
+| Review — findings exist but none is open | "Nothing in this initiative is waiting on you." *(never "nothing was found" — findings exist under All)* |
+| Unknown readiness | "Not enough evidence is available to assess this domain." |
+
+**Never say "Everything is perfect."**
+
+### Trust / freshness
+
+Reserve and use UI patterns for **Last Updated · Last Sync · Evidence timestamp · Confidence**. Never fake a live integration. Synthetic/demo data must be visibly labelled as such.
+
+### Responsiveness
+
+Desktop is the primary Product Manager experience; the application must still remain usable on smaller screens.
+
+---
+
+## 17. Technical architecture
+
+**Stack:** Next.js (App Router) · TypeScript · Supabase PostgreSQL · Next.js server functionality / API routes where appropriate · Codex API later · optional pgvector only if semantic retrieval becomes necessary.
+
+**Never introduce:** graph databases · microservices · Kafka · autonomous agent infrastructure · premature distributed architecture.
+
+### Repository conventions
+
+- **Styling:** CSS Modules per component plus a global design-token layer (`src/styles/tokens.css`). **No Tailwind, no component framework.** Tokens are the single source of visual truth — never hard-code a colour, size or radius in a component.
+- **Data access:** one `Repository` interface with two implementations (Supabase, local fixtures) returning **identical domain shapes**. UI code must never know, or be able to tell, which implementation is active.
+- **Identity:** `initiatives.slug` is the stable public identifier used by routes and fixtures. **Never key fixtures or URLs off generated UUIDs.**
+- **Server-side only data access.** No Supabase client ships to the browser.
+- **No new dependency without approval.** Ask first.
+- Clear component boundaries · reusable status components · typed models · clean naming · sensible folder structure · simple state management · migrations · seed data. **Avoid premature abstraction.**
+
+### Trust / explainability principle
+
+Every important AI conclusion must eventually be traceable to evidence and answer *"Why does the system believe this?"*, preserving evidence · source · date · confidence · user correction/override. Evidence freshness must eventually be visible.
+
+### Security principle
+
+Future evidence must be **permission-aware**. The architecture must not assume every user can see every artifact. Evidence records should conceptually preserve source · workspace/tenant · visibility · source permissions. Full enterprise ACL is not required in the first prototype.
+
+---
+
+## 18. Phase 1 write safety (temporary demo security model)
+
+Phase 1 intentionally has **no authentication**. That must not create an unrestricted public write surface.
+
+- **RLS is enabled on all tables with no policies** — deny by default. The `anon` and `authenticated` roles can read and write nothing.
+- **All access is server-side**, via a server-only service-role key. There is no browser Supabase client and **the service-role key is never exposed to the browser** (never prefix it `NEXT_PUBLIC_`).
+- **`DEMO_WRITE_ENABLED` gates every mutation.** It defaults to `false` unless explicitly enabled in the intended local/demo environment. Reads remain available; create/update/delete **fail safely** with a clear handled refusal when it is off.
+- **The guard is enforced server-side inside the data/repository layer**, not merely hidden in the UI. Disabling a button is not the control.
+- **Do not introduce authentication in Phase 1.** Real per-user ACL arrives with evidence permissions in a later phase.
+
+---
+
+## 19. Data model direction
+
+The future logical model stays simple. Expected entities may eventually include: `users` · `initiatives` · `initiative_sources` · `evidence` · `claims` · `relationships` · `review_issues` · `assessments` · `actions` · `activity_log`.
+
+**Create only what the current phase requires.** Phase 1 created exactly: `users`, `initiatives`, `activity_log`. Phase 2 added exactly: `initiative_sources`, `evidence`. Phase 3 added exactly: `claims`, `claim_evidence`. Phase 4 added exactly one: `finding_states`, holding only human decisions — findings themselves are derived on every read, never stored, so there is deliberately **no `review_findings` table**. No `evidence_history`, `claim_history`, `claim_versions`, `knowledge_graph` or `claim_conflicts` — `activity_log` records these changes cleanly, and a second history mechanism would be schema for its own sake.
+
+---
+
+## 20. Golden demo initiative — Merchant Flex Finance
+
+A **synthetic** initiative (slug `merchant-flex-finance`) used to demonstrate the experience.
+
+> A merchant working-capital financing initiative allowing eligible merchants to request financing and repay installments from settlement activity.
+
+**Scenario:** original requirement *Traditional + Islamic Financing*; later decision *Islamic Financing Only* → the old requirement is **SUPERSEDED, not a conflict**. Financial requirement *Daily repayment = Monthly installment / 27* vs implementation requirement *= / 30* → a **critical financial CONFLICT**. Delivery: epic in development, several stories complete, some work open. QA partial. Finance: final authoritative calculation confirmation not found. Compliance: approval evidence not found. Future phase: Automated Disbursement.
+
+**Expected interpretation:** Stage `DELIVERY` · Overall `AT_RISK` · Critical: repayment calculation conflict · Superseded: Traditional+Islamic → Islamic-only · Finance `AT_RISK` · Release `BLOCKED` · Unknown: no evidence confirming Compliance approval was found.
+
+**Which of those the engine actually produces:** only the repayment conflict and the supersession. The Unknown, the domain states and the Next Best Action are carried by the synthetic Overview and Readiness fixtures and are **not** review-engine output — Prodwise does not detect gaps, unknowns or risks.
+
+**Primary Next Best Action:** *Resolve the daily repayment calculation with the relevant Finance / Lending owner before continuing affected implementation.*
+
+This is **synthetic placeholder data**. Never present it as AI-generated output.
+
+---
+
+## 21. Phase discipline
+
+### Phase 1 — Foundation + Initiative Management + Core Application Shell — **COMPLETE**
+
+Delivered: design token system and shared primitives · application shell (navy rail, light workspace, tab navigation) · Initiatives list · Create Initiative · Initiative Workspace with Overview / Review / Product Memory / Evidence / Readiness · the seeded Merchant Flex Finance demo · `users` / `initiatives` / `activity_log` in Supabase with migrations and seed · the local-fixture repository fallback.
+
+**Real and functional:** listing initiatives, creating an initiative, activity logging, navigation, responsive layout, empty states.
+
+**Deliberately synthetic:** everything on Review, Product Memory, Evidence and Readiness, plus domain states and Next Best Action — static typed fixtures keyed to the demo initiative's slug. Consequently **an initiative you create yourself correctly shows honest empty states**, while the seeded demo shows the full narrative. This is intentional: it satisfies Rule 4 and proves the empty-state paths in real code.
+
+### Phase 2 — Evidence + Initiative Boundary — **COMPLETE**
+
+Prodwise now answers *"what evidence belongs to this initiative?"* before attempting *"what does this evidence mean?"*.
+
+Delivered: persisted `EvidenceRecord` and `InitiativeSource` entities · five-value boundary classification on every record · manual add / edit / reclassify / exclude, all human-driven · boundary changes recorded in `activity_log` · evidence metadata and factual freshness · the `/reporting` executive view · file-backed local persistence behind the repository abstraction.
+
+**Real and functional:** evidence is created, edited, reclassified and persisted; classification survives reload and server restart; activity records every boundary move.
+
+**Still synthetic:** Review findings, Product Memory claims, Readiness, domain states and Next Best Action. **Evidence does not produce them.** Nothing is derived from evidence in Phase 2 — it is the source layer, not the reasoning layer.
+
+**Boundary rules that hold going forward:** exactly one boundary per record; no auto-classification; the user can always change it; `EXCLUDED` is one click but returning from it is never assumed — the target boundary must be chosen explicitly.
+
+**Persistence:** `.data/prodwise.json` via `src/lib/data/store.ts` is **local demo persistence only** — not distributed, serverless or multi-instance safe. Nothing outside the repository layer may import it. Supabase migrations for the same schema are committed and swap in automatically once env vars exist.
+
+### Phase 3 — Product Memory — **COMPLETE**
+
+Product Memory stops being fixture intelligence and becomes the second real layer. The chain is now **Evidence → Product Memory → (later) Review Intelligence**.
+
+Delivered: persisted `ClaimRecord` reusing the canonical 6 types and 7 statuses unchanged · `claim_evidence` many-to-many provenance with **no role taxonomy** · Add / Edit Claim, status change, evidence linking and unlinking, all human-driven · `supersededByClaimId` with server-enforced invariants · activity logging of meaningful corrections · the 14 seeded claims migrated preserving **Decisions 3 · Requirements 5 · Risks 2 · Dependencies 2 · Claims 14**.
+
+**Real and functional:** claims are created, edited, reclassified, superseded, linked and unlinked; everything persists across reload and server restart.
+
+#### What is real, and what is not
+
+| Layer | State |
+|---|---|
+| Evidence | **Real** (Phase 2) |
+| Product Memory | **Real** (Phase 3) |
+| Review — including the 27-vs-30 conflict | **Synthetic fixture** |
+| Readiness · Current State · Needs Your Attention · Next Best Action | **Synthetic fixture** |
+
+**There is no AI extraction, and no inference of any kind.** Every claim is a migrated seed or something a person typed. Product Memory is **never** to be described as AI-generated.
+
+> **Superseded by Phase 4.** This section originally continued: *"Review findings are not derived from claims — the 27 and 30 divisor claims sit side by side as plain ACTIVE requirements, and nothing in the product says they conflict."* That is no longer true. Phase 4 derives CONFLICT and SUPERSEDED findings from these claims. Everything else in Phase 3 stands.
+
+Future AI may *propose* claims. It must never silently create product truth.
+
+#### Rules that hold going forward
+
+- **No claim is ever hard-deleted.** Knowledge that no longer holds gets `SUPERSEDED` / `REJECTED` / `DEFERRED`. There is no Delete in the UI.
+- **A human-created claim starts `UNVERIFIED`** — unchecked, which is not the same as wrong. Absent evidence is shown as *"No evidence linked"*, never *"no evidence exists"*.
+- **Supersession invariants**, enforced server-side and by DB constraint: a replacement only while `status = SUPERSEDED`; cleared when the status moves off it; same initiative only; never self-referential; `SUPERSEDED` with no known replacement stays valid — no successor is ever invented.
+- **`EXCLUDED` evidence cannot be newly linked.** But a link made before the evidence was excluded is **never removed automatically** — it stays, marked *Excluded evidence*, and only a deliberate human unlink removes it. Silently dropping provenance would rewrite history.
+- **Confidence is displayed, never assigned by hand.** It exists on migrated records only.
+- **Reporting is unchanged** — no claim counts, no evidence counts. Management sees the summary, not Prodwise internals.
+
+### Stage 2.1 — Trust Foundation — **IMPLEMENTED LOCALLY; NOT DEPLOYED**
+
+Stage 2.1 adds explicit trust provenance without changing Review semantics.
+
+Delivered: immutable claim entry origin (LEGACY / HUMAN_ENTRY) · evidence-backed or direct-knowledge verification · atomic verify_claim and reopen_finding_state database functions with structured audit events · evidence locators/excerpts · preserved finding-state rows on reopen · local JSON shape upgrade · a Windows-native PostgreSQL migration/concurrency harness.
+
+Rules that hold going forward:
+
+- **Origin records entry provenance and never changes.** A legacy claim may be verified later and remains LEGACY.
+- **Verify is the only path from a non-active claim to ACTIVE.** Ordinary edits cannot activate a claim.
+- **Evidence verification requires CURRENT_SCOPE, or FUTURE_PHASE with a recorded non-blank claim phase when no current-scope evidence is linked.** Historical, related and excluded records do not authorise verification.
+- **Direct knowledge requires a written note.**
+- **Legacy active claims with no recorded verifier say exactly “Verification history not recorded.”** No changed-after-verification inference exists in Stage 2.1.
+- **Finding reopen is a state transition, never a delete.** The row and its descriptive identity survive; the reopen and audit row commit atomically.
+- **Evidence-anchor updates preserve existing links.** In the Supabase adapter, the anchor update and its audit insert are intentionally non-atomic in Stage 2.1. Atomic provenance mutation remains later work.
+- Migration 0007_stage2_1_trust_origin_activity.sql is committed but has **not** been applied to hosted Supabase.
+
+### Phase 4, Slice 1 — Review Intelligence: CONFLICT + SUPERSEDED — **COMPLETE**
+
+Review stops being fixture intelligence. The chain is now **Evidence → Product Memory → Review**.
+
+Delivered: a **pure, deterministic review engine** (`src/lib/review/`) that derives findings from persisted claims — no LLM, no extraction, no semantic similarity, no canonicalisation, no chronology-based inference · `CONFLICT_SAME_ATTRIBUTE_V1` and `SUPERSEDED_CLAIM_V1`, the only two rules · content-addressed finding identity · the human OPEN/RESOLVED overlay in `finding_states` · 46 unit tests under `npm run test` with **zero new dependencies**.
+
+**Real and functional:** findings derive from claims on every read, so they cannot drift from Product Memory — edit a claim and the next render reflects it with no refresh step. Every finding traces to real claim ids, and to whatever evidence those claims have linked through `claim_evidence`. Where a claim has none, the finding says *No evidence linked* — never that none exists. Findings derive fully with `DEMO_WRITE_ENABLED=false`; only resolving is gated.
+
+#### What is real, and what is not
+
+| Layer | State |
+|---|---|
+| Evidence | **Real** (Phase 2) |
+| Product Memory | **Real** (Phase 3) |
+| Review — CONFLICT, SUPERSEDED | **Real** (Phase 4) |
+| Review — GAP, UNKNOWN, RISK | **Not implemented.** Not "none found" — not checked at all |
+| Finding severity and ranking | **Not assessed. Deliberately absent** |
+| Readiness · Current State · Needs Your Attention · Next Best Action · Reporting | **Synthetic fixture** |
+
+**The real demo output is 2 findings on Merchant Flex Finance and none on the other three initiatives**, which have no claims. That is the honest result. No claim, evidence or initiative may be invented to make Review look busier.
+
+#### Rules that hold going forward
+
+- **Findings are never persisted.** Only the human decision is, keyed by fingerprint. A `review_findings` table would be a second source of truth that could drift from Product Memory.
+- **No severity, no confidence, no ranking.** The structured data does not prove business impact: the same conflict may be trivial or release-critical. A fixed per-rule default would be a fabricated ranking, and deriving one from domain would be arbitrary scoring (§12). Both fields exist and are `null`.
+- **`domains` is a list, never a single chosen domain.** Order is canonical and carries no meaning. **Domain is not a conflict gate** — a Finance claim disagreeing with a Technical one is the most valuable conflict there is.
+- **Conflict gates are conservative and complete.** Same subject · same attribute · same context · all ACTIVE · differing values · no supersession link. A stated phase and an absent phase are **not** comparable: prefer a missed conflict to a false one.
+- **Supersession is read, never inferred.** `status === "SUPERSEDED"` only. Never from chronology. A recorded-but-unreachable replacement is reported as such, never as "no replacement".
+- **SUPERSEDED findings are history**: never actionable, never in Open, never auto-resolved.
+- **The engine is pure** — no clock, no database, no environment. `detectedOn` is the latest source-claim `updatedAt`, so repeated runs are identical.
+- **A resolution is a person's decision, not a data change.** The UI says so. If the source claims change after it, the finding reopens and the earlier note is kept.
+- **Known limitation:** free-text values mean the engine proves two claims *record different strings*, not that they *contradict*. `"6 months"` vs `"6 months of continuous settlement activity"` will raise a conflict. This is pinned by a test. It is **not** to be solved with semantic similarity.
+
+### Not built in Phases 1–4, and not to be added without explicit approval
+
+Real Jira integration · Google Drive integration · **AI claim extraction** · Codex API integration · semantic search · vector database · **GAP / UNKNOWN / RISK detection** · readiness reasoning · Product State reasoning · Next Best Action generation · canonicalisation / entity resolution · chronology-based supersession inference · automated source authority scoring · real domain activation logic · autonomous agents · authentication · file/binary upload · portfolio analytics · **claim deletion**.
+
+### Rule
+
+**Do not begin a later phase without explicit approval from the user.** When a phase is complete, report and stop.
+
+---
+
+## 22. Working discipline
+
+Adapted from the Karpathy-skills principles referenced by the playbook (that skill is not installed here; its substance is captured directly):
+
+- **Make no silent assumptions.** If a requirement is ambiguous and the readings lead to materially different work, ask. Otherwise state the assumption explicitly in your report.
+- **Do not over-engineer.** Build what the phase requires. Avoid premature abstraction, speculative generality and infrastructure the product does not yet need.
+- **Do not invent installation commands.** If a skill or tool is not installed, inspect the playbook and the local environment to find the supported procedure before installing anything. Do not halt the whole build over one optional skill.
+- **Report faithfully.** If something is mocked, say it is mocked. If a step was skipped, say so. Never dress synthetic data as engine output.
+
+### Available design skills
+
+`frontend-design` and `ui-ux-pro-max` are installed locally and should be used for UI work. `mcp-builder` belongs to a later connector phase.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

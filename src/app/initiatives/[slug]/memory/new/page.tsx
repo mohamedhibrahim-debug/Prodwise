@@ -26,7 +26,7 @@ export default async function NewClaimPage({
   if (!isDemoWriteEnabled) {
     return (
       <div className={styles.page}>
-        <Link href={`/initiatives/${slug}/knowledge`} className={styles.back}>
+        <Link prefetch={false} href={`/initiatives/${slug}/knowledge`} className={styles.back}>
           ← Knowledge
         </Link>
         <h2 className={styles.title}>Add Knowledge entry</h2>
@@ -37,7 +37,7 @@ export default async function NewClaimPage({
 
   return (
     <div className={styles.page}>
-      <Link href={`/initiatives/${slug}/knowledge`} className={styles.back}>
+      <Link prefetch={false} href={`/initiatives/${slug}/knowledge`} className={styles.back}>
         ← Knowledge
       </Link>
 

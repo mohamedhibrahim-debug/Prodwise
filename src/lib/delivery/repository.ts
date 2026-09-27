@@ -1,8 +1,10 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { getRepository } from "@/lib/data";
 import { supabaseServiceRoleKey, supabaseUrl } from "@/lib/env";
 import { isLocalAuth, configuredWorkspaceId } from "@/lib/auth/service";
+import { requireFreshWorkspaceAccess } from "@/lib/auth/access";
 import { localDeliveryPath } from "./local-path";
 import { workspacePresentation, type WorkspacePresentation } from "@/lib/workspace/context";
 import { LocalDeliveryStore } from "./local-store";
@@ -19,7 +21,7 @@ function camel(value:unknown):unknown {
 export interface DeliveryRead { ctx:WorkspaceAccess; source:PortfolioSource; state:DeliveryState; rawSource:unknown; presentation:WorkspacePresentation; }
 function localFor(ctx:WorkspaceAccess) { return new LocalDeliveryStore(localDeliveryPath(process.cwd(),ctx.workspaceId,configuredWorkspaceId())); }
 async function readWith(ctx:WorkspaceAccess):Promise<DeliveryRead> {
-  const presentation=await workspacePresentation(ctx);
+  const presentationPromise=workspacePresentation(ctx);
   if (!isLocalAuth()) {
     const {data,error}=await client().rpc("delivery_read_workspace",{p_workspace_id:ctx.workspaceId,p_member_id:ctx.memberId ?? ctx.actor.id});
     if (error) throw new Error("Delivery data is unavailable. Check that the Auth and delivery migrations are installed locally.");
@@ -27,13 +29,16 @@ async function readWith(ctx:WorkspaceAccess):Promise<DeliveryRead> {
     for (const snapshot of source.snapshots) for (const claim of snapshot.claims) {
       if (!claim.updatedAt || !claim.createdAt) throw new Error("Source claim timestamps are unavailable. Repair the snapshot projection before continuing.");
     }
-    assertMember(ctx,source); return {ctx,source,state:value.state,rawSource:value.source,presentation};
+    assertMember(ctx,source); return {ctx,source,state:value.state,rawSource:value.source,presentation:await presentationPromise};
   }
   if (process.env.VERCEL) throw new Error("Durable delivery storage must be configured before this feature can run on a hosted deployment.");
   const repo=getRepository(); const source={snapshots:await repo.listInitiativeSnapshots(),members:await deliveryWorkspaceMembers()};
-  assertMember(ctx,source); return {ctx,source,state:await localFor(ctx).read(),rawSource:meaningful(source),presentation};
+  assertMember(ctx,source); return {ctx,source,state:await localFor(ctx).read(),rawSource:meaningful(source),presentation:await presentationPromise};
 }
-export async function readDelivery():Promise<DeliveryRead> { return readWith(await requireDeliveryAccess()); }
+const readForRender=cache(async ():Promise<DeliveryRead> => readWith(await requireDeliveryAccess()));
+export async function readDelivery():Promise<DeliveryRead> { return readForRender(); }
+/** Mutation orchestration must see product writes made earlier in the same action. */
+export async function readDeliveryFresh():Promise<DeliveryRead> { return readWith(await requireFreshWorkspaceAccess()); }
 export async function mutateDelivery(change:(read:DeliveryRead)=>Promise<DeliveryState>):Promise<DeliveryState> {
   // Every mutation rechecks the real membership and environment write guard.
   const ctx=await requireDeliveryWriteAccess();

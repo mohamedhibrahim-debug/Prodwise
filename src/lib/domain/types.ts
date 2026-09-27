@@ -187,6 +187,8 @@ export type BusinessLine = (typeof BUSINESS_LINES)[number];
 
 export interface Initiative {
   id: string;
+  /** Persisted scope on server/store records; authorization never comes from the client. */
+  workspaceId?: string;
   /** Stable public identifier. Routes and fixtures key off this, never the id. */
   slug: string;
   name: string;
@@ -206,6 +208,7 @@ export interface Initiative {
 
 export interface ActivityEntry {
   id: string;
+  workspaceId?: string;
   initiativeId: string;
   eventType: string;
   summary: string;

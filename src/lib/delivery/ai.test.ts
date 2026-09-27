@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { draftWeeklyWording, PROVIDER_TIMEOUT_MS } from "./ai.ts";
-import { EMPTY_STATE, type PortfolioSource, type WorkspaceAccess } from "./types.ts";
+import { draftWeeklyWording, PROMPT_VERSION, PROVIDER_TIMEOUT_MS } from "./ai.ts";
+import { EMPTY_STATE, type PortfolioSource, type Reference, type WorkspaceAccess } from "./types.ts";
 import { createReview, recordFact, referencesFor } from "./model.ts";
 const ctx:WorkspaceAccess={workspaceId:"w",organizationId:"org",platformRole:null,memberId:"a",role:"ADMIN",isProductLead:false,actor:{id:"u",label:"Administrator"}};
 const source:PortfolioSource={members:[{id:"a",workspaceId:"w",displayName:"Administrator",role:"ADMIN",active:true,isProductLead:false}],snapshots:[{initiative:{id:"i",slug:"initiative",name:"Initiative",description:null,knownReferences:null,businessLine:"MF",stage:"DELIVERY",overallState:"UNKNOWN",stateSummary:null,isDemo:true,createdAt:"2026-09-26T00:00:00Z",updatedAt:"2026-09-26T00:00:00Z"},claims:[],evidence:[],findingStates:[]}]};
@@ -56,3 +56,86 @@ test("Provider deadline abort returns supported template wording without accepti
   assert.deepEqual(prepared,before,"timeout must not alter frozen inputs, human narrative, or AI history");
  }finally{if(oldKey===undefined)delete process.env.ANTHROPIC_API_KEY;else process.env.ANTHROPIC_API_KEY=oldKey;if(oldModel===undefined)delete process.env.ANTHROPIC_MODEL;else process.env.ANTHROPIC_MODEL=oldModel;}
 });
+
+function portfolioReview() {
+ const portfolio=structuredClone(source),second=structuredClone(portfolio.snapshots[0]!);
+ second.initiative={...second.initiative,id:"second",slug:"second-initiative",name:"Second initiative"};
+ portfolio.snapshots.push(second);
+ let state=structuredClone(EMPTY_STATE);
+ for(const snapshot of portfolio.snapshots)state=recordFact(state,portfolio,ctx,{initiativeId:snapshot.initiative.id,kind:"SCOPE",expectedRevision:0,value:{date:null,text:"Named pilot",extent:null,memberId:null},retract:false,basis:"DIRECT_KNOWLEDGE",note:"Fictional test scope",evidenceId:null,locator:null},"2026-09-26T09:00:00Z");
+ return createReview(state,portfolio,ctx,"2026-W39","2026-09-26T09:00:00Z").reviews[0]!;
+}
+async function withConfiguredProvider(run:()=>Promise<void>) {
+ const oldKey=process.env.ANTHROPIC_API_KEY,oldModel=process.env.ANTHROPIC_MODEL;
+ process.env.ANTHROPIC_API_KEY="test-not-a-real-key";process.env.ANTHROPIC_MODEL="configured-test-model";
+ try {await run();} finally {
+  if(oldKey===undefined)delete process.env.ANTHROPIC_API_KEY;else process.env.ANTHROPIC_API_KEY=oldKey;
+  if(oldModel===undefined)delete process.env.ANTHROPIC_MODEL;else process.env.ANTHROPIC_MODEL=oldModel;
+ }
+}
+function supportedSections(refs:Reference[]) {
+ return [...new Set(refs.map(ref=>ref.initiativeId))].reverse().map(initiativeId=>({initiativeId,lines:refs.filter(ref=>ref.initiativeId===initiativeId).slice(0,8).reverse().map(ref=>({referenceId:ref.id,text:ref.texts.at(-1)!}))}));
+}
+function assertSupportedTemplate(result:Awaited<ReturnType<typeof draftWeeklyWording>>,prepared:ReturnType<typeof portfolioReview>) {
+ assert.equal(result.mode,"TEMPLATE");assert.equal(result.model,null);assert.equal(result.inputDigest,prepared.input.digest);
+ const refs=referencesFor(prepared.input,null);
+ assert.deepEqual(new Set(result.original.map(section=>section.initiativeId)),new Set(prepared.sections.map(section=>section.initiativeId)));
+ for(const section of result.original)for(const line of section.lines)assert.ok(refs.some(ref=>ref.initiativeId===section.initiativeId&&ref.id===line.referenceId&&ref.texts.includes(line.text)),"every fallback line must remain supported in the same initiative");
+}
+
+test("Provider truncation and refusal never accept syntactically valid partial or complete wording",async()=>withConfiguredProvider(async()=>{
+ const prepared=portfolioReview(),before=structuredClone(prepared),sections=supportedSections(referencesFor(prepared.input,null));
+ for(const stopReason of ["max_tokens","refusal"])for(const returnedSections of [sections.slice(0,1),sections]){
+  const mock:typeof fetch=async()=>Response.json({stop_reason:stopReason,content:[{type:"text",text:JSON.stringify({sections:returnedSections})}]});
+  const result=await draftWeeklyWording(prepared,null,ctx,mock);
+  assertSupportedTemplate(result,prepared);assert.match(result.reason!,/did not return a complete supported draft.*no partial AI wording was accepted/i);
+ }
+ assert.deepEqual(prepared,before,"a provider stop must not mutate the review, its frozen inputs, or prior wording");
+}));
+
+test("A successful provider response must cover every accessible initiative with nonempty supported lines",async()=>withConfiguredProvider(async()=>{
+ const prepared=portfolioReview(),sections=supportedSections(referencesFor(prepared.input,null));
+ const cases=[{sections:sections.slice(0,1)},{sections:[]},{sections:sections.map((section,index)=>index===0?{...section,lines:[]}:section)}];
+ for(const output of cases){
+  const mock:typeof fetch=async()=>Response.json({stop_reason:"end_turn",content:[{type:"text",text:JSON.stringify(output)}]});
+  const result=await draftWeeklyWording(prepared,null,ctx,mock);
+  assertSupportedTemplate(result,prepared);assert.match(result.reason!,/did not cover all accessible initiative sections/i);
+ }
+}));
+
+test("Missing text, empty content and malformed provider output produce an honest supported template",async()=>withConfiguredProvider(async()=>{
+ const prepared=portfolioReview();
+ for(const response of [{stop_reason:"end_turn"},{stop_reason:"end_turn",content:[]},{stop_reason:"end_turn",content:[{type:"text",text:""}]},{stop_reason:"end_turn",content:[{type:"text",text:"{not complete json"}]}]){
+  const mock:typeof fetch=async()=>Response.json(response),result=await draftWeeklyWording(prepared,null,ctx,mock);
+  assertSupportedTemplate(result,prepared);assert.match(result.reason!,/factual template.*no AI claims were accepted/i);
+ }
+}));
+
+test("Provider request uses low-effort structured output and accepts only unchanged permitted lines",async()=>withConfiguredProvider(async()=>{
+ const prepared=portfolioReview(),before=structuredClone(prepared);let calls=0;
+ let returned:ReturnType<typeof supportedSections>=[];
+ const mock:typeof fetch=async(url,init)=>{
+  calls++;assert.equal(url,"https://api.anthropic.com/v1/messages");assert.equal(init?.method,"POST");
+  const body=JSON.parse(String(init?.body));
+  assert.equal(body.model,"configured-test-model");assert.equal(body.max_tokens,8192);assert.equal(body.output_config.effort,"low");
+  const format=body.output_config.format;assert.equal(format.type,"json_schema");assert.equal(format.schema.additionalProperties,false);assert.deepEqual(format.schema.required,["sections"]);
+  const sectionSchema=format.schema.properties.sections;assert.equal(sectionSchema.minItems,1);assert.deepEqual(sectionSchema.items.required,["initiativeId","lines"]);assert.equal(sectionSchema.items.additionalProperties,false);
+  const lineSchema=sectionSchema.items.properties.lines;assert.equal(lineSchema.minItems,1);assert.deepEqual(lineSchema.items.required,["referenceId","text"]);assert.equal(lineSchema.items.additionalProperties,false);
+  const input=JSON.parse(body.messages[0].content) as {selectedWeek:string;asOf:string;baselineAsOf:string|null;permittedStatements:Reference[]};
+  assert.equal(input.selectedWeek,prepared.week);assert.equal(input.asOf,prepared.input.asOf);assert.equal(input.baselineAsOf,null);
+  assert.deepEqual(input.permittedStatements,referencesFor(prepared.input,null));
+  returned=supportedSections(input.permittedStatements);
+  return Response.json({stop_reason:"end_turn",content:[{type:"text",text:JSON.stringify({sections:returned})}]});
+ };
+ const result=await draftWeeklyWording(prepared,null,ctx,mock);
+ assert.equal(calls,1);assert.equal(result.mode,"CLAUDE");assert.equal(result.model,"configured-test-model");assert.equal(result.promptVersion,PROMPT_VERSION);assert.equal(result.reason,null);assert.deepEqual(result.original,returned);
+ const refs=referencesFor(prepared.input,null);
+ for(const section of result.original)for(const line of section.lines)assert.ok(refs.some(ref=>ref.initiativeId===section.initiativeId&&ref.id===line.referenceId&&ref.texts.includes(line.text)),"accepted lines must preserve the exact permitted statement and initiative binding");
+ assert.deepEqual(prepared,before);
+ const invented=structuredClone(returned);invented.at(-1)!.lines.at(-1)!.text+=" The launch is guaranteed.";
+ const invalid:typeof fetch=async()=>Response.json({stop_reason:"end_turn",content:[{type:"text",text:JSON.stringify({sections:invented})}]});
+ assertSupportedTemplate(await draftWeeklyWording(prepared,null,ctx,invalid),prepared);
+ const crossed=structuredClone(returned);crossed[0]!.lines[0]={...crossed[1]!.lines[0]!};
+ const foreign:typeof fetch=async()=>Response.json({stop_reason:"end_turn",content:[{type:"text",text:JSON.stringify({sections:crossed})}]});
+ assertSupportedTemplate(await draftWeeklyWording(prepared,null,ctx,foreign),prepared);
+}));

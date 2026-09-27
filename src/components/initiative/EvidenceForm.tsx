@@ -1,4 +1,5 @@
 "use client";
+import { ScopeField } from "@/components/auth/WorkspaceScope";
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -72,6 +73,7 @@ export function EvidenceForm({
 
   return (
     <form action={formAction} className={styles.form}>
+      <ScopeField />
       <input type="hidden" name="slug" value={slug} />
       {evidence ? (
         <input type="hidden" name="evidenceId" value={evidence.id} />

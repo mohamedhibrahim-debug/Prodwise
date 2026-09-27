@@ -1,4 +1,6 @@
 "use server";
+import { assertFormWorkspace } from "@/lib/auth/scope";
+import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -47,6 +49,7 @@ export async function updateClaimAction(
   if (!domain) return { error: "Select a domain." };
 
   try {
+    assertFormWorkspace(formData,await requireBusinessWriteAccess());
     // Ownership is proven at the mutation boundary — claimId, slug and every
     // evidenceId arrive from client-controlled input and none is trusted.
     const { initiative, claim } = await resolveOwnedClaim(slug, claimId);

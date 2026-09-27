@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 
 import { Button } from "@/components/primitives/Button";
+import {ScopeField} from '@/components/auth/WorkspaceScope';
 import { BUSINESS_LINE_LABEL } from "@/lib/domain/labels";
 import { BUSINESS_LINES } from "@/lib/domain/types";
 import {
@@ -32,6 +33,7 @@ export function CreateInitiativeForm() {
 
   return (
     <form action={formAction} className={styles.form}>
+      <ScopeField/>
       {state.error ? (
         <p className={styles.error} role="alert">
           {state.error}
@@ -113,7 +115,7 @@ export function CreateInitiativeForm() {
 
       <div className={styles.actions}>
         <SubmitButton />
-        <Link href="/initiatives">
+        <Link prefetch={false} href="/initiatives">
           <Button type="button" variant="ghost">
             Cancel
           </Button>

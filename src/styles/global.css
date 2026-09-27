@@ -45,6 +45,9 @@ h4 {
   letter-spacing: var(--ls-tight);
 }
 main { min-width: 0; }
+.skip-link{position:fixed;top:var(--s-2);left:var(--s-2);z-index:200;padding:var(--s-3) var(--s-4);background:var(--panel);color:var(--accent-700);transform:translateY(-150%);border:2px solid var(--accent-700)}
+.skip-link:focus{transform:none}
+html{scroll-padding-top:calc(var(--workspace-header-h) + var(--s-4))}
 button:disabled { cursor: not-allowed; }
 a:hover { text-underline-offset: 3px; }
 ul,

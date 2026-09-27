@@ -1,114 +1,32 @@
-"use client";
-
-import Image from "next/image";
-import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
-import { InstrumentIcon } from "./InstrumentIcon";
-import { openPalette } from "./events";
-import styles from "./NavRail.module.css";
-
-interface NavRailProps {
-  dataSource: "Supabase" | "Local demo data";
-  writesEnabled: boolean;
-}
-
-export function NavRail({ dataSource, writesEnabled }: NavRailProps) {
-  const pathname = usePathname();
-  const [expanded, setExpanded] = useState(true);
-  const [preferenceReady, setPreferenceReady] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileTitle, setMobileTitle] = useState("Initiative");
-  const drawerRef = useRef<HTMLElement>(null);
-  const hamburgerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const media = window.matchMedia("(min-width: 1101px)");
-    const sync = () => {
-      let saved: string | null = null;
-      try { saved = localStorage.getItem("prodwise.navigation.expanded"); } catch { /* Storage may be unavailable. */ }
-      setExpanded(media.matches && saved !== "false");
-      setPreferenceReady(true);
-    };
-    const frame = requestAnimationFrame(sync);
-    media.addEventListener("change", sync);
-    return () => { cancelAnimationFrame(frame); media.removeEventListener("change", sync); };
-  }, []);
-
-  useEffect(() => {
-    if (!preferenceReady) return;
-    document.documentElement.style.setProperty("--rail-w", expanded ? "248px" : "76px");
-    return () => { document.documentElement.style.removeProperty("--rail-w"); };
-  }, [expanded, preferenceReady]);
-
-  const closeDrawer = useCallback(() => {
-    setMobileOpen(false);
-    requestAnimationFrame(() => hamburgerRef.current?.focus());
-  }, []);
-  useEffect(() => {
-    if (!mobileOpen) return;
-    drawerRef.current?.querySelector<HTMLElement>("nav a")?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); closeDrawer(); return; }
-      if (event.key !== "Tab") return;
-      const focusable = [...(drawerRef.current?.querySelectorAll<HTMLElement>('a[href],button:not([disabled])') ?? [])];
-      if (!focusable.length) return;
-      const first = focusable[0]!, last = focusable[focusable.length - 1]!;
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [mobileOpen, closeDrawer]);
-  useEffect(() => {
-    const update = () => {
-      const name = document.querySelector("[data-workspace-title]")?.textContent?.trim();
-      if (name) setMobileTitle(name);
-    };
-    update();
-    const observer = new MutationObserver(update);
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [pathname]);
-
-  const links = [
-    { href: "/", label: "Home", icon: "home" as const, active: pathname === "/" },
-    { href: "/initiatives", label: "Initiatives", icon: "initiatives" as const, active: pathname.startsWith("/initiatives") },
-    { href: "/roadmap", label: "Roadmap", icon: "reporting" as const, active: pathname.startsWith("/roadmap") },
-    { href: "/analysis", label: "Analysis", icon: "reporting" as const, active: pathname.startsWith("/analysis") },
-  ];
-
-  return <>
-    <header className={styles.mobileBar}>
-      <button ref={hamburgerRef} type="button" onClick={() => setMobileOpen(true)} aria-label="Open navigation" aria-expanded={mobileOpen}><InstrumentIcon name="menu" /></button>
-      <Image src="/assets/prodwise-logo-mark.png" alt="" width={24} height={24} unoptimized />
-      <span>{pathname === "/" ? "Home" : pathname.startsWith("/initiatives/") && pathname !== "/initiatives/new" ? mobileTitle : pathname.startsWith("/initiatives") ? "Initiatives" : links.find(link => link.active)?.label ?? "Prodwise"}</span>
-      <button type="button" onClick={openPalette} aria-label="Search"><InstrumentIcon name="search" /></button>
-    </header>
-    {mobileOpen && <button className={styles.scrim} aria-label="Close navigation" onClick={closeDrawer} />}
-    <aside ref={drawerRef} className={`${styles.rail} ${expanded ? styles.expanded : ""} ${mobileOpen ? styles.mobileOpen : ""}`} role={mobileOpen ? "dialog" : undefined} aria-modal={mobileOpen ? true : undefined} aria-label={mobileOpen ? "Navigation" : undefined}>
-      <div className={styles.brand}>
-        <Image src="/assets/prodwise-logo-mark.png" alt="" width={32} height={32} unoptimized priority />
-        <strong>Prodwise</strong>
-      </div>
-      <nav aria-label="Primary">
-        {links.map(link => <Link key={link.href} href={link.href} onClick={closeDrawer} aria-label={link.label} title={link.label} className={`${styles.navItem} ${link.active ? styles.active : ""}`} aria-current={link.active ? "page" : undefined}>
-          <InstrumentIcon name={link.icon} /><span>{link.label}</span>
-        </Link>)}
-      </nav>
-      {pathname.startsWith("/initiatives/") && pathname !== "/initiatives/new" ? <nav className={styles.context} aria-label="Current initiative">
-        <Link href={`/initiatives/${pathname.split("/")[2]}`} className={styles.navItem} aria-label={`Open ${mobileTitle} Brief`} title={mobileTitle}><InstrumentIcon name="initiatives" /><span>{mobileTitle}</span></Link>
-      </nav> : null}
-      <div className={styles.footer}>
-        <p title={writesEnabled ? "Environment permits changes; your role still determines access." : "Environment changes are disabled."}>{dataSource === "Supabase" ? "Connected workspace" : "Local workspace"}<br />{writesEnabled ? "Environment writes on" : "Environment writes off"}</p>
-        <button type="button" className={styles.pin} onClick={() => {
-          const next = !expanded;
-          setExpanded(next);
-          try { localStorage.setItem("prodwise.navigation.expanded", String(next)); } catch { /* Keep the in-session preference. */ }
-        }} aria-label={expanded ? "Collapse navigation" : "Pin expanded navigation"} aria-pressed={expanded}>
-          <InstrumentIcon name="pin" /><span>{expanded ? "Collapse" : "Expand"}</span>
-        </button>
-      </div>
-    </aside>
-  </>;
+'use client';
+import Image from 'next/image';
+import Link from 'next/link';
+import {useEffect,useRef,useState} from 'react';
+import {usePathname} from 'next/navigation';
+import {logoutAction} from '@/app/login/actions';
+import {hasOrganizationAdminAuthority} from '@/lib/auth/roles';
+import {InstrumentIcon} from './InstrumentIcon';
+import {openPalette} from './events';
+import {OrganizationControl} from './OrganizationControl';
+import {OPEN_HELP} from './HelpPanel';
+import type {ShellIdentity} from './ShellIdentity';
+import styles from './NavRail.module.css';
+export function NavRail({identity,writesEnabled}:{identity:ShellIdentity;writesEnabled:boolean}){
+ const pathname=usePathname();const[expanded,setExpanded]=useState(true);const[title,setTitle]=useState('Initiative');const drawer=useRef<HTMLDialogElement>(null);const trigger=useRef<HTMLButtonElement>(null);
+ useEffect(()=>{const media=matchMedia('(min-width:1101px)');function sync(){let saved;try{saved=localStorage.getItem('prodwise.navigation.expanded');}catch{}setExpanded(media.matches&&saved!=='false');}sync();media.addEventListener('change',sync);return()=>media.removeEventListener('change',sync);},[]);
+ useEffect(()=>{document.documentElement.style.setProperty('--rail-w',expanded?'248px':'76px');return()=>{document.documentElement.style.removeProperty('--rail-w');};},[expanded]);
+ useEffect(()=>{function update(){const text=document.querySelector('[data-workspace-title]')?.textContent;if(text)setTitle(text);}update();const observer=new MutationObserver(update);observer.observe(document.body,{childList:true,subtree:true});return()=>observer.disconnect();},[pathname]);
+ function close(){drawer.current?.close();trigger.current?.focus();}
+ const links=[{href:'/',label:'Home',icon:'home' as const,active:pathname==='/'},{href:'/initiatives',label:'Initiatives',icon:'initiatives' as const,active:pathname.startsWith('/initiatives')},{href:'/roadmap',label:'Roadmap',icon:'reporting' as const,active:pathname.startsWith('/roadmap')},{href:'/analysis/portfolio',label:'Analysis',icon:'reporting' as const,active:pathname.startsWith('/analysis')}];
+ const brand=<div className={styles.brand}><Image src="/assets/prodwise-logo-mark.png" alt="" width={32} height={32} unoptimized/><strong>Prodwise</strong></div>;
+ const navigation=<><nav aria-label="Primary">{links.map(link=><Link key={link.href} href={link.href} onClick={close} title={link.label} aria-label={link.label} className={`${styles.navItem} ${link.active?styles.active:''}`} aria-current={link.active?'page':undefined}><InstrumentIcon name={link.icon}/><span>{link.label}</span></Link>)}</nav>{pathname.startsWith('/initiatives/')&&pathname!='/initiatives/new'&&<nav className={styles.context} aria-label="Current initiative"><Link prefetch={false} href={`/initiatives/${pathname.split('/')[2]}`} className={styles.navItem} title={title}><InstrumentIcon name="initiatives"/><span>{title}</span></Link></nav>}</>;
+ const utilities=<nav aria-label="Administration and account" className={styles.utilities}>
+ {!identity.guest&&hasOrganizationAdminAuthority(identity.access)&&<Link prefetch={false} href="/administration" className={styles.navItem} onClick={close} title="Administration"><InstrumentIcon name="administration"/><span>Administration</span></Link>}
+ <button className={styles.navItem} type="button" title="Help" aria-label="Help" onClick={()=>{close();window.dispatchEvent(new Event(OPEN_HELP));}}><b aria-hidden="true">?</b><span>Help</span></button>
+ <details className={styles.account}><summary className={styles.navItem} title={`Account: ${identity.access.actor.label}`}><b aria-hidden="true">{identity.access.actor.label.slice(0,1)}</b><span>{identity.access.actor.label}</span></summary><div className={styles.accountMenu}><Link prefetch={false} href="/account" onClick={close}>My account</Link><form action={logoutAction}><button type="submit">Sign out</button></form></div></details>
+ {!writesEnabled&&<p>Changes disabled in this environment</p>}
+ </nav>;
+ return <><header className={styles.mobileBar}><button ref={trigger} type="button" onClick={()=>drawer.current?.showModal()} aria-label="Open navigation"><InstrumentIcon name="menu"/></button><Image src="/assets/prodwise-logo-mark.png" alt="" width={24} height={24} unoptimized/><div className={styles.mobileIdentity}><span>Prodwise{identity.presentation.isDemo?' · Demo':''}</span><OrganizationControl identity={identity} compact/></div><button type="button" onClick={openPalette} aria-label="Search"><InstrumentIcon name="search"/></button></header>
+ <aside className={`${styles.rail} ${expanded?styles.expanded:''}`} aria-label="Product navigation">{brand}<div className={styles.organization}><OrganizationControl identity={identity}/></div>{navigation}<div className={styles.footer}>{utilities}<button className={styles.pin} type="button" onClick={()=>{const next=!expanded;setExpanded(next);try{localStorage.setItem('prodwise.navigation.expanded',String(next));}catch{}}} aria-label={expanded?'Collapse navigation':'Pin expanded navigation'} aria-pressed={expanded}><InstrumentIcon name="pin"/><span>{expanded?'Collapse':'Expand'}</span></button></div></aside>
+ <dialog ref={drawer} className={styles.drawer} aria-label="Navigation" onCancel={()=>trigger.current?.focus()}>{brand}<button type="button" className={styles.close} onClick={close} aria-label="Close navigation">Close ×</button><OrganizationControl identity={identity}/>{navigation}{utilities}</dialog></>;
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { EMPTY_STATE, type DeliveryState, type PortfolioSource, type WorkspaceAccess, type SectionEdit } from "./types.ts";
-import { changesSince, createReview, editSection, finalizeReview, freezeInput, isoWeek, recordFact, refreshReview, supportChanged, weekValid } from "./model.ts";
+import { applyFactUpdatesAndRefresh, finalizationChecks, nextReviewWeek, changesSince, createReview, editSection, finalizeReview, freezeInput, isoWeek, recordFact, refreshReview, supportChanged, weekValid } from "./model.ts";
 import { validateDraft } from "./ai-validation.ts";
 import type { MemoryClaim, FindingState } from "../domain/types.ts";
 const admin:WorkspaceAccess={workspaceId:"w1",organizationId:"org1",platformRole:null,memberId:"admin",actor:{id:"admin-user",label:"ADMIN"},role:"ADMIN",isProductLead:false};
@@ -18,6 +18,31 @@ function set(state:DeliveryState,s:PortfolioSource,kind:"OWNER"|"SCOPE"|"TARGET_
 }
 function configured(s:PortfolioSource,time=now):DeliveryState { let state=structuredClone(EMPTY_STATE); state=set(state,s,"OWNER","pm",time); state=set(state,s,"OWNER","pm2",time,"i2"); state=set(state,s,"SCOPE","Pilot",time); state=set(state,s,"SCOPE","Phase A",time,"i2"); return state; }
 const edit:SectionEdit={headline:"PM reviewed",updates:"",attention:"",decisionNeeded:"",nextMilestone:"",nextStep:""};
+test("record update group refreshes its Draft atomically, preserves commentary and marks affected section",()=>{
+ const s=source();let state=createReview(configured(s),s,admin,"2026-W39",now),review=state.reviews[0]!;
+ state=editSection(state,s,admin,review.id,review.revision,"i1",review.sections[0]!.revision,{...edit,updates:"Keep management commentary"},now);review=state.reviews[0]!;
+ const before=JSON.stringify(state);const update={initiativeId:"i1",kind:"TARGET_LIVE" as const,expectedRevision:0,value:{date:"2026-10-08",text:null,memberId:null,extent:null},retract:false,basis:"DIRECT_KNOWLEDGE" as const,note:"Confirmed pilot target in planning",evidenceId:null,locator:null};
+ const next=applyFactUpdatesAndRefresh(state,s,admin,review.id,review.revision,[update,{...update,kind:"NEXT_STEP",value:{...update.value,date:null,text:"Finance review"}}],now);
+ assert.equal(JSON.stringify(state),before);assert.equal(next.events.length,state.events.length+2);assert.equal(next.reviews[0]!.sections[0]!.updates,"Keep management commentary");assert.equal(next.reviews[0]!.sections[0]!.needsRecheck,true);assert.equal(next.reviews[0]!.input.facts.find(f=>f.kind==="TARGET_LIVE")?.value.date,"2026-10-08");
+ assert.throws(()=>applyFactUpdatesAndRefresh(state,s,admin,review.id,review.revision,[update,{...update,kind:"ACTUAL_LIVE",value:{...update.value,date:"2026-10-09"}}],now),/future/);assert.equal(JSON.stringify(state),before);
+ assert.throws(()=>applyFactUpdatesAndRefresh(state,s,admin,review.id,review.revision+1,[update],now),/changed/);
+});
+test("final checklist exposes authority, environment, stale inputs and exact reviewed prerequisites",()=>{
+ const s=source();let state=createReview(configured(s),s,admin,"2026-W39",now),review=state.reviews[0]!;
+ let checks=finalizationChecks(state,s,pm,review,now,false);assert.equal(checks.find(c=>c.id==="authority")!.met,false);assert.equal(checks.find(c=>c.id==="environment")!.met,false);assert.equal(checks.find(c=>c.id==="sections")!.met,false);
+ state=reviewed(state,s,review.id);review=state.reviews[0]!;assert.ok(finalizationChecks(state,s,admin,review,now,true).every(c=>c.met));
+ const changed=structuredClone(s);changed.snapshots[0]!.initiative.stage="VALIDATION";checks=finalizationChecks(state,changed,admin,review,now,true);assert.equal(checks.find(c=>c.id==="inputs")!.met,false);
+});
+test("next review uses ISO year boundaries and Cairo week availability without synthetic clock",()=>{
+ assert.deepEqual(nextReviewWeek("2026-W39"),{week:"2026-W40",startsOn:"2026-09-28"});
+ assert.deepEqual(nextReviewWeek("2026-W53"),{week:"2027-W01",startsOn:"2027-01-04"});
+ assert.throws(()=>nextReviewWeek("2025-W53"),/valid ISO/);
+ const s=source();assert.throws(()=>createReview(configured(s),s,admin,nextReviewWeek("2026-W39").week,now),/current week/);
+});
+test("next week opens against the newly finalized review and never rewrites it",()=>{
+ const s=source();let state=createReview(configured(s),s,admin,"2026-W39",now);state=reviewed(state,s,state.reviews[0]!.id);const draft=state.reviews[0]!;state=finalizeReview(state,s,admin,draft.id,draft.revision,now);
+ const bytes=JSON.stringify(state.reviews[0]);state=createReview(state,s,admin,nextReviewWeek(draft.week).week,"2026-09-28T10:00:00Z");assert.equal(state.reviews[1]!.baselineReviewId,draft.id);assert.equal(state.reviews[1]!.week,"2026-W40");assert.equal(JSON.stringify(state.reviews[0]),bytes);
+});
 
 test("Changing delivery scope cannot report the new phase target as a like-for-like slip",()=>{
  const s=source();let state=configured(s,"2026-09-18T10:00:00Z");state=set(state,s,"TARGET_LIVE","2026-10-01","2026-09-18T10:00:00Z");

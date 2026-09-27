@@ -1,4 +1,5 @@
 "use client";
+import { ScopeField } from "@/components/auth/WorkspaceScope";
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
@@ -52,7 +53,8 @@ export function ResolveFindingForm({
   if (resolved) {
     return (
       <form action={reopen} className={styles.resolveDisclosure}>
-        <input type="hidden" name="slug" value={slug} />
+        <ScopeField />
+      <input type="hidden" name="slug" value={slug} />
         <input type="hidden" name="fingerprint" value={fingerprint} />
         {error ? <p className={styles.error}>{error}</p> : null}
         <Submit label="Review again" busy="Reopening…" />
@@ -62,10 +64,11 @@ export function ResolveFindingForm({
 
   return (
     <details className={styles.resolveDisclosure} open={Boolean(error)}>
-      <summary className={styles.resolveTrigger}>Review with a note only</summary>
+      <summary className={`${styles.resolveTrigger} ${styles.noteTrigger}`}><span>Review with a note only</span><small>Records a note; Knowledge unchanged.</small></summary>
 
       <form action={resolve} className={styles.resolveForm}>
-        <input type="hidden" name="slug" value={slug} />
+        <ScopeField />
+      <input type="hidden" name="slug" value={slug} />
         <input type="hidden" name="fingerprint" value={fingerprint} />
         {/* What the reader actually saw. Checked server-side so a decision
             cannot be recorded against a finding that changed while they typed. */}

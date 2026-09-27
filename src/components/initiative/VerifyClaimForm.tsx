@@ -1,4 +1,5 @@
 "use client";
+import { ScopeField } from "@/components/auth/WorkspaceScope";
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
@@ -25,6 +26,7 @@ export function VerifyClaimForm({
   const [state, submit] = useActionState(action, { error: null });
   return (
     <form action={submit} className={styles.form}>
+      <ScopeField />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="claimId" value={claimId} />
       <input type="hidden" name="expectedUpdatedAt" value={expectedUpdatedAt} />

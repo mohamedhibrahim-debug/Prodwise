@@ -9,6 +9,7 @@ const TABS = [
   { segment: "", label: "Brief" },
   { segment: "decisions", label: "Decisions" },
   { segment: "knowledge", label: "Knowledge" },
+  { segment: "sources", label: "Sources" },
 ] as const;
 
 /**
@@ -28,7 +29,7 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
   const base = `/initiatives/${slug}`;
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (!event.altKey || event.ctrlKey || event.metaKey || !["1", "2", "3"].includes(event.key)) return;
+      if (!event.altKey || event.ctrlKey || event.metaKey || !["1", "2", "3", "4"].includes(event.key)) return;
       if (event.target instanceof HTMLElement &&
         event.target.closest("input,textarea,select,[contenteditable]:not([contenteditable=false])")) return;
       event.preventDefault();
@@ -101,7 +102,7 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
   const rest = pathname.startsWith(base) ? pathname.slice(base.length) : "";
   const currentSegment = rest.replace(/^\//, "").split("/")[0] ?? "";
   const activeSegment =
-    TABS.find((t) => t.segment && t.segment === currentSegment)?.segment ?? "";
+    rest.startsWith('/knowledge/sources') ? 'sources' : TABS.find((t) => t.segment && t.segment === currentSegment)?.segment ?? "";
 
   return (
     <div
@@ -122,6 +123,7 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
             <Link
               key={label}
               href={href}
+              prefetch={false}
               className={`${styles.tab} ${active ? styles.tabActive : ""}`}
               aria-current={active ? "page" : undefined}
             >

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { adminClient, contextForRequest, isLocalAuth, localAuthStore } from "@/lib/auth/service";
@@ -9,12 +10,16 @@ export interface WorkspacePresentation { organizationName:string; workspaceName:
  * organization name. A registered synthetic scenario has a fixed review date. */
 export async function workspacePresentation(access?:WorkspaceAccess):Promise<WorkspacePresentation> {
   const ctx=access??await contextForRequest();
+  return readPresentation(ctx.workspaceId,ctx.organizationId);
+}
+const readPresentation=cache(async (workspaceId:string, organizationId:string):Promise<WorkspacePresentation> => {
+  const ctx={workspaceId,organizationId};
   if (isLocalAuth()) {
     const state=localAuthStore(ctx.workspaceId).read(true);
     let scenarioAt:string|null=null;
     try {
       const registered=JSON.parse(await readFile(join(process.cwd(),".data","demo-access.json"),"utf8"));
-      if(registered.workspaceId===ctx.workspaceId&&registered.organizationId===ctx.organizationId&&registered.version==="prodwise-graduation-2026-09-v1") scenarioAt=registered.scenarioAt??"2026-09-26T10:00:00.000Z";
+      if(registered.workspaceId===ctx.workspaceId&&registered.organizationId===ctx.organizationId&&["prodwise-graduation-2026-09-v1","prodwise-graduation-2026-09-v2"].includes(registered.version)) scenarioAt=registered.scenarioAt??registered.asOf??"2026-09-26T10:00:00.000Z";
     } catch(error) { if((error as NodeJS.ErrnoException).code!=="ENOENT") throw new Error("Demo scenario registration is unavailable."); }
     return {organizationName:state.organization.name,workspaceName:state.workspace.name,isDemo:scenarioAt!==null,scenarioAt};
   }
@@ -26,4 +31,4 @@ export async function workspacePresentation(access?:WorkspaceAccess):Promise<Wor
   ]);
   if(org.error||workspace.error||scenario.error) throw new Error("Workspace context is unavailable.");
   return {organizationName:org.data.name,workspaceName:workspace.data.name,isDemo:!!scenario.data,scenarioAt:scenario.data?.scenario_at??null};
-}
+});

@@ -118,7 +118,7 @@ export function changesSince(input: PortfolioInput, baseline: PortfolioInput | n
   const result: Change[]=[];
   for (const snap of input.snapshots) {
     const id=snap.initiative.id;
-    if (!baseline.snapshots.some(s=>s.initiative.id===id)) { result.push({ id:`scope:${id}`,initiativeId:id,kind:"SCOPE",label:"New to this review scope.",eventIds:[],days:null,lateRecorded:false }); continue; }
+    if (!baseline.snapshots.some(s=>s.initiative.id===id)) { const late=input.events.filter(e=>e.initiativeId===id&&e.occurredAt>baseline.asOf&&e.occurredAt<=input.asOf&&["DEV_STARTED","SOLUTION_DEFINED","ACTUAL_LIVE"].includes(e.after.kind)&&e.after.value.date&&e.after.value.date<=cairoDay(baseline.asOf));result.push({ id:`scope:${id}`,initiativeId:id,kind:"SCOPE",label:"New to this review scope."+(late.length?" Earlier effective dates were recorded after the previous Final; this is late-recorded provenance, not proof the delivery occurred this week.":""),eventIds:late.map(e=>e.id),days:null,lateRecorded:Boolean(late.length) }); continue; }
     const prior=baseline.snapshots.find(s=>s.initiative.id===id)!;
     const scopeChanged=canonical(factFor(baseline.facts,id,"SCOPE")?.value ?? null)!==canonical(factFor(input.facts,id,"SCOPE")?.value ?? null);
     const add=(kind:"KNOWLEDGE"|"DECISION"|"STAGE"|"SUPPORT",ref:string,label:string)=>result.push({id:`change:${id}:${ref}`,initiativeId:id,kind,label,eventIds:[],days:null,lateRecorded:false});
@@ -228,12 +228,43 @@ export function refreshReview(state:DeliveryState,source:PortfolioSource,ctx:Wor
     return { ...old,ownerMemberId:ownerFor(input.facts,s.initiative.id),sourceDigest:sectionDigest(input,s.initiative.id),revision:old.revision+1,needsRecheck:old.needsRecheck || old.sourceDigest!==sectionDigest(input,s.initiative.id) || review.baselineReviewId!==baseline?.id && Boolean(baseline) }; });
   return replaceReview(state,{ ...review,input,baselineReviewId:baseline?.id ?? null,revision:review.revision+1,sections });
 }
+/** Used by the visible checklist and final mutation: no independent approval state. */
+export function finalizationChecks(state:DeliveryState,source:PortfolioSource,ctx:WorkspaceAccess,review:WeeklyReview,now:string,writesEnabled:boolean) {
+  const current=freezeInput(source,state,ctx.workspaceId,now);
+  const baseline=latestBaseline(state,ctx.workspaceId,review.week);
+  const available=new Set(source.snapshots.map(s=>s.initiative.id));
+  return [
+    {id:"draft",label:"The review is a Draft",met:review.status==="DRAFT"},
+    {id:"authority",label:"You are an Org Owner, Admin, Platform Owner or Product Lead",met:canBusinessWrite(ctx)&&(hasOrganizationAdminAuthority(ctx)||ctx.isProductLead)},
+    {id:"environment",label:"Changes are enabled in this environment",met:writesEnabled},
+    {id:"chronology",label:"No later week is finalized",met:!state.reviews.some(r=>r.workspaceId===ctx.workspaceId&&r.status==="FINAL"&&r.week>review.week)},
+    {id:"inputs",label:"Inputs match the current initiative records",met:current.digest===review.input.digest},
+    {id:"baseline",label:"The previous Final baseline is unchanged",met:(baseline?.id??null)===review.baselineReviewId},
+    {id:"sections",label:"Every section is saved and reviewed; none needs re-check",met:review.sections.every(s=>!s.needsRecheck&&Boolean(s.editedByMemberId||s.editedByUserId))},
+    {id:"available",label:"Every frozen section is available in this workspace",met:review.sections.every(s=>available.has(s.initiativeId))&&review.sections.length===review.input.snapshots.length},
+  ];
+}
+/** Facts and the refreshed draft are one delivery transaction. Commentary is preserved. */
+export function applyFactUpdatesAndRefresh(state:DeliveryState,source:PortfolioSource,ctx:WorkspaceAccess,reviewId:string,expectedReviewRevision:number,updates:RecordFactInput[],now:string):DeliveryState {
+  draft(state,ctx,reviewId,expectedReviewRevision);
+  let next=state;
+  for(const update of updates) next=recordFact(next,source,ctx,update,now);
+  return refreshReview(next,source,ctx,reviewId,expectedReviewRevision,now);
+}
+export function nextReviewWeek(week:string):{week:string;startsOn:string} {
+  if(!weekValid(week)) fail("WEEK","Choose a valid ISO week.");
+  const year=Number(week.slice(0,4)),number=Number(week.slice(6));
+  const jan4=new Date(Date.UTC(year,0,4,12));
+  jan4.setUTCDate(jan4.getUTCDate()-(jan4.getUTCDay()||7)+1+number*7);
+  return {week:isoWeek(jan4.toISOString()),startsOn:jan4.toISOString().slice(0,10)};
+}
 export function finalizeReview(state:DeliveryState,source:PortfolioSource,ctx:WorkspaceAccess,id:string,revision:number,now:string):DeliveryState {
   assertMember(ctx,source); assertFinalizer(ctx); const review=draft(state,ctx,id,revision);
   if (state.reviews.some(r=>r.workspaceId===ctx.workspaceId && r.status === "FINAL" && r.week>review.week)) fail("OUT_OF_ORDER_FINAL","A later week is already finalized. Keep this historical draft for reference; record corrections in the current week's review.");
   const current=freezeInput(source,state,ctx.workspaceId,now); const baseline=latestBaseline(state,ctx.workspaceId,review.week);
   if (current.digest!==review.input.digest || (baseline?.id ?? null)!==review.baselineReviewId) fail("STALE_FINALIZE","Inputs or the previous finalized review changed. Refresh, review the affected PM sections, then finalize.");
   if (review.sections.some(s=>s.needsRecheck || (!s.editedByMemberId && !s.editedByUserId))) fail("SECTION_REVIEW_REQUIRED","Every PM section must be reviewed and saved before finalization.");
+  if(!finalizationChecks(state,source,ctx,review,now,true).find(c=>c.id==="available")!.met) fail("SECTION_UNAVAILABLE","Some frozen sections are unavailable. Refresh the review before finalizing.");
   return replaceReview(state,{ ...review,status:"FINAL",revision:review.revision+1,finalizedAt:now,finalizedByMemberId:ctx.memberId,finalizedByUserId:ctx.actor.id,finalizedByLabel:ctx.actor.label });
 }
 export function applyAiDraft(state:DeliveryState,source:PortfolioSource,ctx:WorkspaceAccess,id:string,revision:number,ai:AiDraft,now:string):DeliveryState {

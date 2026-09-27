@@ -60,9 +60,9 @@ export default async function DecisionsPage({ params, searchParams }: { params: 
       <DecisionWorkbench initialItem={item} lanes={DECISION_LANES.map(lane => ({ ...lane, items: laneItems[lane.key], empty: content[lane.key].body }))}>
     <aside className={styles.reviewContext} aria-label="Initiative context">
       <div className={styles.contextBlock}><div className={styles.contextLabel}>Go to</div>
-        <Link href={`/initiatives/${slug}/knowledge`} className={styles.contextLink}>Knowledge →</Link>
-        <Link href={`/initiatives/${slug}/knowledge/sources`} className={styles.contextLink}>Sources →</Link>
-        <Link href={`/initiatives/${slug}`} className={styles.contextLink}>Brief →</Link></div>
+        <Link prefetch={false} href={`/initiatives/${slug}/knowledge`} className={styles.contextLink}>Knowledge →</Link>
+        <Link prefetch={false} href={`/initiatives/${slug}/knowledge/sources`} className={styles.contextLink}>Sources →</Link>
+        <Link prefetch={false} href={`/initiatives/${slug}`} className={styles.contextLink}>Brief →</Link></div>
       {!isDemoWriteEnabled ? <p className={styles.contextNotice}>{WRITE_DISABLED_MESSAGE}</p> : null}
     </aside>
       </DecisionWorkbench>

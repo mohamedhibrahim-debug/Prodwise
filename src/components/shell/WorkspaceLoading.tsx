@@ -1,0 +1,2 @@
+import styles from "./WorkspaceLoading.module.css";
+export function WorkspaceLoading(){return <section className={styles.loading} aria-busy="true" aria-label="Loading workspace content"><p role="status">Loading current records…</p><div className={styles.heading} aria-hidden="true"/><div className={styles.summary} aria-hidden="true"/><div className={styles.rows} aria-hidden="true">{[0,1,2,3].map(n=><div key={n}/>)}</div></section>;}

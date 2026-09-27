@@ -1,7 +1,7 @@
 import "server-only";
 
 import { isDemoWriteEnabled } from "@/lib/env";
-import { requireWorkspaceAccess } from "@/lib/auth/access";
+import { requireWorkspaceAccess, requireFreshWorkspaceAccess } from "@/lib/auth/access";
 import { isLocalAuth } from "@/lib/auth/service";
 import { guardedRepository } from "./guarded-repository";
 import { localRepository } from "./local-repository";
@@ -17,7 +17,7 @@ import type { Repository } from "./repository";
  */
 export function getRepository(): Repository {
   return guardedRepository(requireWorkspaceAccess, () => isLocalAuth() ? localRepository : supabaseRepository,
-    () => isDemoWriteEnabled, isLocalAuth);
+    () => isDemoWriteEnabled, isLocalAuth, requireFreshWorkspaceAccess);
 }
 
 export type { Repository } from "./repository";

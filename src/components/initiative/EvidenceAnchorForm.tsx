@@ -1,4 +1,5 @@
 "use client";
+import { ScopeField } from "@/components/auth/WorkspaceScope";
 
 import { useActionState } from "react";
 import { updateEvidenceAnchorAction } from "@/app/initiatives/[slug]/memory/actions";
@@ -14,6 +15,7 @@ export function EvidenceAnchorForm({
   const [state, action, pending] = useActionState(updateEvidenceAnchorAction, { error: null });
   return (
     <form action={action}>
+      <ScopeField />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="claimId" value={claimId} />
       <input type="hidden" name="evidenceId" value={evidenceId} />

@@ -1,4 +1,6 @@
 "use server";
+import { assertFormWorkspace } from "@/lib/auth/scope";
+import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -59,6 +61,7 @@ export async function updateEvidenceAction(
   if (!boundary) return { error: "Select a boundary classification." };
 
   try {
+    assertFormWorkspace(formData,await requireBusinessWriteAccess());
     // `evidenceId` and `slug` are client-controlled hidden fields, so ownership
     // is proven at this mutation boundary rather than trusted from the page
     // guard. Nothing is written and no activity is logged if they do not match.

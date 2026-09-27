@@ -16,7 +16,7 @@ export default function NewInitiativePage() {
   if (!isDemoWriteEnabled) {
     return (
       <div className={styles.page}>
-        <Link href="/initiatives" className={styles.back}>
+        <Link prefetch={false} href="/initiatives" className={styles.back}>
           ← Initiatives
         </Link>
         <h1 className={styles.title}>Create Initiative</h1>
@@ -27,7 +27,7 @@ export default function NewInitiativePage() {
 
   return (
     <div className={styles.page}>
-      <Link href="/initiatives" className={styles.back}>
+      <Link prefetch={false} href="/initiatives" className={styles.back}>
         ← Initiatives
       </Link>
 

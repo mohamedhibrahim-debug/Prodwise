@@ -1,20 +1,11 @@
-import { requireWorkspaceAccess } from '@/lib/auth/access';
-import { AccountAccess } from '@/components/auth/AccountAccess';
-import styles from '@/components/auth/auth.module.css';
-import Link from 'next/link';
-import { AuthForm } from '@/components/auth/AuthForm';
-import { passwordAction } from './actions';
-import { isDemoGuestSession } from '@/lib/auth/service';
-export const dynamic='force-dynamic';
-export default async function Account({searchParams}:{searchParams:Promise<{restricted?:string}>}) {
-  const ctx=await requireWorkspaceAccess();const query=await searchParams;const guest=await isDemoGuestSession();
-  return <section className={styles.page}><AccountAccess/><h1>My account</h1>
-    {query.restricted&&<p className={styles.role}>You have view-only access. You can inspect initiatives, Sources, Knowledge and Decisions.</p>}
-    <p>{ctx.actor.label} · {ctx.role}</p><p>Workspace access and your account email are managed by your Admin.</p><Link href="/">Go to Home</Link>
-    {guest ? <div className={styles.card}><h2>Exploring Demo</h2><p>You are using synthetic demo data. Changes stay inside this workspace.</p><p>Sign out to use your own account.</p></div> : <div className={styles.card}><h2>Change my password</h2><AuthForm action={passwordAction} submit="Update password">
-      <label>Current password<input name="currentPassword" type="password" autoComplete="current-password" required/></label>
-      <label>New password<input name="password" type="password" autoComplete="new-password" minLength={12} maxLength={256} required/></label>
-      <label>Confirm new password<input name="confirmPassword" type="password" autoComplete="new-password" minLength={12} maxLength={256} required/></label>
-    </AuthForm></div>}
-  </section>;
-}
+import Link from "next/link";
+import {requireWorkspaceAccess} from "@/lib/auth/access";
+import {currentIdentityPresentation,isDemoGuestSession} from "@/lib/auth/service";
+import {workspacePresentation} from "@/lib/workspace/context";
+import {logoutAction} from "@/app/login/actions";
+import {passwordAction} from "./actions";
+import {AdminForm} from "@/components/admin/AdminForm";
+import {Section,styles} from "@/components/admin/AdminUI";
+import {roleLabel} from "@/components/admin/model";
+export const metadata={title:"My account"};
+export default async function Account(){const ctx=await requireWorkspaceAccess();const [identity,workspace,guest]=await Promise.all([currentIdentityPresentation(),workspacePresentation(ctx),isDemoGuestSession()]);return <div className={styles.page}><header className={styles.masthead}><div><p className={styles.eyebrow}>Personal account</p><h1>My account</h1><p className={styles.intro}>Your identity, current organization access and account security.</p></div></header><div className={styles.detailColumns}><div><Section title="Identity"><dl className={styles.details}><div><dt>Name</dt><dd>{identity.displayName}</dd></div><div><dt>Email</dt><dd>{identity.email}</dd></div></dl></Section><Section title="Security">{guest?<div className={styles.notice}><h3>Exploring Demo</h3><p>This is a shared synthetic product session. Account credentials and organization administration are unavailable.</p><p>Sign out to use your own account.</p></div>:<AdminForm action={passwordAction} scopeWorkspaceId={ctx.workspaceId} submit="Update password" fields={[{name:"currentPassword",label:"Current password",type:"password",required:true,autoComplete:"current-password"},{name:"password",label:"New password",type:"password",required:true,minLength:12,maxLength:256,autoComplete:"new-password",hint:"Use between 12 and 256 characters."},{name:"confirmPassword",label:"Confirm new password",type:"password",required:true,minLength:12,maxLength:256,autoComplete:"new-password"}]}/>}</Section><form action={logoutAction}><input type="hidden" name="scopeWorkspaceId" value={ctx.workspaceId}/><button className={styles.secondary}>Sign out</button></form></div><aside className={styles.side}><Section title="Current organization"><dl className={styles.details}><div><dt>Organization</dt><dd>{workspace.organizationName}</dd></div><div><dt>Workspace</dt><dd>{workspace.workspaceName}</dd></div><div><dt>Organization role</dt><dd>{ctx.role?roleLabel(ctx.role):"Platform access · not a member"}</dd></div><div><dt>Review finalization</dt><dd>{ctx.isProductLead?"Product Lead capability":"Based on organization authority"}</dd></div>{ctx.platformRole&&<div><dt>Platform authority</dt><dd>Platform Owner · global</dd></div>}</dl></Section><Section title="Continue working"><Link className={styles.textLink} href="/">Return to Home →</Link><p className={styles.summary}>Help and orientation are available from the workspace’s Help control.</p></Section></aside></div></div>;}

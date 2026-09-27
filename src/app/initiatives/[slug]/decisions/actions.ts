@@ -1,4 +1,5 @@
 "use server";
+import { assertFormWorkspace } from "@/lib/auth/scope";
 import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
 import { revalidatePath } from "next/cache";
@@ -17,6 +18,7 @@ function refreshDecisionPages(slug: string) {
 export async function decideAction(_prev: DecisionFormState, form: FormData): Promise<DecisionFormState> {
   try {
     const ctx=await requireBusinessWriteAccess();
+    assertFormWorkspace(form,ctx);
     return submitDecisionForm(form, { repo: getRepository(), actor: ctx.actor,
       assertWrite: assertWriteAllowed, refresh: refreshDecisionPages }, "decision");
   } catch(error) { return {error: decisionError(error)}; }
@@ -25,6 +27,7 @@ export async function decideAction(_prev: DecisionFormState, form: FormData): Pr
 export async function confirmerAction(_prev: DecisionFormState, form: FormData): Promise<DecisionFormState> {
   try {
     const ctx=await requireBusinessWriteAccess();
+    assertFormWorkspace(form,ctx);
     return submitDecisionForm(form, { repo: getRepository(), actor: ctx.actor,
       assertWrite: assertWriteAllowed, refresh: refreshDecisionPages }, "confirmer");
   } catch(error) { return {error: decisionError(error)}; }
@@ -75,7 +78,7 @@ export async function resolveFindingAction(
   }
 
   try {
-    await requireBusinessWriteAccess();
+    assertFormWorkspace(formData,await requireBusinessWriteAccess());
     const { initiative, finding } = await resolveOwnedFinding(slug, fingerprint);
 
     /* The fingerprint ignores membership, so it cannot serve as a concurrency
@@ -137,7 +140,7 @@ export async function reopenFindingAction(
   const fingerprint = readText(formData.get("fingerprint"));
 
   try {
-    await requireBusinessWriteAccess();
+    assertFormWorkspace(formData,await requireBusinessWriteAccess());
     const { initiative } = await resolveOwnedFinding(slug, fingerprint);
     await getRepository().reopenFindingState(
       initiative.id,

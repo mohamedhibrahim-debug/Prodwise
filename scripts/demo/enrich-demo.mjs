@@ -1,0 +1,77 @@
+/** Plan-only additive Demo enrichment. No environment, provider, network or DB access. */
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {resolve,relative,join} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {createHash} from 'node:crypto';
+import {canonicalDemoData,canonicalDemoDataV2,DEMO_CANONICAL_VERSION,DEMO_ENRICHED_VERSION,DEMO_CUTOFF} from '../../src/lib/demo/canonical.ts';
+import {canonical,refreshReview,freezeInput,sectionDigest} from '../../src/lib/delivery/model.ts';
+import {FIXTURE_ORIGIN_LABEL} from '../../src/lib/demo/presentation.ts';
+const hash=v=>createHash('sha256').update(canonical(v)).digest('hex');
+const ordered=rows=>[...rows].sort((a,b)=>String(a.id??`${a.claimId}:${a.evidenceId}`).localeCompare(String(b.id??`${b.claimId}:${b.evidenceId}`)));
+const normalizedDates=value=>Array.isArray(value)?value.map(normalizedDates):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).map(([k,v])=>[k,typeof v==='string'&&['createdAt','updatedAt','capturedAt','occurredAt','verifiedAt','lastVerifiedAt'].includes(k)&&!Number.isNaN(Date.parse(v))?new Date(v).toISOString():normalizedDates(v)])):value;
+const comparableStore=store=>Object.fromEntries(Object.entries(store).map(([key,rows])=>[key,normalizedDates(ordered(rows))]));
+/** Matches the original hosted operator's source projection, including frozen historical scope. */
+export function projectDemoForDatabase(demo,identity) {
+ const sourceProjection=source=>{const copy=structuredClone(source);for(const snap of copy.snapshots){snap.initiative.createdBy=identity.reviewerUserId;snap.evidence.sort((a,b)=>a.id.localeCompare(b.id));snap.claims.sort((a,b)=>a.id.localeCompare(b.id));for(const c of snap.claims){c.evidence.sort((a,b)=>a.id.localeCompare(b.id));c.anchors.sort((a,b)=>a.evidenceId.localeCompare(b.evidenceId));}}return copy;};
+ demo.source=sourceProjection(demo.source);
+ for(const review of demo.deliveryState.reviews){const frozenSource=sourceProjection({snapshots:review.input.snapshots,members:review.input.members});review.input=freezeInput(frozenSource,{...demo.deliveryState,facts:review.input.facts,events:review.input.events},identity.workspaceId,review.input.asOf);for(const section of review.sections)section.sourceDigest=sectionDigest(review.input,section.initiativeId);}
+ return demo;
+}
+export function planDemoEnrichment(input) {
+ const {identity,registration,productStore,deliveryState}=input;
+ if(!registration||registration.workspaceId!==identity.workspaceId||registration.organizationId!==identity.organizationId||registration.canonicalVersion!==DEMO_CANONICAL_VERSION||registration.scenarioAt!==DEMO_CUTOFF)throw new Error('Only the explicitly registered V1 Demo scenario may be enriched.');
+ if(input.storage&&!['LOCAL','POSTGRES'].includes(input.storage))throw new Error('Choose LOCAL or POSTGRES capture projection.');
+ const prepare=demo=>input.storage==='POSTGRES'?projectDemoForDatabase(demo,identity):demo;
+ const before=prepare(canonicalDemoData(identity)),after=prepare(canonicalDemoDataV2(identity));
+ if(canonical(comparableStore(productStore))!==canonical(comparableStore(before.productStore)))throw new Error('Demo business records changed. Stop and review the drift; enrichment must not replace them.');
+ if(canonical(ordered(deliveryState.facts))!==canonical(ordered(before.deliveryState.facts))||canonical(ordered(deliveryState.events))!==canonical(ordered(before.deliveryState.events)))throw new Error('Existing Demo facts/history changed. Review drift rather than resetting it.');
+ const originalFinal=before.deliveryState.reviews.find(r=>r.week==='2026-W38'),actualFinal=deliveryState.reviews.find(r=>r.id===originalFinal.id);
+ if(canonical(actualFinal)!==canonical(originalFinal))throw new Error('The existing W38 Final differs; no historical replacement is permitted.');
+ const draft=deliveryState.reviews.find(r=>r.week==='2026-W39'&&r.workspaceId===identity.workspaceId);
+ if(!draft||draft.status!=='DRAFT'||draft.input.digest!==before.deliveryState.reviews.find(r=>r.week==='2026-W39').input.digest||deliveryState.reviews.length!==2)throw new Error('W39 must remain a compatible open Draft with its existing baseline.');
+ const ctx={workspaceId:identity.workspaceId,organizationId:identity.organizationId,memberId:identity.reviewerMemberId,actor:{id:identity.reviewerUserId,label:FIXTURE_ORIGIN_LABEL},role:'ORG_OWNER',platformRole:null,isProductLead:false};
+ const next=refreshReview({...deliveryState,facts:after.deliveryState.facts,events:after.deliveryState.events},after.source,ctx,draft.id,draft.revision,DEMO_CUTOFF);
+ if(JSON.stringify(next.reviews.find(r=>r.id===originalFinal.id))!==JSON.stringify(actualFinal))throw new Error('Historical Final preservation check failed.');
+ const additions=Object.fromEntries(Object.entries(after.productStore).map(([key,rows])=>[key,rows.slice(before.productStore[key].length)]));
+ const nextDraft=next.reviews.find(r=>r.id===draft.id);if(!nextDraft)throw new Error('Refreshed Draft missing.');
+ return {schema:1,version:DEMO_ENRICHED_VERSION,identity,registration,expected:{productHash:hash(productStore),factsHash:hash(deliveryState.facts),eventsHash:hash(deliveryState.events),finalHash:hash(actualFinal),draftRevision:draft.revision},additions,facts:after.deliveryState.facts.slice(before.deliveryState.facts.length),events:after.deliveryState.events.slice(before.deliveryState.events.length),metrics:after.metrics,previousDraft:draft,nextDraft,originalFinal:actualFinal,preservation:{finalByteIdentical:true,originalBusinessUntouched:true,existingBlockers:2,commentaryPreserved:true}};
+}
+const literal=v=>"'"+String(v).replaceAll("'","''")+"'",json=v=>literal(JSON.stringify(v))+'::jsonb';
+const snake=row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key.replace(/[A-Z]/g,c=>'_'+c.toLowerCase()),value]));
+function inserts(table,columns,rows){return rows.length?`insert into public.${table} (${columns.join(',')}) select ${columns.map(c=>'r.'+c).join(',')} from jsonb_populate_recordset(null::public.${table},${json(rows)}) r;\n`:'';}
+function unchanged(table,columns,rows,ws,keys=['id']) {return `if (select count(*) from public.${table} where workspace_id=${ws})<>${rows.length} or exists(select 1 from jsonb_populate_recordset(null::public.${table},${json(rows)}) r left join public.${table} a on ${keys.map(k=>'a.'+k+'=r.'+k).join(' and ')} and a.workspace_id=${ws} where a.${keys[0]} is null or row(${columns.map(c=>'a.'+c).join(',')}) is distinct from row(${columns.map(c=>'r.'+c).join(',')})) then raise exception 'DEMO_${table.toUpperCase()}_DRIFT';end if;\n`;}
+/** Trusted operator reviews/applies this SQL; script deliberately has no apply mode. */
+export function renderDemoEnrichmentSql(p,actorId) {
+ if(!/^[0-9a-f-]{36}$/i.test(actorId))throw new Error('Explicit persisted Platform Owner actor UUID required.');
+ const ws=literal(p.identity.workspaceId)+'::uuid',org=literal(p.identity.organizationId)+'::uuid',s=p.additions;
+ let sql=`begin;\nset local standard_conforming_strings=on;\nset local lock_timeout='10s';\nset local statement_timeout='60s';\nselect public.require_platform_owner(${literal(actorId)}::uuid);\nselect 1 from public.organizations where id=${org} for update;\nselect 1 from public.workspaces where id=${ws} for update;\nselect 1 from public.organization_memberships where organization_id=${org} for update;\nselect 1 from public.weekly_reviews where workspace_id=${ws} for update;\nselect 1 from public.initiatives where workspace_id=${ws} for update;\nselect 1 from public.delivery_facts where workspace_id=${ws} for update;\nselect 1 from public.claims where workspace_id=${ws} for update;\nselect 1 from public.evidence where workspace_id=${ws} for update;\nselect 1 from public.initiative_sources where workspace_id=${ws} for update;\nselect 1 from public.claim_evidence where workspace_id=${ws} for update;\nselect 1 from public.finding_states where workspace_id=${ws} for update;\nselect 1 from public.activity_log where workspace_id=${ws} for update;\ndo $guard$ begin\n`;
+ sql+=`if not exists(select 1 from public.demo_scenarios where workspace_id=${ws} and organization_id=${org} and canonical_version=${literal(DEMO_CANONICAL_VERSION)} and scenario_at=${literal(DEMO_CUTOFF)}::timestamptz) then raise exception 'DEMO_REGISTRATION_CHANGED';end if;\n`;
+ sql+=`if (select count(*) from public.initiatives where workspace_id=${ws})<>4 or exists(select 1 from public.initiatives where workspace_id=${ws} and not is_demo) then raise exception 'DEMO_BUSINESS_DRIFT';end if;\n`;
+ sql+=`if not exists(select 1 from public.organization_memberships m join public.users u on u.id=m.user_id where m.id=${literal(p.identity.reviewerMemberId)}::uuid and m.organization_id=${org} and m.user_id=${literal(p.identity.reviewerUserId)}::uuid and m.active and m.role='ORG_OWNER' and u.active and u.platform_role is null) or (select count(*) from public.organization_memberships where organization_id=${org})<>1 then raise exception 'DEMO_REVIEWER_BINDING_CHANGED';end if;\n`;
+ const old=canonicalDemoData(p.identity),oldStore=old.productStore;
+ for(const [table,key,keys] of [['initiatives','initiatives',['id']],['initiative_sources','sources',['id']],['evidence','evidence',['id']],['claims','claims',['id']],['claim_evidence','claimEvidence',['claim_id','evidence_id']]]){const rows=oldStore[key].map(snake);sql+=unchanged(table,Object.keys(rows[0]??{}),rows,ws,keys);}
+ sql+=unchanged('delivery_facts',['id','data'],old.deliveryState.facts.map(f=>({id:f.id,data:f})),ws);
+ const oldLogs=[...oldStore.activity.map(r=>({...snake(r),actor_id:p.identity.reviewerUserId})),...old.deliveryState.events.map(e=>({id:e.id,workspace_id:p.identity.workspaceId,initiative_id:e.initiativeId,actor_id:p.identity.reviewerUserId,actor_label:e.actor.label,event_type:'DELIVERY_FACT_RECORDED',summary:'Synthetic scenario delivery fact prepared',occurred_at:e.occurredAt,entity_type:'DELIVERY_FACT',entity_id:e.after.id,payload:{deliveryEvent:e}}))];
+ sql+=unchanged('activity_log',Object.keys(oldLogs[0]),oldLogs,ws);
+ sql+=`if exists(select 1 from public.finding_states where workspace_id=${ws}) then raise exception 'DEMO_FINDING_STATE_DRIFT';end if;\n`;
+ sql+=`if not exists(select 1 from public.weekly_reviews where workspace_id=${ws} and id=${literal(p.originalFinal.id)}::uuid and status='FINAL' and data=${json(p.originalFinal)}) then raise exception 'HISTORICAL_FINAL_CHANGED';end if;\n`;
+ sql+=`if not exists(select 1 from public.weekly_reviews where workspace_id=${ws} and id=${literal(p.previousDraft.id)}::uuid and status='DRAFT' and revision=${p.expected.draftRevision} and data=${json(p.previousDraft)}) then raise exception 'DRAFT_CHANGED';end if;\n`;
+ sql+=`if exists(select 1 from public.metric_definitions where workspace_id=${ws}) then raise exception 'DEMO_METRICS_ALREADY_EXIST';end if;\nend;$guard$;\n`;
+ sql+=inserts('initiatives',['id','workspace_id','slug','name','description','known_references','business_line','stage','overall_state','state_summary','is_demo','created_by','created_at','updated_at'],s.initiatives.map(r=>({...snake(r),created_by:p.identity.reviewerUserId})));
+ sql+=inserts('initiative_sources',['id','workspace_id','initiative_id','name','source_type','connection_state','last_synced_at','created_at','updated_at'],s.sources.map(snake));
+ sql+=inserts('evidence',['id','workspace_id','initiative_id','source_id','title','source_type','source_reference','source_url','content_summary','boundary','occurred_at','captured_at','last_verified_at','created_by','created_at','updated_at'],s.evidence.map(snake));
+ sql+=inserts('claims',['id','workspace_id','initiative_id','type','status','subject','attribute','value','domain','phase','confidence','superseded_by_claim_id','created_by','created_at','updated_at','origin','verified_at','verified_actor_id','verified_actor_label','verification_basis','verification_note'],s.claims.map(snake));
+ sql+=inserts('claim_evidence',['workspace_id','claim_id','evidence_id','created_at','locator','excerpt'],s.claimEvidence.map(snake));
+ sql+=inserts('activity_log',['id','workspace_id','initiative_id','actor_id','actor_label','event_type','summary','occurred_at','entity_type','entity_id','payload'],[...s.activity.map(r=>({...snake(r),actor_id:p.identity.reviewerUserId})),...p.events.map(e=>({id:e.id,workspace_id:p.identity.workspaceId,initiative_id:e.initiativeId,actor_id:p.identity.reviewerUserId,actor_label:e.actor.label,event_type:'DELIVERY_FACT_RECORDED',summary:'Synthetic additive scenario delivery fact prepared',occurred_at:e.occurredAt,entity_type:'DELIVERY_FACT',entity_id:e.after.id,payload:{deliveryEvent:e}}))]);
+ sql+=inserts('delivery_facts',['id','workspace_id','initiative_id','kind','revision','value_date','value_text','owner_member_id','data'],p.facts.map(f=>({id:f.id,workspace_id:p.identity.workspaceId,initiative_id:f.initiativeId,kind:f.kind,revision:f.revision,value_date:f.value.date,value_text:f.value.text,owner_member_id:f.value.memberId,data:f})));
+ sql+=inserts('metric_definitions',['id','organization_id','workspace_id','initiative_id','name','definition','unit','formula','source_label','source_evidence_id','period_grain','timezone','target_value','target_comparator','target_owner_label','target_approved_at','target_note','origin','revision','updated_at'],p.metrics.map(m=>({...snake(m),organization_id:p.identity.organizationId})));
+ sql+=inserts('metric_observations',['id','workspace_id','metric_id','period_start','period_end','value','captured_at','source_evidence_id','note','origin'],p.metrics.flatMap(m=>m.observations.map(o=>({...snake(o),workspace_id:p.identity.workspaceId,metric_id:m.id}))));
+ sql+=`update public.weekly_reviews set revision=${p.nextDraft.revision},data=${json(p.nextDraft)} where id=${literal(p.nextDraft.id)}::uuid and workspace_id=${ws} and status='DRAFT';\nupdate public.demo_scenarios set canonical_version=${literal(DEMO_ENRICHED_VERSION)} where workspace_id=${ws} and organization_id=${org};\n`;
+ sql+=`select public.platform_audit(${literal(actorId)}::uuid,${org},${ws},${literal(p.identity.reviewerUserId)},'DEMO_ADDITIVE_ENRICHMENT',null,${json({version:p.version,previousFinalPreserved:true,addedInitiatives:4,previousDraftRevision:p.expected.draftRevision})},'Approved additive synthetic scenario enrichment; historical Final and existing business records preserved.',false);\ncommit;\n`;
+ return sql;
+}
+if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
+ const [mode,inputPath,outputDir,actorId]=process.argv.slice(2);if(mode!=='--plan'||!inputPath||!outputDir)throw new Error('Use --plan captured-input.json .data/private-output actorUUID. No apply mode exists.');
+ const root=resolve('.data'),out=resolve(outputDir),rel=relative(root,out);if(rel.startsWith('..')||rel==='')throw new Error('Plan output must be a dedicated private .data subdirectory.');
+ const plan=planDemoEnrichment(JSON.parse(readFileSync(inputPath,'utf8')));mkdirSync(out,{recursive:true});writeFileSync(join(out,'enrichment-plan.json'),JSON.stringify(plan,null,2),{flag:'wx',mode:0o600});writeFileSync(join(out,'enrichment.sql'),renderDemoEnrichmentSql(plan,actorId),{flag:'wx',mode:0o600});console.log(JSON.stringify({status:'PLAN_ONLY',version:plan.version,newInitiatives:4,metricDefinitions:2,metricObservations:4,finalUnchanged:true,networkCalls:0}));
+}

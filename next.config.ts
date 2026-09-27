@@ -9,9 +9,6 @@ const nextConfig: NextConfig = {
       { source: "/initiatives/:slug/memory/new", destination: "/initiatives/:slug/knowledge/new", permanent: true },
       { source: "/initiatives/:slug/memory/:claimId/edit", destination: "/initiatives/:slug/knowledge/:claimId/edit", permanent: true },
       { source: "/initiatives/:slug/memory/:claimId/verify", destination: "/initiatives/:slug/knowledge/:claimId/confirm", permanent: true },
-      { source: "/initiatives/:slug/sources", destination: "/initiatives/:slug/knowledge/sources", permanent: true },
-      { source: "/initiatives/:slug/sources/new", destination: "/initiatives/:slug/knowledge/sources/new", permanent: true },
-      { source: "/initiatives/:slug/sources/:evidenceId/edit", destination: "/initiatives/:slug/knowledge/sources/:evidenceId/edit", permanent: true },
       { source: "/initiatives/:slug/readiness", destination: "/initiatives/:slug", permanent: true },
       {
         source: "/initiatives/:slug/review",

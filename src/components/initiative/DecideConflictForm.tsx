@@ -1,4 +1,5 @@
 "use client";
+import { ScopeField } from "@/components/auth/WorkspaceScope";
 
 import { useActionState, useId, useState } from "react";
 import { decideAction, confirmerAction } from "@/app/initiatives/[slug]/decisions/actions";
@@ -22,13 +23,14 @@ export function DecideConflictForm({ finding, slug }: { finding: ReviewFinding; 
   const domains = [...new Set(finding.claims.map((c) => c.domain))];
   const duplicate = choice === "corrected" && values.some((c) => normalise(c.value) === normalise(corrected));
   return <details className={styles.decisionForm}>
-    <summary className={styles.resolveTrigger}>Make a decision</summary>
+    <summary className={`${styles.resolveTrigger} ${styles.primaryDecision}`}>Make a decision</summary>
     <form action={action}
       // React resets action forms even when the action returns a refusal.
       // Cancel the native reset so selects/radios retain their controlled values
       // alongside text inputs. Successful decisions disappear via revalidation.
       onReset={(event) => event.preventDefault()}
       onSubmit={(event) => { if (duplicate) event.preventDefault(); }}>
+      <ScopeField />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="fingerprint" value={finding.fingerprint} />
       <input type="hidden" name="contentDigest" value={finding.contentDigest} />
@@ -69,7 +71,7 @@ export function DecideConflictForm({ finding, slug }: { finding: ReviewFinding; 
             setChoice("existing");
           }}>Choose existing value instead</button></p> : null}
         {state.error ? <p role="alert" className={styles.error}>{state.error}</p> : null}
-        <button className={styles.submit} type="submit" disabled={pending || duplicate}>
+        <button className={`${styles.submit} ${styles.primarySubmit}`} type="submit" disabled={pending || duplicate}>
           {pending ? "Saving…" : "Save decision"}
         </button>
       </fieldset>
@@ -84,6 +86,7 @@ export function ConfirmerForm({ finding, slug }: { finding: ReviewFinding; slug:
   return <details className={styles.decisionForm}>
     <summary className={styles.resolveTrigger}>{finding.confirmerLabel ? "Change confirmer" : "Assign confirmer"}</summary>
     <form action={action}>
+      <ScopeField />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="fingerprint" value={finding.fingerprint} />
       <label htmlFor={id}>Confirm with</label>

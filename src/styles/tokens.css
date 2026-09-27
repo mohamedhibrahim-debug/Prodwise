@@ -52,7 +52,7 @@
   --surface-subtle: #f3f6f8;
   --surface-sunken: #e5edf2;
   --surface-inset: #dfe7ed;
-  --attention-fg: #a84d17;
+  --attention-fg: #a3450f;
   --attention-bg: #fff1e7;
   --attention-rule: #d6783d;
   --font-display: "Segoe UI", Inter, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -64,7 +64,7 @@
      including on --surface-subtle, which is where the Next Best Action labels
      sit. 4.85:1 on white, 4.57:1 on --surface-subtle. Kept as light as those
      two thresholds allow, to preserve the hierarchy. */
-  --ink-400: #67737e;
+  --ink-400: #586c7c;
   /* Decorative only - dashes, separators, disclosure glyphs. Never text that
      has to be read; anything meaningful uses --ink-400 or darker. */
   --ink-300: #a9b4bf;
@@ -168,8 +168,8 @@
   --rail-w: 248px;
   --rail-w-expanded: 248px;
   --content-max: 1600px;
-  --command-h: 64px;
-  --mobile-global-h: 56px;
+  --command-h: 56px;
+  --mobile-global-h: 64px;
   --mobile-ia-h: 56px;
   --gutter: var(--s-10);
   --header-h: 60px;
@@ -180,7 +180,8 @@
      opaque bar. Approximate by design — a long initiative name can wrap — so
      it is rounded up rather than down. */
   --workspace-header-h: 152px;
-  --focus-ring: 0 0 0 2px var(--canvas), 0 0 0 4px var(--accent-500);
+  --focus-ring: 0 0 0 2px var(--panel), 0 0 0 4px #00607a;
+  --focus-ring-dark: 0 0 0 2px var(--navy-900), 0 0 0 4px #99dbe9;
   /* Public entry: compact identity panel beside a focused form. */
   --login-width: 70rem;
   --login-min-height: 42rem;

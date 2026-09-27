@@ -1,7 +1,9 @@
 import 'server-only';
+import { cache } from 'react';
 import { cookies, headers } from 'next/headers';
 import { createHmac } from 'node:crypto';
 import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseUrl, supabaseServiceRoleKey } from '@/lib/env';
 import { LocalAuthStore, AccessError, hash, opaqueToken, signToken, unsignedToken, normalizeEmail, validatePassword, authorizeManagement, authorizeOwner, authorizePlatform, authorizeInvitationRole, type Member, type Role, type Session, type WorkspaceAccess } from './core';
@@ -117,7 +119,11 @@ export async function startDemoSession() {
         throw new AccessError('ACCESS_DENIED', 'Demo is temporarily unavailable. Please try again shortly.');
     }
 }
-export async function contextForRequest(): Promise<WorkspaceAccess> { return contextForCookie((await cookies()).get(SESSION_COOKIE)?.value); }
+/** React memoization lasts for this render request only, never across tenants. */
+const readContext = cache((value: string | undefined) => contextForCookie(value));
+export async function contextForRequest(): Promise<WorkspaceAccess> { return readContext((await cookies()).get(SESSION_COOKIE)?.value); }
+/** All mutations bypass render memoization, including actions after an org switch. */
+export async function freshContextForRequest(): Promise<WorkspaceAccess> { return contextForCookie((await cookies()).get(SESSION_COOKIE)?.value); }
 export async function contextForCookie(cookieValue: string | undefined): Promise<WorkspaceAccess> {
     const token = unsignedToken(cookieValue, secret());
     if (!token) throw new AccessError('UNAUTHENTICATED', 'Sign in to continue.');
@@ -181,7 +187,7 @@ export async function signOut() {
 }
 export async function changeOwnPassword(currentPassword: string, nextPassword: string) {
     if (await isDemoGuestSession()) throw new AccessError('ACCESS_DENIED', 'Sign in with your own account to change a password.');
-    const ctx = await contextForRequest(); validatePassword(nextPassword); let email: string;
+    const ctx = await freshContextForRequest(); validatePassword(nextPassword); let email: string;
     if (isLocalAuth()) {
         const store = localAuthStore(ctx.workspaceId);
         email = store.read(true).identities.find(identity => identity.id === ctx.actor.id)!.email;
@@ -205,19 +211,19 @@ export async function listWorkspaceMembers(): Promise<Member[]> { const ctx = aw
 export function requireManagementWrites(ctx: WorkspaceAccess) { return authorizeManagement(ctx, process.env.MANAGEMENT_WRITE_ENABLED === 'true' && process.env.VERCEL_ENV !== 'preview'); }
 function platformWrites(ctx: WorkspaceAccess) { authorizePlatform(ctx); if (process.env.MANAGEMENT_WRITE_ENABLED !== 'true' || process.env.VERCEL_ENV === 'preview')
     throw new AccessError('MANAGEMENT_DISABLED', 'Platform management changes are disabled in this environment.'); return ctx; }
-export async function userManagementSnapshot() { const ctx = await contextForRequest(); if (!hasOrganizationAdminAuthority(ctx))
+export async function userManagementSnapshot() { await denyGuestAdministration(); const ctx = await contextForRequest(); if (!hasOrganizationAdminAuthority(ctx))
     throw new AccessError('ADMIN_REQUIRED', 'Organization administration is required.'); const members = await listWorkspaceMembers(); if (isLocalAuth()) {
     const state = localAuthStore(ctx.workspaceId).read(true);
     return { members, invitations: state.invitations.filter(x => x.workspaceId === ctx.workspaceId).map(({ tokenHash: removed, ...invite }) => { void removed; return invite; }), events: state.events.filter(x => x.organizationId === ctx.organizationId), workspaceName: state.workspace.name, organizationName: state.organization.name, organizationId: ctx.organizationId, capturedAt: Date.now() };
 } const db = adminClient(), [invites, events, workspace, org] = await Promise.all([db.from('workspace_invitations').select('id,workspace_id,organization_id,email,role,expires_at,revoked_at,used_at,invited_by,provisioned_by_platform,policy_override').eq('workspace_id', ctx.workspaceId), db.from('membership_events').select('*').eq('organization_id', ctx.organizationId).order('occurred_at', { ascending: false }).limit(50), db.from('workspaces').select('name').eq('id', ctx.workspaceId).single(), db.from('organizations').select('name').eq('id', ctx.organizationId).single()]); if (invites.error || events.error || workspace.error || org.error)
     throw new Error('Could not load user management.'); return { members, invitations: invites.data.map(x => ({ id: x.id as string, workspaceId: x.workspace_id as string, organizationId: x.organization_id as string, email: x.email as string, role: normalizeLegacyRole(x.role as string), expiresAt: x.expires_at as string, revokedAt: x.revoked_at as string | null, usedAt: x.used_at as string | null, invitedBy: x.invited_by as string, provisionedByPlatform:x.provisioned_by_platform as boolean, policyOverride:x.policy_override as boolean })), events: events.data.map(x => ({ id: x.id as string, workspaceId: x.workspace_id as string, organizationId: x.organization_id as string, actorId: x.actor_id as string, actorLabel: x.actor_label as string, targetId: x.target_id as string, action: x.action as string, at: x.occurred_at as string })), workspaceName: workspace.data.name as string, organizationName: org.data.name as string, organizationId: ctx.organizationId, capturedAt: Date.now() }; }
-export async function inviteUser(email: string, role: Role) { const ctx = requireManagementWrites(await contextForRequest()); authorizeInvitationRole(ctx, role); if (isLocalAuth())
+export async function inviteUser(email: string, role: Role) { await denyGuestAdministration(); const ctx = requireManagementWrites(await freshContextForRequest()); authorizeInvitationRole(ctx, role); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).invite(ctx, email, role); const token = opaqueToken(), { error } = await adminClient().rpc('manage_workspace_invitation', { p_workspace_id: ctx.workspaceId, p_member_id: ctx.memberId ?? ctx.actor.id, p_action: 'INVITE', p_invitation_id: null, p_email: normalizeEmail(email), p_role: role, p_token_hash: hash(token) }); if (error)
     throw new Error(error.message); return token; }
-export async function rotateInvitation(id: string, revoke: boolean) { const ctx = requireManagementWrites(await contextForRequest()); if (isLocalAuth())
+export async function rotateInvitation(id: string, revoke: boolean) { await denyGuestAdministration(); const ctx = requireManagementWrites(await freshContextForRequest()); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).rotate(ctx, id, revoke); const token = opaqueToken(), { error } = await adminClient().rpc('manage_workspace_invitation', { p_workspace_id: ctx.workspaceId, p_member_id: ctx.memberId ?? ctx.actor.id, p_action: revoke ? 'REVOKE' : 'RESEND', p_invitation_id: id, p_email: null, p_role: null, p_token_hash: hash(token) }); if (error)
     throw new Error(error.message); return revoke ? null : token; }
-export async function changeMembership(id: string, role: Role, active: boolean, isProductLead: boolean) { const ctx = requireManagementWrites(await contextForRequest()); if (isLocalAuth())
+export async function changeMembership(id: string, role: Role, active: boolean, isProductLead: boolean) { await denyGuestAdministration(); const ctx = requireManagementWrites(await freshContextForRequest()); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).change(ctx, id, role, active, isProductLead); const { error } = await adminClient().rpc('change_workspace_membership', { p_workspace_id: ctx.workspaceId, p_member_id: ctx.memberId ?? ctx.actor.id, p_target_id: id, p_role: role, p_active: active, p_is_product_lead: isProductLead }); if (error)
     throw new Error(error.message); }
 export async function inspectInvitation(token: string) { if (isLocalAuth()) {
@@ -245,33 +251,91 @@ else {
         throw new Error(error.message);
 } if (invite.workspaceId === configuredWorkspaceId())
     await signIn(invite.email, password); return { workspaceId: invite.workspaceId, organizationId: invite.organizationId, signedIn: invite.workspaceId === configuredWorkspaceId() }; }
-export async function renameWorkspace(name: string) { const ctx = authorizeOwner(await contextForRequest(), process.env.MANAGEMENT_WRITE_ENABLED === 'true' && process.env.VERCEL_ENV !== 'preview'); if (!name.trim() || name.trim().length > 120)
+export async function renameWorkspace(name: string) { await denyGuestAdministration(); const ctx = authorizeOwner(await freshContextForRequest(), process.env.MANAGEMENT_WRITE_ENABLED === 'true' && process.env.VERCEL_ENV !== 'preview'); if (!name.trim() || name.trim().length > 120)
     throw new Error('Enter a workspace name up to 120 characters.'); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).renameWorkspace(ctx, name); const { error } = await adminClient().rpc('rename_workspace', { p_workspace_id: ctx.workspaceId, p_member_id: ctx.memberId ?? ctx.actor.id, p_name: name.trim() }); if (error)
     throw new Error(error.message); }
 export async function platformSnapshot() { const ctx = authorizePlatform(await contextForRequest()); if (isLocalAuth())
-    return {...localAuthStore(ctx.workspaceId).platformSnapshot(ctx),capturedAt:Date.now()}; const db = adminClient(), [organizations, workspaces, identities, memberships, invitations, events] = await Promise.all([db.from('organizations').select('*'), db.from('workspaces').select('*'), db.from('users').select('id,email,display_name,platform_role,active'), db.from('organization_memberships').select('*'), db.from('workspace_invitations').select('id,workspace_id,organization_id,email,role,expires_at,revoked_at,used_at,invited_by,provisioned_by_platform,policy_override,policy_override_reason').eq('provisioned_by_platform',true), db.from('platform_events').select('*').order('occurred_at', { ascending: false }).limit(100)]); if (organizations.error || workspaces.error || identities.error || memberships.error || invitations.error || events.error)
-    throw new Error('Platform management is unavailable.'); return { capturedAt:Date.now(), organizations: organizations.data.map(x => ({ id: x.id as string, name: x.name as string, status: x.status as 'ACTIVE' | 'BOOTSTRAPPING', emailPolicy: { domains: x.allowed_email_domains as string[], exactEmails: x.allowed_exact_emails as string[] } })), workspaces: workspaces.data.map(x => ({ id: x.id as string, organizationId: x.organization_id as string, name: x.name as string, status: x.status as 'ACTIVE' | 'BOOTSTRAPPING' })), identities: identities.data.map(x => ({ id: x.id as string, email: x.email as string, displayName: x.display_name as string, platformRole: x.platform_role as PlatformRole, active: x.active as boolean })), memberships: memberships.data.map(x => ({ id: x.id as string, organizationId: x.organization_id as string, userId: x.user_id as string, role: normalizeLegacyRole(x.role as string), active: x.active as boolean, isProductLead: x.is_product_lead as boolean, policyOverride: x.policy_override as boolean, policyOverrideReason: x.policy_override_reason as string | null })), invitations:invitations.data.map(x=>({id:x.id as string,workspaceId:x.workspace_id as string,organizationId:x.organization_id as string,email:x.email as string,role:normalizeLegacyRole(x.role as string),expiresAt:x.expires_at as string,revokedAt:x.revoked_at as string|null,usedAt:x.used_at as string|null,invitedBy:x.invited_by as string,provisionedByPlatform:x.provisioned_by_platform as boolean,policyOverride:x.policy_override as boolean,policyOverrideReason:x.policy_override_reason as string|null})), events: events.data.map(x => ({ id: x.id as string, workspaceId: x.workspace_id as string | null, organizationId: x.organization_id as string | null, actorId: x.actor_id as string, actorLabel: x.actor_label as string, targetId: x.target_id as string, action: x.action as string, at: x.occurred_at as string, before:x.before_state as unknown,after:x.after_state as unknown,reason: x.reason as string, policyOverridden: x.policy_overridden as boolean })) }; }
-export async function platformCreateOrganization(name: string, domains: string[], exactEmails: string[]) { const ctx = platformWrites(await contextForRequest()), policy = validateEmailPolicy({ domains, exactEmails }); if (isLocalAuth())
+    return localPlatformSnapshot(ctx); const db = adminClient(), [organizations, workspaces, identities, memberships, invitations, events, demos] = await Promise.all([db.from('organizations').select('*'), db.from('workspaces').select('*'), db.from('users').select('id,email,display_name,platform_role,active'), db.from('organization_memberships').select('*'), db.from('workspace_invitations').select('id,workspace_id,organization_id,email,role,expires_at,revoked_at,used_at,invited_by,provisioned_by_platform,policy_override,policy_override_reason').eq('provisioned_by_platform',true), db.from('platform_events').select('*').order('occurred_at', { ascending: false }).limit(100),db.from('demo_scenarios').select('organization_id,workspace_id')]); if (organizations.error || workspaces.error || identities.error || memberships.error || invitations.error || events.error || demos.error)
+    throw new Error('Platform management is unavailable.'); return { capturedAt:Date.now(), organizations: organizations.data.map(x => ({ isDemo:demos.data!.some(d=>d.organization_id===x.id), id: x.id as string, name: x.name as string, status: x.status as 'ACTIVE' | 'BOOTSTRAPPING' | 'ARCHIVED', emailPolicy: { domains: x.allowed_email_domains as string[], exactEmails: x.allowed_exact_emails as string[] } })), workspaces: workspaces.data.map(x => ({ id: x.id as string, organizationId: x.organization_id as string, name: x.name as string, status: x.status as 'ACTIVE' | 'BOOTSTRAPPING' | 'ARCHIVED' })), identities: identities.data.map(x => ({ id: x.id as string, email: x.email as string, displayName: x.display_name as string, platformRole: x.platform_role as PlatformRole, active: x.active as boolean })), memberships: memberships.data.map(x => ({ id: x.id as string, organizationId: x.organization_id as string, userId: x.user_id as string, role: normalizeLegacyRole(x.role as string), active: x.active as boolean, isProductLead: x.is_product_lead as boolean, policyOverride: x.policy_override as boolean, policyOverrideReason: x.policy_override_reason as string | null })), invitations:invitations.data.map(x=>({id:x.id as string,workspaceId:x.workspace_id as string,organizationId:x.organization_id as string,email:x.email as string,role:normalizeLegacyRole(x.role as string),expiresAt:x.expires_at as string,revokedAt:x.revoked_at as string|null,usedAt:x.used_at as string|null,invitedBy:x.invited_by as string,provisionedByPlatform:x.provisioned_by_platform as boolean,policyOverride:x.policy_override as boolean,policyOverrideReason:x.policy_override_reason as string|null})), events: events.data.map(x => ({ id: x.id as string, workspaceId: x.workspace_id as string | null, organizationId: x.organization_id as string | null, actorId: x.actor_id as string, actorLabel: x.actor_label as string, targetId: x.target_id as string, action: x.action as string, at: x.occurred_at as string, before:x.before_state as unknown,after:x.after_state as unknown,reason: x.reason as string, policyOverridden: x.policy_overridden as boolean })) }; }
+export async function platformCreateOrganization(name: string, domains: string[], exactEmails: string[]) { const ctx = platformWrites(await freshContextForRequest()), policy = validateEmailPolicy({ domains, exactEmails }); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).platformCreateOrganization(ctx, name, policy); const { data, error } = await adminClient().rpc('platform_create_organization', { p_actor_id: ctx.actor.id, p_name: name, p_domains: policy.domains, p_exact_emails: policy.exactEmails }); if (error)
     throw new Error(error.message); return data as {
     organizationId: string;
     workspaceId: string;
 }; }
-export async function platformConfigurePolicy(orgId: string, domains: string[], exactEmails: string[]) { const ctx = platformWrites(await contextForRequest()), policy = validateEmailPolicy({ domains, exactEmails }); if (isLocalAuth())
+export async function platformConfigurePolicy(orgId: string, domains: string[], exactEmails: string[]) { const ctx = platformWrites(await freshContextForRequest()), policy = validateEmailPolicy({ domains, exactEmails }); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).platformConfigurePolicy(ctx, orgId, policy); const { error } = await adminClient().rpc('platform_configure_policy', { p_actor_id: ctx.actor.id, p_organization_id: orgId, p_domains: policy.domains, p_exact_emails: policy.exactEmails }); if (error)
     throw new Error(error.message); }
-export async function platformProvisionMembership(orgId: string, email: string, role: Role, override: boolean, reason: string) { const ctx = platformWrites(await contextForRequest()); if (isLocalAuth())
+export async function platformProvisionMembership(orgId: string, email: string, role: Role, override: boolean, reason: string) { const ctx = platformWrites(await freshContextForRequest()); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).platformProvisionMembership(ctx, orgId, email, role, override, reason); const token = opaqueToken(), { data, error } = await adminClient().rpc('platform_provision_membership', { p_actor_id: ctx.actor.id, p_organization_id: orgId, p_email: normalizeEmail(email), p_role: role, p_policy_override: override, p_reason: reason, p_token_hash: hash(token) }); if (error)
     throw new Error(error.message); return { invitationToken: data?.invitationId ? token : null, memberId: data?.memberId as string | null, userId: data?.userId as string | null, workspaceId: data?.workspaceId as string | undefined }; }
-export async function platformReplaceOrgOwner(orgId: string, userId: string, reason: string) { const ctx = platformWrites(await contextForRequest()); if (isLocalAuth())
+export async function platformReplaceOrgOwner(orgId: string, userId: string, reason: string) { const ctx = platformWrites(await freshContextForRequest()); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).platformReplaceOrgOwner(ctx, orgId, userId, reason); const { error } = await adminClient().rpc('platform_replace_org_owner', { p_actor_id: ctx.actor.id, p_organization_id: orgId, p_target_user_id: userId, p_reason: reason }); if (error)
     throw new Error(error.message); }
-export async function grantPlatformOwner(userId: string, reason: string) { const ctx = platformWrites(await contextForRequest()); if (isLocalAuth())
+export async function grantPlatformOwner(userId: string, reason: string) { const ctx = platformWrites(await freshContextForRequest()); if (isLocalAuth())
     return localAuthStore(ctx.workspaceId).grantPlatformOwner(ctx, userId, reason); const { error } = await adminClient().rpc('grant_platform_owner', { p_actor_id: ctx.actor.id, p_target_user_id: userId, p_reason: reason }); if (error)
     throw new Error(error.message); }
 export type { WorkspaceAccess, Role, Member, Session };
+export type { AuthorizedContext } from "./context-types";
 
 
 
-export async function platformRotateInvitation(id:string,revoke:boolean,reason:string){const ctx=platformWrites(await contextForRequest());if(isLocalAuth())return localAuthStore(ctx.workspaceId).platformRotateInvitation(ctx,id,revoke,reason);const token=opaqueToken(),{error}=await adminClient().rpc('platform_rotate_invitation',{p_actor_id:ctx.actor.id,p_invitation_id:id,p_revoke:revoke,p_token_hash:hash(token),p_reason:reason});if(error)throw new Error(error.message);return revoke?null:token;}
+export async function platformRotateInvitation(id:string,revoke:boolean,reason:string){const ctx=platformWrites(await freshContextForRequest());if(isLocalAuth())return localAuthStore(ctx.workspaceId).platformRotateInvitation(ctx,id,revoke,reason);const token=opaqueToken(),{error}=await adminClient().rpc('platform_rotate_invitation',{p_actor_id:ctx.actor.id,p_invitation_id:id,p_revoke:revoke,p_token_hash:hash(token),p_reason:reason});if(error)throw new Error(error.message);return revoke?null:token;}
+
+export async function denyGuestAdministration() {
+    if (await isDemoGuestSession()) throw new AccessError('DEMO_ADMIN_DENIED', 'Demo access is for product exploration. Sign in with your own account for administration.');
+}
+export async function currentIdentityPresentation():Promise<import('./context-types').IdentityPresentation> {
+    const ctx=await contextForRequest();
+    if(isLocalAuth()) {
+        const user=localAuthStore(ctx.workspaceId).read(true).identities.find(u=>u.id===ctx.actor.id)!;
+        return {id:user.id,email:user.email,displayName:user.displayName,active:user.active,platformRole:user.platformRole};
+    }
+    const {data,error}=await adminClient().from('users').select('id,email,display_name,active,platform_role').eq('id',ctx.actor.id).single();
+    if(error)throw new Error('Account information is unavailable.');
+    return {id:data.id,email:data.email,displayName:data.display_name,active:data.active,platformRole:data.platform_role};
+}
+export async function readOrganizationAdministration() {
+    await denyGuestAdministration(); const ctx=await contextForRequest(); authorizeManagement(ctx,true);
+    if(isLocalAuth()) {
+        const state=localAuthStore(ctx.workspaceId).read(true);
+        return {organization:state.organization,workspace:state.workspace};
+    }
+    const [org,workspace]=await Promise.all([adminClient().from('organizations').select('id,name,status,allowed_email_domains,allowed_exact_emails').eq('id',ctx.organizationId).single(),adminClient().from('workspaces').select('id,name,status,organization_id').eq('id',ctx.workspaceId).single()]);
+    if(org.error||workspace.error)throw new Error('Organization settings are unavailable.');
+    return {organization:{id:org.data.id as string,name:org.data.name as string,status:org.data.status as import('./core').Organization['status'],emailPolicy:{domains:org.data.allowed_email_domains as string[],exactEmails:org.data.allowed_exact_emails as string[]}},workspace:{id:workspace.data.id as string,name:workspace.data.name as string,status:workspace.data.status as import('./core').Workspace['status'],organizationId:workspace.data.organization_id as string}};
+}
+export async function listAuthorizedContexts():Promise<import('./context-types').AuthorizedContext[]> {
+    const ctx=await freshContextForRequest();
+    await denyGuestAdministration();
+    if(isLocalAuth()){ const registered=await localDemoRegistration();return localAuthStore(ctx.workspaceId).authorizedContexts(ctx).map(c=>({...c,isDemo:c.workspaceId===registered?.workspaceId&&c.organizationId===registered?.organizationId})); }
+    const {data,error}=await adminClient().rpc('list_authorized_contexts',{p_actor_id:ctx.actor.id,p_current_workspace_id:ctx.workspaceId});
+    if(error)throw new Error('Available organizations could not be loaded.');
+    return data as import('./context-types').AuthorizedContext[];
+}
+export async function switchOrganization(workspaceId:string, expectedWorkspaceId:string) {
+    await denyGuestAdministration();
+    const ctx=await freshContextForRequest();
+    if(ctx.workspaceId!==expectedWorkspaceId)throw new AccessError('SCOPE_CHANGED','Your organization changed. Reload before switching.');
+    if(!/^[0-9a-f-]{36}$/i.test(workspaceId))throw new AccessError('ACCESS_DENIED','Organization access is unavailable.');
+    const token=await cookieToken();
+    if(!token)throw new AccessError('UNAUTHENTICATED','Sign in to continue.');
+    if(isLocalAuth()) {
+        const next=await localAuthStore(ctx.workspaceId).switchSession(token,workspaceId,expectedWorkspaceId);
+        await setSessionCookie(next.token,next.maxAge); return;
+    }
+    const next=opaqueToken();
+    const {data,error}=await adminClient().rpc('switch_workspace_session',{p_token_hash:hash(token),p_next_token_hash:hash(next),p_expected_workspace_id:expectedWorkspaceId,p_target_workspace_id:workspaceId,p_actor_id:ctx.actor.id});
+    if(error)throw new AccessError('ACCESS_DENIED','The organization switch was refused. Reload and check your access.');
+    await setSessionCookie(next,Math.max(1,Math.floor(Number(data))));
+}
+
+async function localDemoRegistration():Promise<{organizationId:string;workspaceId:string}|null> {
+    try { return JSON.parse(await readFile(join(process.cwd(),'.data','demo-access.json'),'utf8')); }
+    catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return null;throw new Error('Demo registration is unavailable.');}
+}
+async function localPlatformSnapshot(ctx:WorkspaceAccess){
+    const data=localAuthStore(ctx.workspaceId).platformSnapshot(ctx),registered=await localDemoRegistration();
+    return {...data,organizations:data.organizations.map(o=>({...o,isDemo:o.id===registered?.organizationId})),capturedAt:Date.now()};
+}

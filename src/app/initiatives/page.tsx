@@ -1,47 +1,32 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { DemoWriteLink } from "@/components/primitives/DemoWriteLink";
-import { EmptyState } from "@/components/primitives/EmptyState";
-import { BUSINESS_LINE_LABEL, STAGE_LABEL } from "@/lib/domain/labels";
-import { getRepository } from "@/lib/data";
-import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
-import { activitySummary } from "@/lib/workspace/copy";
-import { readDelivery } from "@/lib/delivery/repository";
-import { factFor } from "@/lib/delivery/model";
-import styles from "./initiatives.module.css";
-
-export const metadata: Metadata = { title: "Initiatives" };
-export const dynamic = "force-dynamic";
-export default async function InitiativesPage({ searchParams }: { searchParams: Promise<{ q?: string; line?: string; stage?: string; attention?: string; sort?: string }> }) {
-  const rawFilters = await searchParams;
-  const filters = Object.fromEntries(Object.entries(rawFilters).filter(([, value]) => typeof value === "string")) as Record<string, string>;
-  const [delivery, activity] = await Promise.all([readDelivery(), getRepository().listRecentActivity(100)]);
-  const snapshots = delivery.source.snapshots.map(deriveInstrumentSnapshot);
-  const facts = delivery.state.facts.filter(f => f.workspaceId === delivery.ctx.workspaceId);
-  const rows = snapshots.map(snapshot => {
-    const { initiative } = snapshot;
-    const conflicts = snapshot.findings.filter(f => f.status === "OPEN" && f.actionable).length;
-    const blocker = factFor(facts, initiative.id, "BLOCKER");
-    const target = factFor(facts, initiative.id, "TARGET_LIVE");
-    const change = activity.filter(entry => entry.initiativeId === initiative.id).sort((a,b) => b.occurredAt.localeCompare(a.occurredAt))[0];
-    const event = delivery.state.events.filter(entry => entry.workspaceId === delivery.ctx.workspaceId && entry.initiativeId === initiative.id).sort((a,b) => b.occurredAt.localeCompare(a.occurredAt))[0];
-    const deliveryLatest = event && (!change || event.occurredAt > change.occurredAt);
-    const latest = deliveryLatest ? `${event.after.kind.replaceAll("_", " ").toLowerCase()} ${event.after.state === "RETRACTED" ? "withdrawn" : "confirmed"}` : change ? activitySummary(change) : null;
-    const updated = deliveryLatest ? event.occurredAt : change?.occurredAt;
-    return { snapshot, initiative, conflicts, blocker, target, latest, updated };
-  }).filter(row => (!filters.line || row.initiative.businessLine === filters.line) && (!filters.stage || row.initiative.stage === filters.stage) && (filters.attention !== "needs-attention" || row.conflicts > 0 || row.blocker) && (!filters.q || `${row.initiative.name} ${row.initiative.slug}`.toLowerCase().includes(filters.q.trim().toLowerCase())))
-    .sort((a,b) => filters.sort === "target" ? (a.target?.value.date ?? "9999").localeCompare(b.target?.value.date ?? "9999") : filters.sort === "updated" ? (b.updated ?? "").localeCompare(a.updated ?? "") : a.initiative.name.localeCompare(b.initiative.name));
-  return <div className={styles.page}>
-    <header className={styles.head}><div><p className={styles.eyebrow}>Portfolio register</p><h1 className={styles.title}>Initiatives</h1><p className={styles.subtitle}>Current stage, attention and committed delivery timing in one view.</p></div><DemoWriteLink href="/initiatives/new" variant="primary">Create initiative</DemoWriteLink></header>
-    <form className={styles.filters} aria-label="Filter initiatives"><label className={styles.search}>Search<input name="q" defaultValue={filters.q ?? ""} placeholder="Find an initiative" type="search" /></label><label>Business line<select name="line" defaultValue={filters.line ?? ""}><option value="">All lines</option>{[...new Set(snapshots.map(row => row.initiative.businessLine))].map(line => <option key={line} value={line}>{BUSINESS_LINE_LABEL[line]}</option>)}</select></label><label>Lifecycle stage<select name="stage" defaultValue={filters.stage ?? ""}><option value="">All stages</option>{[...new Set(snapshots.map(row => row.initiative.stage))].map(stage => <option key={stage} value={stage}>{STAGE_LABEL[stage]}</option>)}</select></label><label>Attention<select name="attention" defaultValue={filters.attention ?? ""}><option value="">All initiatives</option><option value="needs-attention">Decisions / blockers</option></select></label><label>Sort by<select name="sort" defaultValue={filters.sort ?? "name"}><option value="name">Name</option><option value="target">Target Live</option><option value="updated">Latest change</option></select></label><button type="submit">Apply</button>{Object.values(filters).some(Boolean) && <Link href="/initiatives">Reset</Link>}</form>
-    <div className={styles.registerSummary}><strong>{rows.length} of {snapshots.length} initiatives</strong><span>Target Live comes from the delivery record</span></div>
-    {rows.length === 0 ? <EmptyState message="No initiatives match this view." hint="Change the filters or create an initiative to begin." /> : <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Initiative</th><th>Business line</th><th>Lifecycle stage</th><th>Attention</th><th>Target Live</th><th>Latest change</th></tr></thead><tbody>{rows.map(({ initiative, conflicts, blocker, target, latest, updated, snapshot }) => <tr key={initiative.id}>
-      <td data-label="Initiative"><Link className={styles.name} href={`/initiatives/${initiative.slug}`}>{initiative.name}<span aria-hidden="true"> ↗</span></Link>{initiative.isDemo && <small>Synthetic scenario</small>}</td>
-      <td data-label="Business line">{BUSINESS_LINE_LABEL[initiative.businessLine]}</td><td data-label="Lifecycle stage"><span className={styles.stage}>{STAGE_LABEL[initiative.stage]}</span></td>
-      <td data-label="Attention">{conflicts ? <Link className={styles.attention} href={`/initiatives/${initiative.slug}/decisions`}>{conflicts} {conflicts === 1 ? "decision" : "decisions"}</Link> : null}{blocker ? <Link className={styles.attention} href={`/initiatives/${initiative.slug}/delivery`}>Recorded blocker</Link> : null}{!conflicts && !blocker ? <span className={styles.quiet}>{snapshot.claims.length ? "No open mismatches" : "Knowledge not recorded"}</span> : null}</td>
-      <td data-label="Target Live"><Link className={target ? styles.date : styles.unknown} href={`/initiatives/${initiative.slug}/delivery`}>{target?.value.date ?? "Unknown"}</Link>{target && <small>Human-confirmed</small>}</td>
-      <td data-label="Latest change"><span className={styles.latest}>{latest ?? "No change recorded"}</span>{updated && <small>{new Date(updated).toLocaleDateString("en-GB")}</small>}</td>
-    </tr>)}</tbody></table></div>}
-    <p className={styles.note}>Recorded stage and delivery dates do not establish release readiness. Missing dates remain unknown.</p>
-  </div>;
+import Link from 'next/link';
+import {getRepository} from '@/lib/data';
+import {readDelivery} from '@/lib/delivery/repository';
+import {buildPortfolioProjection,filterPortfolioRows,type PortfolioFilters,type PortfolioRow} from '@/lib/workspace/portfolio';
+import {displayDate} from '@/lib/delivery/roadmap';
+import {BUSINESS_LINE_LABEL,STAGE_LABEL} from '@/lib/domain/labels';
+import {STAGES} from '@/lib/domain/types';
+import {canBusinessWrite} from '@/lib/auth/roles';
+import {isDemoWriteEnabled} from '@/lib/env';
+import {FilterSheet} from '@/components/shell/FilterSheet';
+import styles from './initiatives.module.css';
+export const dynamic='force-dynamic';
+function Target({row:r}:{row:PortfolioRow}){return <>{r.actual?.value.extent==='FULL'?`Live ${displayDate(r.actual.value.date)} (full)`:r.target?.value.date?displayDate(r.target.value.date):'Unknown'}{r.targetMovement&&<small>Moved {r.targetMovement.days>0?'+':''}{r.targetMovement.days} d from {displayDate(r.targetMovement.from)}</small>}</>;}
+export default async function Initiatives({searchParams}:{searchParams:Promise<PortfolioFilters>}){
+ const[d,activity,f]=await Promise.all([readDelivery(),getRepository().listRecentActivity(150),searchParams]);const p=buildPortfolioProjection({source:d.source,state:d.state,workspaceId:d.ctx.workspaceId,activity,asOf:d.presentation.scenarioAt??new Date().toISOString()});const rows=filterPortfolioRows(p.rows,f,p.today);
+ const select=(name:string,label:string,options:{value:string;label:string}[])=> <label>{label}<select name={name} defaultValue={f[name as keyof PortfolioFilters]??''}><option value="">All</option>{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></label>;
+ const sortHeader=(value:string,label:string)=><th scope="col" aria-sort={(f.sort??'name')===value?value==='updated'||value==='attention'?'descending':'ascending':'none'}><button type="submit" form="register-sort" name="sort" value={value}>{label}{(f.sort??'name')===value?(value==='updated'||value==='attention'?' ↓':' ↑'):''}</button></th>;
+ const controls=<form className={styles.filters}><label className={styles.search}>Search initiatives<input type="search" name="q" defaultValue={f.q??''} placeholder="Initiative name"/></label>
+ {select('line','Business line',[...new Set(p.rows.map(r=>r.initiative.businessLine))].map(value=>({value,label:BUSINESS_LINE_LABEL[value]})))}{select('stage','Stage',STAGES.map(value=>({value,label:STAGE_LABEL[value]})))}
+ {select('owner','Owner',[{value:'unassigned',label:'Unassigned'},...d.source.members.filter(m=>m.active).map(m=>({value:m.id,label:m.displayName}))])}
+ {select('coverage','Coverage',[{value:'incomplete',label:'Setup incomplete'},{value:'checked',label:'Checked'}])}
+ {select('attention','Attention',[{value:'any',label:'Any reason'},{value:'decision',label:'Decision needed'},{value:'blocker',label:'Recorded blocker'},{value:'past-target',label:'Past target'},{value:'past-milestone',label:'Past milestone'},{value:'support-changed',label:'Supporting evidence changed'}])}
+ {select('target','Target',[{value:'upcoming',label:'Next 28 days'},{value:'past',label:'Past target · update needed'},{value:'unknown',label:'Unknown'},{value:'moved',label:'Moved in last 28 days'}])}
+ {select('sort','Sort',[{value:'name',label:'Name'},{value:'target',label:'Target Live'},{value:'updated',label:'Latest change'},{value:'attention',label:'Attention first'}])}<div className={styles.filterActions}><button type="submit">Apply filters</button><Link prefetch={false} href="/initiatives">Clear</Link></div></form>;
+ return <div className={styles.page}><header className={styles.header}><div><p className={styles.eyebrow}>Portfolio register · {d.presentation.organizationName}</p><h1>Initiatives</h1><p>Recorded work, its coverage and delivery outlook.</p></div>{canBusinessWrite(d.ctx)&&isDemoWriteEnabled&&<Link prefetch={false} className={styles.primary} href="/initiatives/new">Create initiative</Link>}</header>
+ <form className={styles.mobileSearch}><label>Search initiatives<input type="search" name="q" defaultValue={f.q??''}/></label>{Object.entries(f).filter(([k,v])=>k!=='q'&&v).map(([k,v])=><input type="hidden" name={k} value={v} key={k}/>)}<button>Search</button></form>
+ <FilterSheet count={Object.entries(f).filter(([k,v])=>k!=='sort'&&v).length}>{controls}</FilterSheet><p className={styles.count}>{rows.length} of {p.rows.length} initiatives{Object.values(f).some(Boolean)?' · filters applied':''}</p>
+ <form id="register-sort">{Object.entries(f).filter(([k,v])=>k!=='sort'&&v).map(([k,v])=><input type="hidden" name={k} value={v} key={k}/>)}</form>
+ {rows.length?<><table className={styles.table}><caption className="visually-hidden">Initiative register with recorded coverage and attention</caption><thead><tr>{sortHeader('name','Initiative')}<th scope="col">Stage</th><th scope="col">Owner</th><th scope="col">Coverage</th>{sortHeader('attention','Attention')}{sortHeader('target','Target Live')}{sortHeader('updated','Latest change')}</tr></thead><tbody>{rows.map(r=><tr key={r.initiative.id}><th scope="row"><Link prefetch={false} href={`/initiatives/${r.initiative.slug}`}>{r.initiative.name}</Link><small>{BUSINESS_LINE_LABEL[r.initiative.businessLine]} · {r.initiative.knownReferences?.split(/[\n,]/)[0]??'Reference not recorded'}{r.initiative.isDemo?' · Synthetic':''}</small><span className={styles.compactChange}>{r.latestChange?.sentence??'No recent change recorded'}</span></th><td>{STAGE_LABEL[r.initiative.stage]}</td><td>{r.ownerLabel}</td><td>{r.coverage.label}</td><td className={r.attention.length?styles.attention:undefined}>{r.attention.length?[...new Set(r.attention.map(a=>a.label))].join(' · '):<><span aria-hidden="true">—</span><span className="visually-hidden">No attention reasons recorded</span></>}</td><td><Target row={r}/></td><td>{r.latestChange?<>{r.latestChange.sentence}<small>{displayDate(r.latestChange.occurredAt.slice(0,10))}</small></>:'No recent change recorded'}</td></tr>)}</tbody></table>
+ <ul className={styles.mobileList}>{rows.map(r=><li key={r.initiative.id}><Link prefetch={false} href={`/initiatives/${r.initiative.slug}`}>{r.initiative.name}</Link><p>{BUSINESS_LINE_LABEL[r.initiative.businessLine]} · {STAGE_LABEL[r.initiative.stage]}</p><dl><dt>Owner</dt><dd>{r.ownerLabel}</dd><dt>Coverage</dt><dd>{r.coverage.label}</dd><dt>Attention</dt><dd className={r.attention.length?styles.attention:undefined}>{r.attention.length?[...new Set(r.attention.map(a=>a.label))].join(' · '):<><span aria-hidden="true">—</span><span className="visually-hidden">No attention reasons recorded</span></>}</dd><dt>Target Live</dt><dd><Target row={r}/></dd><dt>Latest change</dt><dd>{r.latestChange?.sentence??'No recent change recorded'}</dd></dl></li>)}</ul></>:<section className={styles.empty}><h2>{p.rows.length?'No initiatives match these filters.':`No initiatives recorded in ${d.presentation.organizationName} yet.`}</h2><Link prefetch={false} href="/initiatives">{p.rows.length?'Clear filters':'Open the register'}</Link></section>}
+ <p className={styles.note}>Coverage describes the recorded setup and value checks. It is not a readiness assessment. Unknown dates stay unknown.</p></div>;
 }

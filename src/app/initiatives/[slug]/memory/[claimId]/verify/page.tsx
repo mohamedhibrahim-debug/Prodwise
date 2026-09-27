@@ -20,7 +20,7 @@ export default async function VerifyClaimPage({ params }: {
   if (!initiative || !claim || claim.initiativeId !== initiative.id) notFound();
   return (
     <div className={styles.page}>
-      <Link href={`/initiatives/${slug}/knowledge?view=all#claim-${claim.id}`} className={styles.back}>← Knowledge</Link>
+      <Link prefetch={false} href={`/initiatives/${slug}/knowledge?view=all#claim-${claim.id}`} className={styles.back}>← Knowledge</Link>
       <h2 className={styles.title}>Confirm Knowledge</h2>
       <p className={styles.intro}><b>{claim.subject} · {claim.attribute}</b><br />{claim.value}</p>
       {!isDemoWriteEnabled ? (

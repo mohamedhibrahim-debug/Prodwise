@@ -1,7 +1,9 @@
 'use server';
-import { changeOwnPassword } from '@/lib/auth/service';
+import { changeOwnPassword,freshContextForRequest } from '@/lib/auth/service';
+import {assertFormWorkspace} from '@/lib/auth/scope';
 import type { AuthFormState } from '@/components/auth/AuthForm';
 export async function passwordAction(_state:AuthFormState,form:FormData):Promise<AuthFormState>{
+  try{assertFormWorkspace(form,await freshContextForRequest());}catch(error){return {error:error instanceof Error?error.message:'Reload this page before saving.'};}
   const next=String(form.get('password')??'');
   if(next!==form.get('confirmPassword'))return {error:'The new passwords do not match.'};
   try{await changeOwnPassword(String(form.get('currentPassword')??''),next);return {error:null,message:'Password updated. Other workspace sessions have been signed out.'};}

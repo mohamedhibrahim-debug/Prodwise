@@ -13,3 +13,5 @@ Browser gates covered login errors/loading/password visibility/keyboard, product
 Migration 0016 and its pinned demo entry configuration are applied. No pre-existing identity, membership, initiative, fact, review or audit record was changed by this release. A concurrently recorded AMAN W39 draft was retained untouched; its origin is recorded against the existing AMAN owner and is not attributed to the gate.
 
 The following mission continues on `prodwise/product-comprehension`, from this production baseline. Login completion is a milestone, not the final mission verdict.
+
+Bounded Supabase log inspection, 08:56–09:03 UTC: 1,718 edge records and four PostgreSQL records had no error-like messages; scanned sources had no API-key/Bearer secret-pattern matches. Five auth error-like records included one invalid-credentials result and two missing/expired-session results, consistent with the negative/sign-out gate; two did not match those categories and are not represented as a clean zero-error auth log. Browser success/negative assertions remain the functional evidence. This pattern scan is not a guarantee about uninspected log systems.

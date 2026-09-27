@@ -1,4 +1,6 @@
 "use server";
+import { assertWorkspaceScope } from "@/lib/auth/scope";
+import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
 import { revalidatePath } from "next/cache";
 
@@ -45,12 +47,14 @@ export async function reclassifyEvidenceAction(
   evidenceId: string,
   slug: string,
   boundary: string,
+  scopeWorkspaceId: string,
 ): Promise<EvidenceActionResult> {
   if (!isBoundary(boundary)) {
     return { error: "That is not a valid boundary classification." };
   }
 
   try {
+    assertWorkspaceScope(scopeWorkspaceId,await requireBusinessWriteAccess());
     await resolveOwnedEvidence(slug, evidenceId);
     await getRepository().updateEvidence(evidenceId, { boundary });
   } catch (error) {
@@ -75,6 +79,7 @@ export async function reclassifyEvidenceAction(
 export async function excludeEvidenceAction(
   evidenceId: string,
   slug: string,
+  scopeWorkspaceId: string,
 ): Promise<EvidenceActionResult> {
-  return reclassifyEvidenceAction(evidenceId, slug, "EXCLUDED");
+  return reclassifyEvidenceAction(evidenceId, slug, "EXCLUDED",scopeWorkspaceId);
 }

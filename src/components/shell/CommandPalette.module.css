@@ -153,3 +153,5 @@
 .dialog{height:auto}
 .list{flex:0 1 auto;max-height:60vh}
 .footer button{margin-left:auto;border:1px solid var(--navy-ink-faint);background:transparent;color:var(--navy-ink);border-radius:var(--r-sm);padding:var(--s-2) var(--s-3);min-height:var(--s-10);cursor:pointer}
+.layer{border:0;padding:0;margin:0;max-width:none;max-height:none;width:100vw;height:100dvh;background:transparent}.layer:not([open]){display:none}.layer::backdrop{background:transparent}
+.layer{padding:12vh var(--s-4) var(--s-4)}

@@ -4,11 +4,13 @@ import { SEED_SOURCES, SEED_EVIDENCE } from "../data/fixtures/evidence.ts";
 import { SEED_CLAIMS, SEED_CLAIM_EVIDENCE } from "../data/fixtures/claims.ts";
 import type { ActivityEntry, ClaimRecord, ClaimTrust, EvidenceRecord, Initiative, InitiativeSnapshot, InitiativeSource, MemoryClaim, FindingState } from "../domain/types.ts";
 import type { DeliveryState, PortfolioSource, WorkspaceAccess, FactKind, FactValue } from "../delivery/types.ts";
-import { createReview, editSection, finalizeReview, recordFact, factFor } from "../delivery/model.ts";
+import { createReview, editSection, finalizeReview, recordFact, factFor, refreshReview } from "../delivery/model.ts";
+import { demoProjectMetrics } from "./metric-fixtures.ts";
 import { FIXTURE_ORIGIN_LABEL } from "./presentation.ts";
 
 export const DEMO_ORGANIZATION_NAME="Prodwise Demo";
 export const DEMO_CANONICAL_VERSION="prodwise-graduation-2026-09-v1";
+export const DEMO_ENRICHED_VERSION="prodwise-graduation-2026-09-v2";
 export const DEMO_CUTOFF="2026-09-26T10:00:00.000Z";
 export const DEMO_BASELINE_WEEK="2026-W38";
 export const DEMO_REVIEW_WEEK="2026-W39";
@@ -21,6 +23,68 @@ export interface DemoProductStore {
   claims:DemoScoped<ClaimRecord & ClaimTrust>[];
   claimEvidence:DemoScoped<{claimId:string;evidenceId:string;createdAt:string;locator:string|null;excerpt:string|null}>[];
   findingStates:DemoScoped<FindingState>[];
+}
+
+/** Additive second scenario. V1 remains the historical factory; no existing fact or Final is rewritten. */
+export function canonicalDemoDataV2(identity:DemoIdentity) {
+  const demo=canonicalDemoData(identity),{workspaceId,reviewerMemberId,reviewerUserId}=identity;
+  const id=(key:string)=>demoId(workspaceId,`v2:${key}`),at="2026-09-22T10:00:00.000Z";
+  const scoped=<T extends object>(value:T):DemoScoped<T>=>({...value,workspaceId});
+  const specs=[
+    {slug:"tap-to-pay-merchant-onboarding",name:"Tap-to-Pay Merchant Onboarding",businessLine:"ACCEPTANCE",stage:"LIVE_VALIDATION",scope:"Full rollout · Tap-to-Pay merchant onboarding",start:"2026-06-01",target:"2026-09-10",actual:"2026-09-10",milestone:"30-day live review",milestoneDate:"2026-10-10",next:"Review the recorded onboarding observations with Operations."},
+    {slug:"merchant-pricing-update",name:"Merchant Pricing Update",businessLine:"FS",stage:"VALIDATION",scope:"Phase 1 · merchant service fee update",start:"2026-08-03",target:"2026-10-12",actual:null,milestone:"UAT sign-off",milestoneDate:"2026-10-01",next:"Confirm the fee value with Finance before UAT sign-off."},
+    {slug:"agent-cash-in-network",name:"Agent Cash-In Network",businessLine:"DIGITAL_TRANSFORMATION",stage:"DISCOVERY",scope:"Discovery · agent cash-in pilot proposal",start:null,target:null,actual:null,milestone:null,milestoneDate:null,next:"Assign a responsible PM and confirm the pilot proposal."},
+    {slug:"installment-early-settlement",name:"Installment Early Settlement",businessLine:"MF",stage:"DELIVERY",scope:"Phase 1 · installment early settlement",start:"2026-09-01",target:"2026-10-20",actual:null,milestone:"QA sign-off",milestoneDate:"2026-10-06",next:"Review the settlement calculations with QA."},
+  ] as const;
+  for(const spec of specs) {
+    const initiative=scoped({id:id(spec.slug),slug:spec.slug,name:spec.name,businessLine:spec.businessLine,stage:spec.stage,description:"Synthetic demo scenario. Fictional records prepared for the graduation walkthrough; no live business results are represented.",knownReferences:null,overallState:"UNKNOWN" as const,stateSummary:null,isDemo:true,createdAt:at,updatedAt:at});
+    demo.productStore.initiatives.push(initiative);
+    const source=scoped({id:id(`${spec.slug}:source`),initiativeId:initiative.id,name:`Synthetic · ${spec.name} scenario notes`,sourceType:"DOCUMENT" as const,connectionState:"MANUAL" as const,lastSyncedAt:null,createdAt:at,updatedAt:at});
+    demo.productStore.sources.push(source);
+    const evidence=scoped({id:id(`${spec.slug}:evidence`),initiativeId:initiative.id,sourceId:source.id,title:`Synthetic ${spec.name} current-scope record`,sourceType:"DOCUMENT" as const,sourceReference:`DEMO-${spec.slug}`,sourceUrl:null,contentSummary:"Synthetic evidence for the graduation walkthrough. Scenario facts are fixture preparation; human verification history is not recorded.",boundary:"CURRENT_SCOPE" as const,occurredAt:at,capturedAt:at,lastVerifiedAt:null,createdBy:reviewerUserId,createdAt:at,updatedAt:at});
+    demo.productStore.evidence.push(evidence);
+    const entries=spec.slug==="tap-to-pay-merchant-onboarding"?[
+      {subject:"Onboarding scope",attribute:"Eligible device",value:"NFC-capable supported Android devices"},
+      {subject:"Merchant activation",attribute:"Required check",value:"Identity review before activation"},
+      {subject:"Transaction receipt",attribute:"Delivery method",value:"Digital receipt within the onboarding scope"},
+    ]:spec.slug==="merchant-pricing-update"?[
+      {subject:"Merchant service fee",attribute:"Rate",value:"1.50%"},{subject:"Merchant service fee",attribute:"Rate",value:"1.75%"},
+    ]:spec.slug==="agent-cash-in-network"?[
+      {subject:"Agent cash-in pilot",attribute:"Pilot region",value:"Proposed single-region pilot; confirmation pending"},{subject:"Agent cash-in pilot",attribute:"Daily limit",value:"Proposed daily limit; value not confirmed"},
+    ]:[
+      {subject:"Early settlement",attribute:"Quote validity",value:"Settlement quote valid for the recorded business day"},{subject:"Early settlement",attribute:"Required confirmation",value:"Customer confirmation before posting settlement"},
+    ];
+    const claims:MemoryClaim[]=entries.map((entry,index)=>{
+      const claim=scoped({id:id(`${spec.slug}:claim:${index}`),initiativeId:initiative.id,type:"REQUIREMENT" as const,status:spec.slug==="agent-cash-in-network"?"UNVERIFIED" as const:"ACTIVE" as const,...entry,domain:spec.slug==="merchant-pricing-update"?"FINANCE" as const:"PRODUCT" as const,phase:spec.scope,confidence:"MEDIUM" as const,supersededByClaimId:null,createdBy:reviewerUserId,createdAt:at,updatedAt:at,origin:"LEGACY" as const,verifiedAt:null,verifiedActorId:null,verifiedActorLabel:null,verificationBasis:null,verificationNote:null});
+      // Pricing has two separately recorded current-scope notes; neither is a chosen resolution.
+      let linked=evidence;
+      if(spec.slug==="merchant-pricing-update"&&index===1){linked={...evidence,id:id(`${spec.slug}:evidence:alternate`),title:"Synthetic Finance fee review note",sourceReference:"DEMO-PRICING-ALTERNATE"};demo.productStore.evidence.push(linked);}
+      demo.productStore.claims.push(claim);
+      const link=scoped({claimId:claim.id,evidenceId:linked.id,createdAt:at,locator:`Scenario section ${index+1}`,excerpt:entry.value});demo.productStore.claimEvidence.push(link);
+      return {...claim,evidence:[linked],anchors:[{evidenceId:linked.id,locator:link.locator,excerpt:link.excerpt}]};
+    });
+    demo.source.snapshots.push({initiative,evidence:demo.productStore.evidence.filter(e=>e.initiativeId===initiative.id),claims,findingStates:[]});
+    demo.productStore.activity.push(scoped({id:id(`${spec.slug}:created`),initiativeId:initiative.id,eventType:"INITIATIVE_CREATED",summary:"Synthetic initiative added to the registered Demo after the W38 cutoff",occurredAt:at,entityType:"INITIATIVE",entityId:initiative.id,payload:{synthetic:true,canonicalVersion:DEMO_ENRICHED_VERSION},actorLabel:FIXTURE_ORIGIN_LABEL}));
+  }
+  const ctx:WorkspaceAccess={workspaceId,organizationId:identity.organizationId,memberId:reviewerMemberId,actor:{id:reviewerUserId,label:FIXTURE_ORIGIN_LABEL},platformRole:null,role:"ORG_OWNER",isProductLead:false};
+  function record(slug:string,kind:FactKind,value:Partial<FactValue>,note:string) {
+    const initiativeId=id(slug);
+    demo.deliveryState=recordFact(demo.deliveryState,demo.source,ctx,{initiativeId,kind,expectedRevision:0,value:{date:null,text:null,memberId:null,extent:null,...value},retract:false,basis:"DIRECT_KNOWLEDGE",note:`Synthetic demo fixture: ${note} Recorded on 22 September; earlier effective dates are late-recorded provenance.`,evidenceId:null,locator:null},at);
+    const event=demo.deliveryState.events.at(-1)!;event.id=id(`${slug}:event:${kind}`);event.after.id=id(`${slug}:fact:${kind}`);event.after.preparedAsFixture=true;
+  }
+  for(const spec of specs) {
+    record(spec.slug,"SCOPE",{text:spec.scope},"Named fictional delivery scope prepared.");
+    if(spec.slug!=="agent-cash-in-network")record(spec.slug,"OWNER",{memberId:reviewerMemberId},"Reviewer section responsibility prepared for the walkthrough.");
+    if(spec.start)record(spec.slug,"DEV_STARTED",{date:spec.start},"Earlier actual development start supplied by the synthetic scenario.");
+    if(spec.target)record(spec.slug,"TARGET_LIVE",{date:spec.target},"Scenario target; not an inferred date.");
+    if(spec.actual)record(spec.slug,"ACTUAL_LIVE",{date:spec.actual,extent:"FULL",text:spec.scope},"Recorded full named scope, distinct from its planned target.");
+    if(spec.milestone)record(spec.slug,"NEXT_MILESTONE",{text:spec.milestone,date:spec.milestoneDate},"Next checkpoint planned; outcome unknown.");
+    record(spec.slug,"NEXT_STEP",{text:spec.next},"Recorded next action; no computed health assessment.");
+  }
+  const draft=demo.deliveryState.reviews.find(r=>r.week===DEMO_REVIEW_WEEK)!;
+  demo.deliveryState=refreshReview(demo.deliveryState,demo.source,ctx,draft.id,draft.revision,demo.cutoff);
+  const metrics=demoProjectMetrics(workspaceId,id("tap-to-pay-merchant-onboarding"),id("tap-to-pay-merchant-onboarding:evidence"),id);
+  return {...demo,version:DEMO_ENRICHED_VERSION,metrics};
 }
 export interface DemoIdentity {workspaceId:string;organizationId:string;reviewerMemberId:string;reviewerUserId:string;asOf?:string;}
 export function demoId(workspaceId:string,key:string):string {
