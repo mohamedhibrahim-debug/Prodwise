@@ -20,7 +20,7 @@ test('exact matches (ignoring case, spacing, punctuation) are flagged with a lin
   proposal('p5','DELIVERY',{factKind:'TARGET_LIVE',date:'2026-10-15'}),
  ],facts);
  assert.deepEqual(Object.keys(hits).sort(),['p1','p2','p3','p4','p5']);
- assert.match(hits.p4!.label,/Instant Settlement Payout depends on Merchant Flex Finance/);
+ assert.match(hits.p4!.label,/Recorded relationship: Instant Settlement Payout depends on Merchant Flex Finance/);
  assert.equal(hits.p2!.href,'/initiatives/mff/actions?action=k1');
 });
 
