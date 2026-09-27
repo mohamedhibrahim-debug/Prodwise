@@ -10,6 +10,7 @@ import {
   EVIDENCE_SOURCE_TYPE_LABEL,
   formatDate,
   formatVerified,
+  displaySourceReference,
 } from "@/lib/domain/labels";
 import type { MemoryClaim, FindingState } from "@/lib/domain/types";
 import { trustLine } from "@/lib/domain/trust";
@@ -171,8 +172,8 @@ export async function ClaimRow({
                 <li key={e.id} className={styles.evidenceItem}>
                   <span className={styles.evidenceTop}>
                     <span className={styles.evidenceTitle}>{e.title}</span>
-                    {e.sourceReference ? (
-                      <Reference>{e.sourceReference}</Reference>
+                    {displaySourceReference(e.sourceReference) ? (
+                      <Reference>{displaySourceReference(e.sourceReference)}</Reference>
                     ) : null}
                     <span className={styles.evidenceKind}>
                       {EVIDENCE_SOURCE_TYPE_LABEL[e.sourceType]}

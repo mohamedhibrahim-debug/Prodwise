@@ -125,15 +125,19 @@ export const EVIDENCE_RELATION_NOTE: Record<EvidenceRelation, string> = {
   EXCLUDED: "Explicitly excluded by a user.",
 };
 
+/** The organization day and clock used for every timestamp shown. */
+export const ORG_TIME_ZONE = "Africa/Cairo";
+
 /** Formats a timestamp for display. Deterministic, so SSR and client agree. */
 export function formatDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
+  // A plain date is a calendar day; a timestamp is shown on the organization's day (Cairo).
   return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
+    day: "numeric",
     month: "short",
     year: "numeric",
-    timeZone: "UTC",
+    timeZone: iso.length === 10 ? "UTC" : ORG_TIME_ZONE,
   }).format(d);
 }
 
@@ -165,11 +169,25 @@ export function formatDateTime(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
   return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
+    day: "numeric",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "UTC",
+    timeZone: ORG_TIME_ZONE,
   }).format(d);
+}
+
+const UUID_REFERENCE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/**
+ * A source reference as a person should read it. Internal keys (a saved-text id,
+ * a meeting-notes key) are never shown: meeting keys read as "Meeting · 25 Sept 2026",
+ * bare ids read as null so the caller shows its own "not recorded" wording.
+ */
+export function displaySourceReference(reference: string | null | undefined): string | null {
+  if (!reference) return null;
+  const meeting = /^meeting:(\d{4}-\d{2}-\d{2}):/.exec(reference);
+  if (meeting) return `Meeting · ${formatDate(`${meeting[1]}T00:00:00Z`)}`;
+  if (UUID_REFERENCE.test(reference)) return null;
+  return reference;
 }

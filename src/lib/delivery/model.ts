@@ -256,10 +256,10 @@ export function finalizationChecks(state:DeliveryState,source:PortfolioSource,ct
     {id:"authority",label:"You are an Org Owner, Admin, Platform Owner or Product Lead",met:canBusinessWrite(ctx)&&(hasOrganizationAdminAuthority(ctx)||ctx.isProductLead)},
     {id:"environment",label:"Changes are enabled in this environment",met:writesEnabled},
     {id:"chronology",label:"No later week is finalized",met:!state.reviews.some(r=>r.workspaceId===ctx.workspaceId&&r.status==="FINAL"&&r.week>review.week)},
-    {id:"inputs",label:"Inputs match the current initiative records",met:current.digest===review.input.digest},
+    {id:"inputs",label:"The review reflects the latest initiative records",met:current.digest===review.input.digest},
     {id:"baseline",label:"The previous Final baseline is unchanged",met:(baseline?.id??null)===review.baselineReviewId},
     {id:"sections",label:"Every section is saved and reviewed; none needs re-check",met:review.sections.every(s=>!s.needsRecheck&&Boolean(s.editedByMemberId||s.editedByUserId))},
-    {id:"available",label:"Every frozen section is available in this workspace",met:review.sections.every(s=>available.has(s.initiativeId))&&review.sections.length===weeklySnapshots(review.input,baseline?.input??null).length},
+    {id:"available",label:"Every section in this review can be read with your access",met:review.sections.every(s=>available.has(s.initiativeId))&&review.sections.length===weeklySnapshots(review.input,baseline?.input??null).length},
   ];
 }
 /** Facts and the refreshed draft are one delivery transaction. Commentary is preserved. */

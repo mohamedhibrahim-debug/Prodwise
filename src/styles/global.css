@@ -152,3 +152,10 @@ button, a, summary {
     align-content: center;
   }
 }
+
+/* Product-wide action states. `:not(#_)` lifts specificity above module button
+   styles so a disabled or destructive action never borrows a primary look. */
+button:disabled:not(#_),button[aria-disabled="true"]:not(#_){background:transparent;color:var(--ink-500);border:1px dashed var(--rule-strong);box-shadow:none;opacity:1}
+button[data-tone="danger"]:not(#_){background:var(--panel);color:var(--state-blocked-fg);border:1px solid var(--state-blocked-edge)}
+button[data-tone="danger"]:not(#_):hover{background:var(--state-blocked-bg)}
+button[data-tone="danger"]:disabled:not(#_){color:var(--ink-500);border:1px dashed var(--rule-strong);background:transparent}

@@ -14,7 +14,7 @@ const GROUP:Record<RelationshipRowView['group'],{label:string;hint:string}>={
 const FACT:Record<string,string>={TARGET_LIVE:'Target Live',NEXT_MILESTONE:'Next milestone'};
 /** Mid-sentence form: Target Live stays a proper name; a milestone does not. */
 const mid=(k:string)=>k==='TARGET_LIVE'?'Target Live':'next milestone';
-const day=(iso:string)=>new Date(`${iso.slice(0,10)}T12:00:00Z`).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+const day=(iso:string)=>new Date(iso.length===10?`${iso}T12:00:00Z`:iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:iso.length===10?'UTC':'Africa/Cairo'});
 
 function RowActions({row,slug}:{row:RelationshipRowView;slug:string}){
  const [state,action,pending]=useActionState(relationshipAction,{error:null,message:null});const [requestId]=useState(()=>crypto.randomUUID());
@@ -24,9 +24,9 @@ function RowActions({row,slug}:{row:RelationshipRowView;slug:string}){
    <label>Why they are related<textarea name="rationale" rows={2} maxLength={1000} value={rationale} onChange={e=>setRationale(e.target.value)} required/></label>
    {row.type==='DEPENDS_ON'&&<DateChoice checked={dates} onToggle={setDates} provider={row.providerFactKind} needed={row.neededByFactKind} targetName={row.other?.name??'The other initiative'}/>}
    <button className={styles.primary} disabled={pending}>{pending?'Saving…':'Save changes'}</button></form></details>
-  <details><summary>End</summary><form action={action} className={styles.inlineForm}><ScopeField/><input type="hidden" name="slug" value={slug}/><input type="hidden" name="operation" value="END"/><input type="hidden" name="id" value={row.id}/><input type="hidden" name="expectedRevision" value={row.revision}/><input type="hidden" name="requestId" value={requestId}/>
+  <details><summary>End relationship…</summary><form action={action} className={styles.inlineForm}><ScopeField/><input type="hidden" name="slug" value={slug}/><input type="hidden" name="operation" value="END"/><input type="hidden" name="id" value={row.id}/><input type="hidden" name="expectedRevision" value={row.revision}/><input type="hidden" name="requestId" value={requestId}/>
    <label>Why it no longer applies<textarea name="reason" rows={2} maxLength={1000} value={reason} onChange={e=>setReason(e.target.value)} required/></label><p className={styles.help}>Ending keeps the relationship in both initiatives’ history.</p>
-   <button className={styles.destructive} disabled={pending||!reason.trim()}>{pending?'Ending…':'End relationship'}</button></form></details>
+   <button className={styles.destructive} data-tone="danger" disabled={pending||!reason.trim()}>{pending?'Ending…':'End relationship'}</button></form></details>
   {state.error&&<p role="alert" className={styles.error}>{state.error}</p>}{state.message&&<p role="status" className={styles.ok}>{state.message}</p>}
  </div>;
 }

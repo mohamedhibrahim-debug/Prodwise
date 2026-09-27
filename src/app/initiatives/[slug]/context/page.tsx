@@ -13,7 +13,7 @@ import {canChangeQuestion,questionOverdueDays} from '@/lib/workspace/questions';
 import {RisksQuestions,type RiskItem,type QuestionItem} from '@/components/initiative/RisksQuestions';
 import styles from '@/components/initiative/context-page.module.css';
 export const metadata={title:'Risks & open questions'};export const dynamic='force-dynamic';
-const short=(iso:string)=>new Date(`${iso.slice(0,10)}T12:00:00Z`).toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'});
+const short=(iso:string)=>new Date(iso.length===10?`${iso}T12:00:00Z`:iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:iso.length===10?'UTC':'Africa/Cairo'});
 export default async function Context({params}:{params:Promise<{slug:string}>}){
  const [{slug},d,qs,rs,cs]=await Promise.all([params,readDelivery(),readQuestions(),readRisks(),readCommitments()]);
  const snap=d.source.snapshots.find(s=>s.initiative.slug===slug);if(!snap)notFound();const i=snap.initiative;const base=`/initiatives/${slug}`;

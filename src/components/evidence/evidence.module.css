@@ -77,7 +77,7 @@
 .kind{font-weight:var(--fw-semibold);color:var(--ink-900)}
 .state{color:var(--ink-500);margin-inline-end:auto}
 .card[data-status=confirmed] .state{color:var(--state-ready-fg)}.card[data-status=outdated] .state{color:var(--state-at-risk-fg)}
-.select{display:inline-flex!important;align-items:center;justify-content:center;min-width:44px;min-height:44px;margin:calc(var(--s-3)*-1) 0}.select input{width:20px!important;height:20px;min-height:20px!important;accent-color:var(--navy-900)}
+.select{display:inline-flex!important;align-items:center;gap:var(--s-2);justify-content:center;min-width:44px;min-height:44px;margin:calc(var(--s-3)*-1) 0}.select input{width:20px!important;height:20px;min-height:20px!important;accent-color:var(--navy-900)}
 .subject{font-size:var(--t-sm);color:var(--ink-500)}
 .statement{font-size:var(--t-h2);line-height:1.45;color:var(--ink-900);font-weight:var(--fw-medium);margin-top:var(--s-1)}
 .aside{font-weight:var(--fw-regular);color:var(--ink-700)}
@@ -146,3 +146,11 @@
 .batchHint{font-size:var(--t-xs);color:var(--ink-500);margin-inline-start:auto}
 .group{scroll-margin-top:calc(var(--workspace-header-h,160px) + 90px)}
 @media(max-width:767px){.groupIndex{position:static;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:var(--s-2);margin-inline:0}.groupIndex a{flex:0 0 auto}.batchHint{display:none}}
+
+/* Something that already exists is said before any decision, never after. */
+.recorded{margin:var(--s-3) 0;padding:var(--s-3) var(--s-4);background:var(--state-at-risk-bg);border-inline-start:3px solid var(--state-at-risk-edge);color:var(--ink-900);font-size:var(--t-sm);line-height:var(--lh-body)}
+.recorded a{color:var(--accent-700);font-weight:var(--fw-medium)}
+.recorded .buttons{margin-top:var(--s-3)}
+.duplicate{margin-top:var(--s-2);font-size:var(--t-sm);color:var(--state-at-risk-fg)}
+.duplicate a{color:inherit;font-weight:var(--fw-semibold)}
+.select span[aria-hidden]{font-size:var(--t-sm);color:var(--ink-700)}

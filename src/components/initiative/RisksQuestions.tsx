@@ -13,7 +13,7 @@ export interface QuestionItem {id:string;revision:number;question:string;status:
  origin:{label:string;href:string|null}|null;answerNote:string|null;answerClaim:{label:string;href:string}|null;resolvedBy:string|null;resolvedAt:string|null;reason:string|null;canDetails:boolean;canResolve:boolean;}
 export interface Option {id:string;label:string;}
 const STATUS:Record<Status,{label:string;glyph:string}>={OPEN:{label:'Open',glyph:'●'},MITIGATING:{label:'Mitigating',glyph:'◐'},ACCEPTED:{label:'Accepted',glyph:'◆'},CLOSED:{label:'Closed',glyph:'✓'}};
-const day=(iso:string)=>new Date(`${iso.slice(0,10)}T12:00:00Z`).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+const day=(iso:string)=>new Date(iso.length===10?`${iso}T12:00:00Z`:iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:iso.length===10?'UTC':'Africa/Cairo'});
 const rid=()=>crypto.randomUUID();
 /** Rows can move between groups after a change (and remount); the outcome is announced here instead. */
 const Notice=createContext<(m:{text:string;anchor:string})=>void>(()=>{});
@@ -68,7 +68,7 @@ function QuestionRow({q,slug,members,claims}:{q:QuestionItem;slug:string;members
     <button className={styles.primary} disabled={pending}>{pending?'Saving…':'Record answer'}</button></form></details>}
    {q.status==='OPEN'&&(q.canDetails||q.canResolve)&&<details className={styles.more}><summary>More</summary><div className={styles.sheet}>
     {q.canDetails&&<form action={act} className={styles.subform}><Hidden slug={slug} op="EDIT" id={q.id} revision={q.revision} requestId={requestId}/><label>Question<textarea name="question" rows={2} maxLength={300} defaultValue={q.question} required/></label><div className={styles.two}><label>Who answers<select name="ownerMemberId" defaultValue={q.ownerId??''}><option value="">Not decided</option>{members.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label><label>Needed by<input type="date" name="dueDate" defaultValue={q.dueDate??''}/></label></div><button className={styles.secondary} disabled={pending}>Save changes</button></form>}
-    {q.canResolve&&<form action={act} className={styles.subform}><Hidden slug={slug} op="WITHDRAW" id={q.id} revision={q.revision} requestId={requestId}/><label>Why is it no longer relevant?<textarea name="reason" rows={2} maxLength={2000} required/></label><button className={styles.quiet} disabled={pending}>Withdraw question</button></form>}
+    {q.canResolve&&<form action={act} className={styles.subform}><Hidden slug={slug} op="WITHDRAW" id={q.id} revision={q.revision} requestId={requestId}/><label>Why is it no longer relevant?<textarea name="reason" rows={2} maxLength={2000} required/></label><button className={styles.quiet} data-tone="danger" disabled={pending}>Withdraw question</button></form>}
    </div></details>}
    {q.status!=='OPEN'&&q.canResolve&&<details className={styles.more}><summary>Reopen</summary><form action={act} className={styles.sheet}><Hidden slug={slug} op="REOPEN" id={q.id} revision={q.revision} requestId={requestId}/><label>Why reopen it?<textarea name="reason" rows={2} maxLength={2000} required/></label><button className={styles.secondary} disabled={pending}>Reopen question</button></form></details>}
   </div>

@@ -11,6 +11,7 @@ import {
   EVIDENCE_SOURCE_TYPE_LABEL,
   FINDING_LABEL,
   formatDateTime,
+  displaySourceReference,
 } from "@/lib/domain/labels";
 import type { FindingClaimRef, ReviewFinding, ClaimWithEvidence, ClaimTrust } from "@/lib/domain/types";
 import { trustLine } from "@/lib/domain/trust";
@@ -154,7 +155,7 @@ function ConflictRow({
               </span>
             ) : null}
             <p className={styles.value}>{claim.value}</p>
-            <p className={styles.compactSource}>{claim.evidence.filter(source => source.boundary !== "EXCLUDED").map(source => source.sourceReference ?? source.title).join(" · ") || "No included source reference"}</p>
+            <p className={styles.compactSource}>{claim.evidence.filter(source => source.boundary !== "EXCLUDED").map(source => displaySourceReference(source.sourceReference) ?? source.title).join(" · ") || "No included source reference"}</p>
             <p className={styles.claimFacts}>{CLAIM_STATUS_LABEL[claim.status]}</p>
           </div>
         ))}
@@ -225,9 +226,9 @@ function ClaimColumn({ claim, slug, record }: { claim: FindingClaimRef; slug: st
      kept and listed below, tagged — but a record a person removed from the
      boundary must not head the column as if it still backed this. */
   const included = claim.evidence.filter((e) => e.boundary !== "EXCLUDED");
-  const primaryRef = included.find((e) => e.sourceReference)?.sourceReference;
+  const primaryRef = displaySourceReference(included.find((e) => displaySourceReference(e.sourceReference))?.sourceReference);
   const hasExcludedRef =
-    !primaryRef && claim.evidence.some((e) => e.sourceReference);
+    !primaryRef && claim.evidence.some((e) => displaySourceReference(e.sourceReference));
 
   return (
     <div className={styles.column}>

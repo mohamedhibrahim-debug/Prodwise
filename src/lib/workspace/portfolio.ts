@@ -41,7 +41,7 @@ export function buildPortfolioProjection({source,state,workspaceId,activity=[],a
   for(const event of state.events.filter(e=>e.workspaceId===workspaceId&&allowed.has(e.initiativeId)&&inWindow(e.occurredAt))) {
     const i=allowed.get(event.initiativeId)!; const f=event.after; const delta=event.before?.value.date&&f.value.date?dayDifference(event.before.value.date,f.value.date):null;
     const sentence=f.state==='RETRACTED'?`${factNames[f.kind]} withdrawn · current status unknown`:f.kind==='TARGET_LIVE'&&delta!==null&&delta!==0?`Target Live moved ${displayDate(event.before!.value.date)} → ${displayDate(f.value.date)} (${delta>0?'+':''}${delta} days)`:f.kind==='OWNER'?`Owner assignment recorded`:`${factNames[f.kind]} confirmed: ${f.value.date?displayDate(f.value.date):f.value.text??'Recorded assignment'}`;
-    changes.push({id:event.id,initiativeId:i.id,slug:i.slug,name:i.name,sentence,actorLabel:f.preparedAsFixture?'Synthetic scenario preparation':event.actor.label,occurredAt:event.occurredAt,href:`/initiatives/${i.slug}/delivery`});
+    changes.push({id:event.id,initiativeId:i.id,slug:i.slug,name:i.name,sentence,actorLabel:f.preparedAsFixture?'Prodwise demo setup':event.actor.label,occurredAt:event.occurredAt,href:`/initiatives/${i.slug}/delivery`});
   }
   // A rejected proposal changed nothing in the product, so it is not a change.
   for(const entry of activity.filter(e=>allowed.has(e.initiativeId)&&inWindow(e.occurredAt)&&e.eventType!=='AI_PROPOSAL_REJECTED')) {

@@ -9,7 +9,7 @@ import { EvidenceAnchorForm } from "@/components/initiative/EvidenceAnchorForm";
 import { normalise } from "@/lib/review/normalise";
 import { deriveInstrumentSnapshot } from "@/lib/workspace/instrument";
 import { attentionSentence } from "@/lib/workspace/copy";
-import { CLAIM_STATUS_LABEL, CLAIM_TYPE_LABEL, DOMAIN_LABEL, EVIDENCE_SOURCE_TYPE_LABEL, EVIDENCE_RELATION_LABEL, formatDate } from "@/lib/domain/labels";
+import { CLAIM_STATUS_LABEL, CLAIM_TYPE_LABEL, DOMAIN_LABEL, EVIDENCE_SOURCE_TYPE_LABEL, EVIDENCE_RELATION_LABEL, formatDate, displaySourceReference } from "@/lib/domain/labels";
 import { trustLine } from "@/lib/domain/trust";
 import { decisionMarkers, groupKnowledge, replacementLineage, type KnowledgeValueGroup } from "@/lib/workspace/knowledge";
 import styles from "./knowledge.module.css";
@@ -80,7 +80,7 @@ export default async function KnowledgePage({ params, searchParams }: {
               <div role="group" aria-label="Confirmation" className={styles.rowStatus}><span>{allSameStatus ? CLAIM_STATUS_LABEL[first.status] : "Entry statuses in details"}</span>
                 {entries.map(entry => <p key={entry.id}>{entry.verifiedAt ? `${entry.verifiedActorLabel ?? "Actor not recorded"} · ${formatDate(entry.verifiedAt)}` : "Verification history not recorded"}</p>)}</div>
               <div role="group" aria-label="Provenance" className={styles.sourceIdentity}><span>{sources.length} linked {sources.length === 1 ? "source" : "sources"}</span>
-                {sources.map(source => <Link prefetch={false} key={source.id} href={`/initiatives/${slug}/sources#source-${source.id}`}>{source.sourceReference ?? source.title}{source.boundary === "EXCLUDED" ? " · Excluded" : ""}</Link>)}</div>
+                {sources.map(source => <Link prefetch={false} key={source.id} href={`/initiatives/${slug}/sources#source-${source.id}`}>{displaySourceReference(source.sourceReference) ?? source.title}{source.boundary === "EXCLUDED" ? " · Excluded" : ""}</Link>)}</div>
               <details><summary aria-label={`Details for ${subject} · ${attribute} (${value})`}>Details</summary>
                 <ul>{entries.map((entry) => {
                   const trust = trustLine(entry);
@@ -98,7 +98,7 @@ export default async function KnowledgePage({ params, searchParams }: {
                       const anchor = entry.anchors.find((item) => item.evidenceId === source.id);
                       return <div key={source.id} className={styles.provenance}>
                         <Link prefetch={false} href={`${base}/sources#source-${source.id}`}>{source.title}</Link>
-                        <p className={styles.sourceMeta}>{source.sourceReference ?? "Reference not recorded"} · {EVIDENCE_SOURCE_TYPE_LABEL[source.sourceType]} · {EVIDENCE_RELATION_LABEL[source.boundary]} · {source.occurredAt ? formatDate(source.occurredAt) : "Source date not recorded"}</p>
+                        <p className={styles.sourceMeta}>{displaySourceReference(source.sourceReference) ?? "Reference not recorded"} · {EVIDENCE_SOURCE_TYPE_LABEL[source.sourceType]} · {EVIDENCE_RELATION_LABEL[source.boundary]} · {source.occurredAt ? formatDate(source.occurredAt) : "Source date not recorded"}</p>
                         {source.contentSummary ? <p><b>Summary:</b> {source.contentSummary}</p> : null}
                         {anchor?.locator ? <p><b>Locator:</b> {anchor.locator}</p> : null}
                         {anchor?.excerpt ? <p><b>Supporting excerpt:</b> “{anchor.excerpt}”</p> : null}

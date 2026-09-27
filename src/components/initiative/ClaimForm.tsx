@@ -14,6 +14,7 @@ import {
   DOMAIN_LABEL,
   EVIDENCE_RELATION_LABEL,
   EVIDENCE_SOURCE_TYPE_LABEL,
+  displaySourceReference,
 } from "@/lib/domain/labels";
 import {
   CLAIM_STATUSES,
@@ -296,9 +297,9 @@ export function ClaimForm({
                           <span className={claimStyles.evidenceTitle}>
                             {e.title}
                           </span>
-                          {e.sourceReference ? (
+                          {displaySourceReference(e.sourceReference) ? (
                             <span className={claimStyles.evidenceRef}>
-                              {e.sourceReference}
+                              {displaySourceReference(e.sourceReference)}
                             </span>
                           ) : null}
                           <span className={claimStyles.evidenceKind}>

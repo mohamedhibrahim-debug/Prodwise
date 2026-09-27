@@ -1,4 +1,4 @@
-export const FIXTURE_ORIGIN_LABEL="Synthetic scenario preparation";
+export const FIXTURE_ORIGIN_LABEL="Prodwise demo setup";
 
 /** Fixture provenance takes precedence over referential-integrity actor labels. */
 export function safeUserLabel(value:{preparedAsFixture?:boolean;confirmedByLabel?:string|null}):string {

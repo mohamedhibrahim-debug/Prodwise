@@ -21,7 +21,7 @@ details.group[open]>summary::before{content:"▾"}
 .itemHead{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2) var(--s-3)}
 .chip{display:inline-flex;align-items:center;gap:var(--s-1);font-size:var(--t-xs);font-weight:var(--fw-semibold);padding:2px var(--s-2);border-radius:var(--r-pill);border:1px solid var(--rule-strong);background:var(--panel);color:var(--ink-700)}
 .chip[data-status=open],.chip[data-status=untracked]{color:var(--state-at-risk-fg);border-color:var(--state-at-risk-edge);background:var(--state-at-risk-bg)}
-.chip[data-status=mitigating]{color:var(--accent-700);border-color:var(--accent-500);background:var(--accent-050)}
+.chip[data-status=mitigating]{color:var(--state-at-risk-fg);border-color:var(--state-at-risk-edge);background:var(--state-at-risk-bg)}
 .chip[data-status=closed],.chip[data-status=answered]{color:var(--state-ready-fg);border-color:var(--state-ready-edge);background:var(--state-ready-bg)}
 .chip[data-status=accepted],.chip[data-status=unverified],.chip[data-status=superseded],.chip[data-status=withdrawn]{color:var(--state-unknown-fg);border-color:var(--state-unknown-edge);background:var(--state-unknown-bg)}
 .chip[data-status=overdue]{color:var(--attention-fg);border-color:var(--attention-rule);background:var(--attention-bg)}

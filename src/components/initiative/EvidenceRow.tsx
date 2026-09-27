@@ -7,6 +7,7 @@ import {
   EVIDENCE_RELATION_LABEL,
   formatDate,
   formatVerified,
+  displaySourceReference,
 } from "@/lib/domain/labels";
 import type { EvidenceRecord } from "@/lib/domain/types";
 import { EvidenceControls } from "./EvidenceControls";
@@ -57,8 +58,8 @@ export async function EvidenceRow({
             <span className={styles.main}>
               <span className={styles.titleLine}>
                 <span className={styles.title}>{item.title}</span>
-                {item.sourceReference ? (
-                  <Reference>{item.sourceReference}</Reference>
+                {displaySourceReference(item.sourceReference) ? (
+                  <Reference>{displaySourceReference(item.sourceReference)}</Reference>
                 ) : null}
                 <span className={styles.kind}>
                   {EVIDENCE_SOURCE_TYPE_LABEL[item.sourceType]}
