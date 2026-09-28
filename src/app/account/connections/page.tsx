@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { requireWorkspaceAccess } from "@/lib/auth/access";
-import { hasOrganizationAdminAuthority } from "@/lib/auth/roles";
 import { connectorOverview } from "@/lib/connectors/service";
 import { CONNECTOR_LABEL, CONNECTOR_SLUG, connectorFromSlug, connectorMessage, type Connector, type ConnectorErrorCode } from "@/lib/connectors/types";
 import { formatDateTime } from "@/lib/domain/labels";
@@ -21,7 +20,8 @@ const KNOWN: ConnectorErrorCode[] = ["NOT_CONFIGURED", "NOT_CONNECTED", "NEEDS_R
 
 export default async function Connections({ searchParams }: { searchParams: Promise<{ connected?: string; connector?: string; result?: string }> }) {
   const [ctx, q, { overview, isDemo }] = await Promise.all([requireWorkspaceAccess(), searchParams, connectorOverview()]);
-  const admin = hasOrganizationAdminAuthority(ctx);
+  // Deployment variable names are for the people who run the installation, not for organization users.
+  const operator = ctx.platformRole === "PLATFORM_OWNER";
   const connected = q.connected ? connectorFromSlug(q.connected) : null, failed = q.connector ? connectorFromSlug(q.connector) : null;
   const result = KNOWN.includes(q.result as ConnectorErrorCode) ? q.result as ConnectorErrorCode : null;
   return <div className={styles.page}>
@@ -33,12 +33,12 @@ export default async function Connections({ searchParams }: { searchParams: Prom
     <div className={styles.detailColumns}><div>
       {overview.map(o => <Section key={o.connector} title={CONNECTOR_LABEL[o.connector]}>
         <dl className={styles.details}>
-          <div><dt>Status</dt><dd>{!o.ready ? "Not set up for this installation" : o.status === "CONNECTED" ? `Connected as ${o.accountLabel ?? "your account"}` : o.status === "NEEDS_RECONNECT" ? "Needs reconnecting — access expired or was revoked" : "Not connected"}</dd></div>
+          <div><dt>Status</dt><dd>{!o.ready ? "Not available yet" : o.status === "CONNECTED" ? `Connected as ${o.accountLabel ?? "your account"}` : o.status === "NEEDS_RECONNECT" ? "Needs reconnecting — access expired or was revoked" : "Not connected"}</dd></div>
           {o.status === "CONNECTED" && o.connectedAt && <div><dt>Connected</dt><dd>{formatDateTime(o.connectedAt)}</dd></div>}
           {o.connector === "JIRA" && o.sites.length > 0 && <div><dt>Jira sites</dt><dd>{o.sites.map(s => s.name).join(", ")}</dd></div>}
           <div><dt>What Prodwise reads</dt><dd>{READS[o.connector]}</dd></div>
         </dl>
-        {!o.ready ? <p className={styles.summary}>{admin ? <>An administrator must register the {CONNECTOR_LABEL[o.connector]} app and set: <code>{o.missing.join(", ")}</code>. Manual source references keep working meanwhile.</> : `Ask an organization administrator to set up ${CONNECTOR_LABEL[o.connector]}. Manual source references keep working meanwhile.`}</p>
+        {!o.ready ? <p className={styles.summary}>{operator ? <>Not set up yet. For the installation: register the {CONNECTOR_LABEL[o.connector]} app and set <code>{o.missing.join(", ")}</code> (see the connector setup guide). Manual source references keep working meanwhile.</> : `Not available yet — ${CONNECTOR_LABEL[o.connector]} hasn’t been set up for Prodwise. You can still add sources by reference. Ask your administrator if you need it.`}</p>
           : isDemo ? null
           : o.status === "CONNECTED" ? <ConnectorButton action={disconnectAction} connector={CONNECTOR_SLUG[o.connector]} label={`Disconnect ${CONNECTOR_LABEL[o.connector]}`} pendingLabel="Disconnecting…" tone="danger" />
           : <ConnectorButton action={connectAction} connector={CONNECTOR_SLUG[o.connector]} returnTo="/account/connections" label={o.status === "NEEDS_RECONNECT" ? `Reconnect ${CONNECTOR_LABEL[o.connector]}` : `Connect ${CONNECTOR_LABEL[o.connector]}`} pendingLabel="Opening sign-in…" />}

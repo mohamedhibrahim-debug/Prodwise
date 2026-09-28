@@ -55,10 +55,11 @@
   --surface-subtle: #eef2f5;
   --surface-sunken: #d3dde5;
   --surface-inset: #cfd9e1;
-  --attention-fg: #a3450f;
-  --attention-bg: #fff1e7;
-  --attention-rule: #d6783d;
-  --font-display: "Segoe UI", Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Attention is a status, so it uses the AT_RISK amber family — never the brand orange (CLAUDE.md §16). */
+  --attention-fg: var(--state-at-risk-fg);
+  --attention-bg: var(--state-at-risk-bg);
+  --attention-rule: var(--state-at-risk-mark);
+  --font-display: Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
   --ink-900: #0b2133;
   --ink-700: #34495a;
   /* Darkened from #586c7c: 5.0:1 on the deeper canvas, 6.4:1 on white. */

@@ -39,7 +39,7 @@ function activityCategory(e:ActivityEntry):{category:HistoryCategory;label:strin
  if(t.startsWith('CONTEXT_')||t==='INITIATIVE_CONTEXT')return {category:'LIFECYCLE',label:'Scope / phase'};
  if(t==='INITIATIVE_ARCHIVED')return {category:'LIFECYCLE',label:'Archived'};
  if(t==='INITIATIVE_RESTORED')return {category:'LIFECYCLE',label:'Restored'};
- if(t==='READINESS_REACHED')return {category:'LIFECYCLE',label:'Ready for intelligence'};
+ if(t==='READINESS_REACHED')return {category:'LIFECYCLE',label:'Setup completed'};
  if(t==='READINESS_LOST')return {category:'LIFECYCLE',label:'Setup readiness lost'};
  if(t==='MEETING_NOTES_SAVED')return {category:'SOURCES',label:'Meeting notes added'};
  if(t==='EVIDENCE_SAVED'||t==='EVIDENCE_ADDED')return {category:'SOURCES',label:'Evidence saved'};

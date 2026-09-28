@@ -94,7 +94,7 @@ export class ConnectorError extends Error {
 export function connectorMessage(code: ConnectorErrorCode, connector: Connector): string {
   const name = CONNECTOR_LABEL[connector];
   switch (code) {
-    case "NOT_CONFIGURED": return `${name} is not set up for this Prodwise installation yet. An administrator needs to register the ${name} app; manual references still work.`;
+    case "NOT_CONFIGURED": return `Not available yet — ${name} hasn’t been set up for Prodwise. You can still add sources by reference.`;
     case "NOT_CONNECTED": return `Connect your ${name} account first. Prodwise only reads what you choose.`;
     case "NEEDS_RECONNECT": return `Your ${name} connection expired or was revoked. Reconnect it; nothing already imported has changed.`;
     case "NO_ACCESS": return `Your ${name} account can't open this item. Ask for access in ${name}; the last saved snapshot is kept.`;

@@ -39,5 +39,5 @@ export function deriveReadiness({ initiative: i, facts, members, claims, current
   const priority: ReadinessKey[] = ['owner','objective','context','source','target','milestone','confirmed','name','businessLine','stage'];
   const next = priority.map(key => requirements.find(r => r.key === key)!).find(r => !r.met) ?? null;
   return {requirements,completed,total:requirements.length,ready:completed === requirements.length,wasReady:previouslyReady && completed < requirements.length,
-    label:i.archivedAt ? 'Archived' : completed === requirements.length ? 'Ready for intelligence' : 'Setup incomplete',next:i.archivedAt ? null : next};
+    label:i.archivedAt ? 'Archived' : completed === requirements.length ? 'Setup complete' : 'Setup incomplete',next:i.archivedAt ? null : next};
 }

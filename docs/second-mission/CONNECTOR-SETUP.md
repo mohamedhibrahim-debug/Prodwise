@@ -70,7 +70,7 @@ Redeploy (environment variables apply to new deployments). Then **My account →
 
 | Situation | Message (what happened → what now) |
 |---|---|
-| Not configured | "… not set up for this Prodwise installation yet. An administrator needs to register the … app; manual references still work." |
+| Not configured | "Not available yet — … hasn’t been set up for Prodwise. You can still add sources by reference." (Platform Owners also see which variables are missing.) |
 | Token expired / access revoked | "Your … connection expired or was revoked. Reconnect it; nothing already imported has changed." |
 | No permission to an item | "Your … account can't open this item. Ask for access in …; the last saved snapshot is kept." |
 | Deleted / moved / unshared | "… no longer has this item, or it is no longer shared with you. The last saved snapshot is kept." (recorded once in History) |

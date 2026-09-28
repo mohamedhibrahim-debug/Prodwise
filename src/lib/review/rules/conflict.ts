@@ -130,7 +130,8 @@ export function detectConflicts(
       subject: display.subject,
       domains: orderedDomains(members),
       phase: display.phase,
-      claims: members.map(toClaimRef),
+      // Oldest entry first (then id): one stable order on every surface, whatever order the claims were read in.
+      claims: [...members].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)).map(toClaimRef),
       detectedOn: latestTimestamp(members.map((c) => c.updatedAt)),
       resolution: null,
       resolvedAt: null,

@@ -19,6 +19,9 @@ export const isStructuredActivity = (entry: ActivityEntry) =>
 export function activitySummary(entry: ActivityEntry): string {
   const subject = field(entry.payload, "subject");
   switch (entry.eventType) {
+    // Older rows carry earlier wording; setup completion is not a readiness verdict.
+    case "READINESS_REACHED":
+      return "Setup complete; attention is tracked separately.";
     case "AI_PROPOSAL_CONFIRMED": {
       // "Human confirmed open question proposal from Steering sync" → "Open question added from Steering sync".
       const m = /^Human confirmed ([\w ]+?) proposal from (.+?)( · unverified Knowledge)?$/.exec(entry.summary);

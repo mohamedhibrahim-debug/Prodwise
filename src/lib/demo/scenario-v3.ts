@@ -423,7 +423,10 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
     }
   }
   // Existing v1/v2 claims: created with their initiative's evidence; ACTIVE legacy claims keep "verification history not recorded".
-  for (const c of base.productStore.claims) { const i = store.initiatives.find(x => x.id === c.initiativeId)!; const t = new Date(Math.min(Date.parse(i.createdAt) + 10 * 86400000, Date.parse(DEMO_CUTOFF) - 2 * 86400000)).toISOString(); c.createdAt = t; c.updatedAt = t; if (i.currentContextId === undefined) { /* set after contexts run */ } }
+  for (const c of base.productStore.claims) { const i = store.initiatives.find(x => x.id === c.initiativeId)!; let t = new Date(Math.min(Date.parse(i.createdAt) + 10 * 86400000, Date.parse(DEMO_CUTOFF) - 2 * 86400000)).toISOString();
+    // A Knowledge entry cannot be recorded before every dated document it cites existed: place it the day after the earliest one.
+    const documentDates = store.claimEvidence.filter(l => l.claimId === c.id).map(l => store.evidence.find(e => e.id === l.evidenceId)?.occurredAt).filter((d): d is string => Boolean(d)).map(d => d.slice(0, 10)).sort();
+    if (documentDates[0] && documentDates[0] > t.slice(0, 10)) t = new Date(Math.min(Date.parse(`${documentDates[0]}T10:00:00.000Z`) + 86400000, Date.parse(DEMO_CUTOFF) - 2 * 86400000)).toISOString(); c.createdAt = t; c.updatedAt = t; if (i.currentContextId === undefined) { /* set after contexts run */ } }
 
   // Story A — an approval email changes the credit limit rule; the earlier requirement is superseded.
   const creditLine = () => bySlug("merchant-credit-line-pilot");
