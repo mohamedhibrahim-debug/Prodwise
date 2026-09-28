@@ -1,22 +1,8 @@
-import { ButtonLink } from "@/components/primitives/Button";
-import styles from "./not-found.module.css";
+import { headers } from "next/headers";
+import { NotAvailable } from "@/components/errors/NotAvailable";
 
-export default function NotFound() {
-  return (
-    <div className={styles.page}>
-      <p className={styles.label}>Not found</p>
-      <h1 className={styles.title}>This page could not be found.</h1>
-      <p className={styles.body}>
-        The link may be incorrect or out of date. Nothing was changed.
-      </p>
-      <div className={styles.actions}>
-        <ButtonLink href="/" variant="primary">
-          Go to Home
-        </ButtonLink>
-        <ButtonLink href="/initiatives" variant="secondary">
-          Initiatives
-        </ButtonLink>
-      </div>
-    </div>
-  );
+/** The proxy marks requests whose record is missing, so the 404 keeps the specific wording. */
+export default async function NotFound() {
+  const missing = (await headers()).get("x-prodwise-missing");
+  return <NotAvailable kind={missing === "initiative" || missing === "record" ? missing : "page"} />;
 }

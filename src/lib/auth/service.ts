@@ -1,4 +1,5 @@
 import 'server-only';
+import { loginWait, recordLoginFailure, recordLoginSuccess, throttleKey, waitMessage } from './login-throttle';
 import { platformActorLabel } from './roles';
 import { cache } from 'react';
 import { cookies, headers } from 'next/headers';
@@ -167,9 +168,16 @@ async function startSession(email: string, password: string, preferredWorkspaceI
     }
     await setSessionCookie(token);
 }
-export async function signIn(email: string, password: string) { await startSession(email, password, configuredWorkspaceId()); }
+async function throttled(email: string, run: () => Promise<void>) {
+    const h = await headers(), client = (h.get('x-forwarded-for') ?? '').split(',')[0]!.trim() || h.get('x-real-ip') || 'unknown';
+    const key = throttleKey(email, client), wait = loginWait(key);
+    if (wait > 0) throw new AccessError('RATE_LIMITED', waitMessage(wait));
+    try { await run(); recordLoginSuccess(key); }
+    catch (error) { if (error instanceof AccessError && error.code === 'INVALID_CREDENTIALS') recordLoginFailure(key); throw error; }
+}
+export async function signIn(email: string, password: string) { await throttled(email, () => startSession(email, password, configuredWorkspaceId())); }
 /** Sign in straight into a specific organization's workspace (used after self sign-up). */
-export async function signInToWorkspace(email: string, password: string, workspaceId: string) { await startSession(email, password, workspaceId); }
+export async function signInToWorkspace(email: string, password: string, workspaceId: string) { await throttled(email, () => startSession(email, password, workspaceId)); }
 export async function signOut() {
     const token = await cookieToken();
     if (token) {
