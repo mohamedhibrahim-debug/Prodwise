@@ -10,3 +10,4 @@
 .counts span{font-size:var(--t-xs);color:var(--ink-500)}
 .burst{color:var(--ink-500)}
 @media(max-width:780px){.counts{grid-template-columns:repeat(3,minmax(0,1fr))}.counts li:nth-child(4){border-inline-start:0}.counts li:nth-child(n+4){border-top:1px solid var(--rule)}.yours{order:3}.contextRail{order:5}.changes{order:6}}
+.next strong{color:var(--ink-900);margin-right:var(--s-1)}

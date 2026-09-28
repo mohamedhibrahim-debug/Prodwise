@@ -29,6 +29,7 @@ export default async function Notifications({ searchParams }: { searchParams: Pr
       <Link href={href({ scope: "mine" })} aria-current={scope === "mine" ? "page" : undefined}>For me <span>{unread(mineCount)} new</span></Link>
       <Link href={href({ scope: "all" })} aria-current={scope === "all" ? "page" : undefined}>Everything in {presentation.organizationName} <span>{unread(items)} new</span></Link>
     </nav>
+    <p className={styles.muted}>{scope === "mine" ? "For me: items assigned to you, and unassigned items on initiatives you own. Home shows the whole portfolio." : "Everything that needs attention in this organization, whoever it is assigned to."}</p>
     <div className={styles.chips} role="group" aria-label="Filter by kind">
       <Link href={href({ kind: null })} aria-pressed={!kind} className={styles.chip}>All <span>{inScope.length}</span></Link>
       {NOTIFICATION_KINDS.map(k => { const n = inScope.filter(x => x.kind === k).length; return n ? <Link key={k} href={href({ kind: k })} aria-pressed={kind === k} className={styles.chip}>{KIND_LABEL[k]} <span>{n}</span></Link> : null; })}

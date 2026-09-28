@@ -17,7 +17,7 @@ import type { RiskEvent } from "../workspace/risks.ts";
  */
 export const NOTIFICATION_KINDS = ["DECISION", "DUE", "CHANGED", "SETUP"] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
-export const KIND_LABEL: Record<NotificationKind, string> = { DECISION: "Decisions", DUE: "Due & overdue", CHANGED: "Changes to review", SETUP: "Setup & connections" };
+export const KIND_LABEL: Record<NotificationKind, string> = { DECISION: "Decisions", DUE: "Dates & deadlines", CHANGED: "Changes to review", SETUP: "Setup & connections" };
 
 export type NotificationType =
   | "DECISION_NEEDED" | "DECISION_REOPENED" | "DEPENDENCY_DATE"
@@ -26,7 +26,7 @@ export type NotificationType =
   | "SETUP_INCOMPLETE" | "CONNECTOR_RECONNECT" | "SOURCE_UNAVAILABLE";
 
 const KIND_OF: Record<NotificationType, NotificationKind> = {
-  DECISION_NEEDED: "DECISION", DECISION_REOPENED: "DECISION", DEPENDENCY_DATE: "DECISION",
+  DECISION_NEEDED: "DECISION", DECISION_REOPENED: "DECISION", DEPENDENCY_DATE: "DUE",
   COMMITMENT_OVERDUE: "DUE", COMMITMENT_DUE_SOON: "DUE", QUESTION_OVERDUE: "DUE", TARGET_PASSED: "DUE", WEEKLY_REVIEW_DUE: "DUE",
   SOURCE_CHANGED: "CHANGED", TARGET_MOVED: "CHANGED", RISK_OPENED: "CHANGED", DECISION_FROM_EVIDENCE: "CHANGED",
   SETUP_INCOMPLETE: "SETUP", CONNECTOR_RECONNECT: "SETUP", SOURCE_UNAVAILABLE: "SETUP",

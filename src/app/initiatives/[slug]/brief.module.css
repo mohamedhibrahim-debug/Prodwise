@@ -9,3 +9,8 @@
 .statement{font-size:var(--t-lead,1.125rem);line-height:var(--lh-body);color:var(--ink-900);margin-top:var(--s-3);max-width:62ch}
 .statement strong{font-weight:var(--fw-semibold)}
 .description .label{display:block;font-size:var(--t-xs);color:var(--ink-500);margin-bottom:var(--s-1)}
+.nextStep{margin:var(--s-3) 0 var(--s-4);padding:var(--s-3) var(--s-4);border-left:3px solid var(--navy-900);background:var(--surface-subtle);display:grid;gap:var(--s-1)}
+.nextStep p{margin:0;font-weight:var(--fw-semibold);color:var(--ink-900)}
+.nextStep small{color:var(--ink-500);font-size:var(--t-xs)}
+.nextStep .quiet{font-weight:var(--fw-regular);color:var(--ink-700)}
+.nextStep .label{font-size:var(--t-xs);letter-spacing:var(--ls-micro);text-transform:uppercase;color:var(--ink-500)}

@@ -7,7 +7,7 @@ const e = (id: string, at: string, over: Partial<HistoryEvent> = {}): HistoryEve
 test("a same-minute burst of identical entries reads as one line with its count", () => {
   const out = collapseBursts([e("1", "2026-09-20T10:00:05Z"), e("2", "2026-09-20T10:00:03Z"), e("3", "2026-09-20T10:00:01Z"), e("4", "2026-09-19T10:00:00Z")]);
   assert.equal(out.length, 2);
-  assert.equal(out[0]!.sentence, "3 source items mapped to this initiative");
+  assert.equal(out[0]!.sentence, "3 source references mapped to this initiative");
   assert.equal(out[1]!.sentence, "Source item mapped to initiative");
   assert.ok(!("count" in out[0]!) && !("baseSentence" in out[0]!));
 });

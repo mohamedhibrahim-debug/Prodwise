@@ -103,7 +103,7 @@ export function RisksQuestions({slug,risks,questions,members,claims,actions,canM
   <div className={styles.segmented} role="tablist" aria-label="Risks and open questions"><button role="tab" aria-selected={tab==='risks'} aria-controls="risks-panel" onClick={()=>setTab('risks')}>Risks ({risks.length})</button><button role="tab" aria-selected={tab==='questions'} aria-controls="questions-panel" onClick={()=>setTab('questions')}>Questions ({questions.length})</button></div>
   <div className={styles.columns}>
    <section id="risks-panel" className={styles.panel} data-active={tab==='risks'} aria-labelledby="risks-heading">
-    <header className={styles.panelHead}><h3 id="risks-heading">Risks</h3><p>{openRisks} open · {tracked('MITIGATING').length} mitigating</p></header>
+    <header className={styles.panelHead}><h3 id="risks-heading">Risks</h3><p>{openRisks} open or mitigating{tracked('MITIGATING').length?` (${tracked('MITIGATING').length} being mitigated)`:''}</p></header>
     <p className={styles.explain}>A risk is recorded in Knowledge first. Tracking adds status, an owner and mitigation; it never changes what the risk says.</p>
     {risks.length?renderGroups(riskGroups,r=><RiskRow key={r.claimId} r={r} slug={slug} canManage={canManageRisks} members={members} actions={actions}/>):<p className={styles.empty}>No risks recorded. Risks arrive from confirmed evidence or meeting notes, or from <Link prefetch={false} href={`/initiatives/${slug}/knowledge/new`}>a Knowledge entry you add</Link>.</p>}
     {!canManageRisks&&readOnlyReason&&<p className={styles.hint}>{readOnlyReason}</p>}

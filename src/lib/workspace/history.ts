@@ -107,7 +107,7 @@ export function collapseBursts(events:HistoryEvent[]):HistoryEvent[]{
  const out:(HistoryEvent&{count?:number;baseSentence?:string})[]=[];
  for(const e of events){const last=out.at(-1);
   if(last&&last.label===e.label&&last.actor===e.actor&&last.category===e.category&&last.at.slice(0,16)===e.at.slice(0,16)&&(last.baseSentence??last.sentence)===e.sentence){last.count=(last.count??1)+1;last.baseSentence??=e.sentence;
-   last.sentence=e.category==='SOURCES'&&/^Source item mapped/.test(last.baseSentence)?`${last.count} source items mapped to this initiative`:`${last.baseSentence} · ${last.count} records`;continue;}
+   last.sentence=e.category==='SOURCES'&&/^Source item mapped/.test(last.baseSentence)?`${last.count} source references mapped to this initiative`:`${last.baseSentence} · ${last.count} records`;continue;}
   out.push({...e});}
  return out.map(({baseSentence:_b,count:_c,...e})=>e);
 }
