@@ -16,3 +16,9 @@ do $$declare i uuid:='e4100000-0000-4000-8000-000000000001';r record;begin
 end$$;
 reset role;
 rollback;
+-- Public functions are not invocable by the anonymous or signed-in database roles.
+do $$begin
+ if exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and (has_function_privilege('anon',p.oid,'EXECUTE') or has_function_privilege('authenticated',p.oid,'EXECUTE')))
+ then raise exception 'TEST_PUBLIC_FUNCTION_EXECUTE';end if;
+ raise notice 'PASS: no public function is executable by anon or authenticated';
+end$$;
