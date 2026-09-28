@@ -9,7 +9,7 @@ It supersedes chat context. Later phases never start before earlier ones are com
 |---|---|---|
 | 1 | Finish current mission: Relationships/Dependencies, Initiative History, Risks & Open Questions, organization-aware sign-up, darker/clearer UX direction, UX specialist review, independent red-team — all Blocker/Major fixed | Complete |
 | 2 | Realistic Demo / data enrichment (sanitized synthetic portfolio) | Complete |
-| 3 | Real connector layer: **Jira → Gmail → Google Drive / Docs → Figma** | Not started |
+| 3 | Real connector layer: **Jira → Gmail → Google Drive / Docs → Figma** | Implemented; live sign-in awaits provider app registration (manual, see CONNECTOR-SETUP.md) |
 | 4 | Notifications / Attention Center (in-app) | Not started |
 | 5 | Perceived performance / interaction responsiveness | Not started |
 | 6 | Error states & edge-case hardening | Not started |
@@ -35,6 +35,8 @@ It supersedes chat context. Later phases never start before earlier ones are com
 - Explicit selection / scoped search only; many external objects may map to one initiative; preserve key/URL/metadata, source role, freshness, manual refresh.
 - Handle disconnect, expired token, missing permission, deleted/renamed/updated source, sync failure, retry. Never expose or log tokens. No cross-organization leakage.
 - If OAuth credentials or callbacks need manual configuration, report the exact manual step; do not fake success.
+
+**Delivered (Phase 3):** `src/lib/connectors/` (OAuth, sealed tokens, token lifecycle, Jira/Gmail/Drive/Figma clients), migration `0039_connectors.sql` (+ SQL proof), My account → Connected sources, Sources → Import from Jira, Gmail, Drive or Figma, refresh with change signals. Exact manual registration steps: `docs/second-mission/CONNECTOR-SETUP.md`.
 
 ### 3a Jira (first)
 Read-first delivery evidence: connect workspace, choose project(s), search/browse, multi-select, map to initiative with role/context, key + URL, last synced, manual sync. Signals: status, progress, milestones, blockers, dependencies, changed dates, meaningful activity. Jira status is never translated into Prodwise truth without confirmation where interpretation is needed.
