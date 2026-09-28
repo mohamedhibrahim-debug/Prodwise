@@ -159,3 +159,16 @@ button:disabled:not(#_),button[aria-disabled="true"]:not(#_){background:transpar
 button[data-tone="danger"]:not(#_){background:var(--panel);color:var(--state-blocked-fg);border:1px solid var(--state-blocked-edge)}
 button[data-tone="danger"]:not(#_):hover{background:var(--state-blocked-bg)}
 button[data-tone="danger"]:disabled:not(#_){color:var(--ink-500);border:1px dashed var(--rule-strong);background:transparent}
+
+/* Link pending mark (see PendingHint): a thin bar under the clicked link, no layout shift. */
+a:has(> .link-pending){position:relative}
+.link-pending{position:absolute;left:0;right:0;bottom:0;height:2px;pointer-events:none;background:var(--accent-500);transform:scaleX(0);transform-origin:left;opacity:0}
+.link-pending[data-link-pending]{opacity:1;animation:link-pending 1.2s var(--ease) infinite}
+@keyframes link-pending{0%{transform:scaleX(0)}60%{transform:scaleX(.8)}100%{transform:scaleX(1);opacity:.4}}
+@media (prefers-reduced-motion:reduce){.link-pending[data-link-pending]{animation:none;transform:scaleX(1)}}
+
+/* App-wide navigation progress (see NavigationProgress). */
+.nav-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:200;pointer-events:none;background:var(--accent-500);transform:scaleX(0);transform-origin:left;opacity:0;transition:opacity var(--dur-fast) var(--ease)}
+.nav-progress[data-active]{opacity:1;animation:nav-progress 8s cubic-bezier(.1,.7,.2,1) forwards}
+@keyframes nav-progress{0%{transform:scaleX(0)}10%{transform:scaleX(.35)}100%{transform:scaleX(.92)}}
+@media (prefers-reduced-motion:reduce){.nav-progress[data-active]{animation:none;transform:scaleX(1);opacity:.7}}

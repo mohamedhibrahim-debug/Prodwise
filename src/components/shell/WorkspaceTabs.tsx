@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import styles from "./WorkspaceHeader.module.css";
+import { PendingHint } from "./PendingHint";
 
 const TABS = [
   { segment: "", label: "Brief" },
@@ -137,11 +138,11 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
             <Link
               key={label}
               href={href}
-              prefetch={false}
               className={`${styles.tab} ${active ? styles.tabActive : ""}`}
               aria-current={active ? "page" : undefined}
             >
               {label}
+              <PendingHint />
             </Link>
           );
         })}

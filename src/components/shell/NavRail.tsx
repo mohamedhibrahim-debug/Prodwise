@@ -6,6 +6,7 @@ import {usePathname} from 'next/navigation';
 import {logoutAction} from '@/app/login/actions';
 import {hasOrganizationAdminAuthority} from '@/lib/auth/roles';
 import {InstrumentIcon} from './InstrumentIcon';
+import {PendingHint} from './PendingHint';
 import {openPalette} from './events';
 import {OrganizationControl} from './OrganizationControl';
 import {NotificationBell} from '@/components/notifications/NotificationBell';
@@ -20,7 +21,7 @@ export function NavRail({identity,writesEnabled}:{identity:ShellIdentity;writesE
  function close(){drawer.current?.close();trigger.current?.focus();}
  const links=[{href:'/',label:'Home',icon:'home' as const,active:pathname==='/'},{href:'/initiatives',label:'Initiatives',icon:'initiatives' as const,active:pathname.startsWith('/initiatives')},{href:'/roadmap',label:'Roadmap',icon:'reporting' as const,active:pathname.startsWith('/roadmap')},{href:'/weekly-review',label:'Weekly Review',icon:'event' as const,active:pathname.startsWith('/weekly-review')},{href:'/analysis/portfolio',label:'Analysis',icon:'reporting' as const,active:pathname.startsWith('/analysis')}];
  const brand=<div className={styles.brand}><Image src="/assets/prodwise-logo-mark.png" alt="" width={32} height={32} unoptimized/><strong>Prodwise</strong></div>;
- const navigation=<><nav aria-label="Primary">{links.map(link=><Link key={link.href} href={link.href} onClick={close} title={link.label} aria-label={link.label} className={`${styles.navItem} ${link.active?styles.active:''}`} aria-current={link.active?'page':undefined}><InstrumentIcon name={link.icon}/><span>{link.label}</span></Link>)}</nav>{pathname.startsWith('/initiatives/')&&pathname!='/initiatives/new'&&<nav className={styles.context} aria-label="Current initiative"><Link prefetch={false} href={`/initiatives/${pathname.split('/')[2]}`} className={styles.navItem} title={title}><InstrumentIcon name="initiatives"/><span>{title}</span></Link></nav>}</>;
+ const navigation=<><nav aria-label="Primary">{links.map(link=><Link key={link.href} href={link.href} onClick={close} title={link.label} aria-label={link.label} className={`${styles.navItem} ${link.active?styles.active:''}`} aria-current={link.active?'page':undefined}><InstrumentIcon name={link.icon}/><span>{link.label}</span><PendingHint/></Link>)}</nav>{pathname.startsWith('/initiatives/')&&pathname!='/initiatives/new'&&<nav className={styles.context} aria-label="Current initiative"><Link prefetch={false} href={`/initiatives/${pathname.split('/')[2]}`} className={styles.navItem} title={title}><InstrumentIcon name="initiatives"/><span>{title}</span></Link></nav>}</>;
  const utilities=<nav aria-label="Administration and account" className={styles.utilities}>
  {!identity.guest&&hasOrganizationAdminAuthority(identity.access)&&<Link prefetch={false} href="/administration" className={styles.navItem} onClick={close} title="Administration"><InstrumentIcon name="administration"/><span>Administration</span></Link>}
  <button className={styles.navItem} type="button" title="Help" aria-label="Help" onClick={()=>{close();window.dispatchEvent(new Event(OPEN_HELP));}}><b aria-hidden="true">?</b><span>Help</span></button>

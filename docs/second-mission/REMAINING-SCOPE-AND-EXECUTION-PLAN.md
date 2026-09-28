@@ -11,7 +11,7 @@ It supersedes chat context. Later phases never start before earlier ones are com
 | 2 | Realistic Demo / data enrichment (sanitized synthetic portfolio) | Complete |
 | 3 | Real connector layer: **Jira → Gmail → Google Drive / Docs → Figma** | Implemented; live sign-in awaits provider app registration (manual, see CONNECTOR-SETUP.md) |
 | 4 | Notifications / Attention Center (in-app) | Complete |
-| 5 | Perceived performance / interaction responsiveness | Not started |
+| 5 | Perceived performance / interaction responsiveness | Complete (production timings re-measured in smoke) |
 | 6 | Error states & edge-case hardening | Not started |
 | 7 | Final product polish / forgotten details | Not started |
 | 8 | Production readiness & trust sweep | Not started |
@@ -63,6 +63,23 @@ Role: **design evidence / product definition**.
 **Delivered (Phase 4):** notifications are derived from canonical records on every read (`src/lib/notifications/model.ts`) and never stored; only each person's read marks are kept (`0040_notification_reads.sql`), keyed by a fingerprint of the exact record version, so a changed record is new again. Bell with unread count (loaded in the background), `/notifications` with For me / Everything, kind filters, mark all read, deep links that cannot redirect outside Prodwise. "Approval evidence arrived" is implemented honestly as *Decision entry confirmed from evidence* — approval is never inferred.
 
 In-app only. Meaningful canonical events (conflicts, source changed, decision reopened, action overdue / due soon, target moved, dependency risk, risk opened, question overdue, approval evidence arrived, Weekly Review due, setup incomplete, connector failure). Deduplicated, grouped, organization-scoped, owner-aware; unread/read, mark all read, deep links, type filter, timestamps.
+
+## Phase 5 — result (enriched Demo, warm dev, 1440; ms from click)
+
+| Journey | first feedback before → after | content before → after |
+|---|---|---|
+| Home → Initiative | 399 → 16 | 766 → 779 |
+| Initiative → Decisions | 233 → 45 | 267 → 342 |
+| Initiative → Sources | 1007 → 41 | 1045 → 486 |
+| Initiative → Commitments | 833 → 21 | 857 → 460 |
+| Home → Roadmap | 370 → 44 | 474 → 696 |
+| Home → Analysis | 352 → 40 | 694 → 666 |
+| Home → Weekly Review | 373 → 28 | 753 → 758 |
+| Admin → Users | 213 → 47 | 248 → 253 |
+| Initiative → Meeting notes | 912 → 47 | 951 → 543 |
+
+390 px: first feedback 32–47 ms. Content times are dev-mode renders (±150 ms run to run); local fixture auth is refused in production builds by design, so production timings are measured in the production smoke.
+Changes: app-wide navigation progress (capture-phase, same-tab internal links only), pending hint on tabs and rail, `[slug]/loading.tsx` so tab switches show a content skeleton under a persistent header, default prefetch for tabs and initiative entry links (loading shell only for dynamic routes), one shared de-duplicated notification count per tab (≤1 request/minute).
 
 ## Phases 5–8 (summary)
 - **5 Responsiveness:** immediate click feedback, persistent shell, selective prefetch, progressive destination loading, safe optimistic UI (never for Product Truth/permissions/destructive actions). Measure click → feedback / context / content / settle on the enriched Demo (baseline recorded before enrichment).

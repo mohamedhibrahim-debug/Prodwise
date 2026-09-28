@@ -167,6 +167,7 @@ function load(): StoreShape {
         sourceContainers: parsed.sourceContainers ?? [],
         sourceItems: parsed.sourceItems ?? [],
         sourceMappings: parsed.sourceMappings ?? [],
+        sourceItemSyncs: parsed.sourceItemSyncs ?? [],
       }));
       return cache;
     } catch {
