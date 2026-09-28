@@ -11,6 +11,8 @@ import {WriteNotice} from '@/components/delivery/WriteNotice';
 import {readRelationships} from '@/lib/data/relationships';
 import {relationshipsFor} from '@/lib/workspace/relationship-view';
 import styles from './roadmap.module.css';
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Roadmap" };
 /** First day of each month strictly inside the window, for axis ticks. */
 function months(start:string,end:string):string[]{const out:string[]=[];const d=new Date(`${start.slice(0,7)}-01T00:00:00Z`);d.setUTCMonth(d.getUTCMonth()+1);while(d.toISOString().slice(0,10)<end&&out.length<24){out.push(d.toISOString().slice(0,10));d.setUTCMonth(d.getUTCMonth()+1);}return out;}
 export default async function Roadmap({searchParams}:{searchParams:Promise<{businessLine?:string;owner?:string;cutoff?:string;view?:string}>}){

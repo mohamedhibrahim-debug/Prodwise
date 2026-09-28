@@ -20,6 +20,8 @@ import {readRelationships} from '@/lib/data/relationships';
 import {relationshipsFor,type RelationshipRow} from '@/lib/workspace/relationship-view';
 import {canManageRelationship} from '@/lib/workspace/relationships';
 import styles from '@/components/initiative/management.module.css';
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Manage initiative" };
 export const dynamic='force-dynamic';
 export default async function ManageInitiative({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{section?:string;edit?:string}>}){
  const [{slug},q,d,management,rel]=await Promise.all([params,searchParams,readDelivery(),readManagement(),readRelationships()]);

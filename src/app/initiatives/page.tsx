@@ -13,6 +13,8 @@ import {canBusinessWrite} from '@/lib/auth/roles';
 import {isDemoWriteEnabled} from '@/lib/env';
 import {FilterSheet} from '@/components/shell/FilterSheet';
 import styles from './initiatives.module.css';
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Initiatives" };
 export const dynamic='force-dynamic';
 function Target({row:r}:{row:PortfolioRow}){return <>{r.actual?.value.extent==='FULL'?`Live ${factDate(r.actual)} (full)`:r.target?.value.date?factDate(r.target):r.target?.value.unknown?'Explicitly unknown':'Not recorded'}{r.targetMovement&&<small>Moved {r.targetMovement.days>0?'+':''}{r.targetMovement.days} d from {displayDate(r.targetMovement.from)}</small>}</>;}
 export default async function Initiatives({searchParams}:{searchParams:Promise<PortfolioFilters>}){

@@ -10,6 +10,8 @@ import { safeUserLabel } from "@/lib/demo/presentation";
 import {safeReturnPath} from "@/lib/auth/core";
 import styles from "@/components/delivery/delivery.module.css";
 import factsStyles from "@/components/delivery/facts.module.css";
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Delivery facts" };
 export default async function InitiativeDelivery({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{returnTo?:string}>}) {
   const {slug}=await params;const query=await searchParams,requested=safeReturnPath(query.returnTo),returnTo=["/roadmap","/weekly-review",`/initiatives/${slug}`].some(prefix=>requested===prefix||requested.startsWith(prefix+"?")||requested.startsWith(prefix+"/"))?requested:`/initiatives/${slug}`; const {ctx,source,state}=await readDelivery(); const snapshot=source.snapshots.find(s=>s.initiative.slug===slug);
   if (!snapshot) notFound(); const initiative=snapshot.initiative,facts=state.facts.filter(f=>f.workspaceId===ctx.workspaceId),history=targetHistory(state.events,ctx.workspaceId,initiative.id);

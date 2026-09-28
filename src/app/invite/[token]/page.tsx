@@ -2,6 +2,8 @@ import { AuthForm } from '@/components/auth/AuthForm';
 import styles from '@/components/auth/auth.module.css';
 import { inspectInvitation } from '@/lib/auth/service';
 import { acceptInviteAction } from '../actions';
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Invitation" };
 export const dynamic='force-dynamic';
 export default async function AcceptInvite({params}:{params:Promise<{token:string}>}) {
   const {token}=await params;

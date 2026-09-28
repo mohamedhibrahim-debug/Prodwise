@@ -3,6 +3,8 @@ import styles from '@/components/auth/login.module.css';
 import { safeReturnPath } from '@/lib/auth/core';
 import Link from 'next/link';
 import { ProviderReturn } from '@/components/auth/ProviderReturn';
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Sign in" };
 
 export const dynamic = 'force-dynamic';
 

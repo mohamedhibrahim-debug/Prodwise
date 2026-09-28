@@ -4,6 +4,8 @@ import {readCommitments} from '@/lib/data/commitments';
 import {ownerFor,cairoDay} from '@/lib/delivery/model';
 import {isDemoWriteEnabled} from '@/lib/env';
 import {CommitmentWorkbench} from '@/components/initiative/CommitmentWorkbench';
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Actions" };
 export const dynamic='force-dynamic';
 export default async function InitiativeActions({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{action?:string}>}){
  const [{slug},q,d,c]=await Promise.all([params,searchParams,readDelivery(),readCommitments()]);const snap=d.source.snapshots.find(s=>s.initiative.slug===slug);if(!snap)notFound();

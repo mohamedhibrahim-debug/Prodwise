@@ -5,6 +5,8 @@ import { isDemoWriteEnabled, WRITE_DISABLED_MESSAGE } from "@/lib/env";
 import { VerifyClaimForm } from "@/components/initiative/VerifyClaimForm";
 import { verifyClaimAction } from "./actions";
 import styles from "@/app/initiatives/[slug]/sources/evidence-form.module.css";
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Confirm Knowledge entry" };
 
 export const dynamic = "force-dynamic";
 

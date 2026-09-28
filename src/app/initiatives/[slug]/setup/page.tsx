@@ -11,6 +11,8 @@ import {STAGE_LABEL} from '@/lib/domain/labels';
 import {SetupDelivery} from '@/components/initiative/SetupDelivery';
 import {SourceMapper} from '@/components/initiative/SourceMapper';
 import styles from '@/components/initiative/setup.module.css';
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Setup" };
 export const dynamic='force-dynamic';
 export default async function InitiativeSetup({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{step?:string;created?:string}>}){
  const [{slug},q,d,m]=await Promise.all([params,searchParams,readDelivery(),readManagement()]);

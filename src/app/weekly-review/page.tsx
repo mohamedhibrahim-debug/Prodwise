@@ -21,6 +21,8 @@ import {readRisks} from "@/lib/data/risks";
 import {readRelationships} from "@/lib/data/relationships";
 import {weeklyContextDelta} from "@/lib/workspace/weekly-context";
 import styles from "@/components/weekly/weekly.module.css";
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Weekly Review" };
 export const maxDuration=60;
 const cutoff=(value:string)=>new Date(value).toLocaleString("en-GB",{timeZone:"Africa/Cairo",dateStyle:"medium",timeStyle:"short"});
 export default async function WeeklyReviewPage({searchParams}:{searchParams:Promise<{week?:string;initiative?:string;view?:string}>}) {

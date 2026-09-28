@@ -7,6 +7,8 @@ import {requireWorkspaceAccess} from '@/lib/auth/access';
 import {canBusinessWrite} from '@/lib/auth/roles';
 import {isDemoWriteEnabled} from '@/lib/env';
 import styles from '@/components/initiative/management.module.css';
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Source record" };
 export const dynamic='force-dynamic';
 export default async function SourceDetail({params}:{params:Promise<{id:string}>}){
  const [{id},m,initiatives,ctx]=await Promise.all([params,readManagement(),getRepository().listInitiatives(),requireWorkspaceAccess()]);
