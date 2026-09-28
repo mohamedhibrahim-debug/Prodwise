@@ -31,7 +31,8 @@ export const PROVIDERS: Record<Connector, ProviderConfig> = {
   GOOGLE_DRIVE: { ...GOOGLE, scopes: ["openid", "email", "https://www.googleapis.com/auth/drive.readonly"] },
   FIGMA: {
     authorizeUrl: "https://www.figma.com/oauth", tokenUrl: "https://api.figma.com/v1/oauth/token",
-    scopes: ["current_user:read", "file_content:read", "file_metadata:read", "file_comments:read"],
+    // Exactly the endpoints called: /v1/me, /v1/files/* (incl. /nodes) and /v1/files/*/comments.
+    scopes: ["current_user:read", "file_content:read", "file_comments:read"],
     extraAuthorizeParams: {}, clientAuth: "basic", pkce: true, revokeUrl: null, env: { id: "FIGMA_OAUTH_CLIENT_ID", secret: "FIGMA_OAUTH_CLIENT_SECRET" },
   },
 };

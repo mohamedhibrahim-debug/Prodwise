@@ -57,7 +57,7 @@ Gmail and Drive are separate connections with separate consent: sharing document
 
 1. <https://www.figma.com/developers/apps> → **Create a new app** (owned by your Figma team or organization).
 2. Callback: `https://prodwise-flax.vercel.app/api/connectors/figma/callback`.
-3. Scopes: **`current_user:read`**, **`file_content:read`**, **`file_metadata:read`**, **`file_comments:read`**. No write scopes.
+3. Scopes: **`current_user:read`**, **`file_content:read`**, **`file_comments:read`** — tick exactly these in the Figma app; requesting a scope the app has not enabled fails with "Invalid scopes for app". No write scopes.
 4. Copy the client ID and secret into Vercel as `FIGMA_OAUTH_CLIENT_ID` and `FIGMA_OAUTH_CLIENT_SECRET`.
 5. Keep the app private to your Figma organization. Access for people outside it requires Figma's publishing review.
 

@@ -12,7 +12,7 @@ verification is shown in reports or screenshots beyond its title.
 |---|---|---|
 | Variables present | Administration → Connected sources as an admin | No connector shows "Not available yet" |
 | Callback URLs | Provider consoles, compared with `https://prodwise-flax.vercel.app/api/connectors/<slug>/callback` | Slugs `jira`, `gmail`, `google-drive`, `figma` match exactly (scheme, host, no trailing slash) |
-| Requested scopes | Code: `src/lib/connectors/oauth.ts` | Jira `read:jira-work read:jira-user offline_access`; Gmail `openid email gmail.readonly`; Drive `openid email drive.readonly`; Figma `current_user:read file_content:read file_metadata:read file_comments:read` |
+| Requested scopes | Code: `src/lib/connectors/oauth.ts` | Jira `read:jira-work read:jira-user offline_access`; Gmail `openid email gmail.readonly`; Drive `openid email drive.readonly`; Figma `current_user:read file_content:read file_comments:read` |
 | Google consent mode | Google Cloud → OAuth consent screen | App in *Testing* with the test account listed. In Testing mode, refresh tokens for these scopes **expire after 7 days**: expect "Reconnect" a week after connecting. That is expected, not a defect. |
 | Atlassian | Developer console → Authorization | OAuth 2.0 (3LO) enabled; the test account can reach the Jira site |
 | Figma | App settings | Scopes above granted; refresh uses `POST /v1/oauth/token` with `grant_type=refresh_token` ([Figma OAuth docs](https://developers.figma.com/docs/rest-api/oauth-apps/)) |

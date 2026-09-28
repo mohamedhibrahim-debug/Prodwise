@@ -142,6 +142,14 @@ export const EVIDENCE_RELATION_NOTE: Record<EvidenceRelation, string> = {
 /** The organization day and clock used for every timestamp shown. */
 export const ORG_TIME_ZONE = "Africa/Cairo";
 
+/** The organization calendar day (YYYY-MM-DD) of a timestamp; a plain date is returned unchanged. */
+export function orgDay(iso: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: ORG_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+}
+
 /** Formats a timestamp for display. Deterministic, so SSR and client agree. */
 export function formatDate(iso: string): string {
   const d = new Date(iso);
