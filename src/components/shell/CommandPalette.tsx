@@ -251,6 +251,14 @@ export function CommandPalette({administration=false,canSwitch=false}:{administr
         id: "go-weekly", label: "Weekly Review", keywords: "weekly meeting review",
         group: "Go to", href: "/weekly-review",
       },
+      {
+        id: "go-notifications", label: "Notifications", keywords: "notifications attention inbox overdue changed",
+        group: "Go to", href: "/notifications",
+      },
+      {
+        id: "go-connections", label: "Connected sources", keywords: "jira gmail google drive docs figma connect sources import",
+        group: "Utilities", href: "/account/connections",
+      },
     );
 
     if(administration)out.push({id:'administration',label:'Administration',keywords:'users organization access policy',group:'Utilities',href:'/administration'});
