@@ -20,25 +20,25 @@
   {
     "route": "/",
     "width": 1024,
-    "scroll": 1009,
+    "scroll": 1024,
     "passed": true
   },
   {
     "route": "/",
     "width": 1280,
-    "scroll": 1265,
+    "scroll": 1280,
     "passed": true
   },
   {
     "route": "/",
     "width": 1440,
-    "scroll": 1425,
+    "scroll": 1440,
     "passed": true
   },
   {
     "route": "/",
     "width": 1920,
-    "scroll": 1905,
+    "scroll": 1920,
     "passed": true
   },
   {
@@ -62,25 +62,25 @@
   {
     "route": "/initiatives",
     "width": 1024,
-    "scroll": 1009,
+    "scroll": 1024,
     "passed": true
   },
   {
     "route": "/initiatives",
     "width": 1280,
-    "scroll": 1265,
+    "scroll": 1280,
     "passed": true
   },
   {
     "route": "/initiatives",
     "width": 1440,
-    "scroll": 1425,
+    "scroll": 1440,
     "passed": true
   },
   {
     "route": "/initiatives",
     "width": 1920,
-    "scroll": 1905,
+    "scroll": 1920,
     "passed": true
   },
   {
@@ -104,25 +104,25 @@
   {
     "route": "/reporting",
     "width": 1024,
-    "scroll": 1009,
+    "scroll": 1024,
     "passed": true
   },
   {
     "route": "/reporting",
     "width": 1280,
-    "scroll": 1265,
+    "scroll": 1280,
     "passed": true
   },
   {
     "route": "/reporting",
     "width": 1440,
-    "scroll": 1425,
+    "scroll": 1440,
     "passed": true
   },
   {
     "route": "/reporting",
     "width": 1920,
-    "scroll": 1905,
+    "scroll": 1920,
     "passed": true
   },
   {
@@ -230,25 +230,25 @@
   {
     "route": "/initiatives/merchant-flex-finance/decisions",
     "width": 1024,
-    "scroll": 1009,
+    "scroll": 1024,
     "passed": true
   },
   {
     "route": "/initiatives/merchant-flex-finance/decisions",
     "width": 1280,
-    "scroll": 1265,
+    "scroll": 1280,
     "passed": true
   },
   {
     "route": "/initiatives/merchant-flex-finance/decisions",
     "width": 1440,
-    "scroll": 1425,
+    "scroll": 1440,
     "passed": true
   },
   {
     "route": "/initiatives/merchant-flex-finance/decisions",
     "width": 1920,
-    "scroll": 1905,
+    "scroll": 1920,
     "passed": true
   },
   {
@@ -272,25 +272,25 @@
   {
     "route": "/initiatives/merchant-flex-finance/knowledge",
     "width": 1024,
-    "scroll": 1009,
+    "scroll": 1024,
     "passed": true
   },
   {
     "route": "/initiatives/merchant-flex-finance/knowledge",
     "width": 1280,
-    "scroll": 1265,
+    "scroll": 1280,
     "passed": true
   },
   {
     "route": "/initiatives/merchant-flex-finance/knowledge",
     "width": 1440,
-    "scroll": 1425,
+    "scroll": 1440,
     "passed": true
   },
   {
     "route": "/initiatives/merchant-flex-finance/knowledge",
     "width": 1920,
-    "scroll": 1905,
+    "scroll": 1920,
     "passed": true
   },
   {
@@ -314,25 +314,25 @@
   {
     "route": "/initiatives/merchant-flex-finance/knowledge/sources",
     "width": 1024,
-    "scroll": 1009,
+    "scroll": 1024,
     "passed": true
   },
   {
     "route": "/initiatives/merchant-flex-finance/knowledge/sources",
     "width": 1280,
-    "scroll": 1265,
+    "scroll": 1280,
     "passed": true
   },
   {
     "route": "/initiatives/merchant-flex-finance/knowledge/sources",
     "width": 1440,
-    "scroll": 1425,
+    "scroll": 1440,
     "passed": true
   },
   {
     "route": "/initiatives/merchant-flex-finance/knowledge/sources",
     "width": 1920,
-    "scroll": 1905,
+    "scroll": 1920,
     "passed": true
   }
 ]

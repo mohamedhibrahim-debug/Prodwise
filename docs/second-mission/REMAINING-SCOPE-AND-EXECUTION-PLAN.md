@@ -13,7 +13,7 @@ It supersedes chat context. Later phases never start before earlier ones are com
 | 4 | Notifications / Attention Center (in-app) | Complete |
 | 5 | Perceived performance / interaction responsiveness | Complete (production timings re-measured in smoke) |
 | 6 | Error states & edge-case hardening | Complete |
-| 7 | Final product polish / forgotten details | Not started |
+| 7 | Final product polish / forgotten details | Complete |
 | 8 | Production readiness & trust sweep | Not started |
 | 9 | Final full acceptance (+ final UX review and fresh red-team) | Not started |
 | 10 | Final candidate (push to `prodwise/p1-core-operating-loop`, verify remote SHA, no force-push) | Not started |
@@ -87,7 +87,16 @@ Changes: app-wide navigation progress (capture-phase, same-tab internal links on
 - **7 Polish:** brand/logo, Guide/Help critique, micro-UI, copy, icons, quiet states, level consistency, 390px mobile, accessibility, "what did we forget".
 - **8 Trust sweep:** deterministic Demo reset/reseed (never affects AMAN), search sanity, auditability, archived-data exclusions, 404/unauthorized/session-expired surfaces, diagnosable runtime errors without secrets, privacy scan.
 
+## Phase 7 — result
+- UX specialist (15 Majors) and a fresh red-team (0 Blockers, 6 Majors, 16 Minors) run; every Major fixed.
+- Security: outbound links (sign-up verification) come from `PRODWISE_PUBLIC_URL` → Vercel production domain → localhost in development, never from request headers; `safeReturnPath` rejects `/.//host`; the OAuth callback sends signed-out people to sign in and tells viewers they are read-only.
+- History includes hand-entered / edited Knowledge; the first setup observation is an actorless baseline (migration 0041, local store alike), so an unrelated edit no longer writes "Setup completed" on other initiatives.
+- Inline elements isolate bidirectional text; connector imports drop direction overrides.
+- Carried to Phase 8: local login throttling (hosted uses Supabase Auth limits), HTTP status codes on Not available / Not found pages, shared Demo visitor content (scheduled reset), scenario-time vs real-time labelling in the Demo, `/api/evidence/<id>/stop` idempotent reply, same display name across organizations.
+- Carried to Phase 9: the legacy Stage 2.2 UI script (`scripts/ui-test/run.mjs`) predates the current navigation and must be updated or retired; on Linux-as-root it needs a `--no-sandbox` Chromium wrapper and `NODE_OPTIONS=--experimental-transform-types`.
+
 ## Known manual steps (production)
+- Set `PRODWISE_PUBLIC_URL=https://prodwise-flax.vercel.app` in Vercel (otherwise the Vercel production domain is used for sign-up links).
 - Supabase Auth → URL configuration must allow `https://prodwise-flax.vercel.app/signup/verify`.
 - Supabase Auth email templates should link to `/signup/verify?token_hash={{ .TokenHash }}&type=…` so link scanners cannot consume one-time tokens; configure custom SMTP for real onboarding volume.
 

@@ -49,7 +49,7 @@ try {
   });
   const evaluate = async (expression) => {
     const r = await cdp("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
-    if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails));
+    if (r.exceptionDetails) throw new Error(`${r.exceptionDetails.exception?.description ?? "Evaluation failed"} — in: ${expression.slice(0, 240)}`);
     return r.result.value;
   };
   const text = () => evaluate("document.body.innerText");
@@ -482,5 +482,6 @@ try {
   socket?.close(); await stop(server); await stop(browser);
   // Delete only the exact disposable directory created by this invocation.
   assert.ok(resolve(temp).startsWith(resolve(tmpdir()) + "\\prodwise-ui-") || resolve(temp).startsWith(resolve(tmpdir()) + "/prodwise-ui-"));
-  rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  // Browser helper processes can still be writing; a cleanup failure must not mask the test result.
+  try { rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }); } catch (e) { console.warn(`Could not remove ${temp}: ${e.code}`); }
 }
