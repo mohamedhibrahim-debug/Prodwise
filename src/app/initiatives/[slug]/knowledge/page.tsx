@@ -79,7 +79,7 @@ export default async function KnowledgePage({ params, searchParams }: {
                 </div>; })}
               </div>
               <div role="group" aria-label="Confirmation" className={styles.rowStatus}><span data-status={allSameStatus ? first.status : undefined}>{allSameStatus ? `${first.status === "ACTIVE" ? "✓ " : first.status === "SUPERSEDED" ? "↻ " : "○ "}${CLAIM_STATUS_LABEL[first.status]}` : "Entry statuses in details"}</span>
-                {entries.map(entry => <p key={entry.id}>{entry.verifiedAt ? `${entry.verifiedActorLabel ?? "Actor not recorded"} · ${formatDate(entry.verifiedAt)}` : "Verification history not recorded"}</p>)}</div>
+                {entries.map(entry => <p key={entry.id}>{entry.verifiedAt ? `${entry.verifiedActorLabel ?? "Actor not recorded"} · ${formatDate(entry.verifiedAt)}` : entry.origin === "LEGACY" ? "Verification history not recorded." : "Not yet confirmed."}</p>)}</div>
               <div role="group" aria-label="Provenance" className={styles.sourceIdentity}><span>{sources.length} linked {sources.length === 1 ? "source" : "sources"}</span>
                 {sources.map(source => <Link prefetch={false} key={source.id} href={`/initiatives/${slug}/sources#source-${source.id}`}>{displaySourceReference(source.sourceReference) ?? source.title}{source.boundary === "EXCLUDED" ? " · Excluded" : ""}</Link>)}</div>
               <details><summary aria-label={`Details for ${subject} · ${attribute} (${value})`}>Details</summary>

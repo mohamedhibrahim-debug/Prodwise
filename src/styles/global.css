@@ -185,3 +185,8 @@ a:has(> .link-pending){position:relative}
 .business-line[data-code]{font-size:var(--t-xs);font-weight:var(--fw-semibold);letter-spacing:var(--ls-micro);padding:0 var(--s-1);border:1px solid var(--rule-strong);border-radius:var(--r-xs);color:var(--ink-700);line-height:1.5}
 .business-line small{font-weight:var(--fw-regular);color:var(--ink-500);letter-spacing:normal}
 .business-line[data-empty]{color:var(--ink-500)}
+
+/* Text people type or import may carry bidirectional control characters (e.g. U+202E).
+   Isolating inline elements keeps any direction override inside the element it was typed
+   into, so it can never reorder a neighbouring field. Block elements already isolate. */
+:where(a,abbr,b,bdi,cite,code,data,dfn,em,i,kbd,label,mark,q,s,samp,small,span,strong,sub,sup,time,u,var,output,dd,dt,td,th,li){unicode-bidi:isolate}

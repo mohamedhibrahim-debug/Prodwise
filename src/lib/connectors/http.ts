@@ -27,7 +27,7 @@ export function bearerCall(f: typeof fetch, token: string): ProviderCall {
 
 /** Evidence snapshots are capped at the evidence limit; the cut is stated in the text. */
 export function capText(text: string, limit = 20000): string {
-  const clean = text.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/\n{3,}/g, "\n\n").trim();
+  const clean = text.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u202A-\u202E\u2066-\u2069]/g, "").replace(/\n{3,}/g, "\n\n").trim();
   if (clean.length <= limit) return clean;
   const note = "\n\n[Snapshot shortened to fit the evidence limit. Open the original for the rest.]";
   let cut = clean.slice(0, limit - note.length);

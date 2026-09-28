@@ -3,7 +3,7 @@ import { requireWorkspaceAccess } from "@/lib/auth/access";
 import { workspacePresentation } from "@/lib/workspace/context";
 import { readNotifications } from "@/lib/notifications/service";
 import { KIND_LABEL, NOTIFICATION_KINDS, type NotificationKind } from "@/lib/notifications/model";
-import { formatDateTime } from "@/lib/domain/labels";
+import { formatDate, formatDateTime } from "@/lib/domain/labels";
 import { MarkAllRead } from "@/components/notifications/MarkAllRead";
 import { markAllReadAction } from "./actions";
 import styles from "./notifications.module.css";
@@ -22,7 +22,7 @@ export default async function Notifications({ searchParams }: { searchParams: Pr
   const mineCount = items.filter(n => n.forMe);
   return <div className={styles.page}>
     <header className={styles.head}><div><p className={styles.eyebrow}>Attention center · {presentation.organizationName}</p><h1>Notifications</h1>
-      <p className={styles.intro}>What needs attention, derived from the current records: decisions, dates, commitments, questions, risks and sources. Nothing is scored; items are ordered by kind, then time.{presentation.scenarioAt ? " Dates are relative to the Demo scenario date." : ""}</p></div>
+      <p className={styles.intro}>Everything waiting on someone, derived from the current records: decisions, dates, commitments, questions, risks and sources. Home’s “Needs attention” is narrower: only each initiative’s decisions, blockers and missed dates. Nothing is scored; items are ordered by kind, then time.{presentation.scenarioAt ? " Dates are relative to the Demo scenario date." : ""}</p></div>
       {unread(shown) > 0 ? <MarkAllRead action={markAllReadAction} fingerprints={shown.filter(n => !read.has(n.fingerprint)).map(n => n.fingerprint)} count={unread(shown)} /> : shown.length > 0 && <p role="status" className={styles.muted}>All {shown.length} marked read. New or changed items will appear as new.</p>}</header>
     {q.gone && <p role="status" className={styles.notice}>That notification no longer applies — its record changed or was resolved.</p>}
     <nav className={styles.scope} aria-label="Whose notifications">
@@ -44,7 +44,7 @@ export default async function Notifications({ searchParams }: { searchParams: Pr
         <div className={styles.body}>
           <p className={styles.meta}>{isNew && <span className={styles.new}>New</span>}<span>{n.title}</span>{n.initiativeName && <span>· {n.initiativeName}</span>}</p>
           <p className={styles.detail}><Link href={`/notifications/open?n=${n.fingerprint}`}>{n.detail}</Link></p>
-          <p className={styles.time}><time dateTime={n.at}>{formatDateTime(n.at)}</time>{!n.forMe && scope === "all" && <span> · not assigned to you</span>}</p>
+          <p className={styles.time}><time dateTime={n.dateOnly ? n.at.slice(0, 10) : n.at}>{n.dateOnly ? formatDate(n.at) : formatDateTime(n.at)}</time>{!n.forMe && scope === "all" && <span> · not assigned to you</span>}</p>
         </div></li>; })}</ol></section>)}
   </div>;
 }

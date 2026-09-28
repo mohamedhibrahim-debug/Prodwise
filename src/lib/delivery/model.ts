@@ -5,6 +5,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { runReview } from "../review/engine.ts";
 import { applyFindingStates } from "../review/merge.ts";
 import type { MemoryClaim } from "../domain/types.ts";
+import { CLAIM_STATUS_LABEL } from "../domain/labels.ts";
 import { FACT_KINDS, type AiDraft, type Change, type DeliveryFact, type DeliveryState, type FactKind, type FactValue, type PortfolioInput, type PortfolioSource, type Reference, type ReviewSection, type SectionEdit, type WeeklyReview, type WorkspaceAccess } from "./types.ts";
 
 export class DeliveryError extends Error { readonly code:string; constructor(code: string, message: string) { super(message); this.code=code; } }
@@ -191,7 +192,7 @@ export function referencesFor(input: PortfolioInput, baseline: PortfolioInput | 
       refs.push({id:`action:${action.id}:${action.revision}`,initiativeId:id,texts:[text,`Current record: ${text}`]});
     }
     for (const claim of snap.claims) {
-      const text=`Recorded Knowledge ${claim.subject} · ${claim.attribute}: ${claim.value} (${claim.status}).${claim.verifiedAt ? ` Confirmed by ${claim.verifiedActorLabel ?? "actor not recorded"}.` : " Verification history not recorded."}${sourceLabel(claim)}`;
+      const text=`Recorded Knowledge ${claim.subject} · ${claim.attribute}: ${claim.value} (${CLAIM_STATUS_LABEL[claim.status] ?? claim.status}).${claim.verifiedAt ? ` Confirmed by ${claim.verifiedActorLabel ?? "actor not recorded"}.` : claim.origin === "LEGACY" ? " Verification history not recorded." : " Not yet confirmed."}${sourceLabel(claim)}`;
       refs.push({id:`knowledge:${claim.id}`,initiativeId:id,texts:[text,`Current record: ${text}`]});
     }
     for (const fact of input.facts.filter(f=>f.initiativeId===id && f.state === "SET" && f.kind !== "OWNER")) {

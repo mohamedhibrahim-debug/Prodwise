@@ -36,6 +36,8 @@ export interface Notification {
   fingerprint: string; type: NotificationType; kind: NotificationKind;
   title: string; detail: string; initiativeId: string | null; initiativeName: string | null;
   href: string; at: string; forMe: boolean;
+  /** Derived from a date, not an event: shown without a time of day. */
+  dateOnly?: boolean;
 }
 
 export interface NotificationInput {
@@ -78,9 +80,9 @@ export function deriveNotifications(input: NotificationInput): Notification[] {
   for (const r of rows) {
     const id = r.initiative.id;
     for (const a of r.attention) {
-      if (a.kind === "DECISION") push({ fingerprint: fp("DECISION_NEEDED", id, a.detail), type: "DECISION_NEEDED", title: "Decision needed", detail: a.detail, initiativeId: id, href: `${base(id)}/decisions`, at: a.date ? noon(a.date) : r.initiative.updatedAt, forMe: mine(id) });
-      if (a.kind === "DEPENDENCY") push({ fingerprint: fp("DEPENDENCY_DATE", id, a.detail), type: "DEPENDENCY_DATE", title: "Dependency date impact", detail: a.detail, initiativeId: id, href: a.href || `${base(id)}#relationships`, at: a.date ? noon(a.date) : r.initiative.updatedAt, forMe: mine(id) });
-      if (a.kind === "PAST_TARGET") push({ fingerprint: fp("TARGET_PASSED", id, r.target?.id, r.target?.revision), type: "TARGET_PASSED", title: "Target date passed · update needed", detail: a.detail, initiativeId: id, href: `${base(id)}/delivery`, at: a.date ? noon(a.date) : r.initiative.updatedAt, forMe: mine(id) });
+      if (a.kind === "DECISION") push({ fingerprint: fp("DECISION_NEEDED", id, a.detail), type: "DECISION_NEEDED", title: "Decision needed", detail: a.detail, initiativeId: id, href: `${base(id)}/decisions`, at: noon(a.date ?? today), dateOnly: true, forMe: mine(id) });
+      if (a.kind === "DEPENDENCY") push({ fingerprint: fp("DEPENDENCY_DATE", id, a.detail), type: "DEPENDENCY_DATE", title: "Dependency date impact", detail: a.detail, initiativeId: id, href: a.href || `${base(id)}#relationships`, at: noon(a.date ?? today), dateOnly: true, forMe: mine(id) });
+      if (a.kind === "PAST_TARGET") push({ fingerprint: fp("TARGET_PASSED", id, r.target?.id, r.target?.revision), type: "TARGET_PASSED", title: "Target date passed · update needed", detail: a.detail, initiativeId: id, href: `${base(id)}/delivery`, at: noon(a.date ?? today), dateOnly: true, forMe: mine(id) });
     }
     if (!r.setup.ready && mine(id)) { const missing = r.setup.requirements.filter(x => !x.met).map(x => x.label);
       push({ fingerprint: fp("SETUP_INCOMPLETE", id, missing.join(",")), type: "SETUP_INCOMPLETE", title: `Setup incomplete · ${r.setup.completed} of ${r.setup.total}`, detail: `Still needed: ${missing.join(", ")}.`, initiativeId: id, href: r.setup.next?.href ?? `${base(id)}/setup`, at: r.initiative.updatedAt, forMe: true }); }
@@ -89,12 +91,12 @@ export function deriveNotifications(input: NotificationInput): Notification[] {
   for (const c of input.commitments) {
     if (!byId.has(c.initiativeId) || !c.dueDate || c.status === "DONE" || c.status === "CANCELLED") continue;
     const days = dayDiff(today, c.dueDate);
-    if (days < 0) push({ fingerprint: fp("COMMITMENT_OVERDUE", c.id, c.dueDate), type: "COMMITMENT_OVERDUE", title: `Commitment overdue by ${plural(-days, "day")}`, detail: c.title, initiativeId: c.initiativeId, href: `${base(c.initiativeId)}/actions?action=${c.id}`, at: noon(c.dueDate), forMe: mine(c.initiativeId, c.assigneeMemberId) });
-    else if (days <= DUE_SOON_DAYS) push({ fingerprint: fp("COMMITMENT_DUE_SOON", c.id, c.dueDate), type: "COMMITMENT_DUE_SOON", title: days === 0 ? "Commitment due today" : `Commitment due in ${plural(days, "day")}`, detail: c.title, initiativeId: c.initiativeId, href: `${base(c.initiativeId)}/actions?action=${c.id}`, at: noon(today), forMe: mine(c.initiativeId, c.assigneeMemberId) });
+    if (days < 0) push({ fingerprint: fp("COMMITMENT_OVERDUE", c.id, c.dueDate), type: "COMMITMENT_OVERDUE", title: `Commitment overdue by ${plural(-days, "day")}`, detail: c.title, initiativeId: c.initiativeId, href: `${base(c.initiativeId)}/actions?action=${c.id}`, at: noon(c.dueDate), dateOnly: true, forMe: mine(c.initiativeId, c.assigneeMemberId) });
+    else if (days <= DUE_SOON_DAYS) push({ fingerprint: fp("COMMITMENT_DUE_SOON", c.id, c.dueDate), type: "COMMITMENT_DUE_SOON", title: days === 0 ? "Commitment due today" : `Commitment due in ${plural(days, "day")}`, detail: c.title, initiativeId: c.initiativeId, href: `${base(c.initiativeId)}/actions?action=${c.id}`, at: noon(today), dateOnly: true, forMe: mine(c.initiativeId, c.assigneeMemberId) });
   }
   for (const q of input.questions) {
     if (!byId.has(q.initiativeId) || q.status !== "OPEN" || !q.dueDate || q.dueDate >= today) continue;
-    push({ fingerprint: fp("QUESTION_OVERDUE", q.id, q.dueDate), type: "QUESTION_OVERDUE", title: `Question past its needed-by date (${plural(dayDiff(q.dueDate, today), "day")})`, detail: q.question, initiativeId: q.initiativeId, href: `${base(q.initiativeId)}/context#question-${q.id}`, at: noon(q.dueDate), forMe: mine(q.initiativeId, q.ownerMemberId) });
+    push({ fingerprint: fp("QUESTION_OVERDUE", q.id, q.dueDate), type: "QUESTION_OVERDUE", title: `Question past its needed-by date (${plural(dayDiff(q.dueDate, today), "day")})`, detail: q.question, initiativeId: q.initiativeId, href: `${base(q.initiativeId)}/context#question-${q.id}`, at: noon(q.dueDate), dateOnly: true, forMe: mine(q.initiativeId, q.ownerMemberId) });
   }
 
   // Recent events worth a look, within the window. One per underlying thing: the latest wins.
@@ -126,13 +128,14 @@ export function deriveNotifications(input: NotificationInput): Notification[] {
   if (!final && (weekday >= 4 || weekday === 0) && rows.length) {
     const draft = input.reviews.find(r => r.week === week && r.status === "DRAFT");
     const open = draft ? draft.sections.filter(s => s.needsRecheck || !(s.editedByMemberId || s.editedByUserId)).length : null;
-    push({ fingerprint: fp("WEEKLY_REVIEW_DUE", week, open), type: "WEEKLY_REVIEW_DUE", title: `${week.replace(/^\d{4}-/, "")} Weekly Review not finalized`, detail: draft ? `${plural(open ?? 0, "section")} still to review before finalizing.` : "No draft has been prepared for this week yet.", initiativeId: null, href: "/weekly-review", at: noon(today), forMe: input.me.canFinalizeReviews });
+    push({ fingerprint: fp("WEEKLY_REVIEW_DUE", week, open), type: "WEEKLY_REVIEW_DUE", title: `${week.replace(/^\d{4}-/, "")} Weekly Review not finalized`, detail: draft ? `${plural(open ?? 0, "section")} still to review before finalizing.` : "No draft has been prepared for this week yet.", initiativeId: null, href: "/weekly-review", at: noon(today), dateOnly: true, forMe: input.me.canFinalizeReviews });
   }
-  for (const c of input.connectors) if (c.status === "NEEDS_RECONNECT") push({ fingerprint: fp("CONNECTOR_RECONNECT", c.label), type: "CONNECTOR_RECONNECT", title: `${c.label} needs reconnecting`, detail: "Access expired or was revoked. Imported sources are unchanged; refreshing them needs a new connection.", initiativeId: null, href: "/account/connections", at: noon(today), forMe: true });
+  for (const c of input.connectors) if (c.status === "NEEDS_RECONNECT") push({ fingerprint: fp("CONNECTOR_RECONNECT", c.label), type: "CONNECTOR_RECONNECT", title: `${c.label} needs reconnecting`, detail: "Access expired or was revoked. Imported sources are unchanged; refreshing them needs a new connection.", initiativeId: null, href: "/account/connections", at: noon(today), dateOnly: true, forMe: true });
 
   // One dependency is one fact, even though both initiatives show it: keep one item, "for me" if I own either side.
   const deps = new Map<string, Notification>();
-  for (const n of out.filter(n => n.type === "DEPENDENCY_DATE")) { const prev = deps.get(n.detail); if (prev) prev.forMe ||= n.forMe; else deps.set(n.detail, n); }
+  // Both sides of one dependency describe the same date impact: keep one, preferring the side that is mine.
+  for (const n of out.filter(n => n.type === "DEPENDENCY_DATE")) { const prev = deps.get(n.detail); if (!prev) deps.set(n.detail, n); else if (n.forMe && !prev.forMe) deps.set(n.detail, n); }
   const merged = out.filter(n => n.type !== "DEPENDENCY_DATE" || deps.get(n.detail) === n);
   const seen = new Set<string>();
   return merged.filter(n => !seen.has(n.fingerprint) && seen.add(n.fingerprint))
