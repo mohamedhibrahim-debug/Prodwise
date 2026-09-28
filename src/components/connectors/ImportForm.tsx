@@ -1,5 +1,6 @@
 "use client";
 import {useFormAction} from '@/components/forms/useFormAction';
+import { ScopeField } from '@/components/auth/WorkspaceScope';
 import Link from "next/link";
 import { useState } from "react";
 import type { ImportState } from "@/app/initiatives/[slug]/sources/import/actions";
@@ -14,7 +15,7 @@ export function ImportForm({ action, rows, slug, connector, label, defaultRole, 
   const [selected, setSelected] = useState<string[]>([]);
   const toggle = (r: string) => setSelected(s => s.includes(r) ? s.filter(x => x !== r) : s.length >= 10 ? s : [...s, r]);
   const groups = [...new Set(rows.map(r => r.group ?? ""))];
-  return <form action={formAction} onReset={keepFormAction} className={styles.importForm} aria-busy={pending}>
+  return <form action={formAction} onReset={keepFormAction} className={styles.importForm} aria-busy={pending}><ScopeField/>
     <input type="hidden" name="slug" value={slug} /><input type="hidden" name="connector" value={connector} />{site && <input type="hidden" name="site" value={site} />}
     {selected.map(r => <input key={r} type="hidden" name="ref" value={r} />)}
     {groups.map(g => <fieldset key={g} className={styles.results}><legend className={g ? styles.groupLegend : "visually-hidden"}>{g || `${label} results`}</legend>

@@ -25,6 +25,7 @@ import {
 } from "@/lib/domain/types";
 import styles from "@/app/initiatives/[slug]/sources/evidence-form.module.css";
 import claimStyles from "./ClaimForm.module.css";
+import { CONFIRMED_CONTENT_MESSAGE } from "@/lib/domain/claim-content";
 
 interface FormState {
   error: string | null;
@@ -71,6 +72,7 @@ export function ClaimForm({
 }: ClaimFormProps) {
   const [state, formAction, , keepFormAction] = useFormAction(action, initialState);
   const isEdit = Boolean(claim);
+  const locked = claim?.status === "ACTIVE";
 
   const linkedIds = new Set(claim?.evidence.map((e) => e.id) ?? []);
 
@@ -85,7 +87,7 @@ export function ClaimForm({
     <form action={formAction} className={styles.form} onReset={e=>e.preventDefault()}>
       <ScopeField />
       <ApplicabilityFields contexts={contexts} contextId={claim?(claim.contextId??null):currentContextId} effectiveDate={claim?.effectiveDate??null} slug={slug}/>
-      {claim&&<><input type="hidden" name="expectedUpdatedAt" value={claim.updatedAt}/><label>Reason if applicability changes<input name="applicabilityReason" maxLength={2000}/></label><p>Changing applicability creates a new unverified revision and preserves this record and evidence for re-verification.</p></>}
+      {claim&&<><input type="hidden" name="expectedUpdatedAt" value={claim.updatedAt}/><label>Reason if applicability changes<input name="applicabilityReason" maxLength={2000}/></label><p>Changing applicability creates a new unconfirmed revision and preserves this record and evidence for re-confirmation.</p></>}
       <input type="hidden" name="slug" value={slug} />
       {claim ? <input type="hidden" name="claimId" value={claim.id} /> : null}
 
@@ -95,6 +97,8 @@ export function ClaimForm({
         </p>
       ) : null}
 
+      {locked ? <p className={styles.hint} role="note">{CONFIRMED_CONTENT_MESSAGE}</p> : null}
+      {locked ? <><input type="hidden" name="type" value={claim!.type} /><input type="hidden" name="domain" value={claim!.domain} /></> : null}
       <div className={styles.pair}>
         <div className={styles.field}>
           <label className={styles.label} htmlFor="type">
@@ -102,7 +106,8 @@ export function ClaimForm({
           </label>
           <select
             id="type"
-            name="type"
+            name={locked ? undefined : "type"}
+            disabled={locked}
             required
             className={styles.select}
             defaultValue={claim?.type ?? "REQUIREMENT"}
@@ -121,7 +126,8 @@ export function ClaimForm({
           </label>
           <select
             id="domain"
-            name="domain"
+            name={locked ? undefined : "domain"}
+            disabled={locked}
             required
             className={styles.select}
             defaultValue={claim?.domain ?? "PRODUCT"}
@@ -143,6 +149,7 @@ export function ClaimForm({
           <input
             id="subject"
             name="subject"
+            readOnly={locked}
             type="text"
             required
             maxLength={160}
@@ -160,6 +167,7 @@ export function ClaimForm({
           <input
             id="attribute"
             name="attribute"
+            readOnly={locked}
             type="text"
             required
             maxLength={160}
@@ -178,6 +186,8 @@ export function ClaimForm({
         <textarea
           id="value"
           name="value"
+          readOnly={locked}
+          maxLength={4000}
           rows={2}
           required
           className={styles.textarea}
@@ -200,6 +210,7 @@ export function ClaimForm({
           <input
             id="phase"
             name="phase"
+            readOnly={locked}
             type="text"
             maxLength={80}
             autoComplete="off"

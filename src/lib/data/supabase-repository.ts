@@ -40,6 +40,7 @@ import { uniqueSlug, type Repository } from "./repository";
 import { partitionEvidenceLinks } from "./claim-evidence-links";
 import { repositoryContext } from "../auth/repository-context";
 import { workspaceClient } from "./workspace-client";
+import { assertConfirmedContentUnchanged } from "@/lib/domain/claim-content";
 
 /**
  * Supabase-backed repository.
@@ -704,6 +705,7 @@ export const supabaseRepository: Repository = {
     const existing = toClaim(existingRow as ClaimRow);
     if(existing&&((patch.contextId!==undefined&&(patch.contextId??null)!==(existing.contextId??null))||(patch.effectiveDate!==undefined&&(patch.effectiveDate??null)!==(existing.effectiveDate??null))))throw Error("Applicability changes require a new Knowledge revision.");
     if(patch.expectedUpdatedAt!==undefined&&patch.expectedUpdatedAt!==existing.updatedAt)throw Error("This Knowledge entry changed. Reload before saving.");
+    assertConfirmedContentUnchanged(existing, patch);
     if (patch.status !== undefined && !canOrdinaryUpdateStatus(existing.status, patch.status)) {
       throw new Error("Verify this claim to make it active.");
     }

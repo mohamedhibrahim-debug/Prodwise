@@ -13,8 +13,9 @@ export function impactSentence(r:InitiativeRelationship,impact:Impact|null,names
  if(!impact.assessed)return `Impact not assessed: ${impact.reason}.`;
  if('delivered' in impact&&impact.delivered)return `${names.to} is recorded as fully live (${displayDate(impact.providerDate)}).`;
  const p=FACT_LABEL[r.providerFactKind!],n=r.neededByFactKind==='TARGET_LIVE'?'Target Live':'next milestone';
- if(impact.late)return `${names.to} ${p} (${displayDate(impact.providerDate)}) is ${impact.days} ${impact.days===1?'day':'days'} after ${names.from}’s ${n} (${displayDate(impact.neededDate)}).`;
- return `${names.to} ${p} (${displayDate(impact.providerDate)}) is on or before ${names.from}’s ${n} (${displayDate(impact.neededDate)}).`;
+ // Lead with who is waiting on whom: the dependent initiative needs the other one by its own date.
+ if(impact.late)return `${names.from} needs ${names.to} by its ${n} (${displayDate(impact.neededDate)}); ${names.to}’s ${p} is ${displayDate(impact.providerDate)}, ${impact.days} ${impact.days===1?'day':'days'} later.`;
+ return `${names.from} needs ${names.to} by its ${n} (${displayDate(impact.neededDate)}); ${names.to}’s ${p} (${displayDate(impact.providerDate)}) is on or before that.`;
 }
 
 /**

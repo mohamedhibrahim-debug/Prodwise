@@ -27,7 +27,7 @@ export function activitySummary(entry: ActivityEntry): string {
       const m = /^Human confirmed ([\w ]+?) proposal from (.+?)( · unverified Knowledge)?$/.exec(entry.summary);
       if (!m) return entry.summary;
       const noun = m[1]!.replace(/_/g, " ");
-      return noun === "evidence" ? `Proposal accepted from ${m[2]}` : `${noun[0]!.toUpperCase()}${noun.slice(1)} added from ${m[2]}${m[3] ? " · awaiting verification" : ""}`;
+      return noun === "evidence" ? `Proposal accepted from ${m[2]}` : `${noun[0]!.toUpperCase()}${noun.slice(1)} added from ${m[2]}${m[3] ? " · awaiting confirmation" : ""}`;
     }
     case "FINDING_CONFIRMER_ASSIGNED": {
       const label = field(entry.payload, "label");
@@ -63,4 +63,9 @@ export function attentionSentence(finding: ReviewFinding): string {
 /** A first-observation readiness record: bookkeeping, not something a person did. */
 export function isReadinessBaseline(e: Pick<ActivityEntry, "eventType" | "payload">): boolean {
   return (e.eventType === "READINESS_REACHED" || e.eventType === "READINESS_LOST") && (e.payload as { baseline?: unknown } | null)?.baseline === true;
+}
+
+/** Display length for one activity sentence; the stored record keeps its full text. */
+export function clipSentence(text: string, max = 280): string {
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }

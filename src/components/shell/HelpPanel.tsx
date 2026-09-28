@@ -18,9 +18,9 @@ function helpFor(path:string):string{
  if(inInitiative){
   const byTab:Record<string,string>={
    decisions:'Decisions lists places where confirmed Knowledge entries record different values for the same thing. Compare the sources, then record a decision, defer it, or dismiss it with a reason. Nothing is decided for you.',
-   knowledge:'Knowledge holds what is recorded as true, with its scope, sources and verification. Entries you add or accept start as awaiting verification; replaced entries stay in history.',
+   knowledge:'Knowledge holds what is recorded as true, with its scope, sources and confirmation. Entries you add or accept start as awaiting confirmation; replaced entries stay in history.',
    sources:'Sources holds the material behind Knowledge: documents, email, Jira work, designs and meeting notes. Import from connected accounts or add a reference; refreshing a connected source saves a new snapshot only if it changed.',
-   evidence:'Saved evidence and meeting notes. Open one to read it and review what was proposed from it; accept, edit or reject each proposal. Only accepted items change the initiative.',
+   evidence:'Saved meeting notes and pasted text. Open one to read it and review what was proposed from it; accept, edit or reject each proposal. Only accepted items change the initiative.',
    actions:'Commitments are promises people made — from reviews, meetings and decisions — with an owner and a due date. They are not delivery tickets.',
    context:'Risks & questions tracks open risks (recorded in Knowledge first) and questions that need an answer by a date. Answering with a Knowledge entry keeps the answer traceable.',
    history:'History shows how this initiative changed and who changed it, newest first. It is built from the records themselves, so it cannot disagree with them.',

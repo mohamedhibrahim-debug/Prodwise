@@ -169,7 +169,9 @@ async function startSession(email: string, password: string, preferredWorkspaceI
     await setSessionCookie(token);
 }
 async function throttled(email: string, run: () => Promise<void>) {
-    const h = await headers(), client = (h.get('x-forwarded-for') ?? '').split(',')[0]!.trim() || h.get('x-real-ip') || 'unknown';
+    // Only a platform-set address counts: Vercel overwrites these headers at its edge. Elsewhere any
+    // client can send them, so they are ignored and the email alone keys the throttle.
+    const h = await headers(), client = process.env.VERCEL ? (h.get('x-real-ip') ?? (h.get('x-forwarded-for') ?? '').split(',')[0]!.trim()) || 'unknown' : 'direct';
     const key = throttleKey(email, client), wait = loginWait(key);
     if (wait > 0) throw new AccessError('RATE_LIMITED', waitMessage(wait));
     try { await run(); recordLoginSuccess(key); }

@@ -21,7 +21,7 @@ test("confirmed proposals read as what was added, not as an internal type", asyn
   const { activitySummary } = await import("./copy.ts");
   const at = (summary: string) => activitySummary({ id: "x", workspaceId: "w", initiativeId: "i", eventType: "AI_PROPOSAL_CONFIRMED", summary, occurredAt: "2026-09-25T10:00:00Z", entityType: null, entityId: null, payload: null, actorLabel: null } as never);
   assert.equal(at("Human confirmed open_question proposal from Steering sync"), "Open question added from Steering sync");
-  assert.equal(at("Human confirmed risk proposal from Steering sync · unverified Knowledge"), "Risk added from Steering sync · awaiting verification");
+  assert.equal(at("Human confirmed risk proposal from Steering sync · unverified Knowledge"), "Risk added from Steering sync · awaiting confirmation");
   assert.equal(at("Human confirmed evidence proposal from Pilot email"), "Proposal accepted from Pilot email");
 });
 

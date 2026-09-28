@@ -16,7 +16,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export async function missingRecord(ctx: WorkspaceAccess, pathname: string): Promise<MissingKind | null> {
   const want = lookupFor(pathname);
   if (!want) return null;
-  if ([want.source, want.submission, want.claim].some(id => id !== undefined && !UUID.test(id))) return 'record';
+  if (want.malformed) return 'record';
   const w = ctx.workspaceId;
   if (isLocalAuth()) return withRepositoryContext(ctx, () => {
     const s = readStore();
@@ -25,8 +25,11 @@ export async function missingRecord(ctx: WorkspaceAccess, pathname: string): Pro
     if (want.source && !(s.sourceItems ?? []).some(x => x.id === want.source && x.workspaceId === w)) return 'record';
     if (want.submission && !(s.evidenceSubmissions ?? []).some(x => x.id === want.submission && x.initiativeId === initiative!.id)) return 'record';
     if (want.claim && !s.claims.some(x => x.id === want.claim && x.initiativeId === initiative!.id)) return 'record';
+    if (want.evidence && !s.evidence.some(x => x.id === want.evidence && x.initiativeId === initiative!.id)) return 'record';
     return null;
   });
+  // Hosted ids are uuid columns: anything else cannot exist, and must not reach a uuid cast.
+  if ([want.source, want.submission, want.claim, want.evidence].some(id => id !== undefined && !UUID.test(id))) return 'record';
   const db = adminClient();
   let initiativeId: string | null = null;
   if (want.initiative !== undefined) {
@@ -44,5 +47,6 @@ export async function missingRecord(ctx: WorkspaceAccess, pathname: string): Pro
   if (want.source && !(await exists('source_items', want.source, { workspace_id: w }))) return 'record';
   if (want.submission && !(await exists('evidence_submissions', want.submission, { workspace_id: w, initiative_id: initiativeId! }))) return 'record';
   if (want.claim && !(await exists('claims', want.claim, { workspace_id: w, initiative_id: initiativeId! }))) return 'record';
+  if (want.evidence && !(await exists('evidence', want.evidence, { workspace_id: w, initiative_id: initiativeId! }))) return 'record';
   return null;
 }

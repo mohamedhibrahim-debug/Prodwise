@@ -47,7 +47,7 @@ export default async function DecisionsPage({ params, searchParams }: { params: 
       <DecisionWorkbench initialItem={item} lanes={DECISION_LANES.map(lane => ({ ...lane, items: laneItems[lane.key], empty: empty[lane.key] }))}>
     <aside className={styles.reviewContext} aria-label="Initiative context">
       <div className={styles.contextBlock}><div className={styles.contextLabel}>Recorded decisions</div>
-        {recorded.length?recorded.slice(0,8).map(c=><Link prefetch={false} key={c.id} href={`/initiatives/${slug}/knowledge?view=all#claim-${c.id}`} className={styles.contextLink}>{c.subject}: {c.value}<span className={styles.contextMeta}> · {c.status==='ACTIVE'?'verified':'awaiting verification'}</span></Link>):<p className={styles.contextMeta}>No decisions recorded in Knowledge yet. Decisions accepted from meeting notes appear here.</p>}
+        {recorded.length?recorded.slice(0,8).map(c=><Link prefetch={false} key={c.id} href={`/initiatives/${slug}/knowledge?view=all#claim-${c.id}`} className={styles.contextLink}>{c.subject}: {c.value}<span className={styles.contextMeta}> · {c.status==='ACTIVE'?'confirmed':'awaiting confirmation'}</span></Link>):<p className={styles.contextMeta}>No decisions recorded in Knowledge yet. Decisions accepted from meeting notes appear here.</p>}
         {recorded.length>8&&<Link prefetch={false} href={`/initiatives/${slug}/knowledge?view=all`} className={styles.contextLink}>All {recorded.length} decisions →</Link>}</div>
       <div className={styles.contextBlock}><div className={styles.contextLabel}>Go to</div>
         <Link prefetch={false} href={`/initiatives/${slug}/knowledge`} className={styles.contextLink}>Knowledge →</Link>

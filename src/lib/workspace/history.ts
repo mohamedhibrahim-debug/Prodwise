@@ -1,7 +1,7 @@
 import type {ActivityEntry} from '../domain/types.ts';
 import type {DeliveryEvent,DeliveryMember,WeeklyReview} from '../delivery/types.ts';
 import {displayDate} from '../delivery/roadmap.ts';
-import {activitySummary,isReadinessBaseline} from './copy.ts';
+import {activitySummary,clipSentence,isReadinessBaseline} from './copy.ts';
 import type {CommitmentEvent} from './commitments.ts';
 import type {QuestionEvent} from './questions.ts';
 import type {RelationshipEvent} from './relationships.ts';
@@ -66,8 +66,8 @@ function activityCategory(e:ActivityEntry):{category:HistoryCategory;label:strin
 }
 
 const KIND:Record<string,string>={requirement:'Requirement',decision:'Decision',business_rule:'Business rule',risk:'Risk',dependency:'Dependency',assumption:'Assumption'};
-/** "Human confirmed risk proposal from Steering sync · unverified Knowledge" → "Risk added from Steering sync · awaiting verification". */
-function proposalSentence(summary:string){const m=/^Human (?:confirmed|entered|human_entryed|confirmed) (\w+)? ?(?:evidence )?proposal from (.+?)(?: · .*)?$/.exec(summary);if(!m)return summary.replace(/unverified Knowledge/,'awaiting verification');return `${KIND[m[1]??'']??'Knowledge entry'} added from ${m[2]} · awaiting verification`;}
+/** "Human confirmed risk proposal from Steering sync · unverified Knowledge" → "Risk added from Steering sync · awaiting confirmation". */
+function proposalSentence(summary:string){const m=/^Human (?:confirmed|entered|human_entryed|confirmed) (\w+)? ?(?:evidence )?proposal from (.+?)(?: · .*)?$/.exec(summary);if(!m)return summary.replace(/unverified Knowledge/,'awaiting confirmation');return `${KIND[m[1]??'']??'Knowledge entry'} added from ${m[2]} · awaiting confirmation`;}
 const FACT:Record<string,string>={SCOPE:'Scope',OWNER:'Owner',SOLUTION_DEFINED:'Solution defined',DEV_STARTED:'Development start',TARGET_LIVE:'Target Live',ACTUAL_LIVE:'Actual Live',NEXT_MILESTONE:'Next milestone',BLOCKER:'Blocker',NEXT_STEP:'Next step'};
 function deliverySentence(e:DeliveryEvent,member:(id:string|null|undefined)=>string):{label:string;sentence:string}|null{
  const a=e.after,b=e.before,name=FACT[a.kind]??a.kind;const val=(f:typeof a|null)=>!f||f.state==='RETRACTED'?'not recorded':f.value.unknown||f.value.dateUnknown&&!f.value.text?'Unknown':a.kind==='OWNER'?member(f.value.memberId):f.value.date&&f.value.text?`${f.value.text} (${displayDate(f.value.date)})`:f.value.date?displayDate(f.value.date):f.value.text??'recorded';
@@ -85,7 +85,7 @@ export function buildInitiativeHistory(src:HistorySources):HistoryEvent[]{
  const ev=(evidenceId:string|null|undefined)=>{const e=src.evidence.find(x=>x.evidenceId===evidenceId);return e?{label:`from ${e.title}, ${displayDate(e.date)}`,href:`${base}/evidence/${e.submissionId}`}:null;};
  for(const e of src.activity){if(e.initiativeId!==id)continue;const c=activityCategory(e);if(!c)continue;
   const payload=(e.payload??{}) as Record<string,unknown>;const sub=typeof payload.submissionId==='string'?src.evidence.find(x=>x.submissionId===payload.submissionId):undefined;
-  out.push({id:`a:${e.id}`,at:e.occurredAt,...c,sentence:e.eventType==='INITIATIVE_CREATED'?'Initiative created in Prodwise':e.eventType.startsWith('AI_PROPOSAL_')?proposalSentence(e.summary):activitySummary(e),actor:e.actorLabel??'Recorded actor',rationale:typeof payload.reason==='string'&&payload.reason?payload.reason:null,
+  out.push({id:`a:${e.id}`,at:e.occurredAt,...c,sentence:clipSentence(e.eventType==='INITIATIVE_CREATED'?'Initiative created in Prodwise':e.eventType.startsWith('AI_PROPOSAL_')?proposalSentence(e.summary):activitySummary(e)),actor:e.actorLabel??'Recorded actor',rationale:typeof payload.reason==='string'&&payload.reason?payload.reason:null,
    href:c.category==='KNOWLEDGE'?`${base}/knowledge?view=all`:c.category==='DECISIONS'?`${base}/decisions`:c.category==='SOURCES'?(sub?`${base}/evidence/${sub.submissionId}`:`${base}/sources`):c.category==='LIFECYCLE'?`${base}/manage`:null,hrefLabel:c.category==='SOURCES'&&sub?'Open evidence':c.category==='KNOWLEDGE'?'Open Knowledge':c.category==='DECISIONS'?'Open Decisions':null,
    provenance:c.category!=='SOURCES'&&sub?{label:`from ${sub.title}, ${displayDate(sub.date)}`,href:`${base}/evidence/${sub.submissionId}`}:null});}
  for(const e of src.deliveryEvents){if(e.initiativeId!==id)continue;const s=deliverySentence(e,member);if(!s)continue;

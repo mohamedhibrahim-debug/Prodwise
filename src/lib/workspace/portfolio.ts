@@ -8,7 +8,7 @@ import { applyFindingStates } from '../review/merge.ts';
 import {deriveReadiness,type InitiativeContext} from './readiness.ts';
 import type {SourceMapping} from './source-mapping.ts';
 import { deriveSetup } from './setup.ts';
-import { activitySummary, isReadinessBaseline } from './copy.ts';
+import { activitySummary, clipSentence, isReadinessBaseline } from './copy.ts';
 import { STAGE_LABEL } from '../domain/labels.ts';
 import { relationshipsFor } from './relationship-view.ts';
 import type { InitiativeRelationship } from './relationships.ts';
@@ -49,7 +49,7 @@ export function buildPortfolioProjection({source,state,workspaceId,activity=[],a
   // A rejected proposal changed nothing in the product, so it is not a change.
   for(const entry of activity.filter(e=>allowed.has(e.initiativeId)&&inWindow(e.occurredAt)&&e.eventType!=='AI_PROPOSAL_REJECTED'&&!isReadinessBaseline(e))) {
     const i=allowed.get(entry.initiativeId)!;
-    changes.push({id:entry.id,initiativeId:i.id,slug:i.slug,name:i.name,sentence:entry.eventType==='INITIATIVE_CREATED'?'Added to Prodwise':activitySummary(entry),actorLabel:entry.actorLabel??'Actor not recorded',occurredAt:entry.occurredAt,href:`/initiatives/${i.slug}`});
+    changes.push({id:entry.id,initiativeId:i.id,slug:i.slug,name:i.name,sentence:entry.eventType==='INITIATIVE_CREATED'?'Added to Prodwise':clipSentence(activitySummary(entry)),actorLabel:entry.actorLabel??'Actor not recorded',occurredAt:entry.occurredAt,href:`/initiatives/${i.slug}`});
   }
   if(baseline) {
     const compared=changesSince(freezeInput(source,state,workspaceId,asOf),baseline.input);
@@ -80,7 +80,7 @@ export function buildPortfolioProjection({source,state,workspaceId,activity=[],a
     const move=targetMovements(state.events,workspaceId,i.id).at(-1);
     const ownerId=ownerFor(facts,i.id);const member=source.members.find(m=>m.id===ownerId);
     const readiness=deriveReadiness({initiative:{...i,workspaceId},facts,members:source.members,claims:snapshot.claims,currentContext:management?.contexts.find(c=>c.id===i.currentContextId)??null,activeSourceLinks:management?.mappings.filter(m=>m.initiativeId===i.id&&!m.unlinkedAt).length??0,previouslyReady:activity.some(a=>a.initiativeId===i.id&&a.eventType==='READINESS_REACHED')});
-    return {snapshot,initiative:i,setup:readiness,ownerId,ownerLabel:ownerId?member?.displayName??'Recorded owner unavailable':'Unassigned',coverage:{complete:setup.complete,label:coverageLabel+(unconfirmed?` · ${unconfirmed} ${unconfirmed===1?'entry':'entries'} not yet verified`:''),unconfirmed},attention,target,actual,milestone,nextStep,timing,targetMovement:move?{from:move.before!.value.date!,to:move.after.value.date!,days:dayDifference(move.before!.value.date!,move.after.value.date!),occurredAt:move.occurredAt}:null,latestChange:changes.find(c=>c.initiativeId===i.id)??null};
+    return {snapshot,initiative:i,setup:readiness,ownerId,ownerLabel:ownerId?member?.displayName??'Recorded owner unavailable':'Unassigned',coverage:{complete:setup.complete,label:coverageLabel+(unconfirmed?` · ${unconfirmed} ${unconfirmed===1?'entry':'entries'} not yet confirmed`:''),unconfirmed},attention,target,actual,milestone,nextStep,timing,targetMovement:move?{from:move.before!.value.date!,to:move.after.value.date!,days:dayDifference(move.before!.value.date!,move.after.value.date!),occurredAt:move.occurredAt}:null,latestChange:changes.find(c=>c.initiativeId===i.id)??null};
   });
   const activeRows=rows.filter(r=>!r.initiative.archivedAt);
   const upcoming=activeRows.flatMap(r=>(['TARGET_LIVE','NEXT_MILESTONE'] as const).flatMap(kind=>{const f=kind==='TARGET_LIVE'?r.target:r.milestone;if(kind==='TARGET_LIVE'&&r.actual?.value.extent==='FULL')return [];return f?.value.date&&dayDifference(today,f.value.date)>=0&&dayDifference(today,f.value.date)<=28?[{initiativeId:r.initiative.id,slug:r.initiative.slug,name:r.initiative.name,kind,date:f.value.date,label:kind==='TARGET_LIVE'?'Target Live':f.value.text??'Next milestone'}]:[];})).sort((a,b)=>a.date.localeCompare(b.date)||a.name.localeCompare(b.name));

@@ -31,7 +31,7 @@ export function reviseRisk(rows:RiskTracking[],events:RiskEvent[],cmd:RiskComman
  const owner=(id:string|null|undefined)=>{if(id&&!members.some(m=>m.id===id&&m.workspaceId===ctx.workspaceId&&m.active&&m.role!=='VIEWER'))throw Error('Choose an active non-Viewer member in this organization.');return id??null;};
  const mitigation=(t:string|null|undefined)=>{const v=(t??'').trim()||null;if(v&&v.length>500)throw Error('Keep the mitigation under 500 characters.');return v;};
  const action=(id:string|null|undefined)=>{if(id&&!actionIds.includes(id))throw Error('Choose a commitment from this initiative.');return id??null;};
- const trackable=(id:string|undefined)=>{const c=claims.find(c=>c.id===id&&c.initiativeId===initiative.id);if(!c||c.type!=='RISK')throw Error('Only a risk recorded in this initiative’s Knowledge can be tracked.');if(c.status!=='ACTIVE')throw Error('This risk is awaiting verification. Confirm it in Knowledge before tracking it.');return c;};
+ const trackable=(id:string|undefined)=>{const c=claims.find(c=>c.id===id&&c.initiativeId===initiative.id);if(!c||c.type!=='RISK')throw Error('Only a risk recorded in this initiative’s Knowledge can be tracked.');if(c.status!=='ACTIVE')throw Error('This risk is awaiting confirmation. Confirm it in Knowledge before tracking it.');return c;};
  let next:RiskTracking,before:RiskTracking|undefined,type:RiskEvent['type'],claim:RiskClaim;
  if(cmd.operation==='START'||cmd.operation==='CARRY'){
   if(!canManageRisk(ctx,initiativeOwnerId))throw Error('Only the initiative owner, a Product Lead or administration can start tracking a risk.');

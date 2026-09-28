@@ -1,6 +1,7 @@
 import type { Repository } from './repository';
 import { AccessError, authorizeBusiness, type WorkspaceAccess } from '../auth/core';
 import { withRepositoryContext } from '../auth/repository-context';
+import { cleanInput } from '@/lib/domain/text-input';
 const writes = new Set(['createInitiative','createEvidence','updateEvidence','createClaim','updateClaim','setClaimEvidence',
   'verifyClaim','setEvidenceAnchor','resolveConflict','assignFindingConfirmer','setFindingState','reopenFindingState']);
 function workspaceOf(value: unknown): string | undefined {
@@ -33,6 +34,9 @@ export function guardedRepository(resolve: () => Promise<WorkspaceAccess>, rawFo
             if ((initiative as {archivedAt?:string|null})?.archivedAt) throw new AccessError('INITIATIVE_ARCHIVED','Archived — restore to edit. Nothing was changed.');
           }
         };
+        // Hand-entered text: invisible characters removed, lengths bounded, links must be web links.
+        if (name === 'createEvidence' || name === 'createClaim') args[0] = cleanInput(args[0] as Record<string, unknown>);
+        if (name === 'updateEvidence' || name === 'updateClaim') args[1] = cleanInput(args[1] as Record<string, unknown>);
         if (writes.has(name)) {
           if (name === 'createEvidence' || name === 'createClaim' || name === 'resolveConflict' || name === 'assignFindingConfirmer') {
             const input = args[0] as Record<string, unknown>;

@@ -41,3 +41,6 @@ export class WriteDisabledError extends Error {
 export function assertWriteAllowed(): void {
   if (!isDemoWriteEnabled) throw new WriteDisabledError();
 }
+
+/** Automatic reading needs both a key and a model; without them the product must not offer it. */
+export const isClaudeConfigured = Boolean(process.env.ANTHROPIC_API_KEY?.trim() && process.env.ANTHROPIC_MODEL?.trim());

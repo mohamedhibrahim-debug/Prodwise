@@ -61,7 +61,7 @@ export default async function KnowledgePage({ params, searchParams }: {
       <Link prefetch={false} href={`/initiatives/${slug}/decisions${mismatchItems.size === 1 ? `?item=${encodeURIComponent([...mismatchItems.values()][0]!)}` : ""}`}>Review in Decisions →</Link>
     </div> : null}
     <div className={styles.recordLayout}><div>
-    {view === "confirmed" && claims.some(c => c.status === "UNVERIFIED" || c.status === "DRAFT") && <p className={styles.awaiting} role="note"><strong>{claims.filter(c => c.status === "UNVERIFIED" || c.status === "DRAFT").length} {claims.filter(c => c.status === "UNVERIFIED" || c.status === "DRAFT").length === 1 ? "entry is" : "entries are"} waiting for verification.</strong> Accepted proposals and new entries start here. <Link prefetch={false} href={`${base}?view=all`}>Review them in All current →</Link></p>}
+    {view === "confirmed" && claims.some(c => c.status === "UNVERIFIED" || c.status === "DRAFT") && <p className={styles.awaiting} role="note"><strong>{claims.filter(c => c.status === "UNVERIFIED" || c.status === "DRAFT").length} {claims.filter(c => c.status === "UNVERIFIED" || c.status === "DRAFT").length === 1 ? "entry is" : "entries are"} waiting for confirmation.</strong> Accepted proposals and new entries start here. <Link prefetch={false} href={`${base}?view=all`}>Review them in All current →</Link></p>}
     {subjects.size ? <div className={styles.ledgerHead}><span>Attribute / context</span><span>Recorded value</span><span>Confirmation</span><span>Provenance</span><span>Inspect</span></div> : null}
     {subjects.size ? [...subjects].map(([subject, attributes]) => { const single = [...attributes.values()].reduce((n, phases) => n + [...phases.values()].reduce((m, values) => m + values.length, 0), 0) === 1; return <section className={styles.subject} data-single={single || undefined} key={subject}>
       <h2 className={single ? styles.srOnly : undefined}>{subject}</h2>{[...attributes].map(([attribute, phases]) => <div className={styles.attribute} key={attribute}>
@@ -80,7 +80,7 @@ export default async function KnowledgePage({ params, searchParams }: {
               </div>
               <div role="group" aria-label="Confirmation" className={styles.rowStatus}><span data-status={allSameStatus ? first.status : undefined}>{allSameStatus ? `${first.status === "ACTIVE" ? "✓ " : first.status === "SUPERSEDED" ? "↻ " : "○ "}${CLAIM_STATUS_LABEL[first.status]}` : "Entry statuses in details"}</span>
                 {entries.map(entry => <p key={entry.id}>{entry.verifiedAt ? `${entry.verifiedActorLabel ?? "Actor not recorded"} · ${formatDate(entry.verifiedAt)}` : entry.origin === "LEGACY" ? "Verification history not recorded." : "Not yet confirmed."}</p>)}</div>
-              <div role="group" aria-label="Provenance" className={styles.sourceIdentity}><span>{sources.length} linked {sources.length === 1 ? "source" : "sources"}</span>
+              <div role="group" aria-label="Provenance" className={styles.sourceIdentity}><span>{sources.length ? `${sources.length} linked ${sources.length === 1 ? "source" : "sources"}` : "No source linked"}</span>
                 {sources.map(source => <Link prefetch={false} key={source.id} href={`/initiatives/${slug}/sources#source-${source.id}`}>{displaySourceReference(source.sourceReference) ?? source.title}{source.boundary === "EXCLUDED" ? " · Excluded" : ""}</Link>)}</div>
               <details><summary aria-label={`Details for ${subject} · ${attribute} (${value})`}>Details</summary>
                 <ul>{entries.map((entry) => {
@@ -115,7 +115,7 @@ export default async function KnowledgePage({ params, searchParams }: {
           })}
           {values.length > 1 && view !== "replaced" && mismatchItems.has(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null])) ?
             <Link prefetch={false} className={styles.mismatch} href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(mismatchItems.get(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null]))!)}`}><span aria-hidden="true">⚠</span> Values differ in this phase — compare them in Decisions →</Link> : null}
-        </div>)}</div>)}</section>; }) : <p className={styles.empty}>{view === "confirmed" ? "No verified Knowledge entries yet." : "No Knowledge entries in this view."}</p>}
+        </div>)}</div>)}</section>; }) : <p className={styles.empty}>{view === "confirmed" ? "No confirmed Knowledge entries yet." : "No Knowledge entries in this view."}</p>}
     </div><aside className={styles.recordContext} aria-label="Record context">
       <h2>Recorded Knowledge</h2>
       <dl><div><dt>Confirmed entries</dt><dd>{claims.filter(entry => entry.status === "ACTIVE").length}</dd></div>
@@ -123,7 +123,7 @@ export default async function KnowledgePage({ params, searchParams }: {
         <div><dt>Replaced entries</dt><dd>{claims.filter(entry => entry.status === "SUPERSEDED").length}</dd></div>
       </dl>
       <p>Confirmed records retain their original provenance. Confirmation does not guarantee that a statement is correct.</p>
-      <p>Open Sources and details to inspect each entry’s verification history, phase, domain and replacement lineage.</p>
+      <p>Open Sources and details to inspect each entry’s confirmation history, phase, domain and replacement lineage.</p>
       <Link prefetch={false} href={`${base}/sources`}>Browse Sources →</Link>
     </aside></div>
   </div>;

@@ -27,6 +27,7 @@ import { normalise } from "../review/normalise";
 import { uniqueSlug, type Repository } from "./repository";
 import { partitionEvidenceLinks } from "./claim-evidence-links";
 import { repositoryContext } from "../auth/repository-context";
+import { assertConfirmedContentUnchanged } from "@/lib/domain/claim-content";
 
 /**
  * Repository used when no Supabase project is configured.
@@ -389,6 +390,7 @@ export const localRepository: Repository = {
     if(existing&&((patch.contextId!==undefined&&(patch.contextId??null)!==(existing.contextId??null))||(patch.effectiveDate!==undefined&&(patch.effectiveDate??null)!==(existing.effectiveDate??null))))throw Error("Applicability changes require a new Knowledge revision.");
     if (!existing) throw new Error(`Claim ${id} was not found.`);
     if(patch.expectedUpdatedAt!==undefined&&patch.expectedUpdatedAt!==existing.updatedAt)throw Error("This Knowledge entry changed. Reload before saving.");
+    assertConfirmedContentUnchanged(existing, patch);
     if (
       patch.status !== undefined &&
       !canOrdinaryUpdateStatus(existing.status, patch.status)

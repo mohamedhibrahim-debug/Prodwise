@@ -5,6 +5,7 @@ import { getRepository } from "@/lib/data";
 import { EVIDENCE_RELATIONS } from "@/lib/domain/types";
 import { EVIDENCE_RELATION_LABEL, EVIDENCE_SOURCE_TYPE_LABEL, formatDate, displaySourceReference } from "@/lib/domain/labels";
 import { businessWritePresentation } from "@/lib/auth/presentation";
+import { AddEvidenceMenu } from "@/components/evidence/AddEvidenceMenu";
 import styles from "../knowledge.module.css";
 import cstyles from "@/components/connectors/connectors.module.css";
 import { readSyncs } from "@/lib/connectors/service";
@@ -32,7 +33,7 @@ export default async function KnowledgeSourcesPage({ params }: { params: Promise
   const sameKey = (e: (typeof evidence)[number]) => `${e.title.trim().toLowerCase()}|${e.occurredAt?.slice(0, 10) ?? ''}`;
   const keyCount = new Map<string, number>(); for (const e of evidence) keyCount.set(sameKey(e), (keyCount.get(sameKey(e)) ?? 0) + 1);
   return <div className={styles.page}>
-    <header className={styles.head}><div><p className={styles.eyebrow}>Evidence library</p><h2>Sources</h2><p>Inspect source material and the Knowledge it supports.</p></div><Link prefetch={false} className={styles.quietAction} href={`/initiatives/${slug}/evidence`}>Saved evidence & meeting notes</Link>{writesEnabled && !isDemo && <Link prefetch={false} className={styles.quietAction} href={`/initiatives/${slug}/sources/import`}>Import from Jira, Gmail, Drive or Figma</Link>}{writesEnabled && <Link prefetch={false} className={styles.action} href={`${base}/sources/new`}>Add source</Link>}</header>
+    <header className={styles.head}><div><p className={styles.eyebrow}>{initiative.name}</p><h2>Sources</h2><p>Where this initiative’s evidence comes from, and the Knowledge it supports.</p></div>{writesEnabled ? <AddEvidenceMenu slug={slug} connectors={!isDemo}/> : <Link prefetch={false} className={styles.quietAction} href={`/initiatives/${slug}/evidence`}>Saved notes and pasted text</Link>}</header>
 
     {syncs.length > 0 && <section aria-labelledby="connected-sources"><h3 id="connected-sources">Connected sources <span className={cstyles.muted}>{syncs.length}</span></h3>
       <p className={cstyles.muted}>Imported from connected accounts. Refresh saves a new snapshot only when the content changed; earlier snapshots stay. A change is a signal to review, not a confirmed fact.</p>

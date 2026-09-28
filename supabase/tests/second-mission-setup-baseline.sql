@@ -22,3 +22,15 @@ do $$begin
  then raise exception 'TEST_PUBLIC_FUNCTION_EXECUTE';end if;
  raise notice 'PASS: no public function is executable by anon or authenticated';
 end$$;
+-- A confirmed entry's content cannot be changed in place; its status can.
+begin;
+set local role service_role;
+do $$declare c public.claims;begin
+ select * into c from public.claims where status='ACTIVE' limit 1;
+ if not found then raise exception 'TEST_NO_ACTIVE_CLAIM';end if;
+ begin update public.claims set value=value||' changed' where id=c.id;raise exception 'TEST_CONFIRMED_CONTENT_CHANGED';
+ exception when others then if sqlerrm<>'CONFIRMED_CLAIM_CONTENT_IMMUTABLE' then raise;end if;end;
+ raise notice 'PASS: confirmed entry content is immutable';
+end$$;
+reset role;
+rollback;

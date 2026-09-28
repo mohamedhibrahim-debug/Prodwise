@@ -8,7 +8,7 @@ const riskOwner:WorkspaceAccess={...owner,memberId:'m-risk',actor:{id:'u-risk',l
 const members:DeliveryMember[]=[{id:'m-owner',workspaceId:ws,displayName:'Owner',role:'MEMBER',active:true,isProductLead:false},{id:'m-risk',workspaceId:ws,displayName:'Risk owner',role:'MEMBER',active:true,isProductLead:false}];
 const claim=(o:Partial<RiskClaim>={}):RiskClaim=>({id:'c1',initiativeId:'i1',type:'RISK',status:'ACTIVE',subject:'Settlement files',value:'may arrive late',supersededByClaimId:null,...o});
 test('risks: only an ACTIVE risk claim can be tracked, by the initiative owner; one tracking per claim',()=>{
- assert.throws(()=>reviseRisk([],[],{operation:'START',claimId:'c1',requestId:randomUUID(),expectedRevision:0},owner,I,'m-owner',members,[claim({status:'UNVERIFIED'})],[],'t'),/awaiting verification/);
+ assert.throws(()=>reviseRisk([],[],{operation:'START',claimId:'c1',requestId:randomUUID(),expectedRevision:0},owner,I,'m-owner',members,[claim({status:'UNVERIFIED'})],[],'t'),/awaiting confirmation/);
  assert.throws(()=>reviseRisk([],[],{operation:'START',claimId:'c1',requestId:randomUUID(),expectedRevision:0},riskOwner,I,'m-owner',members,[claim()],[],'t'),/Only the initiative owner/);
  const a=reviseRisk([],[],{operation:'START',claimId:'c1',requestId:randomUUID(),expectedRevision:0,ownerMemberId:'m-risk'},owner,I,'m-owner',members,[claim()],[],'t');assert.equal(a.tracking.status,'OPEN');assert.equal(a.event!.statement,'Settlement files: may arrive late');
  assert.equal(reviseRisk([a.tracking],[a.event!],{operation:'START',claimId:'c1',requestId:randomUUID(),expectedRevision:0},owner,I,'m-owner',members,[claim()],[],'t').event,null);});
