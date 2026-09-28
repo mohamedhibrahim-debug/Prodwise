@@ -14,7 +14,7 @@ It supersedes chat context. Later phases never start before earlier ones are com
 | 5 | Perceived performance / interaction responsiveness | Complete (production timings re-measured in smoke) |
 | 6 | Error states & edge-case hardening | Complete |
 | 7 | Final product polish / forgotten details | Complete |
-| 8 | Production readiness & trust sweep | Not started |
+| 8 | Production readiness & trust sweep | Complete |
 | 9 | Final full acceptance (+ final UX review and fresh red-team) | Not started |
 | 10 | Final candidate (push to `prodwise/p1-core-operating-loop`, verify remote SHA, no force-push) | Not started |
 | 11 | Deploy exact tested candidate (non-destructive migrations) | Not started |
@@ -95,7 +95,17 @@ Changes: app-wide navigation progress (capture-phase, same-tab internal links on
 - Carried to Phase 8: local login throttling (hosted uses Supabase Auth limits), HTTP status codes on Not available / Not found pages, shared Demo visitor content (scheduled reset), scenario-time vs real-time labelling in the Demo, `/api/evidence/<id>/stop` idempotent reply, same display name across organizations.
 - Carried to Phase 9: the legacy Stage 2.2 UI script (`scripts/ui-test/run.mjs`) predates the current navigation and must be updated or retired; on Linux-as-root it needs a `--no-sandbox` Chromium wrapper and `NODE_OPTIONS=--experimental-transform-types`.
 
+## Phase 8 — result
+- Carried items: sign-in throttle (5 free failures per email + client address, then 1 → 15 min); real 404 for missing or other-organization initiative, source, evidence and claim ids (decided in the proxy before a loading boundary streams); shared-Demo notice separating scenario time from real time, with the last reset date; stop reports whether a reading was running; local fixture people renamed (production's two "Demo Reviewer" rows are the archived and active Demo generations only).
+- Found and fixed: search index went stale (new initiatives missing; after an organization switch it could list the previous organization's initiatives); bell count after an organization switch; viewers offered a Connect button that was always refused; search ranking; public functions executable by `anon`/`authenticated` (migration 0042).
+- Production upgrade rehearsal (`scripts/db-test/upgrade-rehearsal.sh`): production-branch schema, seed and hosted Demo (archived + active generation) → 26 pending migrations → deploy-path Demo reset from the database-registered generation → every pre-existing non-Demo row intact. Production's 46 delivery facts all satisfy 0025's new check (read-only count).
+- Deploy note: the hosted reset normally reads `.data/demo-hosted-access.json`, which exists only on the operator machine; at deploy the prior generation is read from the database, as the rehearsal does. Production's registration (`…-v1`, scenario 2026-09-26 10:00 UTC) matches the generator.
+- Checks run: privacy/secret scan (1,109 files, 106 client assets, nothing leaked), search, archived exclusions (Home, Notifications, Roadmap; read-only page and forms), signed-out pages/APIs/OAuth callback, viewer restrictions, cross-screen attention counts, server log, build, a11y (15 screens), unit 342, DB 17 proofs.
+- Runbooks: `DEMO-RESET.md`, `CONNECTOR-LIVE-VERIFICATION.md`.
+
 ## Known manual steps (production)
+- Supabase Auth → enable leaked-password protection (security advisor WARN).
+- Google OAuth app is in Testing: refresh tokens for these scopes expire after 7 days, so expect "Reconnect" weekly until the app is published/verified.
 - Set `PRODWISE_PUBLIC_URL=https://prodwise-flax.vercel.app` in Vercel (otherwise the Vercel production domain is used for sign-up links).
 - Supabase Auth → URL configuration must allow `https://prodwise-flax.vercel.app/signup/verify`.
 - Supabase Auth email templates should link to `/signup/verify?token_hash={{ .TokenHash }}&type=…` so link scanners cannot consume one-time tokens; configure custom SMTP for real onboarding volume.
