@@ -25,14 +25,14 @@ export default async function NewClaimPage({
   const evidence = await repo.listEvidence(initiative.id);
 
   const management=await readManagement();
-  if (!isDemoWriteEnabled) {
+  if (!isDemoWriteEnabled || initiative.archivedAt) {
     return (
       <div className={styles.page}>
         <Link prefetch={false} href={`/initiatives/${slug}/knowledge`} className={styles.back}>
           ← Knowledge
         </Link>
         <h2 className={styles.title}>Add Knowledge entry</h2>
-        <p className={styles.notice}>{WRITE_DISABLED_MESSAGE}</p>
+        <p className={styles.notice}>{initiative.archivedAt ? "This initiative is archived and read-only. An administrator can restore it in Manage initiative." : WRITE_DISABLED_MESSAGE}</p>
       </div>
     );
   }
