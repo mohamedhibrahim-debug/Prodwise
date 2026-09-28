@@ -15,7 +15,7 @@ It supersedes chat context. Later phases never start before earlier ones are com
 | 6 | Error states & edge-case hardening | Complete |
 | 7 | Final product polish / forgotten details | Complete |
 | 8 | Production readiness & trust sweep | Complete |
-| 9 | Final full acceptance (+ final UX review and fresh red-team) | Not started |
+| 9 | Final full acceptance (+ final UX review and fresh red-team) | Complete |
 | 10 | Final candidate (push to `prodwise/p1-core-operating-loop`, verify remote SHA, no force-push) | Not started |
 | 11 | Deploy exact tested candidate (non-destructive migrations) | Not started |
 | 12 | Production smoke + final report (verdict: READY FOR DEMO / READY WITH ONE MANUAL STEP / BLOCKED) | Not started |
@@ -103,8 +103,14 @@ Changes: app-wide navigation progress (capture-phase, same-tab internal links on
 - Checks run: privacy/secret scan (1,109 files, 106 client assets, nothing leaked), search, archived exclusions (Home, Notifications, Roadmap; read-only page and forms), signed-out pages/APIs/OAuth callback, viewer restrictions, cross-screen attention counts, server log, build, a11y (15 screens), unit 342, DB 17 proofs.
 - Runbooks: `DEMO-RESET.md`, `CONNECTOR-LIVE-VERIFICATION.md`.
 
+## Phase 9 — result (final acceptance, local)
+- Gates: typecheck; 347 unit tests; fresh replay of 43 migrations with every DB proof; production upgrade rehearsal (production-branch schema, seed and hosted Demo → 27 pending migrations → deploy-path Demo reset → every pre-existing non-Demo row intact); production build; browser acceptance `npm run test:e2e` 23/23 (auth and sign-up, RBAC, organization isolation, Demo labelling and connector refusal, search, notifications, archived exclusions, 404s, offline recovery, cross-screen counts, 390/768/1440 overflow); accessibility 15/15 screens; privacy scan clean; server log clean; performance warm within noise of the Phase 5 baseline (first feedback 28–49 ms).
+- Legacy Stage 2.2 UI script retired (it asserted copy and controls the product no longer has); `scripts/e2e/acceptance.mjs` replaces it.
+- Final UX review (0 Blocker, 8 Major) and final red-team (0 Blocker, 2 Major): all Majors fixed. Most important: confirmed Knowledge content is immutable in place (repositories + migration 0043), which previously kept a confirmation nobody gave.
+- Claude live: no API key in this environment, so only the not-configured behaviour is verified locally (no reading offered, nothing invented); the live call is verified in the production smoke on synthetic Demo evidence.
+- Accepted limitation: Supabase leaked-password protection needs a paid plan; minimum password length stays 8.
+
 ## Known manual steps (production)
-- Supabase Auth → enable leaked-password protection (security advisor WARN).
 - Google OAuth app is in Testing: refresh tokens for these scopes expire after 7 days, so expect "Reconnect" weekly until the app is published/verified.
 - Set `PRODWISE_PUBLIC_URL=https://prodwise-flax.vercel.app` in Vercel (otherwise the Vercel production domain is used for sign-up links).
 - Supabase Auth → URL configuration must allow `https://prodwise-flax.vercel.app/signup/verify`.
