@@ -19,6 +19,13 @@ export const isStructuredActivity = (entry: ActivityEntry) =>
 export function activitySummary(entry: ActivityEntry): string {
   const subject = field(entry.payload, "subject");
   switch (entry.eventType) {
+    case "AI_PROPOSAL_CONFIRMED": {
+      // "Human confirmed open question proposal from Steering sync" → "Open question added from Steering sync".
+      const m = /^Human confirmed ([\w ]+?) proposal from (.+?)( · unverified Knowledge)?$/.exec(entry.summary);
+      if (!m) return entry.summary;
+      const noun = m[1]!.replace(/_/g, " ");
+      return noun === "evidence" ? `Proposal accepted from ${m[2]}` : `${noun[0]!.toUpperCase()}${noun.slice(1)} added from ${m[2]}${m[3] ? " · awaiting verification" : ""}`;
+    }
     case "FINDING_CONFIRMER_ASSIGNED": {
       const label = field(entry.payload, "label");
       return label ? `Confirmer assigned: ${label}` : "Confirmer cleared";

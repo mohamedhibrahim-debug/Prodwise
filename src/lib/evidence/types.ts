@@ -1,5 +1,9 @@
 import type {ClaimType,Domain} from '../domain/types';
 export type ProposalType=ClaimType|'DELIVERY'|'ACTION'|'OPEN_QUESTION'|'CHANGED_REQUIREMENT'|'RELATIONSHIP';
+/** Plain words for a proposal type in history lines ("open question", not OPEN_QUESTION). */
+export function proposalNoun(type:ProposalType):string {
+  return ({ACTION:'commitment',DELIVERY:'delivery date',OPEN_QUESTION:'open question',CHANGED_REQUIREMENT:'changed requirement',BUSINESS_RULE:'business rule'} as Record<string,string>)[type] ?? type.toLowerCase();
+}
 export type SubmissionKind='PASTED'|'MEETING_NOTES';
 export interface ProposalPayload {subject:string;attribute:string;value:string;domain:Domain;phase:string|null;factKind?:'TARGET_LIVE'|'NEXT_MILESTONE'|'DEV_STARTED'|'ACTUAL_LIVE';date?:string|null;extent?:'PARTIAL'|'FULL'|null;
  /** CHANGED_REQUIREMENT: the existing claim this proposes to supersede, pinned to the revision that was read. */

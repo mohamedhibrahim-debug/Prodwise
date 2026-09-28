@@ -95,7 +95,18 @@ export function buildInitiativeHistory(src:HistorySources):HistoryEvent[]{
   out.push({id:`k:${e.id}`,at:e.at,category:'RISKS_QUESTIONS',label:e.type==='STARTED'?'Risk tracking started':e.type==='CARRIED'?'Risk tracking carried forward':r.status==='CLOSED'?'Risk closed':r.status==='ACCEPTED'?'Risk accepted':r.status==='MITIGATING'?'Risk being mitigated':e.type==='STATUS'?'Risk reopened':'Risk updated',sentence:e.type==='UPDATED'?`${e.statement} — ${[e.before?.ownerMemberId!==r.ownerMemberId?`owner ${member(r.ownerMemberId)}`:null,e.before?.mitigationText!==r.mitigationText?`mitigation: ${r.mitigationText??'removed'}`:null,e.before?.mitigationActionId!==r.mitigationActionId?(r.mitigationActionId?'linked to a commitment':'commitment link removed'):null].filter(Boolean).join(' · ')}`:e.statement,actor:e.actor.label,rationale:e.note||null,href:`${base}/context#risk-${r.claimId}`,hrefLabel:'Open risk',provenance:null});}
  for(const r of src.reviews){if(r.status!=='FINAL'||!r.finalizedAt||!r.sections.some(s=>s.initiativeId===id))continue;
   out.push({id:`w:${r.id}`,at:r.finalizedAt,category:'LIFECYCLE',label:'Weekly Review finalized',sentence:`${r.week.replace(/^\d{4}-/,'')} Final includes this initiative`,actor:r.preparedAsFixture?'Prodwise demo setup':r.finalizedByLabel??'Recorded actor',rationale:null,href:`/weekly-review?week=${r.week}&initiative=${src.slug}`,hrefLabel:'Open Final as stored',provenance:null});}
- return out.sort((a,b)=>b.at.localeCompare(a.at)||b.id.localeCompare(a.id));
+ return collapseBursts(out.sort((a,b)=>b.at.localeCompare(a.at)||b.id.localeCompare(a.id)));
+}
+
+/** A burst of identical entries (same kind, sentence and person within one minute — e.g. twenty Jira issues mapped at once)
+ * reads as one line with a count. Nothing is hidden: the count says how many records it stands for. */
+export function collapseBursts(events:HistoryEvent[]):HistoryEvent[]{
+ const out:(HistoryEvent&{count?:number;baseSentence?:string})[]=[];
+ for(const e of events){const last=out.at(-1);
+  if(last&&last.label===e.label&&last.actor===e.actor&&last.category===e.category&&last.at.slice(0,16)===e.at.slice(0,16)&&(last.baseSentence??last.sentence)===e.sentence){last.count=(last.count??1)+1;last.baseSentence??=e.sentence;
+   last.sentence=e.category==='SOURCES'&&/^Source item mapped/.test(last.baseSentence)?`${last.count} source items mapped to this initiative`:`${last.baseSentence} · ${last.count} records`;continue;}
+  out.push({...e});}
+ return out.map(({baseSentence:_b,count:_c,...e})=>e);
 }
 
 /** Newest first, 50 per page; the cursor is the last event's position key. */

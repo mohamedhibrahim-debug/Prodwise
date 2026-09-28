@@ -25,6 +25,7 @@ import type { InitiativeContext } from "../workspace/readiness.ts";
 import { runReview } from "../review/engine.ts";
 import { prepareDisposition, type FindingDisposition } from "../review/dispositions.ts";
 import type { Anchor, Confirmation, MeetingNote, Proposal, ProposalPayload, ReadingAttempt, Submission } from "../evidence/types.ts";
+import { proposalNoun } from "../evidence/types.ts";
 
 export const DEMO_V3_VERSION = "prodwise-graduation-2026-09-v3";
 export const DEMO_V3_CUTOFF = DEMO_CUTOFF;
@@ -472,7 +473,7 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
     Object.assign(p, { status: "CONFIRMED", version: p.version + 1, decidedBy: who(by).userId, decidedAt: when, reason, resultType, resultId });
     store.evidenceConfirmations.push({ proposalId: p.id, workspaceId, initiativeId: p.initiativeId, proposalVersion: 1, actorId: who(by).userId, actorLabel: who(by).displayName, at: when, resultType, resultId, requestId: hashId(`confirm:${p.id}`) });
     const sub = store.evidenceSubmissions.find(s => s.id === p.submissionId)!; const slug = store.initiatives.find(i => i.id === p.initiativeId)!.slug;
-    log(slug, when, "AI_PROPOSAL_CONFIRMED", `Human confirmed ${p.type.toLowerCase()} proposal from ${sub.title}`, by, { entityType: resultType, entityId: resultId, payload: { proposalId: p.id, submissionId: sub.id, receipt: { type: resultType, id: resultId } } });
+    log(slug, when, "AI_PROPOSAL_CONFIRMED", `Human confirmed ${proposalNoun(p.type)} proposal from ${sub.title}`, by, { entityType: resultType, entityId: resultId, payload: { proposalId: p.id, submissionId: sub.id, receipt: { type: resultType, id: resultId } } });
   }
   function reject(p: Proposal, by: string, when: string, reason: string) {
     Object.assign(p, { status: "REJECTED", version: p.version + 1, decidedBy: who(by).userId, decidedAt: when, reason });
