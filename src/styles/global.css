@@ -172,3 +172,10 @@ a:has(> .link-pending){position:relative}
 .nav-progress[data-active]{opacity:1;animation:nav-progress 8s cubic-bezier(.1,.7,.2,1) forwards}
 @keyframes nav-progress{0%{transform:scaleX(0)}10%{transform:scaleX(.35)}100%{transform:scaleX(.92)}}
 @media (prefers-reduced-motion:reduce){.nav-progress[data-active]{animation:none;transform:scaleX(1);opacity:.7}}
+
+/* Why a button is not available yet (instead of a silently disabled control). */
+.disabled-reason{margin:var(--s-1) 0 0;font-size:var(--t-sm);color:var(--ink-500)}
+
+/* Page-level save confirmation (see SavedNotice): sticky so it is seen wherever the form was. */
+.saved-notice{position:sticky;top:var(--s-2);z-index:30;margin:0;padding:var(--s-2) var(--s-4);border-left:3px solid var(--state-ready-edge);background:var(--state-ready-bg);color:var(--state-ready-fg);font-weight:var(--fw-semibold)}
+.saved-notice:empty{padding:0;border:0;background:none}

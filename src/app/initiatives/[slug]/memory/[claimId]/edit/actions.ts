@@ -1,4 +1,5 @@
 "use server";
+import { safeMessage } from '@/lib/errors/safe-message';
 import { assertFormWorkspace } from "@/lib/auth/scope";
 import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
@@ -107,7 +108,7 @@ export async function updateClaimAction(
     if (error instanceof EvidenceAccessError) return { error: error.message };
     if (error instanceof WriteDisabledError) return { error: error.message };
     return {
-      error: error instanceof Error ? error.message : "Could not save the claim.",
+      error: safeMessage(error, "Could not save the claim."),
     };
   }
 

@@ -69,7 +69,7 @@ export function reviseRelationship(rows:InitiativeRelationship[],events:Relation
   const existing=active.find(r=>r.type===t&&r.fromInitiativeId===f&&r.toInitiativeId===to);
   if(existing)throw Error(`Already recorded by ${existing.confirmedByLabel}.`);
   if(t==='PART_OF'&&active.some(r=>r.type==='PART_OF'&&r.fromInitiativeId===f))throw Error(`${fromI.name} is already part of another initiative. End that relationship first.`);
-  if((t==='PART_OF'||t==='DEPENDS_ON')&&reaches(active,t,to,f))throw Error(t==='DEPENDS_ON'?'This would create a circular dependency.':'This would make an initiative part of itself.');
+  if((t==='PART_OF'||t==='DEPENDS_ON')&&reaches(active,t,to,f))throw Error(t==='DEPENDS_ON'?'This would create a circular dependency: the other initiative already depends on this one, directly or through others. End or change that relationship first, or record this one as Related.':'This would make an initiative part of itself through its parts. Change the existing part-of relationship first.');
   next={id:randomUUID(),workspaceId:ctx.workspaceId,fromInitiativeId:f,toInitiativeId:to,type:t,rationale,providerFactKind:provider,neededByFactKind:needed,evidenceId:cmd.evidenceId??null,evidenceAnchorId:cmd.evidenceAnchorId??null,originProposalId:cmd.originProposalId??null,originHref:cmd.originHref??null,status:'ACTIVE',createdBy:ctx.actor.id,confirmedBy:ctx.actor.id,confirmedByLabel:ctx.actor.label,confirmedAt:at,endedBy:null,endedByLabel:null,endedAt:null,endReason:null,updatedAt:at,revision:1};
   type='CONFIRMED';
  }else{

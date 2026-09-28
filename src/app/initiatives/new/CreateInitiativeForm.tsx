@@ -1,5 +1,6 @@
 "use client";
-import {useActionState,useEffect,useRef} from 'react';
+import {useFormAction} from '@/components/forms/useFormAction';
+import {useEffect,useRef} from 'react';
 import Link from 'next/link';
 import {ScopeField} from '@/components/auth/WorkspaceScope';
 import {BUSINESS_LINES,STAGES} from '@/lib/domain/types';
@@ -8,10 +9,10 @@ import type {DeliveryMember} from '@/lib/delivery/types';
 import {createInitiativeAction} from './actions';
 import styles from './new.module.css';
 export function CreateInitiativeForm({requestId,members,selfId,canAssign}:{requestId:string;members:DeliveryMember[];selfId:string|null;canAssign:boolean}){
- const [state,action,pending]=useActionState(createInitiativeAction,{error:null});const error=useRef<HTMLParagraphElement>(null);
+ const [state, action, pending, keepAction] = useFormAction(createInitiativeAction,{error:null});const error=useRef<HTMLParagraphElement>(null);
  useEffect(()=>{if(state.error)error.current?.focus();},[state]);
  const eligible=members.filter(m=>m.active&&m.role!=='VIEWER'),self=eligible.find(m=>m.id===selfId);
- return <form action={action} className={styles.form}>
+ return <form action={action} onReset={keepAction} className={styles.form}>
  <ScopeField/><input type="hidden" name="clientRequestId" value={requestId}/>
  {state.error&&<p ref={error} tabIndex={-1} role="alert" className={styles.error}>{state.error}</p>}
  <fieldset className={styles.group}><legend>Basics <span className={styles.optional}>* Required to create</span></legend>

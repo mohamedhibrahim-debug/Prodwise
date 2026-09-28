@@ -1,6 +1,7 @@
 "use client";
+import {useFormAction} from '@/components/forms/useFormAction';
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import type { ImportState } from "@/app/initiatives/[slug]/sources/import/actions";
 import styles from "./connectors.module.css";
 
@@ -9,11 +10,11 @@ const ROLE_LABEL = { REQUIREMENTS: "Requirements source", DELIVERY: "Delivery so
 
 /** Explicit multi-select. Selection survives a failed import; results link to each saved snapshot. */
 export function ImportForm({ action, rows, slug, connector, label, defaultRole, site, figma }: { action: (s: ImportState, f: FormData) => Promise<ImportState>; rows: ImportRow[]; slug: string; connector: string; label: string; defaultRole: keyof typeof ROLE_LABEL; site?: string | null; figma?: boolean }) {
-  const [state, formAction, pending] = useActionState(action, { error: null, outcomes: [] });
+  const [state, formAction, pending, keepFormAction] = useFormAction(action, { error: null, outcomes: [] });
   const [selected, setSelected] = useState<string[]>([]);
   const toggle = (r: string) => setSelected(s => s.includes(r) ? s.filter(x => x !== r) : s.length >= 10 ? s : [...s, r]);
   const groups = [...new Set(rows.map(r => r.group ?? ""))];
-  return <form action={formAction} className={styles.importForm} aria-busy={pending}>
+  return <form action={formAction} onReset={keepFormAction} className={styles.importForm} aria-busy={pending}>
     <input type="hidden" name="slug" value={slug} /><input type="hidden" name="connector" value={connector} />{site && <input type="hidden" name="site" value={site} />}
     {selected.map(r => <input key={r} type="hidden" name="ref" value={r} />)}
     {groups.map(g => <fieldset key={g} className={styles.results}><legend className={g ? styles.groupLegend : "visually-hidden"}>{g || `${label} results`}</legend>

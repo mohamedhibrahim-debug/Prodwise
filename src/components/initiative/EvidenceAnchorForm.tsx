@@ -1,7 +1,7 @@
 "use client";
+import {useFormAction} from '@/components/forms/useFormAction';
 import { ScopeField } from "@/components/auth/WorkspaceScope";
 
-import { useActionState } from "react";
 import { updateEvidenceAnchorAction } from "@/app/initiatives/[slug]/memory/actions";
 import styles from "@/app/initiatives/[slug]/sources/evidence-form.module.css";
 import { Button } from "@/components/primitives/Button";
@@ -12,9 +12,9 @@ export function EvidenceAnchorForm({
   slug: string; claimId: string; evidenceId: string;
   locator: string | null; excerpt: string | null;
 }) {
-  const [state, action, pending] = useActionState(updateEvidenceAnchorAction, { error: null });
+  const [state, action, pending, keepAction] = useFormAction(updateEvidenceAnchorAction, { error: null });
   return (
-    <form action={action}>
+    <form action={action} onReset={keepAction}>
       <ScopeField />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="claimId" value={claimId} />

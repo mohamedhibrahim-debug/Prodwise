@@ -49,3 +49,5 @@
   background: var(--navy-900);
   color: var(--panel);
 }
+.actions{display:flex;flex-wrap:wrap;gap:var(--s-3);align-items:center}
+.home{color:var(--accent-700);font-weight:var(--fw-semibold)}

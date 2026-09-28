@@ -15,7 +15,7 @@ import {adminClient,authClient,isLocalAuth,localAuthStore,secret,signInToWorkspa
 const VERIFIED_COOKIE='prodwise_signup';
 export interface SignupOption {organizationId:string;name:string;workspaceId:string;member:boolean;}
 export interface SignupState {email:string;existingIdentity:boolean;organizations:SignupOption[];}
-const SQL_ERRORS:Record<string,string>={EMAIL_INVALID:'Enter a valid work email.',RATE_LIMITED:'Too many attempts for this address. Try again in an hour.',EMAIL_NOT_VERIFIED:'Verify your email first.',SIGNUP_NOT_ALLOWED:'This organization does not accept sign-up for your address.',ACCOUNT_EXISTS:'You already have a Prodwise account. Sign in instead.',NAME_REQUIRED:'Enter your name up to 120 characters.'};
+const SQL_ERRORS:Record<string,string>={EMAIL_INVALID:'Enter a valid work email.',RATE_LIMITED:'Too many attempts for this address. Try again in an hour.',EMAIL_NOT_VERIFIED:'Verify your email first.',SIGNUP_NOT_ALLOWED:'This organization does not accept self sign-up for your address. Ask one of its administrators for an invitation, or sign in if you already have an account.',ACCOUNT_EXISTS:'You already have a Prodwise account. Sign in instead.',NAME_REQUIRED:'Enter your name up to 120 characters.'};
 function friendly(message:string){const code=Object.keys(SQL_ERRORS).find(k=>message.includes(k));return code?new AccessError(code,SQL_ERRORS[code]!):new Error('Sign-up is temporarily unavailable. Please try again.');}
 async function clientKey(){const h=await headers();const ip=(h.get('x-forwarded-for')??'').split(',')[0]!.trim()||h.get('x-real-ip')||'unknown';return createHash('sha256').update(`prodwise-signup:${ip}`).digest('hex');}
 
@@ -54,7 +54,7 @@ export async function finishSignup(organizationId:string,displayName:string,pass
  const v=await readVerified();if(!v)throw new AccessError('EMAIL_NOT_VERIFIED','Your verification expired. Start again.');
  const state=await signupState();if(!state||state.existingIdentity)throw new AccessError('ACCOUNT_EXISTS','You already have a Prodwise account. Sign in instead.');
  // The organization must be one of the verified address's eligible options; the id alone grants nothing.
- const option=state.organizations.find(o=>o.organizationId===organizationId&&!o.member);if(!option)throw new AccessError('SIGNUP_NOT_ALLOWED','This organization does not accept sign-up for your address.');
+ const option=state.organizations.find(o=>o.organizationId===organizationId&&!o.member);if(!option)throw new AccessError('SIGNUP_NOT_ALLOWED','This organization does not accept self sign-up for your address. Ask one of its administrators for an invitation, or sign in if you already have an account.');
  if(password.length<12||password.length>256)throw new AccessError('PASSWORD_INVALID','Use a password between 12 and 256 characters.');
  // Reject the obvious: a repeated fragment, a password made from the address, or a well-known phrase.
  const lower=password.toLowerCase(),local=v.email.split('@')[0]!.toLowerCase();

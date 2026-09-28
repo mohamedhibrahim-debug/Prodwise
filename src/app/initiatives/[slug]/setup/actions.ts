@@ -1,4 +1,5 @@
 'use server';
+import { safeMessage } from '@/lib/errors/safe-message';
 import {revalidatePath} from 'next/cache';
 import {mutateDelivery} from '@/lib/delivery/repository';
 import {recordFact,canonical} from '@/lib/delivery/model';
@@ -31,5 +32,5 @@ export async function saveSetupDelivery(_previous:SetupSaveState,form:FormData):
   });
   revalidatePath('/initiatives','layout');revalidatePath('/');revalidatePath('/roadmap');revalidatePath('/weekly-review');
   return {error:null,message:'Delivery context saved. Continue to Sources or return later; previous revisions remain in history.'};
- }catch(error){return {error:error instanceof Error?error.message:'Delivery context could not be saved.',message:null};}
+ }catch(error){return {error:safeMessage(error, 'Delivery context could not be saved.'),message:null};}
 }

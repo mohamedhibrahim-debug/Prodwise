@@ -8,7 +8,7 @@ const MESSAGES:Record<string,string>={
  INITIATIVE_ARCHIVED:'Archived — restore to edit. Nothing was changed.',ARCHIVED:'Archived — restore to edit. Nothing was changed.',
  INITIATIVE_ACCESS:'That initiative is not available in this organization.',
  STALE_RELATIONSHIP:'This relationship was changed by someone else. Your change was not saved; your input is kept.',
- RELATIONSHIP_DUPLICATE:'This relationship is already recorded.',RELATIONSHIP_CYCLE:'This would create a circular dependency.',
+ RELATIONSHIP_DUPLICATE:'This relationship is already recorded.',RELATIONSHIP_CYCLE:'This would create a circular dependency: the other initiative already depends on this one, directly or through others. End or change that relationship first, or record this one as Related.',
  RELATIONSHIP_PARENT:'This initiative is already part of another initiative. End that relationship first.',
  RELATIONSHIP_PERMISSION:'Only the initiative owner, a Product Lead or administration can record or change its relationships.',
  RELATIONSHIP_TARGET_ARCHIVED:'New relationships to archived initiatives are not allowed.',RELATIONSHIP_SELF:'An initiative cannot relate to itself.',

@@ -1,7 +1,8 @@
 "use client";
+import {useFormAction} from '@/components/forms/useFormAction';
 import { ScopeField } from "@/components/auth/WorkspaceScope";
 
-import { useActionState, useId, useState } from "react";
+import { useId, useState } from "react";
 import { decideAction, confirmerAction } from "@/app/initiatives/[slug]/decisions/actions";
 import type { ReviewFinding } from "@/lib/domain/types";
 import { DOMAIN_LABEL } from "@/lib/domain/labels";
@@ -12,7 +13,7 @@ import styles from "./FindingRow.module.css";
 const EMPTY: DecisionFormState = { error: null };
 
 export function DecideConflictForm({ finding, slug }: { finding: ReviewFinding; slug: string }) {
-  const [state, action, pending] = useActionState(decideAction, EMPTY);
+  const [state, action, pending, keepAction] = useFormAction(decideAction, EMPTY);
   const [choice, setChoice] = useState("existing");
   const [chosen, setChosen] = useState("");
   const [corrected, setCorrected] = useState("");
@@ -80,12 +81,12 @@ export function DecideConflictForm({ finding, slug }: { finding: ReviewFinding; 
 }
 
 export function ConfirmerForm({ finding, slug }: { finding: ReviewFinding; slug: string }) {
-  const [state, action, pending] = useActionState(confirmerAction, EMPTY);
+  const [state, action, pending, keepAction] = useFormAction(confirmerAction, EMPTY);
   const [label, setLabel] = useState(finding.confirmerLabel ?? "");
   const id = useId();
   return <details className={styles.decisionForm}>
     <summary className={styles.resolveTrigger}>{finding.confirmerLabel ? "Change confirmer" : "Assign confirmer"}</summary>
-    <form action={action}>
+    <form action={action} onReset={keepAction}>
       <ScopeField />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="fingerprint" value={finding.fingerprint} />

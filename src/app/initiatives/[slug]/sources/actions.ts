@@ -1,4 +1,5 @@
 "use server";
+import { safeMessage } from '@/lib/errors/safe-message';
 import { assertWorkspaceScope } from "@/lib/auth/scope";
 import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
@@ -29,7 +30,7 @@ function isBoundary(value: unknown): value is EvidenceRelation {
 function toMessage(error: unknown): string {
   if (error instanceof EvidenceAccessError) return error.message;
   if (error instanceof WriteDisabledError) return error.message;
-  return error instanceof Error ? error.message : "Could not update evidence.";
+  return safeMessage(error, "Could not update evidence.");
 }
 
 /**

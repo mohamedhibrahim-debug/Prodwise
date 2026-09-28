@@ -1,4 +1,5 @@
 "use server";
+import { safeMessage } from '@/lib/errors/safe-message';
 import { assertFormWorkspace } from "@/lib/auth/scope";
 import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
@@ -33,7 +34,7 @@ export async function updateEvidenceAnchorAction(
   } catch (error) {
     if (error instanceof ClaimAccessError || error instanceof WriteDisabledError)
       return { error: error.message };
-    return { error: error instanceof Error ? error.message : "Could not save the evidence anchor." };
+    return { error: safeMessage(error, "Could not save the evidence anchor.") };
   }
   revalidatePath(`/initiatives/${slug}/knowledge`);
   return { error: null, saved: true };

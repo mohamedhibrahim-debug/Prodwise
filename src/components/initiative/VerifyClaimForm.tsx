@@ -1,7 +1,7 @@
 "use client";
+import {useFormAction} from '@/components/forms/useFormAction';
 import { ScopeField } from "@/components/auth/WorkspaceScope";
 
-import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/primitives/Button";
 import styles from "@/app/initiatives/[slug]/sources/evidence-form.module.css";
@@ -23,9 +23,9 @@ export function VerifyClaimForm({
   claimId: string;
   expectedUpdatedAt: string;
 }) {
-  const [state, submit] = useActionState(action, { error: null });
+  const [state, submit, , keepSubmit] = useFormAction(action, { error: null });
   return (
-    <form action={submit} className={styles.form}>
+    <form action={submit} onReset={keepSubmit} className={styles.form}>
       <ScopeField />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="claimId" value={claimId} />

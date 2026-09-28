@@ -1,6 +1,8 @@
 'use client';
+import {failureMessage} from '@/components/forms/useFormAction';
+import { DateField } from '@/components/forms/DateField';
 import Link from 'next/link';
-import {createContext,useContext,useState,useTransition} from 'react';
+import {createContext,useContext,useState,useTransition,useRef} from 'react';
 import {ScopeField} from '@/components/auth/WorkspaceScope';
 import {questionAction,riskAction,type ContextActionState} from '@/app/initiatives/[slug]/context/actions';
 import styles from './context.module.css';
@@ -19,15 +21,18 @@ const rid=()=>crypto.randomUUID();
 const Notice=createContext<(m:{text:string;anchor:string})=>void>(()=>{});
 function useCommand(action:(p:ContextActionState,f:FormData)=>Promise<ContextActionState>,anchor:string,onSuccess?:()=>void){
  const notify=useContext(Notice);const [pending,start]=useTransition();const [state,setState]=useState<ContextActionState>({error:null,message:null});const [requestId,setRequestId]=useState(rid);
- const run=(f:FormData)=>start(async()=>{const r=await action({error:null,message:null},f);setState(r.error?r:{error:null,message:null});if(!r.error){setRequestId(rid());onSuccess?.();notify({text:r.message??'Saved.',anchor:r.id&&anchor==='new-question'?`question-${r.id}`:anchor});}});
- return {run,pending,state,requestId};
+ const failed=useRef(false);
+ const run=(f:FormData)=>start(async()=>{let r:ContextActionState;try{r=await action({error:null,message:null},f);}catch(error){const digest=(error as {digest?:unknown})?.digest;if(typeof digest==='string'&&digest.startsWith('NEXT_'))throw error;r={error:await failureMessage(),message:null};}failed.current=Boolean(r.error);setState(r.error?r:{error:null,message:null});if(!r.error){setRequestId(rid());onSuccess?.();notify({text:r.message??'Saved.',anchor:r.id&&anchor==='new-question'?`question-${r.id}`:anchor});}});
+ // React resets a form after its action; keep what was typed when the save failed.
+ const keep=(e:React.FormEvent<HTMLFormElement>)=>{if(failed.current)e.preventDefault();};
+ return {run,pending,state,requestId,keep};
 }
 
 function Feedback({state}:{state:ContextActionState}){return <>{state.error&&<p role="alert" className={styles.error}>{state.error}</p>}{state.message&&!state.error&&<p role="status" className={styles.ok}>✓ {state.message}</p>}</>;}
 function Hidden({slug,op,id,revision,requestId}:{slug:string;op:string;id?:string;revision?:number;requestId:string}){return <><ScopeField/><input type="hidden" name="slug" value={slug}/><input type="hidden" name="operation" value={op}/>{id&&<input type="hidden" name="id" value={id}/>}<input type="hidden" name="expectedRevision" value={revision??0}/><input type="hidden" name="requestId" value={requestId}/></>;}
 
 function RiskRow({r,slug,canManage,members,actions}:{r:RiskItem;slug:string;canManage:boolean;members:Option[];actions:Option[]}){
- const {run:act,pending,state,requestId}=useCommand(riskAction,`risk-${r.claimId}`);const [status,setStatus]=useState<Status>(r.tracking?.status??'OPEN');
+ const {run:act,pending,state,requestId,keep}=useCommand(riskAction,`risk-${r.claimId}`);const [status,setStatus]=useState<Status>(r.tracking?.status??'OPEN');
  const t=r.tracking;const needsReason=status==='ACCEPTED'||status==='CLOSED';
  return <li className={styles.item} id={`risk-${r.claimId}`} data-status={t?.status.toLowerCase()??r.state.toLowerCase()}>
   <div className={styles.itemHead}>{t?<span className={styles.chip} data-status={t.status.toLowerCase()}><span aria-hidden="true">{STATUS[t.status].glyph}</span> {STATUS[t.status].label}</span>:r.state==='AWAITING_VERIFICATION'?<span className={styles.chip} data-status="unverified"><span aria-hidden="true">○</span> Awaiting verification</span>:r.state==='SUPERSEDED'?<span className={styles.chip} data-status="superseded"><span aria-hidden="true">↻</span> Statement superseded</span>:<span className={styles.chip} data-status="untracked"><span aria-hidden="true">●</span> Open · not tracked</span>}
@@ -36,14 +41,14 @@ function RiskRow({r,slug,canManage,members,actions}:{r:RiskItem;slug:string;canM
   {t&&<dl className={styles.facts}><div><dt>Owner</dt><dd>{t.ownerName??'No owner recorded'}</dd></div><div><dt>Mitigation</dt><dd>{t.mitigation??(t.actionTitle?'':'No mitigation recorded')}{t.actionTitle&&<> {t.mitigation?'· ':''}<Link prefetch={false} href={`/initiatives/${slug}/actions?action=${t.actionId}`}>Commitment: {t.actionTitle}</Link></>}</dd></div></dl>}
   <p className={styles.source}>{r.source?<Link prefetch={false} href={r.source.href}>Source · {r.source.label}</Link>:'Source · entered by hand'} · <Link prefetch={false} href={`/initiatives/${slug}/knowledge?view=all#claim-${r.claimId}`}>Knowledge entry</Link></p>
   <div className={styles.actions}>
-   {r.state==='NOT_TRACKED'&&canManage&&<form action={act}><Hidden slug={slug} op="START" requestId={requestId}/><input type="hidden" name="claimId" value={r.claimId}/><button className={styles.secondary} disabled={pending}>{pending?'Starting…':'Track this risk'}</button></form>}
+   {r.state==='NOT_TRACKED'&&canManage&&<form action={act} onReset={keep}><Hidden slug={slug} op="START" requestId={requestId}/><input type="hidden" name="claimId" value={r.claimId}/><button className={styles.secondary} disabled={pending}>{pending?'Starting…':'Track this risk'}</button></form>}
    {r.state==='AWAITING_VERIFICATION'&&<Link prefetch={false} className={styles.secondary} href={`/initiatives/${slug}/knowledge?view=all#claim-${r.claimId}`}>Verify in Knowledge</Link>}
-   {r.state==='SUPERSEDED'&&t&&canManage&&r.replacementClaimId&&<form action={act}><Hidden slug={slug} op="CARRY" id={t.id} requestId={requestId}/><input type="hidden" name="claimId" value={r.replacementClaimId}/><button className={styles.secondary} disabled={pending}>Carry tracking forward</button></form>}
-   {t&&r.state==='TRACKED'&&r.canStatus&&<details className={styles.more}><summary>Change status</summary><form action={act} className={styles.sheet}><Hidden slug={slug} op="STATUS" id={t.id} revision={t.revision} requestId={requestId}/>
+   {r.state==='SUPERSEDED'&&t&&canManage&&r.replacementClaimId&&<form action={act} onReset={keep}><Hidden slug={slug} op="CARRY" id={t.id} requestId={requestId}/><input type="hidden" name="claimId" value={r.replacementClaimId}/><button className={styles.secondary} disabled={pending}>Carry tracking forward</button></form>}
+   {t&&r.state==='TRACKED'&&r.canStatus&&<details className={styles.more}><summary>Change status</summary><form action={act} onReset={keep} className={styles.sheet}><Hidden slug={slug} op="STATUS" id={t.id} revision={t.revision} requestId={requestId}/>
     <fieldset className={styles.statusChoice}><legend>Status</legend>{(Object.keys(STATUS) as Status[]).map(s=><label key={s}><input type="radio" name="status" value={s} checked={status===s} onChange={()=>setStatus(s)} disabled={s===t.status}/><span aria-hidden="true">{STATUS[s].glyph}</span> {STATUS[s].label}{s===t.status?' (current)':''}</label>)}</fieldset>
     {needsReason&&<label>Why is it {status==='ACCEPTED'?'accepted':'closed'}?<textarea name="reason" rows={2} maxLength={2000} required/></label>}
     <button className={styles.primary} disabled={pending||status===t.status}>{pending?'Saving…':'Save status'}</button></form></details>}
-   {t&&r.state==='TRACKED'&&canManage&&<details className={styles.more}><summary>Owner & mitigation</summary><form action={act} className={styles.sheet}><Hidden slug={slug} op="UPDATE" id={t.id} revision={t.revision} requestId={requestId}/>
+   {t&&r.state==='TRACKED'&&canManage&&<details className={styles.more}><summary>Owner & mitigation</summary><form action={act} onReset={keep} className={styles.sheet}><Hidden slug={slug} op="UPDATE" id={t.id} revision={t.revision} requestId={requestId}/>
     <label>Owner<select name="ownerMemberId" defaultValue={t.ownerId??''}><option value="">No owner</option>{members.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label>
     <label>Mitigation <span className={styles.hint}>up to 500 characters</span><textarea name="mitigationText" rows={2} maxLength={500} defaultValue={t.mitigation??''}/></label>
     <label>Linked commitment<select name="mitigationActionId" defaultValue={t.actionId??''}><option value="">None</option>{actions.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}</select></label>
@@ -54,7 +59,7 @@ function RiskRow({r,slug,canManage,members,actions}:{r:RiskItem;slug:string;canM
 }
 
 function QuestionRow({q,slug,members,claims}:{q:QuestionItem;slug:string;members:Option[];claims:Option[]}){
- const {run:act,pending,state,requestId}=useCommand(questionAction,`question-${q.id}`);const [mode,setMode]=useState<'note'|'claim'>('note');
+ const {run:act,pending,state,requestId,keep}=useCommand(questionAction,`question-${q.id}`);const [mode,setMode]=useState<'note'|'claim'>('note');
  return <li className={styles.item} id={`question-${q.id}`} data-status={q.status.toLowerCase()} data-overdue={q.overdueDays?true:undefined}>
   <div className={styles.itemHead}><span className={styles.chip} data-status={q.status==='OPEN'?(q.overdueDays?'overdue':'question'):q.status.toLowerCase()}><span aria-hidden="true">{q.status==='OPEN'?'?':q.status==='ANSWERED'?'✓':'–'}</span> {q.status==='OPEN'?(q.overdueDays?`Overdue ${q.overdueDays} ${q.overdueDays===1?'day':'days'}`:'Open'):q.status==='ANSWERED'?'Answered':'Withdrawn'}</span>{q.origin&&(q.origin.href?<Link prefetch={false} className={styles.origin} href={q.origin.href}>{q.origin.label}</Link>:<span className={styles.origin}>{q.origin.label}</span>)}</div>
   <p className={styles.question}>{q.question}</p>
@@ -62,25 +67,25 @@ function QuestionRow({q,slug,members,claims}:{q:QuestionItem;slug:string;members
   {q.status==='ANSWERED'&&<p className={styles.answer}>{q.answerClaim?<><strong>Confirmed Knowledge →</strong> <Link prefetch={false} href={q.answerClaim.href}>{q.answerClaim.label}</Link></>:<><strong>Answer note — not in Knowledge.</strong> “{q.answerNote}”</>}<span> · {q.resolvedBy}{q.resolvedAt?`, ${day(q.resolvedAt)}`:''}</span></p>}
   {q.status==='WITHDRAWN'&&<p className={styles.answer}><strong>Withdrawn:</strong> {q.reason}<span> · {q.resolvedBy}{q.resolvedAt?`, ${day(q.resolvedAt)}`:''}</span></p>}
   <div className={styles.actions}>
-   {q.status==='OPEN'&&q.canResolve&&<details className={styles.more} open={false}><summary className={styles.secondarySummary}>Answer</summary><form action={act} className={styles.sheet}><Hidden slug={slug} op="ANSWER" id={q.id} revision={q.revision} requestId={requestId}/>
+   {q.status==='OPEN'&&q.canResolve&&<details className={styles.more} open={false}><summary className={styles.secondarySummary}>Answer</summary><form action={act} onReset={keep} className={styles.sheet}><Hidden slug={slug} op="ANSWER" id={q.id} revision={q.revision} requestId={requestId}/>
     <fieldset className={styles.statusChoice}><legend>How was it answered?</legend><label><input type="radio" checked={mode==='note'} onChange={()=>setMode('note')}/> With a note</label><label><input type="radio" checked={mode==='claim'} onChange={()=>setMode('claim')} disabled={!claims.length}/> By a confirmed Knowledge entry{!claims.length?' (none confirmed yet)':''}</label></fieldset>
     {mode==='note'?<label>Answer<textarea name="answerNote" rows={2} maxLength={2000} required/><span className={styles.hint}>Kept as an answer note. It does not become Knowledge or change delivery facts.</span></label>:<label>Knowledge entry<select name="answerClaimId" required defaultValue=""><option value="" disabled>Choose a confirmed entry…</option>{claims.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select><span className={styles.hint}>Only confirmed entries can answer a question. <Link prefetch={false} href={`/initiatives/${slug}/knowledge/new`}>Record the answer as Knowledge</Link>, verify it, then link it here.</span></label>}
     <button className={styles.primary} disabled={pending}>{pending?'Saving…':'Record answer'}</button></form></details>}
    {q.status==='OPEN'&&(q.canDetails||q.canResolve)&&<details className={styles.more}><summary>More</summary><div className={styles.sheet}>
-    {q.canDetails&&<form action={act} className={styles.subform}><Hidden slug={slug} op="EDIT" id={q.id} revision={q.revision} requestId={requestId}/><label>Question<textarea name="question" rows={2} maxLength={300} defaultValue={q.question} required/></label><div className={styles.two}><label>Who answers<select name="ownerMemberId" defaultValue={q.ownerId??''}><option value="">Not decided</option>{members.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label><label>Needed by<input type="date" name="dueDate" defaultValue={q.dueDate??''}/></label></div><button className={styles.secondary} disabled={pending}>Save changes</button></form>}
-    {q.canResolve&&<form action={act} className={styles.subform}><Hidden slug={slug} op="WITHDRAW" id={q.id} revision={q.revision} requestId={requestId}/><label>Why is it no longer relevant?<textarea name="reason" rows={2} maxLength={2000} required/></label><button className={styles.quiet} data-tone="danger" disabled={pending}>Withdraw question</button></form>}
+    {q.canDetails&&<form action={act} onReset={keep} className={styles.subform}><Hidden slug={slug} op="EDIT" id={q.id} revision={q.revision} requestId={requestId}/><label>Question<textarea name="question" rows={2} maxLength={300} defaultValue={q.question} required/></label><div className={styles.two}><label>Who answers<select name="ownerMemberId" defaultValue={q.ownerId??''}><option value="">Not decided</option>{members.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label><label>Needed by<DateField name="dueDate" defaultValue={q.dueDate??''}/></label></div><button className={styles.secondary} disabled={pending}>Save changes</button></form>}
+    {q.canResolve&&<form action={act} onReset={keep} className={styles.subform}><Hidden slug={slug} op="WITHDRAW" id={q.id} revision={q.revision} requestId={requestId}/><label>Why is it no longer relevant?<textarea name="reason" rows={2} maxLength={2000} required/></label><button className={styles.quiet} data-tone="danger" disabled={pending}>Withdraw question</button></form>}
    </div></details>}
-   {q.status!=='OPEN'&&q.canResolve&&<details className={styles.more}><summary>Reopen</summary><form action={act} className={styles.sheet}><Hidden slug={slug} op="REOPEN" id={q.id} revision={q.revision} requestId={requestId}/><label>Why reopen it?<textarea name="reason" rows={2} maxLength={2000} required/></label><button className={styles.secondary} disabled={pending}>Reopen question</button></form></details>}
+   {q.status!=='OPEN'&&q.canResolve&&<details className={styles.more}><summary>Reopen</summary><form action={act} onReset={keep} className={styles.sheet}><Hidden slug={slug} op="REOPEN" id={q.id} revision={q.revision} requestId={requestId}/><label>Why reopen it?<textarea name="reason" rows={2} maxLength={2000} required/></label><button className={styles.secondary} disabled={pending}>Reopen question</button></form></details>}
   </div>
   <Feedback state={state}/>
  </li>;
 }
 
 function Composer({slug,members}:{slug:string;members:Option[]}){
- const [text,setText]=useState('');const {run,pending,state,requestId}=useCommand(questionAction,'new-question',()=>setText(''));
- return <form action={run} className={styles.composer}><Hidden slug={slug} op="CREATE" requestId={requestId}/>
-  <label className={styles.srOnly} htmlFor="new-question">Ask an open question</label><div className={styles.composerLine}><input id="new-question" name="question" value={text} onChange={e=>setText(e.target.value)} maxLength={300} placeholder="Ask an open question…" autoComplete="off"/><button className={styles.primary} disabled={pending||!text.trim()}>{pending?'Adding…':'Add question'}</button></div>
-  {text.trim()&&<div className={styles.two}><label>Who answers <span className={styles.hint}>optional</span><select name="ownerMemberId" defaultValue=""><option value="">Not decided</option>{members.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label><label>Needed by <span className={styles.hint}>optional</span><input type="date" name="dueDate"/></label></div>}
+ const [text,setText]=useState('');const {run,pending,state,requestId,keep}=useCommand(questionAction,'new-question',()=>setText(''));
+ return <form action={run} onReset={keep} className={styles.composer}><Hidden slug={slug} op="CREATE" requestId={requestId}/>
+  <label className={styles.srOnly} htmlFor="new-question">Ask an open question</label><div className={styles.composerLine}><input id="new-question" name="question" value={text} onChange={e=>setText(e.target.value)} maxLength={300} placeholder="Ask an open question…" autoComplete="off"/><button className={styles.primary} disabled={pending||!text.trim()}>{pending?'Adding…':'Add question'}</button>{!text.trim()&&<p className="disabled-reason">Type the question to add it.</p>}</div>
+  {text.trim()&&<div className={styles.two}><label>Who answers <span className={styles.hint}>optional</span><select name="ownerMemberId" defaultValue=""><option value="">Not decided</option>{members.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label><label>Needed by <span className={styles.hint}>optional</span><DateField name="dueDate"/></label></div>}
   <Feedback state={state}/></form>;
 }
 

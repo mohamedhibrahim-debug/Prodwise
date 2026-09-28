@@ -1,12 +1,13 @@
 'use client';
-import {useActionState,useEffect,useRef,useState} from 'react';
+import {useFormAction} from '@/components/forms/useFormAction';
+import {useEffect,useRef,useState} from 'react';
 import {ScopeField} from '@/components/auth/WorkspaceScope';
 import {saveContextAction} from '@/app/initiatives/[slug]/manage/actions';
 import type {InitiativeContext} from '@/lib/workspace/readiness';
 import styles from './management.module.css';
 type Edit={operation:'CREATE'|'SELECT'|'RENAME'|'RETIRE';context?:InitiativeContext;expectedUpdatedAt:string;label?:string};
 export function ContextManager({slug,updatedAt,currentId,contexts,editable,legacy}:{slug:string;updatedAt:string;currentId:string|null;contexts:InitiativeContext[];editable:boolean;legacy:string|null}){
- const [edit,setEdit]=useState<Edit|null>(null),[state,action,pending]=useActionState(saveContextAction,{error:null,message:null});
+ const [edit,setEdit]=useState<Edit|null>(null),[state,action,pending,keepAction]=useFormAction(saveContextAction,{error:null,message:null});
  const error=useRef<HTMLParagraphElement>(null),title=useRef<HTMLInputElement>(null);
  useEffect(()=>{if(state.error)error.current?.focus();else if(state.message)setEdit(null);},[state]);
  useEffect(()=>{if(edit?.operation==='CREATE'||edit?.operation==='RENAME')title.current?.focus();},[edit]);
@@ -15,7 +16,7 @@ export function ContextManager({slug,updatedAt,currentId,contexts,editable,legac
  return <div><p><strong>Current context: {current?.label??'None selected'}</strong></p><p className={styles.muted}>Name the phase, pilot or release boundary this initiative currently covers. Retiring a context keeps its evidence and history.</p>
  {legacy&&!contexts.some(c=>!c.retiredAt&&c.label.trim().toLowerCase()===legacy.trim().toLowerCase())&&<p className={styles.muted}>Earlier scope text: “{legacy}”. Create a scope from it to use it for dates and Knowledge. {editable&&!edit&&<button type="button" onClick={()=>begin('CREATE',undefined,legacy)}>Create scope from this</button>}</p>}
  {state.message&&<p role="status">{state.message}</p>}
- {edit?<form action={action} className={styles.form}>
+ {edit?<form action={action} onReset={keepAction} className={styles.form}>
   <ScopeField/><input type="hidden" name="slug" value={slug}/><input type="hidden" name="operation" value={edit.operation}/><input type="hidden" name="expectedUpdatedAt" value={edit.expectedUpdatedAt}/><input type="hidden" name="contextId" value={edit.context?.id??''}/><input type="hidden" name="expectedRevision" value={edit.context?.revision??''}/>
   {state.error&&<p ref={error} role="alert" tabIndex={-1} className={styles.error}>{state.error}</p>}
   {edit.operation==='CREATE'||edit.operation==='RENAME'?<><label>Context label<input ref={title} name="label" required maxLength={160} defaultValue={edit.context?.label??edit.label??''} placeholder="For example: Phase 1 — merchant pilot"/></label><label>Scope note <span className={styles.muted}>Optional</span><textarea name="note" maxLength={4000} rows={3} defaultValue={edit.context?.note??''}/></label></>:<p>{edit.operation==='RETIRE'?`Retire “${edit.context?.label}”? It remains in history. If current, setup will show that a context needs to be selected.`:`Use “${edit.context?.label}” as the current context? Existing evidence applicability is preserved.`}</p>}

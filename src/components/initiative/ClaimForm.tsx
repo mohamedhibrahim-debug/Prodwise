@@ -1,9 +1,9 @@
 "use client";
+import {useFormAction} from '@/components/forms/useFormAction';
 import { ApplicabilityFields } from "./ApplicabilityFields";
 import type {InitiativeContext} from "@/lib/workspace/readiness";
 import { ScopeField } from "@/components/auth/WorkspaceScope";
 
-import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 
@@ -69,7 +69,7 @@ export function ClaimForm({
   claim,
   replacementOptions = [], contexts=[],currentContextId=null,
 }: ClaimFormProps) {
-  const [state, formAction] = useActionState(action, initialState);
+  const [state, formAction, , keepFormAction] = useFormAction(action, initialState);
   const isEdit = Boolean(claim);
 
   const linkedIds = new Set(claim?.evidence.map((e) => e.id) ?? []);

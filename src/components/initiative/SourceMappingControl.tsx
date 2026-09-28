@@ -1,5 +1,6 @@
 'use client';
-import {useActionState,useEffect,useRef,useState} from 'react';
+import {useFormAction} from '@/components/forms/useFormAction';
+import {useEffect,useRef,useState} from 'react';
 import {ScopeField} from '@/components/auth/WorkspaceScope';
 import {reviseSourceAction} from '@/app/initiatives/[slug]/manage/actions';
 import type {SourceMapping} from '@/lib/workspace/source-mapping';
@@ -11,7 +12,7 @@ export function SourceMappingControl({mapping,slug,canUnlink}:{mapping:SourceMap
  const [draftRole,setDraftRole]=useState(mapping.role);
  const [draftReason,setDraftReason]=useState('');
  const begin=(next:'ROLE'|'UNLINK'|'RELINK')=>{setExpectedRevision(mapping.revision);setDraftRole(mapping.role);setDraftReason('');setOperation(next);};
- const [state,action,pending]=useActionState(reviseSourceAction,{error:null,message:null});
+ const [state, action, pending, keepAction] = useFormAction(reviseSourceAction,{error:null,message:null});
  const error=useRef<HTMLParagraphElement>(null);
  useEffect(()=>{if(state.error)error.current?.focus();else if(state.message)setOperation(null);},[state]);
  return <div>{state.message&&<p role="status">{state.message}</p>}{operation?<form action={action} onReset={event=>event.preventDefault()} className={styles.form}>

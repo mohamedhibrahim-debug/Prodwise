@@ -1,4 +1,5 @@
 "use client";
+import { DateField } from '@/components/forms/DateField';
 import {displayLocator} from '@/lib/delivery/display';
 import {ApplicabilityFields} from "../initiative/ApplicabilityFields";
 import {useRef,useState} from "react";
@@ -26,7 +27,7 @@ export function FactLedger({initiativeId,facts,source,ctx,writesEnabled,changedS
   {!canBusinessWrite(ctx)&&<p className={styles.meta}>Read-only view.</p>}
   <div ref={editor}>{selected&&canEdit(selected)?<section className={styles.editor} key={`${selected}:${fact?.revision??0}`} onChange={()=>{dirty.current=true;}}><h3>Edit {FACT_LABELS[selected]}</h3><p className={styles.meta}>{definitions[selected]??"Confirm the new value and record its basis. Existing history is retained."}</p><p className={styles.meta}>Current: {summary(selected,fact)}. Saving updates this initiative’s Brief, Home and Roadmap. An open Weekly Draft must refresh before finalization; existing Finals stay unchanged.</p><WeeklyActionForm action={saveDeliveryFactAction} label="Confirm and save" scopeWorkspaceId={ctx.workspaceId} disabled={!writesEnabled} watchEdits onSaved={()=>{dirty.current=false;}}>
     <input type="hidden" name="initiativeId" value={initiativeId}/><input type="hidden" name="kind" value={selected}/><input type="hidden" name="revision" value={fact?.revision??0}/><div className={styles.fields}>
-    {["SOLUTION_DEFINED","DEV_STARTED","TARGET_LIVE","ACTUAL_LIVE","NEXT_MILESTONE"].includes(selected)&&<label>{selected==="TARGET_LIVE"||selected==="NEXT_MILESTONE"?"Planned date":"Actual date"}<input type="date" name="date" defaultValue={value?.date??""}/></label>}
+    {["SOLUTION_DEFINED","DEV_STARTED","TARGET_LIVE","ACTUAL_LIVE","NEXT_MILESTONE"].includes(selected)&&<label>{selected==="TARGET_LIVE"||selected==="NEXT_MILESTONE"?"Planned date":"Actual date"}<DateField name="date" defaultValue={value?.date??""} warnPast={selected==="TARGET_LIVE"||selected==="NEXT_MILESTONE"}/></label>}
     {["SCOPE","NEXT_MILESTONE","BLOCKER","NEXT_STEP","ACTUAL_LIVE"].includes(selected)&&<label>{selected==="ACTUAL_LIVE"?"Rollout description (required for partial)":"Description"}<textarea name="text" maxLength={2000} defaultValue={value?.text??""}/></label>}
     {["TARGET_LIVE","DEV_STARTED","NEXT_MILESTONE"].includes(selected)&&<label className={styles.choice}><input type="checkbox" name="unknown" value="yes" defaultChecked={value?.unknown===true}/>Explicitly unknown — leave date and description empty</label>}
     {selected==="NEXT_MILESTONE"&&<label className={styles.choice}><input type="checkbox" name="dateUnknown" value="yes" defaultChecked={value?.dateUnknown===true}/>Milestone is named, but its date is explicitly unknown — leave date empty</label>}

@@ -1,5 +1,6 @@
 'use client';
-import {useActionState,useEffect,useId,useRef,useState,useSyncExternalStore} from 'react';
+import {useFormAction} from '@/components/forms/useFormAction';
+import {useEffect,useId,useRef,useState,useSyncExternalStore} from 'react';
 import {useRouter} from 'next/navigation';
 import {ScopeField} from '@/components/auth/WorkspaceScope';
 import {dispositionAction,type QueueActionState} from '@/app/initiatives/[slug]/decisions/disposition-actions';
@@ -12,7 +13,7 @@ export function DispositionControls({finding,effective,slug}:{finding:ReviewFind
  const router=useRouter(),dialog=useRef<HTMLDialogElement>(null),trigger=useRef<HTMLButtonElement|null>(null),id=useId();const[kind,setKind]=useState<DispositionKind>('DEFERRED'),[mode,setMode]=useState('date');
  const key=`prodwise:queue-reason:${finding.initiativeId}:${finding.fingerprint}`;
  const reason=useSyncExternalStore(subscribeReason,()=>sessionStorage.getItem(key)??'',()=>'');
- const[state,action,pending]=useActionState(async(previous:QueueActionState,form:FormData)=>{const result=await dispositionAction(previous,form);if(result.result?.code==='ok'){sessionStorage.removeItem(key);window.dispatchEvent(new Event(reasonEvent));dialog.current?.close();trigger.current?.focus();router.refresh();}return result;},{result:null,error:null});
+ const[state,action,pending,keepAction]=useFormAction(async(previous:QueueActionState,form:FormData)=>{const result=await dispositionAction(previous,form);if(result.result?.code==='ok'){sessionStorage.removeItem(key);window.dispatchEvent(new Event(reasonEvent));dialog.current?.close();trigger.current?.focus();router.refresh();}return result;},{result:null,error:null});
  const request=useRef<string>('');
  useEffect(()=>{request.current=crypto.randomUUID();},[finding.contentDigest,key]);
  function open(value:DispositionKind,button:HTMLButtonElement){setKind(value);trigger.current=button;request.current=crypto.randomUUID();dialog.current?.showModal();}

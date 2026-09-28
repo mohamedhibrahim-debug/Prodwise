@@ -1,7 +1,7 @@
 "use client";
+import {useFormAction} from '@/components/forms/useFormAction';
 import { ScopeField } from "@/components/auth/WorkspaceScope";
 
-import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
@@ -46,13 +46,13 @@ export function ResolveFindingForm({
   contentDigest: string;
   resolved: boolean;
 }) {
-  const [resolveState, resolve] = useActionState(resolveFindingAction, EMPTY);
-  const [reopenState, reopen] = useActionState(reopenFindingAction, EMPTY);
+  const [resolveState, resolve, , keepResolve] = useFormAction(resolveFindingAction, EMPTY);
+  const [reopenState, reopen, , keepReopen] = useFormAction(reopenFindingAction, EMPTY);
   const error = resolveState.error ?? reopenState.error;
 
   if (resolved) {
     return (
-      <form action={reopen} className={styles.resolveDisclosure}>
+      <form action={reopen} onReset={keepReopen} className={styles.resolveDisclosure}>
         <ScopeField />
       <input type="hidden" name="slug" value={slug} />
         <input type="hidden" name="fingerprint" value={fingerprint} />
@@ -66,7 +66,7 @@ export function ResolveFindingForm({
     <details className={styles.resolveDisclosure} open={Boolean(error)}>
       <summary className={`${styles.resolveTrigger} ${styles.noteTrigger}`}><span>Review with a note only</span><small>Records a note; Knowledge unchanged.</small></summary>
 
-      <form action={resolve} className={styles.resolveForm}>
+      <form action={resolve} onReset={keepResolve} className={styles.resolveForm}>
         <ScopeField />
       <input type="hidden" name="slug" value={slug} />
         <input type="hidden" name="fingerprint" value={fingerprint} />

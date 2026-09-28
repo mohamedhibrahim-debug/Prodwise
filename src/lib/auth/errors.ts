@@ -1,4 +1,5 @@
 import { AccessError } from './core';
+import { safeMessage } from '../errors/safe-message.ts';
 const messages: Record<string, string> = {
     LAST_ORG_OWNER: 'An active organization must retain at least one active Organization Owner.',
     LAST_PLATFORM_OWNER: 'The platform must retain at least one active Platform Owner.',
@@ -32,9 +33,7 @@ export function authErrorMessage(error: unknown, fallback: string) {
             return translated;
         if ((error.message.includes('one_pending_workspace_invite') || error.message.includes('one_pending_organization_invite')))
             return 'This email already has a pending invitation. Resend or revoke its existing link.';
-        if (/constraint|permission denied|relation |column |function |duplicate key/.test(error.message))
-            return fallback;
-        return error.message;
+        return safeMessage(error, fallback);
     }
     return fallback;
 }

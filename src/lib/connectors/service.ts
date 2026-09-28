@@ -1,3 +1,4 @@
+import { safeMessage } from '@/lib/errors/safe-message';
 import "server-only";
 import { randomBytes, randomUUID } from "node:crypto";
 import { requireBusinessWriteAccess, requireWorkspaceAccess } from "@/lib/auth/access";
@@ -162,7 +163,7 @@ export async function importSelection(input: { initiativeId: string; connector: 
       out.push({ reference, name: snap.item.name, ok: true, changed: r.changed, submissionId: r.submissionId, message: r.changed ? null : "Already imported and unchanged; no new snapshot was saved." });
     } catch (e) {
       if (e instanceof ConnectorError && (e.code === "NEEDS_RECONNECT" || e.code === "NOT_CONNECTED")) throw e;
-      out.push({ reference, name: reference, ok: false, changed: false, submissionId: null, message: e instanceof ConnectorError ? e.code : e instanceof Error ? e.message : "The item could not be imported." });
+      out.push({ reference, name: reference, ok: false, changed: false, submissionId: null, message: e instanceof ConnectorError ? e.code : safeMessage(e, "The item could not be imported.") });
     }
   }
   return out;

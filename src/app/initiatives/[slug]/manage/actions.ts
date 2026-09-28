@@ -1,4 +1,5 @@
 'use server';
+import { safeMessage } from '@/lib/errors/safe-message';
 import {revalidatePath} from 'next/cache';
 import {assertFormWorkspace} from '@/lib/auth/scope';
 import {requireBusinessWriteAccess} from '@/lib/auth/access';
@@ -20,7 +21,7 @@ export async function changeLifecycleAction(_previous:ManageActionState,form:For
   else throw new Error('Choose a supported lifecycle change.');
   revalidatePath('/initiatives','layout');revalidatePath('/');revalidatePath('/roadmap');revalidatePath('/analysis','layout');revalidatePath('/weekly-review');
   return {error:null,message:operation==='ARCHIVE'?'Archived. Records and history are preserved.':operation==='RESTORE'?'Restored to the active portfolio.':'Lifecycle stage saved with its reason.'};
- }catch(error){return {error:error instanceof Error?error.message:'The lifecycle change was refused.',message:null};}
+ }catch(error){return {error:safeMessage(error, 'The lifecycle change was refused.'),message:null};}
 }
 export async function saveContextAction(_previous:ManageActionState,form:FormData):Promise<ManageActionState>{
  try{
@@ -30,7 +31,7 @@ export async function saveContextAction(_previous:ManageActionState,form:FormDat
   await updateInitiativeContext({initiativeId:i.id,expectedUpdatedAt:String(form.get('expectedUpdatedAt')??''),operation,contextId:String(form.get('contextId')??'')||undefined,expectedRevision:Number(form.get('expectedRevision'))||undefined,label:String(form.get('label')??''),note:String(form.get('note')??''),reason:String(form.get('reason')??'')},ctx.workspaceId);
   revalidatePath('/initiatives','layout');revalidatePath('/');revalidatePath('/analysis','layout');
   return {error:null,message:'Scope context saved. Earlier labels and changes remain in history.'};
- }catch(error){return {error:error instanceof Error?error.message:'The context change could not be saved.',message:null};}
+ }catch(error){return {error:safeMessage(error, 'The context change could not be saved.'),message:null};}
 }
 export async function reviseSourceAction(_previous:ManageActionState,form:FormData):Promise<ManageActionState>{
  try{
@@ -43,7 +44,7 @@ export async function reviseSourceAction(_previous:ManageActionState,form:FormDa
   await changeSourceMapping({initiativeId:i.id,mappingId:String(form.get('mappingId')??''),expectedRevision:revision,action,role:String(form.get('role')) as SourceRole,reason:String(form.get('reason')??'')},ctx.workspaceId);
   revalidatePath('/initiatives','layout');revalidatePath('/sources','layout');revalidatePath('/');
   return {error:null,message:action==='UNLINK'?'Source unlinked. Evidence and history are preserved.':action==='RELINK'?'Source relinked. Previous unlink history is preserved.':'Source role updated.'};
- }catch(error){return {error:error instanceof Error?error.message:'The source change could not be saved.',message:null};}
+ }catch(error){return {error:safeMessage(error, 'The source change could not be saved.'),message:null};}
 }
 export async function mapSourcesAction(_previous:ManageActionState,form:FormData):Promise<ManageActionState>{
  try{
@@ -55,7 +56,7 @@ export async function mapSourcesAction(_previous:ManageActionState,form:FormData
   await linkSourceItems({initiativeId:i.id,provider:String(form.get('provider')) as SourceProvider,providerWorkspace:String(form.get('providerWorkspace')??''),containerReference:String(form.get('containerReference')??''),containerName:String(form.get('containerName')??''),role:String(form.get('role')) as SourceRole,items},ctx.workspaceId);
   revalidatePath('/initiatives','layout');revalidatePath('/sources','layout');revalidatePath('/');
   return {error:null,message:'Source items linked. These are manual references; add their content before using them as evidence.'};
- }catch(error){return {error:error instanceof Error?error.message:'The source mapping could not be saved.',message:null};}
+ }catch(error){return {error:safeMessage(error, 'The source mapping could not be saved.'),message:null};}
 }
 export async function saveInitiativeBasics(_previous:ManageActionState,form:FormData):Promise<ManageActionState>{
  try{
@@ -65,7 +66,7 @@ export async function saveInitiativeBasics(_previous:ManageActionState,form:Form
   await updateInitiativeBasics({workspaceId:ctx.workspaceId,initiativeId:i.id,expectedUpdatedAt:String(form.get('expectedUpdatedAt')??''),name:String(form.get('name')??''),businessLine:String(form.get('businessLine')??'') as BusinessLine,description:String(form.get('description')??'')});
   revalidatePath('/initiatives','layout');revalidatePath('/');revalidatePath('/analysis','layout');revalidatePath('/weekly-review');
   return {error:null,message:'Basics saved. The initiative link stays the same; history preserves your change.'};
- }catch(error){return {error:error instanceof Error?error.message:'The edit could not be saved.',message:null};}
+ }catch(error){return {error:safeMessage(error, 'The edit could not be saved.'),message:null};}
 }
 
 export async function mapExistingSourceAction(_previous:ManageActionState,form:FormData):Promise<ManageActionState>{
@@ -76,5 +77,5 @@ export async function mapExistingSourceAction(_previous:ManageActionState,form:F
   if(!item||!container||!i)throw new Error('The source or initiative is unavailable in this organization.');
   await linkSourceItems({initiativeId:i.id,provider:container.provider,providerWorkspace:container.providerWorkspace,containerReference:container.reference,containerName:container.name,role:String(form.get('role')) as SourceRole,items:[{reference:item.reference,name:item.name,kind:item.kind,url:item.url}]},ctx.workspaceId);
   revalidatePath('/sources','layout');revalidatePath('/initiatives','layout');revalidatePath('/');return {error:null,message:'Source mapped. The existing reference and its history are retained.'};
- }catch(error){return {error:error instanceof Error?error.message:'The source could not be mapped.',message:null};}
+ }catch(error){return {error:safeMessage(error, 'The source could not be mapped.'),message:null};}
 }

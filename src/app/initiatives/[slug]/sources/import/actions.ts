@@ -1,4 +1,5 @@
 "use server";
+import { safeMessage } from '@/lib/errors/safe-message';
 import { revalidatePath } from "next/cache";
 import { getRepository } from "@/lib/data";
 import { importSelection, refreshSource, type ImportOutcome } from "@/lib/connectors/service";
@@ -22,7 +23,7 @@ export async function importAction(_previous: ImportState, form: FormData): Prom
     refresh(slug);
     return { error: null, outcomes: outcomes.map(o => ({ ...o, message: o.ok ? o.message : /^[A-Z_]+$/.test(o.message ?? "") ? connectorMessage(o.message as never, connector) : o.message })) };
   } catch (e) {
-    return { error: e instanceof ConnectorError ? connectorMessage(e.code, connector) : e instanceof Error ? e.message : "The import failed. Nothing was saved.", outcomes: [] };
+    return { error: e instanceof ConnectorError ? connectorMessage(e.code, connector) : safeMessage(e, "The import failed. Nothing was saved."), outcomes: [] };
   }
 }
 
@@ -36,6 +37,6 @@ export async function refreshAction(_previous: RefreshState, form: FormData): Pr
     if (r.code) return { error: connectorMessage(r.code as never, connector), message: null };
     return { error: null, message: r.changed ? "Changed since the last snapshot. A new snapshot was saved; review it for proposals. Nothing was confirmed." : "No change since the last snapshot. Checked just now." };
   } catch (e) {
-    return { error: e instanceof ConnectorError ? connectorMessage(e.code, connector) : e instanceof Error ? e.message : "The refresh failed. The last snapshot is kept.", message: null };
+    return { error: e instanceof ConnectorError ? connectorMessage(e.code, connector) : safeMessage(e, "The refresh failed. The last snapshot is kept."), message: null };
   }
 }

@@ -1,5 +1,6 @@
 'use client';
-import {useActionState,useEffect,useRef,useState} from 'react';
+import {useFormAction} from '@/components/forms/useFormAction';
+import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import type {Initiative} from '@/lib/domain/types';
 import {BUSINESS_LINES} from '@/lib/domain/types';
@@ -8,11 +9,11 @@ import {ScopeField} from '@/components/auth/WorkspaceScope';
 import {saveInitiativeBasics} from '@/app/initiatives/[slug]/manage/actions';
 import styles from './management.module.css';
 export function ManageBasics({initiative:i}:{initiative:Initiative}){
- const [state,action,pending]=useActionState(saveInitiativeBasics,{error:null,message:null});
+ const [state, action, pending, keepAction] = useFormAction(saveInitiativeBasics,{error:null,message:null});
  const [expectedUpdatedAt]=useState(i.updatedAt);
  const error=useRef<HTMLParagraphElement>(null);
  useEffect(()=>{if(state.error)error.current?.focus();},[state]);
- return <form action={action} className={styles.form}>
+ return <form action={action} onReset={keepAction} className={styles.form}>
   <ScopeField/><input type="hidden" name="slug" value={i.slug}/><input type="hidden" name="expectedUpdatedAt" value={expectedUpdatedAt}/>
   {state.error&&<p ref={error} tabIndex={-1} role="alert" className={styles.error}>{state.error}</p>}
   {state.message&&<p role="status">{state.message}</p>}

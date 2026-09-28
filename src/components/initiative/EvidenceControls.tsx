@@ -46,10 +46,16 @@ export function EvidenceControls({
     setValue(next);
     setError(null);
     startTransition(async () => {
-      const result =
-        next === "EXCLUDED"
-          ? await excludeEvidenceAction(evidenceId, slug,scopeWorkspaceId)
-          : await reclassifyEvidenceAction(evidenceId, slug, next,scopeWorkspaceId);
+      let result: { error: string | null };
+      try {
+        result =
+          next === "EXCLUDED"
+            ? await excludeEvidenceAction(evidenceId, slug,scopeWorkspaceId)
+            : await reclassifyEvidenceAction(evidenceId, slug, next,scopeWorkspaceId);
+      } catch {
+        // The request itself failed: show the saved classification again, not the attempted one.
+        result = { error: "The connection was interrupted, so the classification was not changed. Check your connection and try again." };
+      }
       if (result.error) {
         setValue(previous);
         setError(result.error);

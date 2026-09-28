@@ -1,5 +1,6 @@
 "use client";
-import {useActionState,useId,useState,useRef,useEffect} from "react";
+import {useFormAction} from '@/components/forms/useFormAction';
+import {useId,useState,useRef,useEffect} from "react";
 import Link from "next/link";
 import type {AuthFormState} from "@/components/auth/AuthForm";
 import styles from "./admin.module.css";
@@ -8,10 +9,10 @@ export function AdminForm({action,fields,hidden={},scopeWorkspaceId,submit,disab
  const id=useId();
  const [values,setValues]=useState<Record<string,string>>(()=>Object.fromEntries(fields.map(f=>[f.name,f.value??""])));
  const [reviewing,setReviewing]=useState(false); const reviewHeading=useRef<HTMLHeadingElement>(null); useEffect(()=>{if(reviewing)reviewHeading.current?.focus();},[reviewing]);
- const [state,formAction,pending]=useActionState(async(previous:AuthFormState,form:FormData)=>{const result=await action(previous,form);if(!result.error){setReviewing(false);setValues(current=>({...current,...Object.fromEntries(fields.filter(f=>f.type==="password").map(f=>[f.name,""]))}));}return result;},{error:null});
+ const [state, formAction, pending, keepFormAction] = useFormAction(async(previous:AuthFormState,form:FormData)=>{const result=await action(previous,form);if(!result.error){setReviewing(false);setValues(current=>({...current,...Object.fromEntries(fields.filter(f=>f.type==="password").map(f=>[f.name,""]))}));}return result;},{error:null});
  const invitationLink=state.link&&typeof window!=="undefined"?new URL(state.link,window.location.origin).href:state.link;
  const change=(name:string,value:string)=>{setValues(v=>({...v,[name]:value}));setReviewing(false);};
- return <form action={formAction} className={styles.form} aria-busy={pending} onSubmit={e=>{if(consequence&&!reviewing){e.preventDefault();setReviewing(true);}}}>
+ return <form action={formAction} onReset={keepFormAction} className={styles.form} aria-busy={pending} onSubmit={e=>{if(consequence&&!reviewing){e.preventDefault();setReviewing(true);}}}>
   <input type="hidden" name="reviewConfirmed" value={consequence&&reviewing?"yes":""}/><input type="hidden" name="scopeWorkspaceId" value={scopeWorkspaceId}/>{Object.entries(hidden).map(([name,value])=><input key={name} type="hidden" name={name} value={value}/>)}
   {state.error&&<p id={id+"-error"} role="alert" className={styles.error}>{state.error} Review the fields below; your entries have been kept.</p>}
   {state.message&&<p role="status" className={styles.success}>{state.message}</p>}

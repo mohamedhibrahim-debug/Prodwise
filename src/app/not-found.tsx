@@ -5,13 +5,16 @@ export default function NotFound() {
   return (
     <div className={styles.page}>
       <p className={styles.label}>Not found</p>
-      <h1 className={styles.title}>This initiative could not be found.</h1>
+      <h1 className={styles.title}>This page could not be found.</h1>
       <p className={styles.body}>
-        It may have been removed, or the link may be incorrect.
+        The link may be incorrect or out of date. Nothing was changed.
       </p>
       <div className={styles.actions}>
-        <ButtonLink href="/initiatives" variant="primary">
-          Back to Initiatives
+        <ButtonLink href="/" variant="primary">
+          Go to Home
+        </ButtonLink>
+        <ButtonLink href="/initiatives" variant="secondary">
+          Initiatives
         </ButtonLink>
       </div>
     </div>

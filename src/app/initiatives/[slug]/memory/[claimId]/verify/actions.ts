@@ -1,4 +1,5 @@
 "use server";
+import { safeMessage } from '@/lib/errors/safe-message';
 import { assertFormWorkspace } from "@/lib/auth/scope";
 import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
@@ -34,7 +35,7 @@ export async function verifyClaimAction(_state: State, data: FormData): Promise<
   } catch (error) {
     if (error instanceof ClaimAccessError || error instanceof WriteDisabledError)
       return { error: error.message };
-    return { error: error instanceof Error ? error.message : "Could not verify the claim." };
+    return { error: safeMessage(error, "Could not verify the claim.") };
   }
   revalidatePath(`/initiatives/${slug}/knowledge`);
   redirect(`/initiatives/${slug}/knowledge#claim-${claimId}`);

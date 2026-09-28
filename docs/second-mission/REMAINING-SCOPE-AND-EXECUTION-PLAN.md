@@ -12,7 +12,7 @@ It supersedes chat context. Later phases never start before earlier ones are com
 | 3 | Real connector layer: **Jira → Gmail → Google Drive / Docs → Figma** | Implemented; live sign-in awaits provider app registration (manual, see CONNECTOR-SETUP.md) |
 | 4 | Notifications / Attention Center (in-app) | Complete |
 | 5 | Perceived performance / interaction responsiveness | Complete (production timings re-measured in smoke) |
-| 6 | Error states & edge-case hardening | Not started |
+| 6 | Error states & edge-case hardening | Complete |
 | 7 | Final product polish / forgotten details | Not started |
 | 8 | Production readiness & trust sweep | Not started |
 | 9 | Final full acceptance (+ final UX review and fresh red-team) | Not started |

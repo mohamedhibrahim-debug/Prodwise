@@ -22,10 +22,10 @@ import styles from "./error.module.css";
  */
 export default function AppError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     // Surfaced in the server/browser log so a real failure is diagnosable
@@ -46,9 +46,16 @@ export default function AppError({
         nothing to review.
       </p>
 
-      <button type="button" onClick={reset} className={styles.retry}>
-        Try again
-      </button>
+      <p className={styles.body}>
+        Try again in a moment. If it keeps happening, go back to Home; anything you
+        saved before this is kept.
+      </p>
+      <div className={styles.actions}>
+        <button type="button" onClick={() => retry()} className={styles.retry}>
+          Try again
+        </button>
+        <a href="/" className={styles.home}>Go to Home</a>
+      </div>
 
       {error.digest ? (
         <p className={styles.digest}>Reference {error.digest}</p>

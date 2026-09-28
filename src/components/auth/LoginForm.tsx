@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import {useFormAction} from '@/components/forms/useFormAction';
+import { useId, useState } from 'react';
 import { demoLoginAction, loginAction } from '@/app/login/actions';
 import type { AuthFormState } from './AuthForm';
 import styles from './login.module.css';
@@ -8,8 +9,8 @@ import styles from './login.module.css';
 const initialState: AuthFormState = { error: null };
 
 export function LoginForm({ returnTo }: { returnTo: string }) {
-  const [loginState, signIn, signingIn] = useActionState(loginAction, initialState);
-  const [demoState, exploreDemo, openingDemo] = useActionState(demoLoginAction, initialState);
+  const [loginState, signIn, signingIn, keepSignIn] = useFormAction(loginAction, initialState);
+  const [demoState, exploreDemo, openingDemo, keepExploreDemo] = useFormAction(demoLoginAction, initialState);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +22,7 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
   const pending = signingIn || openingDemo;
 
   return <div className={styles.forms}>
-    <form action={signIn} className={styles.signInForm} aria-label="Sign in to your workspace" aria-busy={signingIn}>
+    <form action={signIn} onReset={keepSignIn} className={styles.signInForm} aria-label="Sign in to your workspace" aria-busy={signingIn}>
       <input type="hidden" name="returnTo" value={returnTo} />
       <div className={styles.field}>
         <label htmlFor={emailId}>Email</label>
@@ -48,7 +49,7 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
       </button>
     </form>
 
-    <form action={exploreDemo} className={styles.demoForm} aria-label="Explore Demo" aria-busy={openingDemo}>
+    <form action={exploreDemo} onReset={keepExploreDemo} className={styles.demoForm} aria-label="Explore Demo" aria-busy={openingDemo}>
       {demoState.error && <p id={demoErrorId} className={styles.error} role="alert">{demoState.error}</p>}
       {demoState.message && <p className={styles.notice} role="status">{demoState.message}</p>}
       <button className={styles.demoButton} type="submit" disabled={pending}

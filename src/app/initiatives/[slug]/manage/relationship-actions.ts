@@ -1,4 +1,5 @@
 'use server';
+import { safeMessage } from '@/lib/errors/safe-message';
 import {revalidatePath} from 'next/cache';
 import {assertFormWorkspace} from '@/lib/auth/scope';
 import {requireBusinessWriteAccess} from '@/lib/auth/access';
@@ -17,6 +18,6 @@ export async function relationshipAction(_previous:RelationshipActionState,form:
   if(operation==='END'){await saveRelationship({operation:'END',id:text('id'),requestId:text('requestId'),expectedRevision:Number(text('expectedRevision')),reason:text('reason')});return {error:null,message:'Relationship ended. It stays in history.'};}
   if(operation==='CONFIRM_PROPOSAL'){const id=await confirmRelationshipProposal({proposalId:text('proposalId'),version:Number(text('version')),requestId:text('requestId'),type:relType(form.get('type')),rationale:text('rationale'),providerFactKind:dates?dateFact(form.get('providerFactKind')):null,neededByFactKind:dates?dateFact(form.get('neededByFactKind')):null});return {error:null,message:'Relationship confirmed from this evidence.',id};}
   throw Error('Unsupported relationship command.');
- }catch(e){return {error:e instanceof Error?e.message:'The relationship was not saved.',message:null};}
+ }catch(e){return {error:safeMessage(e, 'The relationship was not saved.'),message:null};}
  finally{refresh();}
 }

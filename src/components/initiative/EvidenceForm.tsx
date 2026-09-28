@@ -1,7 +1,8 @@
 "use client";
+import {useFormAction} from '@/components/forms/useFormAction';
 import { ScopeField } from "@/components/auth/WorkspaceScope";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 
@@ -63,7 +64,7 @@ export function EvidenceForm({
   submitLabel,
   evidence,
 }: EvidenceFormProps) {
-  const [state, formAction] = useActionState(action, initialState);
+  const [state, formAction, , keepFormAction] = useFormAction(action, initialState);
   // The help text under the boundary select follows the selection. It used to
   // be pinned to the Current Scope wording, which was wrong for four of the
   // five values.
@@ -72,7 +73,7 @@ export function EvidenceForm({
   );
 
   return (
-    <form action={formAction} className={styles.form}>
+    <form action={formAction} onReset={keepFormAction} className={styles.form}>
       <ScopeField />
       <input type="hidden" name="slug" value={slug} />
       {evidence ? (

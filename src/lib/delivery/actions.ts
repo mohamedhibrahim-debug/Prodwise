@@ -1,4 +1,5 @@
 "use server";
+import { safeMessage } from '@/lib/errors/safe-message';
 import { revalidatePath } from "next/cache";
 import { mutateDelivery, readDeliveryFresh } from "./repository";
 import { requireDeliveryFinalizeAccess, requireDeliveryWriteAccess } from "./access-adapter";
@@ -18,26 +19,26 @@ function revision(form:FormData,key:string):number { const value=Number(text(for
 function refresh() { revalidatePath("/");revalidatePath("/analysis","layout");revalidatePath("/roadmap"); revalidatePath("/weekly-review"); revalidatePath("/initiatives","layout"); }
 async function submit(work:()=>Promise<void>,message:string):Promise<DeliveryActionState> {
   try { await work(); refresh(); return {error:null,message}; }
-  catch(error) { return {error:error instanceof Error ? error.message : "The change could not be saved. Reload and try again.",message:null}; }
+  catch(error) { return {error:safeMessage(error, "The change could not be saved. Reload and try again."),message:null}; }
 }
 export async function saveDeliveryFactAction(_previous:DeliveryActionState,form:FormData):Promise<DeliveryActionState> {
-  try { await scope(form); } catch(error) {return {error:error instanceof Error?error.message:"Reload before saving.",message:null};}
+  try { await scope(form); } catch(error) {return {error:safeMessage(error, "Reload before saving."),message:null};}
   return submit(async()=>{ await mutateDelivery(async({ctx,source,state})=>{assertFormWorkspace(form,ctx);return recordFact(state,source,ctx,{initiativeId:text(form,"initiativeId"),contextId:text(form,"contextId")||null,effectiveDate:text(form,"effectiveDate")||null,kind:text(form,"kind") as FactKind,expectedRevision:revision(form,"revision"),value:{unknown:form.get("unknown")==="yes"?true:undefined,dateUnknown:form.get("dateUnknown")==="yes"?true:undefined,date:text(form,"date")||null,text:text(form,"text")||null,memberId:text(form,"memberId")||null,extent:text(form,"extent") === "PARTIAL" ? "PARTIAL" : text(form,"extent") === "FULL" ? "FULL" : null},retract:form.get("retract") === "yes"||(text(form,"kind")==="OWNER"&&!text(form,"memberId")),basis:text(form,"basis") === "EVIDENCE" ? "EVIDENCE" : "DIRECT_KNOWLEDGE",note:text(form,"note"),evidenceId:text(form,"evidenceId")||null,locator:text(form,"locator")||null},new Date().toISOString());}); },"Delivery fact confirmed and recorded.");
 }
 export async function createWeeklyReviewAction(_previous:DeliveryActionState,form:FormData):Promise<DeliveryActionState> {
-  try { await scope(form); } catch(error) {return {error:error instanceof Error?error.message:"Reload before saving.",message:null};}
+  try { await scope(form); } catch(error) {return {error:safeMessage(error, "Reload before saving."),message:null};}
   return submit(async()=>{ await mutateDelivery(async({ctx,source,state})=>{assertFormWorkspace(form,ctx);return state.reviews.some(r=>r.workspaceId===ctx.workspaceId && r.week===text(form,"week")) ? state : createReview(state,source,ctx,text(form,"week"),new Date().toISOString());}); },"The shared review for this week is ready to open.");
 }
 export async function saveWeeklySectionAction(_previous:DeliveryActionState,form:FormData):Promise<DeliveryActionState> {
-  try { await scope(form); } catch(error) {return {error:error instanceof Error?error.message:"Reload before saving.",message:null};}
+  try { await scope(form); } catch(error) {return {error:safeMessage(error, "Reload before saving."),message:null};}
   return submit(async()=>{ await mutateDelivery(async({ctx,source,state})=>{assertFormWorkspace(form,ctx);return editSection(state,source,ctx,text(form,"reviewId"),revision(form,"reviewRevision"),text(form,"initiativeId"),revision(form,"sectionRevision"),{headline:text(form,"headline"),updates:text(form,"updates"),attention:text(form,"attention"),decisionNeeded:text(form,"decisionNeeded"),nextMilestone:text(form,"nextMilestone"),nextStep:text(form,"nextStep")},new Date().toISOString());}); },"Your PM section is saved and marked reviewed.");
 }
 export async function refreshWeeklyReviewAction(_previous:DeliveryActionState,form:FormData):Promise<DeliveryActionState> {
-  try { await scope(form); } catch(error) {return {error:error instanceof Error?error.message:"Reload before saving.",message:null};}
+  try { await scope(form); } catch(error) {return {error:safeMessage(error, "Reload before saving."),message:null};}
   return submit(async()=>{ await mutateDelivery(async({ctx,source,state})=>{assertFormWorkspace(form,ctx);return refreshReview(state,source,ctx,text(form,"reviewId"),revision(form,"revision"),new Date().toISOString());}); },"Delivery inputs refreshed. Changed PM notes were preserved and need review.");
 }
 export async function finalizeWeeklyReviewAction(_previous:DeliveryActionState,form:FormData):Promise<DeliveryActionState> {
-  try { await scope(form); } catch(error) {return {error:error instanceof Error?error.message:"Reload before saving.",message:null};}
+  try { await scope(form); } catch(error) {return {error:safeMessage(error, "Reload before saving."),message:null};}
   return submit(async()=>{ await requireDeliveryFinalizeAccess(); await mutateDelivery(async({ctx,source,state})=>{assertFormWorkspace(form,ctx);return finalizeReview(state,source,ctx,text(form,"reviewId"),revision(form,"revision"),new Date().toISOString());}); },"The weekly review is final. Its snapshot is preserved.");
 }
 export async function draftWeeklyReviewAction(_previous:DeliveryActionState,form:FormData):Promise<DeliveryActionState> {
@@ -82,7 +83,7 @@ export async function applyRecordUpdatesAction(_previous:DeliveryActionState,for
     if(selected.includes("DECISION")) {
       activeField="DECISION";await scope(form);const repo=getRepository();
       try {await createConfirmedDecision(repo,{initiativeId,type:"DECISION",...decision,phase:text(form,"decisionPhase")||null},{basis,note,evidenceId,locator,actor:ctx.actor},()=>{productChanged=true;});}
-      catch(error){mark("DECISION","FAILED",error instanceof Error?error.message:"Decision confirmation incomplete; check Knowledge before retrying.");throw error;}
+      catch(error){mark("DECISION","FAILED",safeMessage(error, "Decision confirmation incomplete; check Knowledge before retrying."));throw error;}
       mark("DECISION","APPLIED","Decision created and confirmed in Knowledge.");
     }
     activeField=facts[0]?.kind??"refresh";
@@ -90,7 +91,7 @@ export async function applyRecordUpdatesAction(_previous:DeliveryActionState,for
     deliveryApplied=true;for(const fact of facts)mark(fact.kind,"APPLIED","Initiative fact confirmed; history preserved.");
     refresh();return{error:null,message:"All selected initiative updates applied. The Draft refreshed; affected sections need re-check. Your meeting commentary was preserved.",results};
   } catch(error) {
-    const message=error instanceof Error?error.message:"The initiative update was refused. Reload before retrying.";
+    const message=safeMessage(error, "The initiative update was refused. Reload before retrying.");
     if(!results.some(r=>r.field===activeField&&r.status==="FAILED"))mark(activeField,"FAILED",message);
     if(productChanged&&!deliveryApplied) {
       try {await mutateDelivery(async({ctx,source,state})=>{assertFormWorkspace(form,ctx);const review=state.reviews.find(r=>r.id===text(form,"reviewId")&&r.workspaceId===ctx.workspaceId);if(!review||review.status!=="DRAFT")throw new Error("The review is no longer a Draft.");return refreshReview(state,source,ctx,review.id,review.revision,new Date().toISOString());});refresh();return{error:message,message:"Some initiative changes persisted. The Draft refreshed and commentary was preserved. Review each result before continuing.",results};}

@@ -1,4 +1,5 @@
 "use server";
+import { safeMessage } from '@/lib/errors/safe-message';
 import { assertFormWorkspace } from "@/lib/auth/scope";
 import { requireBusinessWriteAccess } from "@/lib/auth/access";
 
@@ -77,7 +78,7 @@ export async function createEvidenceAction(
     if (error instanceof WriteDisabledError) return { error: error.message };
     return {
       error:
-        error instanceof Error ? error.message : "Could not add the evidence.",
+        safeMessage(error, "Could not add the evidence."),
     };
   }
 

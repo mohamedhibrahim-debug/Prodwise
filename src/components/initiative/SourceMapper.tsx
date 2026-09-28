@@ -1,5 +1,6 @@
 'use client';
-import {useActionState,useEffect,useRef,useState} from 'react';
+import {useFormAction} from '@/components/forms/useFormAction';
+import {useEffect,useRef,useState} from 'react';
 import {ScopeField} from '@/components/auth/WorkspaceScope';
 import {mapSourcesAction} from '@/app/initiatives/[slug]/manage/actions';
 import type {SourceProvider} from '@/lib/workspace/source-mapping';
@@ -9,14 +10,14 @@ type Item={reference:string;name:string;kind:string;url:string|null};
 export function SourceMapper({slug,name}:{slug:string;name:string}){
  const dialog=useRef<HTMLDialogElement>(null),trigger=useRef<HTMLButtonElement>(null),heading=useRef<HTMLHeadingElement>(null),error=useRef<HTMLParagraphElement>(null);
  const [provider,setProvider]=useState<SourceProvider|null>(null),[items,setItems]=useState<Item[]>([{reference:'',name:'',kind:'Other',url:null}]);
- const [state,action,pending]=useActionState(mapSourcesAction,{error:null,message:null});
+ const [state, action, pending, keepAction] = useFormAction(mapSourcesAction,{error:null,message:null});
  useEffect(()=>{if(state.error)error.current?.focus();},[state]);
  const close=()=>{if(pending)return;dialog.current?.close();trigger.current?.focus();};
  const patch=(index:number,field:keyof Item,value:string)=>setItems(rows=>rows.map((row,n)=>n===index?{...row,[field]:field==='url'?(value||null):value}:row));
  return <><button type="button" className={styles.trigger} ref={trigger} onClick={()=>{dialog.current?.showModal();heading.current?.focus();}}>Add source</button>
  <dialog ref={dialog} className={styles.dialog} aria-labelledby={`source-heading-${slug}`} onCancel={e=>{if(pending)e.preventDefault();else trigger.current?.focus();}}>
   <header className={styles.header}><div><h3 id={`source-heading-${slug}`} tabIndex={-1} ref={heading}>Map sources to {name}</h3><p>Manual references · no live Jira, Drive or mailbox connection.</p></div><button type="button" aria-label="Close source mapping" disabled={pending} onClick={close}>Close</button></header>
-  {!provider?<div className={styles.choices}>{providers.map(([id,label,description])=><button key={id} type="button" onClick={()=>{setProvider(id);setItems([{reference:'',name:'',kind:id==='JIRA'?'Epic':id==='FIGMA'?'FRAME':'Other',url:null}]);}}><strong>{label}</strong><span>{description}</span></button>)}</div>:<form action={action} className={styles.form}>
+  {!provider?<div className={styles.choices}>{providers.map(([id,label,description])=><button key={id} type="button" onClick={()=>{setProvider(id);setItems([{reference:'',name:'',kind:id==='JIRA'?'Epic':id==='FIGMA'?'FRAME':'Other',url:null}]);}}><strong>{label}</strong><span>{description}</span></button>)}</div>:<form action={action} onReset={keepAction} className={styles.form}>
    <ScopeField/><input type="hidden" name="slug" value={slug}/><input type="hidden" name="provider" value={provider}/><input type="hidden" name="items" value={JSON.stringify(items)}/>
    <button type="button" className={styles.back} onClick={()=>setProvider(null)} disabled={pending}>← Change source type</button>
    {state.error&&<p ref={error} role="alert" tabIndex={-1} className={styles.error}>{state.error}</p>}
