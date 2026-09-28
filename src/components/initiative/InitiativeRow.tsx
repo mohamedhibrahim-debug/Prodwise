@@ -13,8 +13,8 @@ export function InitiativeRow({ snapshot }: { snapshot: InstrumentSnapshot }) {
     <span className={styles.line}>{BUSINESS_LINE_LABEL[initiative.businessLine]}</span>
     <div className={styles.review}>
       {!snapshot.progress.complete ? <span className={styles.quiet}>Not assessed yet — setup incomplete</span> : <span className={styles.quiet}>Knowledge checks available</span>}
-      {conflicts ? <span className={styles.conflict}>{conflicts} {conflicts === 1 ? "mismatch needs" : "mismatches need"} a decision</span>
-        : <span className={styles.quiet}>{snapshot.progress.complete ? "No actionable mismatches detected" : "No decisions available under current checks"}</span>}
+      {conflicts ? <span className={styles.conflict}>{conflicts} {conflicts === 1 ? "decision needed" : "decisions needed"}</span>
+        : <span className={styles.quiet}>{snapshot.progress.complete ? "No differing values detected" : "No decisions available under current checks"}</span>}
     </div>
   </li>;
 }

@@ -68,7 +68,7 @@ export const DOMAIN_LABEL: Record<Domain, string> = {
 };
 
 export const FINDING_LABEL: Record<FindingType, string> = {
-  CONFLICT: "Mismatch",
+  CONFLICT: "Values differ",
   GAP: "Gap",
   UNKNOWN: "Unknown",
   SUPERSEDED: "Replaced",

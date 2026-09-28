@@ -28,7 +28,7 @@ try {
  assert.match(await page.locator('body').innerText(),/2026-W38 final review/);
  pass('Previous-final baseline is the existing W38 Final, not an invented weekly cutoff');
  const response=page.waitForResponse(r=>r.request().method()==='POST'&&r.request().headers()['next-action'],{timeout:60000});
- await page.getByRole('button',{name:'Draft wording with Claude',exact:true}).click();
+ await page.getByRole('button',{name:'Draft wording',exact:true}).click();
  assert.ok((await response).status()<500);await page.reload();
  const after=readState();const review=after.reviews.find(r=>r.id===initialReview.id);const ai=review.aiDrafts.at(-1);
  assert.equal(review.aiDrafts.length,initialReview.aiDrafts.length+1,'A new persisted drafting result must be created');

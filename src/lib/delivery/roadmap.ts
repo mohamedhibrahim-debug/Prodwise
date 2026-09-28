@@ -1,9 +1,8 @@
 import { dayDifference, factFor } from "./model.ts";
 import type { DeliveryEvent, DeliveryFact } from "./types.ts";
 
-export function displayDate(date: string | null | undefined): string {
-  return date ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`)) : "Unknown";
-}
+export { displayDate } from "./model.ts";
+import { displayDate } from "./model.ts";
 
 // A passed commitment with no recorded actual is an update request, not proof of a failed launch.
 export function deliveryTiming(facts: DeliveryFact[], initiativeId: string, cutoff: string) {

@@ -99,6 +99,11 @@ export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: W
     confirmedByMemberId:ctx.memberId, confirmedByUserId:ctx.actor.id, confirmedByLabel:ctx.actor.label, updatedAt:now };
   return { ...state, facts:[...state.facts.filter(f => f.id !== fact.id),fact], events:[...state.events,{ id:randomUUID(), workspaceId:ctx.workspaceId, initiativeId:input.initiativeId, occurredAt:now, actor:ctx.actor, before:old ?? null, after:fact }] };
 }
+/** "24 Sept 2026" for a calendar date; "Unknown" when none is recorded. */
+export function displayDate(date: string | null | undefined): string {
+  return date ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`)) : "Unknown";
+}
+const FACT_NAME:Record<string,string>={TARGET_LIVE:"Target Live",ACTUAL_LIVE:"Actual Live",NEXT_MILESTONE:"Next milestone",NEXT_STEP:"Next step",BLOCKER:"Blocker",OWNER:"Owner",SCOPE:"Scope",DEV_STARTED:"Development start",SOLUTION_DEFINED:"Solution defined"};
 export function freezeInput(source: PortfolioSource, state: DeliveryState, workspaceId: string, asOf: string): PortfolioInput {
   const facts = structuredClone(state.facts.filter(f => f.workspaceId === workspaceId).sort((a,b) => a.id.localeCompare(b.id)));
   const events = structuredClone(state.events.filter(e => e.workspaceId === workspaceId).sort((a,b) => a.occurredAt.localeCompare(b.occurredAt) || a.id.localeCompare(b.id)));
@@ -162,13 +167,14 @@ export function changesSince(input: PortfolioInput, baseline: PortfolioInput | n
       const days=before?.value.date && after?.value.date ? dayDifference(before.value.date,after.value.date) : null;
       const path=events.map(e=>e.after.state === "RETRACTED" ? "Withdrawn" : e.after.value.date ?? e.after.value.text ?? e.after.value.memberId ?? "Unknown");
       const late=Boolean(after?.value.date && after.value.date <= cairoDay(baseline.asOf) && events.length);
-      const field=kind.replaceAll("_"," ").toLowerCase();
-      const label=!valueChanged ? `${field}: changed and returned to the previous value (${path.join(" → ")}).` : !after ? `${field}: withdrawn; current value unknown.` : !before ? `${field}: recorded ${after.value.unknown ? "explicitly unknown" : after.value.date ?? after.value.text ?? "owner assignment"}.` : `${field}: ${before.value.unknown ? "explicitly unknown" : before.value.date ?? before.value.text ?? "previous assignment"} → ${after.value.unknown ? "explicitly unknown" : after.value.date ?? after.value.text ?? "new assignment"}${days !== null ? ` (${Math.abs(days)} days ${days>=0?"later":"earlier"})` : ""}${path.length>1?`; movement history ${path.join(" → ")}`:""}.`;
+      const field=FACT_NAME[kind]??kind.replaceAll("_"," ").toLowerCase();
+      const show=(v:{unknown?:boolean;date?:string|null;text?:string|null}|undefined,fallback:string)=>v?.unknown ? "explicitly unknown" : v?.date ? displayDate(v.date) : v?.text ? v.text.replace(/[.\s]+$/,"") : fallback;
+      const label=!valueChanged ? `${field}: changed and returned to the previous value (${path.map(v=>/^\d{4}-\d{2}-\d{2}$/.test(v)?displayDate(v):v).join(" → ")}).` : !after ? `${field}: withdrawn; current value unknown.` : !before ? `${field} recorded: ${show(after.value,"owner assignment")}.` : `${field}: ${show(before.value,"previous assignment")} → ${show(after.value,"new assignment")}${days !== null ? ` (${Math.abs(days)} days ${days>=0?"later":"earlier"})` : ""}${path.length>1?`; movement history ${path.join(" → ")}`:""}.`;
       result.push({ id:`change:${id}:${kind}`,initiativeId:id,kind,label:label+(late?" Recorded after the previous review for an earlier effective date.":""),eventIds:events.map(e=>e.id),days,lateRecorded:late });
     }
   }
   for (const snap of baseline.snapshots) if (!input.snapshots.some(s=>s.initiative.id===snap.initiative.id)) result.push({ id:`left:${snap.initiative.id}`,initiativeId:snap.initiative.id,kind:"SCOPE",label:`${snap.initiative.name}: left the review scope.`,eventIds:[],days:null,lateRecorded:false });
-  for(const action of input.commitments??[]){const before=baseline.commitments?.find(a=>a.id===action.id);if(!before||canonical(before)!==canonical(action))result.push({id:`commitment:${action.id}:${action.revision}`,initiativeId:action.initiativeId,kind:'COMMITMENT',label:`Commitment ${action.title}: ${before?before.status.toLowerCase().replaceAll('_',' ')+' → ':''}${action.status.toLowerCase().replaceAll('_',' ')}${action.dueDate?`; due ${action.dueDate}`:'; due date not recorded'}.`,eventIds:[],days:null,lateRecorded:false});}
+  for(const action of input.commitments??[]){const before=baseline.commitments?.find(a=>a.id===action.id);if(!before||canonical(before)!==canonical(action))result.push({id:`commitment:${action.id}:${action.revision}`,initiativeId:action.initiativeId,kind:'COMMITMENT',label:`Commitment “${action.title}”: ${before?before.status.toLowerCase().replaceAll('_',' ')+' → ':''}${action.status.toLowerCase().replaceAll('_',' ')}${action.dueDate?`; due ${displayDate(action.dueDate)}`:'; due date not recorded'}.`,eventIds:[],days:null,lateRecorded:false});}
   return result;
 }
 /** Keep an archive transition in one reviewed week, then omit it from active
@@ -253,12 +259,12 @@ export function finalizationChecks(state:DeliveryState,source:PortfolioSource,ct
   const available=new Set(source.snapshots.map(s=>s.initiative.id));
   return [
     {id:"draft",label:"The review is a Draft",met:review.status==="DRAFT"},
-    {id:"authority",label:"You are an Org Owner, Admin, Platform Owner or Product Lead",met:canBusinessWrite(ctx)&&(hasOrganizationAdminAuthority(ctx)||ctx.isProductLead)},
-    {id:"environment",label:"Changes are enabled in this environment",met:writesEnabled},
-    {id:"chronology",label:"No later week is finalized",met:!state.reviews.some(r=>r.workspaceId===ctx.workspaceId&&r.status==="FINAL"&&r.week>review.week)},
-    {id:"inputs",label:"The review reflects the latest initiative records",met:current.digest===review.input.digest},
-    {id:"baseline",label:"The previous Final baseline is unchanged",met:(baseline?.id??null)===review.baselineReviewId},
-    {id:"sections",label:"Every section is saved and reviewed; none needs re-check",met:review.sections.every(s=>!s.needsRecheck&&Boolean(s.editedByMemberId||s.editedByUserId))},
+    {id:"authority",label:"You are an Org Owner, Admin, Platform Owner or Product Lead",missing:"Finalizing needs an Org Owner, Admin, Platform Owner or Product Lead",met:canBusinessWrite(ctx)&&(hasOrganizationAdminAuthority(ctx)||ctx.isProductLead)},
+    {id:"environment",label:"Changes are enabled in this environment",missing:"Changes are disabled in this environment",met:writesEnabled},
+    {id:"chronology",label:"No later week is finalized",missing:"A later week is already finalized",met:!state.reviews.some(r=>r.workspaceId===ctx.workspaceId&&r.status==="FINAL"&&r.week>review.week)},
+    {id:"inputs",label:"The review reflects the latest initiative records",missing:"Initiative records changed since this draft — update it to the latest records first",met:current.digest===review.input.digest},
+    {id:"baseline",label:"The previous Final baseline is unchanged",missing:"The previous Final changed since this draft was prepared",met:(baseline?.id??null)===review.baselineReviewId},
+    {id:"sections",label:"Every section is saved and reviewed; none needs re-check",missing:(()=>{const open=review.sections.filter(s=>s.needsRecheck||!(s.editedByMemberId||s.editedByUserId)).length;return `${open} of ${review.sections.length} ${review.sections.length===1?"section still needs":"sections still need"} review`;})(),met:review.sections.every(s=>!s.needsRecheck&&Boolean(s.editedByMemberId||s.editedByUserId))},
     {id:"available",label:"Every section in this review can be read with your access",met:review.sections.every(s=>available.has(s.initiativeId))&&review.sections.length===weeklySnapshots(review.input,baseline?.input??null).length},
   ];
 }
