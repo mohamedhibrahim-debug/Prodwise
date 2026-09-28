@@ -8,7 +8,7 @@ It supersedes chat context. Later phases never start before earlier ones are com
 | # | Phase | Status |
 |---|---|---|
 | 1 | Finish current mission: Relationships/Dependencies, Initiative History, Risks & Open Questions, organization-aware sign-up, darker/clearer UX direction, UX specialist review, independent red-team — all Blocker/Major fixed | Complete |
-| 2 | Realistic Demo / data enrichment (sanitized synthetic portfolio) | In progress |
+| 2 | Realistic Demo / data enrichment (sanitized synthetic portfolio) | Complete |
 | 3 | Real connector layer: **Jira → Gmail → Google Drive / Docs → Figma** | Not started |
 | 4 | Notifications / Attention Center (in-app) | Not started |
 | 5 | Perceived performance / interaction responsiveness | Not started |
@@ -26,6 +26,8 @@ It supersedes chat context. Later phases never start before earlier ones are com
 - Target density (coherence over volume): 12–16 initiatives (one archived example), 35–60 sources, 50–80 Knowledge records, 10–20 decisions across lanes, 15–25 commitments, 8–15 risks, 8–15 open questions, 6–12 relationships, multiple weekly reviews, meaningful history, trustworthy analysis data.
 - Stories: A (document requirement superseded by email), B (delivery slip → target revision → dependency attention), C (meeting notes → proposals → selective confirmation), D (conflict deferred → new evidence → reopened), E (overdue commitment → attention → completed).
 - Privacy review before commit. Enriched dataset is used for all later performance measurements.
+
+**Delivered (Phase 2):** `src/lib/demo/scenario-v3.ts` — 15 initiatives (1 archived), 54 sources, 68 Knowledge entries, 21 commitments, 12 questions, 10 relationships, 6 tracked risks, a meeting with 8 proposals, W37/W38 Finals and a W39 Draft, all built through the product's own reducers on a dated timeline. Seven fictional sign-in-less personas (`@example.demo`). Local reset: `scripts/demo/provision-local.mjs --reset-demo`. Hosted: the operator renders the same dataset as a new Demo generation (`scripts/demo/provision-hosted.mjs`); `npm run test:db-linux` proves initial + reset SQL, persona reuse, and that the Draft matches live database records while each Final matches its own frozen records. Production still runs the original 4-initiative Demo until the deploy phase runs a generation reset.
 
 ## Phase 3 — Connector principles (all connectors)
 - Real integrations only; no fake connector behaviour. Manual structured references remain the fallback.
