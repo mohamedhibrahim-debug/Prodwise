@@ -43,6 +43,9 @@ function activityCategory(e:ActivityEntry):{category:HistoryCategory;label:strin
  if(t==='READINESS_LOST')return {category:'LIFECYCLE',label:'Setup readiness lost'};
  if(t==='MEETING_NOTES_SAVED')return {category:'SOURCES',label:'Meeting notes added'};
  if(t==='EVIDENCE_SAVED'||t==='EVIDENCE_ADDED')return {category:'SOURCES',label:'Evidence saved'};
+ if(t==='SOURCE_IMPORTED')return {category:'SOURCES',label:'Source imported'};
+ if(t==='SOURCE_CHANGED')return {category:'SOURCES',label:'Source changed'};
+ if(t==='SOURCE_UNAVAILABLE')return {category:'SOURCES',label:'Source unavailable'};
  if(t.startsWith('SOURCE_'))return {category:'SOURCES',label:t.includes('UNLINK')?'Source unlinked':'Source linked'};
  if(t==='CLAIM_VERIFIED')return {category:'KNOWLEDGE',label:'Knowledge confirmed'};
  if(t==='CLAIM_SUPERSEDED')return {category:'KNOWLEDGE',label:'Requirement changed'};

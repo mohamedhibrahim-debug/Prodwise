@@ -2,7 +2,7 @@ import {randomUUID} from 'node:crypto';
 import type {WorkspaceAccess} from '../auth/core.ts';
 import {canManageInitiative} from './management-policy.ts';
 
-export const SOURCE_PROVIDERS=['JIRA','DOCUMENT','EMAIL','MEETING_NOTES','PASTED_EVIDENCE','OTHER_URL'] as const;
+export const SOURCE_PROVIDERS=['JIRA','DOCUMENT','EMAIL','MEETING_NOTES','PASTED_EVIDENCE','OTHER_URL','FIGMA'] as const;
 export const SOURCE_ROLES=['REQUIREMENTS','DELIVERY','DECISIONS','GENERAL'] as const;
 export type SourceProvider=typeof SOURCE_PROVIDERS[number];
 export type SourceRole=typeof SOURCE_ROLES[number];

@@ -143,6 +143,7 @@ export const EVIDENCE_SOURCE_TYPES = [
   "EMAIL",
   "JIRA",
   "DECISION_NOTE",
+  "DESIGN",
   "OTHER",
 ] as const;
 

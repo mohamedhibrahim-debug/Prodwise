@@ -100,6 +100,7 @@ export const EVIDENCE_SOURCE_TYPE_LABEL: Record<EvidenceSourceType, string> = {
   DOCUMENT: "Document",
   MEETING: "Meeting",
   EMAIL: "Email",
+  DESIGN: "Design",
   JIRA: "Jira",
   DECISION_NOTE: "Decision Note",
   OTHER: "Other",

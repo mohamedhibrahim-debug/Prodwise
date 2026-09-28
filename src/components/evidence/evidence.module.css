@@ -154,3 +154,4 @@
 .duplicate{margin-top:var(--s-2);font-size:var(--t-sm);color:var(--state-at-risk-fg)}
 .duplicate a{color:inherit;font-weight:var(--fw-semibold)}
 .select span[aria-hidden]{font-size:var(--t-sm);color:var(--ink-700)}
+.origin{font-size:var(--t-sm);color:var(--ink-700);margin-top:var(--s-2);max-width:72ch}

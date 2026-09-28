@@ -10,7 +10,9 @@ export interface ProposalPayload {subject:string;attribute:string;value:string;d
  targetClaimId?:string;targetClaimUpdatedAt?:string;
  /** RELATIONSHIP: an initiative named verbatim in the quote. Type and rationale are chosen by the confirming human. */
  targetInitiativeId?:string;}
-export interface Submission {id:string;workspaceId:string;organizationId:string;initiativeId:string;sourceItemId:string;evidenceId:string;kind:SubmissionKind;title:string;text:string;textSha256:string;charLength:number;createdBy:string;createdAt:string;requestId:string;}
+export interface Submission {id:string;workspaceId:string;organizationId:string;initiativeId:string;sourceItemId:string;evidenceId:string;kind:SubmissionKind;title:string;text:string;textSha256:string;charLength:number;createdBy:string;createdAt:string;requestId:string;
+ /** Present when a connector saved this snapshot (Jira, Gmail, Google Drive, Figma). */
+ origin?:{connector:'JIRA'|'GMAIL'|'GOOGLE_DRIVE'|'FIGMA';reference:string;url:string|null;externalUpdatedAt:string|null};}
 export interface ReadingAttempt {id:string;workspaceId:string;initiativeId:string;submissionId:string;requestId:string;status:'READING'|'READY'|'TIMED_OUT'|'FAILED'|'STOPPED';startedAt:string;endedAt:string|null;errorCode:string|null;model:string|null;promptVersion:string;discardedCount:number;}
 export interface Anchor {id:string;workspaceId:string;initiativeId:string;submissionId:string;start:number;end:number;quote:string;}
 export interface Proposal {id:string;workspaceId:string;initiativeId:string;submissionId:string;attemptId:string;anchorId:string;type:ProposalType;payload:ProposalPayload;version:number;baseRevision:number;status:'PENDING'|'CONFIRMED'|'REJECTED'|'SUPERSEDED_BY_HUMAN_ENTRY'|'OUTDATED';decidedBy:string|null;decidedAt:string|null;reason:string|null;resultType:string|null;resultId:string|null;}

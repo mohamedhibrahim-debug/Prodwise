@@ -74,6 +74,7 @@ export interface StoreShape {
   sourceContainers?: SourceContainer[];
   sourceItems?: SourceItem[];
   sourceMappings?: SourceMapping[];
+  sourceItemSyncs?: import('../connectors/types').SourceItemSync[];
   initiatives: Initiative[];
   activity: ActivityEntry[];
   evidence: EvidenceRecord[];
