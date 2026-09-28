@@ -39,3 +39,13 @@ test('readiness history records transitions once and keeps losses explicit',()=>
  assert.equal(readinessTransition({...args,activity:[reached!,lost!],activeSourceLinks:0}),null);
  assert.equal(readinessTransition({...args,activity:[reached!,lost!],at:'2026-09-27T12:00:00Z'})?.eventType,'READINESS_REACHED');
 });
+test('the first observation is a silent baseline, and a later change is a real transition',async()=>{
+ const {isReadinessBaseline}=await import('./copy.ts');
+ const f=fixture();f.initiative.currentContextId=f.currentContext.id;f.initiative.description='A deliberate objective';
+ const args={...f,claims:[{status:'ACTIVE' as const,verifiedAt:'2026-09-27T10:00:00Z'}],contexts:[f.currentContext],activity:[] as never[],at:'2026-09-27T10:00:00Z',actor:{id:'human',label:'Synthetic PM'}};
+ const first=readinessTransition({...args,activeSourceLinks:0})!;assert.equal(first.eventType,'READINESS_LOST');assert.ok(isReadinessBaseline(first));assert.equal(first.actorLabel,null);
+ const target=f.facts.find(x=>x.initiativeId===f.initiative.id&&x.kind==='TARGET_LIVE')!;
+ const facts=[...f.facts.filter(x=>!(x.initiativeId===f.initiative.id&&['TARGET_LIVE','NEXT_MILESTONE'].includes(x.kind))),{...target,value:{date:null,text:null,memberId:null,extent:null,unknown:true}},{...target,id:'milestone',kind:'NEXT_MILESTONE' as const,value:{date:null,text:null,memberId:null,extent:null,unknown:true}}] as typeof f.facts;
+ const later=readinessTransition({...args,facts,activity:[first] as never[],at:'2026-09-27T11:00:00Z'})!;
+ assert.equal(later.eventType,'READINESS_REACHED');assert.equal(isReadinessBaseline(later),false);assert.equal(later.actorLabel,'Synthetic PM');
+});

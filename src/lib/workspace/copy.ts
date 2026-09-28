@@ -59,3 +59,8 @@ export function attentionSentence(finding: ReviewFinding): string {
   if (count > 2) return `${finding.subject} — ${attribute} has ${count} confirmed values: ${values.slice(0, 2).join(", ")} and ${count - 2} more.`;
   return finding.title;
 }
+
+/** A first-observation readiness record: bookkeeping, not something a person did. */
+export function isReadinessBaseline(e: Pick<ActivityEntry, "eventType" | "payload">): boolean {
+  return (e.eventType === "READINESS_REACHED" || e.eventType === "READINESS_LOST") && (e.payload as { baseline?: unknown } | null)?.baseline === true;
+}

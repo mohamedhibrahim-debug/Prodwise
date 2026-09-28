@@ -8,7 +8,7 @@ import { applyFindingStates } from '../review/merge.ts';
 import {deriveReadiness,type InitiativeContext} from './readiness.ts';
 import type {SourceMapping} from './source-mapping.ts';
 import { deriveSetup } from './setup.ts';
-import { activitySummary } from './copy.ts';
+import { activitySummary, isReadinessBaseline } from './copy.ts';
 import { STAGE_LABEL } from '../domain/labels.ts';
 import { relationshipsFor } from './relationship-view.ts';
 import type { InitiativeRelationship } from './relationships.ts';
@@ -47,7 +47,7 @@ export function buildPortfolioProjection({source,state,workspaceId,activity=[],a
     changes.push({id:event.id,initiativeId:i.id,slug:i.slug,name:i.name,sentence,actorLabel:f.preparedAsFixture?'Prodwise demo setup':event.actor.label,occurredAt:event.occurredAt,href:`/initiatives/${i.slug}/delivery`});
   }
   // A rejected proposal changed nothing in the product, so it is not a change.
-  for(const entry of activity.filter(e=>allowed.has(e.initiativeId)&&inWindow(e.occurredAt)&&e.eventType!=='AI_PROPOSAL_REJECTED')) {
+  for(const entry of activity.filter(e=>allowed.has(e.initiativeId)&&inWindow(e.occurredAt)&&e.eventType!=='AI_PROPOSAL_REJECTED'&&!isReadinessBaseline(e))) {
     const i=allowed.get(entry.initiativeId)!;
     changes.push({id:entry.id,initiativeId:i.id,slug:i.slug,name:i.name,sentence:entry.eventType==='INITIATIVE_CREATED'?'Added to Prodwise':activitySummary(entry),actorLabel:entry.actorLabel??'Actor not recorded',occurredAt:entry.occurredAt,href:`/initiatives/${i.slug}`});
   }

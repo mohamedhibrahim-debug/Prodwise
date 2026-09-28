@@ -1,7 +1,7 @@
 import type {ActivityEntry} from '../domain/types.ts';
 import type {DeliveryEvent,DeliveryMember,WeeklyReview} from '../delivery/types.ts';
 import {displayDate} from '../delivery/roadmap.ts';
-import {activitySummary} from './copy.ts';
+import {activitySummary,isReadinessBaseline} from './copy.ts';
 import type {CommitmentEvent} from './commitments.ts';
 import type {QuestionEvent} from './questions.ts';
 import type {RelationshipEvent} from './relationships.ts';
@@ -39,6 +39,7 @@ function activityCategory(e:ActivityEntry):{category:HistoryCategory;label:strin
  if(t.startsWith('CONTEXT_')||t==='INITIATIVE_CONTEXT')return {category:'LIFECYCLE',label:'Scope / phase'};
  if(t==='INITIATIVE_ARCHIVED')return {category:'LIFECYCLE',label:'Archived'};
  if(t==='INITIATIVE_RESTORED')return {category:'LIFECYCLE',label:'Restored'};
+ if(isReadinessBaseline(e))return null;
  if(t==='READINESS_REACHED')return {category:'LIFECYCLE',label:'Setup completed'};
  if(t==='READINESS_LOST')return {category:'LIFECYCLE',label:'Setup readiness lost'};
  if(t==='MEETING_NOTES_SAVED')return {category:'SOURCES',label:'Meeting notes added'};
@@ -48,6 +49,13 @@ function activityCategory(e:ActivityEntry):{category:HistoryCategory;label:strin
  if(t==='SOURCE_UNAVAILABLE')return {category:'SOURCES',label:'Source unavailable'};
  if(t.startsWith('SOURCE_'))return {category:'SOURCES',label:t.includes('UNLINK')?'Source unlinked':'Source linked'};
  if(t==='CLAIM_VERIFIED')return {category:'KNOWLEDGE',label:'Knowledge confirmed'};
+ if(t==='CLAIM_ADDED')return {category:'KNOWLEDGE',label:'Knowledge added by hand'};
+ if(t==='CLAIM_VALUE_CHANGED')return {category:'KNOWLEDGE',label:'Knowledge edited'};
+ if(t==='CLAIM_STATUS_CHANGED')return {category:'KNOWLEDGE',label:'Knowledge status changed'};
+ if(t==='CLAIM_SUPERSESSION_SET')return {category:'KNOWLEDGE',label:'Replacement recorded'};
+ if(t==='CLAIM_EVIDENCE_LINKED')return {category:'KNOWLEDGE',label:'Evidence linked'};
+ if(t==='CLAIM_EVIDENCE_UNLINKED')return {category:'KNOWLEDGE',label:'Evidence unlinked'};
+ if(t==='EVIDENCE_RECLASSIFIED')return {category:'SOURCES',label:'Evidence reclassified'};
  if(t==='CLAIM_SUPERSEDED')return {category:'KNOWLEDGE',label:'Requirement changed'};
  if(t==='KNOWLEDGE_APPLICABILITY_REVISED')return {category:'KNOWLEDGE',label:'Applicability revised'};
  if(t==='FINDING_DECIDED'||t==='DECISION_RECORDED'||t==='DEFINITION_AGREED')return {category:'DECISIONS',label:'Decision finalized'};

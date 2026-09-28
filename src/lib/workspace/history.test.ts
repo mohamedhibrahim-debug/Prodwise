@@ -24,3 +24,10 @@ test("confirmed proposals read as what was added, not as an internal type", asyn
   assert.equal(at("Human confirmed risk proposal from Steering sync · unverified Knowledge"), "Risk added from Steering sync · awaiting verification");
   assert.equal(at("Human confirmed evidence proposal from Pilot email"), "Proposal accepted from Pilot email");
 });
+
+test("hand-entered and edited Knowledge appears in History", async () => {
+  const { buildInitiativeHistory } = await import("./history.ts");
+  const act = (id: string, eventType: string) => ({ id, workspaceId: "w", initiativeId: "i", eventType, summary: `${eventType} summary`, occurredAt: `2026-09-2${id}T10:00:00Z`, entityType: "claim", entityId: "c", payload: null, actorLabel: "Lina Haddad" });
+  const out = buildInitiativeHistory({ initiativeId: "i", slug: "s", members: [], evidence: [], activity: ["CLAIM_ADDED", "CLAIM_VALUE_CHANGED", "CLAIM_STATUS_CHANGED", "CLAIM_EVIDENCE_LINKED"].map((t, n) => act(String(n + 1), t)), deliveryEvents: [], commitmentEvents: [], questionEvents: [], relationshipEvents: [], riskEvents: [], reviews: [], names: {} } as never);
+  assert.deepEqual(out.map(e => [e.category, e.label]), [["KNOWLEDGE", "Evidence linked"], ["KNOWLEDGE", "Knowledge status changed"], ["KNOWLEDGE", "Knowledge edited"], ["KNOWLEDGE", "Knowledge added by hand"]]);
+});
