@@ -179,3 +179,9 @@ a:has(> .link-pending){position:relative}
 /* Page-level save confirmation (see SavedNotice): sticky so it is seen wherever the form was. */
 .saved-notice{position:sticky;top:var(--s-2);z-index:30;margin:0;padding:var(--s-2) var(--s-4);border-left:3px solid var(--state-ready-edge);background:var(--state-ready-bg);color:var(--state-ready-fg);font-weight:var(--fw-semibold)}
 .saved-notice:empty{padding:0;border:0;background:none}
+
+/* Business line (see BusinessLine): codes shown exactly, as a quiet identifier chip. */
+.business-line{display:inline-flex;align-items:baseline;gap:var(--s-1);white-space:nowrap}
+.business-line[data-code]{font-size:var(--t-xs);font-weight:var(--fw-semibold);letter-spacing:var(--ls-micro);padding:0 var(--s-1);border:1px solid var(--rule-strong);border-radius:var(--r-xs);color:var(--ink-700);line-height:1.5}
+.business-line small{font-weight:var(--fw-regular);color:var(--ink-500);letter-spacing:normal}
+.business-line[data-empty]{color:var(--ink-500)}

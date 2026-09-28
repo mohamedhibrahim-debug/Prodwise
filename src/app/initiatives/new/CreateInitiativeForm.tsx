@@ -4,7 +4,7 @@ import {useEffect,useRef} from 'react';
 import Link from 'next/link';
 import {ScopeField} from '@/components/auth/WorkspaceScope';
 import {BUSINESS_LINES,STAGES} from '@/lib/domain/types';
-import {BUSINESS_LINE_LABEL,STAGE_LABEL} from '@/lib/domain/labels';
+import {BUSINESS_LINE_LABEL,businessLineText,STAGE_LABEL} from '@/lib/domain/labels';
 import type {DeliveryMember} from '@/lib/delivery/types';
 import {createInitiativeAction} from './actions';
 import styles from './new.module.css';
@@ -17,7 +17,7 @@ export function CreateInitiativeForm({requestId,members,selfId,canAssign}:{reque
  {state.error&&<p ref={error} tabIndex={-1} role="alert" className={styles.error}>{state.error}</p>}
  <fieldset className={styles.group}><legend>Basics <span className={styles.optional}>* Required to create</span></legend>
  <label className={styles.field}>Initiative name *<input className={styles.input} name="name" required maxLength={160} autoComplete="off"/></label>
- <label className={styles.field}>Business line *<select className={styles.select} name="businessLine" required defaultValue=""><option value="" disabled>Choose a business line</option>{BUSINESS_LINES.map(v=><option value={v} key={v}>{BUSINESS_LINE_LABEL[v]}</option>)}</select></label>
+ <label className={styles.field}>Business line *<select className={styles.select} name="businessLine" required defaultValue=""><option value="" disabled>Choose a business line</option>{BUSINESS_LINES.map(v=><option value={v} key={v}>{businessLineText(v)}</option>)}</select></label>
  {canAssign?<label className={styles.field}>Primary owner *<select className={styles.select} name="ownerMemberId" required defaultValue={self?.id??''}><option value="" disabled>Choose an active member</option>{eligible.map(m=><option key={m.id} value={m.id}>{m.displayName}{m.id===selfId?' (you)':''}</option>)}</select></label>:<div className={styles.field}><span>Primary owner *</span><p>You ({self?.displayName??'No eligible membership'})</p><input type="hidden" name="ownerMemberId" value={self?.id??''}/></div>}
  <p className={styles.hint}>Responsible for this initiative. Shown on Home, Weekly Review and Actions.</p>
  <fieldset className={styles.stageGroup}><legend>Lifecycle stage *</legend><div className={styles.stages}>{STAGES.map(stage=><label key={stage}><input type="radio" name="stage" value={stage} required/>{STAGE_LABEL[stage]}</label>)}</div></fieldset>

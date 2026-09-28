@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import {
   BUSINESS_LINE_LABEL,
+  businessLineText,
   STAGE_LABEL,
 } from "@/lib/domain/labels";
 import type {
@@ -185,8 +186,8 @@ export function CommandPalette({administration=false,canSwitch=false}:{administr
       out.push({
         id: `init-${i.slug}`,
         label: i.name,
-        keywords: `${i.name} ${STAGE_LABEL[i.stage]} ${BUSINESS_LINE_LABEL[i.businessLine]}`,
-        hint: `${i.archivedAt?"Archived · ":""}${STAGE_LABEL[i.stage]} · ${BUSINESS_LINE_LABEL[i.businessLine]}`,
+        keywords: `${i.name} ${STAGE_LABEL[i.stage]} ${businessLineText(i.businessLine)}`,
+        hint: `${i.archivedAt?"Archived · ":""}${STAGE_LABEL[i.stage]} · ${businessLineText(i.businessLine)}`,
         group: "Initiatives",
         href: `/initiatives/${i.slug}`,
       });

@@ -32,6 +32,19 @@ export const BUSINESS_LINE_LABEL: Record<BusinessLine, string> = {
   DIGITAL_TRANSFORMATION: "Digital Transformation",
 };
 
+/**
+ * Official full names for business-line codes. BP, FS and MF are official
+ * identifiers in their own right: add a name here ONLY when the organization has
+ * confirmed it. Never guess. Until then the code alone is shown, unexpanded.
+ */
+export const BUSINESS_LINE_OFFICIAL_NAME: Partial<Record<BusinessLine, string>> = {};
+
+/** Plain-text form (select options, search hints): "MF" or, once confirmed, "MF — <official name>". */
+export function businessLineText(code: BusinessLine): string {
+  const full = BUSINESS_LINE_OFFICIAL_NAME[code];
+  return full ? `${BUSINESS_LINE_LABEL[code]} — ${full}` : BUSINESS_LINE_LABEL[code];
+}
+
 export const STATE_LABEL: Record<AssessmentState, string> = {
   READY: "Ready",
   AT_RISK: "At Risk",
