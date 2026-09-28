@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireWorkspaceAccess } from "@/lib/auth/access";
+import { canBusinessWrite } from "@/lib/auth/roles";
 import { connectorOverview } from "@/lib/connectors/service";
 import { CONNECTOR_LABEL, CONNECTOR_SLUG, connectorFromSlug, connectorMessage, type Connector, type ConnectorErrorCode } from "@/lib/connectors/types";
 import { formatDateTime } from "@/lib/domain/labels";
@@ -41,6 +42,7 @@ export default async function Connections({ searchParams }: { searchParams: Prom
         {!o.ready ? <p className={styles.summary}>{operator ? <>Not set up yet. For the installation: register the {CONNECTOR_LABEL[o.connector]} app and set <code>{o.missing.join(", ")}</code> (see the connector setup guide). Manual source references keep working meanwhile.</> : `Not available yet — ${CONNECTOR_LABEL[o.connector]} hasn’t been set up for Prodwise. You can still add sources by reference. Ask your administrator if you need it.`}</p>
           : isDemo ? null
           : o.status === "CONNECTED" ? <ConnectorButton action={disconnectAction} connector={CONNECTOR_SLUG[o.connector]} label={`Disconnect ${CONNECTOR_LABEL[o.connector]}`} pendingLabel="Disconnecting…" tone="danger" />
+          : !canBusinessWrite(ctx) ? <p className={styles.summary}>You have view-only access in this organization, so you can’t connect sources here. You can read what others imported on each initiative’s Sources page.</p>
           : <ConnectorButton action={connectAction} connector={CONNECTOR_SLUG[o.connector]} returnTo="/account/connections" label={o.status === "NEEDS_RECONNECT" ? `Reconnect ${CONNECTOR_LABEL[o.connector]}` : `Connect ${CONNECTOR_LABEL[o.connector]}`} pendingLabel="Opening sign-in…" />}
       </Section>)}
     </div><aside className={styles.side}>
