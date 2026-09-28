@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-export type InstrumentIconName = "home" | "initiatives" | "reporting" | "search" | "demo" | "menu" | "pin" | "event" | "evidence" | "decision" | "administration";
+export type InstrumentIconName = "home" | "initiatives" | "reporting" | "search" | "demo" | "menu" | "pin" | "event" | "evidence" | "decision" | "administration" | "bell";
 
 export function InstrumentIcon({ name, ...props }: SVGProps<SVGSVGElement> & { name: InstrumentIconName }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -9,6 +9,7 @@ export function InstrumentIcon({ name, ...props }: SVGProps<SVGSVGElement> & { n
     {name === "initiatives" && <><path d="M3 4.5h14M3 10h14M3 15.5h9" {...common}/><circle cx="15.5" cy="15.5" r="1.5" {...common}/></>}
     {name === "reporting" && <><path d="M3.5 3.5v13h13" {...common}/><path d="m6 13 3-3 2 1.5 4-5" {...common}/></>}
     {name === "administration" && <><path d="m10 2 7 4v8l-7 4-7-4V6z" {...common}/><circle cx="10" cy="10" r="3" {...common}/></>}
+    {name === "bell" && <><path d="M5 13.5V9a5 5 0 0 1 10 0v4.5l1.5 2h-13z" {...common}/><path d="M8.5 17.5a1.6 1.6 0 0 0 3 0" {...common}/></>}
     {name === "search" && <><circle cx="8.5" cy="8.5" r="4.5" {...common}/><path d="m12 12 4.5 4.5" {...common}/></>}
     {name === "demo" && <><path d="M7 3.5h6M8 3.5v4l-4 7a1.5 1.5 0 0 0 1.3 2.2h9.4a1.5 1.5 0 0 0 1.3-2.2l-4-7v-4" {...common}/><path d="M6.5 12h7" {...common}/></>}
     {name === "menu" && <path d="M3 5h14M3 10h14M3 15h14" {...common}/>}

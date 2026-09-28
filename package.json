@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-transform-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/db-test/test-alias.mjs --test \"src/lib/evidence/*.test.ts\" \"src/lib/connectors/*.test.ts\" \"src/lib/domain/*.test.ts\" \"src/lib/data/*.test.ts\" \"src/lib/review/*.test.ts\" \"src/lib/decisions/*.test.ts\" \"src/lib/workspace/*.test.ts\" \"src/lib/auth/*.test.ts\" \"src/lib/delivery/*.test.ts\" \"src/lib/demo/*.test.ts\" \"src/app/analysis/*.test.ts\" \"src/components/admin/*.test.ts\"",
+    "test": "node --experimental-transform-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/db-test/test-alias.mjs --test \"src/lib/evidence/*.test.ts\" \"src/lib/connectors/*.test.ts\" \"src/lib/notifications/*.test.ts\" \"src/lib/domain/*.test.ts\" \"src/lib/data/*.test.ts\" \"src/lib/review/*.test.ts\" \"src/lib/decisions/*.test.ts\" \"src/lib/workspace/*.test.ts\" \"src/lib/auth/*.test.ts\" \"src/lib/delivery/*.test.ts\" \"src/lib/demo/*.test.ts\" \"src/app/analysis/*.test.ts\" \"src/components/admin/*.test.ts\"",
     "test:stage2-2-local": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/db-test/test-alias.mjs --test supabase/tests/stage2_2/local.test.ts",
     "test:stage2-2-ui": "node scripts/ui-test/run.mjs",
     "test:stage2-2-final": "pwsh -NoProfile -File scripts/db-test/run-stage2-2-final.ps1",

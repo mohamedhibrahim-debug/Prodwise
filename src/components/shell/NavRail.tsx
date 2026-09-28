@@ -8,6 +8,7 @@ import {hasOrganizationAdminAuthority} from '@/lib/auth/roles';
 import {InstrumentIcon} from './InstrumentIcon';
 import {openPalette} from './events';
 import {OrganizationControl} from './OrganizationControl';
+import {NotificationBell} from '@/components/notifications/NotificationBell';
 import {OPEN_HELP} from './HelpPanel';
 import type {ShellIdentity} from './ShellIdentity';
 import styles from './NavRail.module.css';
@@ -26,7 +27,7 @@ export function NavRail({identity,writesEnabled}:{identity:ShellIdentity;writesE
  <details className={styles.account}><summary className={styles.navItem} title={`Account: ${identity.access.actor.label}`}><b aria-hidden="true">{identity.access.actor.label.slice(0,1)}</b><span>{identity.access.actor.label}</span></summary><div className={styles.accountMenu}><Link prefetch={false} href="/account" onClick={close}>My account</Link><form action={logoutAction}><button type="submit">Sign out</button></form></div></details>
  {!writesEnabled&&<p>Changes disabled in this environment</p>}
  </nav>;
- return <><header className={styles.mobileBar}><button ref={trigger} type="button" onClick={()=>drawer.current?.showModal()} aria-label="Open navigation"><InstrumentIcon name="menu"/></button><Image src="/assets/prodwise-logo-mark.png" alt="" width={24} height={24} unoptimized/><div className={styles.mobileIdentity}><span>Prodwise{identity.presentation.isDemo?' · Demo':''}</span><OrganizationControl identity={identity} compact/></div><button type="button" onClick={openPalette} aria-label="Search"><InstrumentIcon name="search"/></button></header>
+ return <><header className={styles.mobileBar}><button ref={trigger} type="button" onClick={()=>drawer.current?.showModal()} aria-label="Open navigation"><InstrumentIcon name="menu"/></button><Image src="/assets/prodwise-logo-mark.png" alt="" width={24} height={24} unoptimized/><div className={styles.mobileIdentity}><span>Prodwise{identity.presentation.isDemo?' · Demo':''}</span><OrganizationControl identity={identity} compact/></div><NotificationBell compact/><button type="button" onClick={openPalette} aria-label="Search"><InstrumentIcon name="search"/></button></header>
  <aside className={`${styles.rail} ${expanded?styles.expanded:''}`} aria-label="Product navigation">{brand}<div className={styles.organization}><OrganizationControl identity={identity}/></div>{navigation}<div className={styles.footer}>{utilities}<button className={styles.pin} type="button" onClick={()=>{const next=!expanded;setExpanded(next);try{localStorage.setItem('prodwise.navigation.expanded',String(next));}catch{}}} aria-label={expanded?'Collapse navigation':'Pin expanded navigation'} aria-pressed={expanded}><InstrumentIcon name="pin"/><span>{expanded?'Collapse':'Expand'}</span></button></div></aside>
  <dialog ref={drawer} className={styles.drawer} aria-label="Navigation" onCancel={()=>trigger.current?.focus()}>{brand}<button type="button" className={styles.close} onClick={close} aria-label="Close navigation">Close ×</button><OrganizationControl identity={identity}/>{navigation}{utilities}</dialog></>;
 }

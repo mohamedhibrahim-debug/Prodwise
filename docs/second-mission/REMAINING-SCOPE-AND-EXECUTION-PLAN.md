@@ -10,7 +10,7 @@ It supersedes chat context. Later phases never start before earlier ones are com
 | 1 | Finish current mission: Relationships/Dependencies, Initiative History, Risks & Open Questions, organization-aware sign-up, darker/clearer UX direction, UX specialist review, independent red-team — all Blocker/Major fixed | Complete |
 | 2 | Realistic Demo / data enrichment (sanitized synthetic portfolio) | Complete |
 | 3 | Real connector layer: **Jira → Gmail → Google Drive / Docs → Figma** | Implemented; live sign-in awaits provider app registration (manual, see CONNECTOR-SETUP.md) |
-| 4 | Notifications / Attention Center (in-app) | Not started |
+| 4 | Notifications / Attention Center (in-app) | Complete |
 | 5 | Perceived performance / interaction responsiveness | Not started |
 | 6 | Error states & edge-case hardening | Not started |
 | 7 | Final product polish / forgotten details | Not started |
@@ -60,6 +60,8 @@ Role: **design evidence / product definition**.
 - Support manual structured Figma references if live-connector limitations remain.
 
 ## Phase 4 — Notifications / Attention Center
+**Delivered (Phase 4):** notifications are derived from canonical records on every read (`src/lib/notifications/model.ts`) and never stored; only each person's read marks are kept (`0040_notification_reads.sql`), keyed by a fingerprint of the exact record version, so a changed record is new again. Bell with unread count (loaded in the background), `/notifications` with For me / Everything, kind filters, mark all read, deep links that cannot redirect outside Prodwise. "Approval evidence arrived" is implemented honestly as *Decision entry confirmed from evidence* — approval is never inferred.
+
 In-app only. Meaningful canonical events (conflicts, source changed, decision reopened, action overdue / due soon, target moved, dependency risk, risk opened, question overdue, approval evidence arrived, Weekly Review due, setup incomplete, connector failure). Deduplicated, grouped, organization-scoped, owner-aware; unread/read, mark all read, deep links, type filter, timestamps.
 
 ## Phases 5–8 (summary)
