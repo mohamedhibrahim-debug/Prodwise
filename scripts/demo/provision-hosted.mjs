@@ -11,6 +11,7 @@ import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { canonicalDemoData,DEMO_CANONICAL_VERSION,DEMO_CUTOFF,DEMO_ORGANIZATION_NAME } from '../../src/lib/demo/canonical.ts';
 import { freezeInput,sectionDigest,canonical } from '../../src/lib/delivery/model.ts';
+import { canonicalDemoDataV3,DEMO_V3_VERSION } from '../../src/lib/demo/scenario-v3.ts';
 
 const EMAIL='reviewer@prodwise.demo';
 const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -53,22 +54,54 @@ function validatePlan(plan,config){
  const rebuilt=makeHostedPlan({projectRef:plan.projectRef,actorId:plan.actorId,prior:plan.prior?{...plan,...plan.prior}:null,ids:plan});
  if(plan.format!==1||plan.mode!==rebuilt.mode||plan.projectRef!==config.projectRef||plan.actorId!==config.actorId||plan.version!==DEMO_CANONICAL_VERSION||plan.scenarioAt!==DEMO_CUTOFF||plan.email!==EMAIL||plan.role!=='ORG_OWNER'||plan.platformRole!==null)throw new Error('The saved plan does not match the pinned operator configuration.');
 }
+/** P1 collections: stored as the product's own JSON records plus their indexed columns. */
+function renderP1Rows(demo,p,part){
+ const s=demo.productStore,ws=p.workspaceId;const ev=e=>e.requestId??e.id;let sql='';
+ if(part==='BEFORE_CLAIMS'){
+ sql+=insertRows('source_containers',['id','workspace_id','provider','provider_workspace','reference','name','created_by','created_at'],s.sourceContainers.map(snake));
+ sql+=insertRows('source_items',['id','workspace_id','container_id','reference','name','kind','url','created_by','created_at'],s.sourceItems.map(snake));
+ sql+=insertRows('source_mappings',['id','workspace_id','initiative_id','item_id','role','revision','linked_by','linked_at','unlinked_by','unlinked_at','unlink_reason'],s.sourceMappings.map(snake));
+ sql+=insertRows('evidence_submissions',['id','workspace_id','initiative_id','request_id','data'],s.evidenceSubmissions.map(x=>({id:x.id,workspace_id:ws,initiative_id:x.initiativeId,request_id:x.requestId,data:x})));
+ sql+=insertRows('meeting_notes',['submission_id','workspace_id','initiative_id','revision','data'],s.meetingNotes.map(m=>({submission_id:m.submissionId,workspace_id:ws,initiative_id:m.initiativeId,revision:m.revision,data:m})));
+ sql+=insertRows('evidence_attempts',['id','workspace_id','initiative_id','submission_id','request_id','data'],s.evidenceAttempts.map(a=>({id:a.id,workspace_id:ws,initiative_id:a.initiativeId,submission_id:a.submissionId,request_id:a.requestId,data:a})));
+ sql+=insertRows('evidence_anchors',['id','workspace_id','initiative_id','submission_id','data'],s.evidenceAnchors.map(a=>({id:a.id,workspace_id:ws,initiative_id:a.initiativeId,submission_id:a.submissionId,data:a})));
+ return sql;}
+ sql+=insertRows('finding_states',['workspace_id','initiative_id','fingerprint','rule_id','subject','attribute','phase','values_recorded','status','resolution','resolved_at','created_at','updated_at','content_digest','outcome','chosen_claim_id','decision_claim_id','decided_value','confirmed_with','actor_id','actor_label','confirmer_label','confirmer_set_at','confirmer_set_by_label'],s.findingStates.map(snake));
+ sql+=insertRows('finding_dispositions',['id','workspace_id','organization_id','initiative_id','finding_id','kind','underlying_digest','defer_until','defer_until_next_review','reason','actor','at','client_request_id','data','input'],s.findingDispositions.map(d=>({id:d.id,workspace_id:ws,organization_id:p.organizationId,initiative_id:d.initiativeId,finding_id:d.findingId,kind:d.kind,underlying_digest:d.underlyingDigest,defer_until:d.deferUntil,defer_until_next_review:d.deferUntilNextReview,reason:d.reason,actor:d.actor,at:d.at,client_request_id:d.clientRequestId,data:d,input:{kind:d.kind,reason:d.reason}})));
+ sql+=insertRows('actions',['id','workspace_id','initiative_id','revision','data'],s.commitments.map(a=>({id:a.id,workspace_id:ws,initiative_id:a.initiativeId,revision:a.revision,data:a})));
+ sql+=insertRows('action_events',['id','workspace_id','initiative_id','action_id','seq','data','request_id','input'],s.commitmentEvents.map(e=>({id:e.id,workspace_id:ws,initiative_id:e.initiativeId,action_id:e.actionId,seq:e.seq,data:e,request_id:ev(e),input:{synthetic:true}})));
+ sql+=insertRows('open_questions',['id','workspace_id','initiative_id','revision','data'],s.openQuestions.map(q=>({id:q.id,workspace_id:ws,initiative_id:q.initiativeId,revision:q.revision,data:q})));
+ sql+=insertRows('question_events',['id','workspace_id','initiative_id','question_id','seq','data','request_id','input'],s.questionEvents.map(e=>({id:e.id,workspace_id:ws,initiative_id:e.initiativeId,question_id:e.questionId,seq:e.seq,data:e,request_id:ev(e),input:{synthetic:true}})));
+ sql+=insertRows('initiative_relationships',['id','workspace_id','from_initiative_id','to_initiative_id','type','status','revision','data'],s.relationships.map(r=>({id:r.id,workspace_id:ws,from_initiative_id:r.fromInitiativeId,to_initiative_id:r.toInitiativeId,type:r.type,status:r.status,revision:r.revision,data:r})));
+ sql+=insertRows('relationship_events',['id','workspace_id','relationship_id','seq','data','request_id','input'],s.relationshipEvents.map(e=>({id:e.id,workspace_id:ws,relationship_id:e.relationshipId,seq:e.seq,data:e,request_id:ev(e),input:{synthetic:true}})));
+ sql+=insertRows('risk_tracking',['id','workspace_id','initiative_id','claim_id','status','revision','data'],s.riskTracking.map(t=>({id:t.id,workspace_id:ws,initiative_id:t.initiativeId,claim_id:t.claimId,status:t.status,revision:t.revision,data:t})));
+ sql+=insertRows('risk_tracking_events',['id','workspace_id','initiative_id','tracking_id','seq','data','request_id','input'],s.riskEvents.map(e=>({id:e.id,workspace_id:ws,initiative_id:e.initiativeId,tracking_id:e.trackingId,seq:e.seq,data:e,request_id:ev(e),input:{synthetic:true}})));
+ sql+=insertRows('evidence_proposals',['id','workspace_id','initiative_id','submission_id','attempt_id','anchor_id','data'],s.evidenceProposals.map(x=>({id:x.id,workspace_id:ws,initiative_id:x.initiativeId,submission_id:x.submissionId,attempt_id:x.attemptId,anchor_id:x.anchorId,data:x})));
+ sql+=insertRows('evidence_confirmations',['proposal_id','workspace_id','initiative_id','data'],s.evidenceConfirmations.map(c=>({proposal_id:c.proposalId,workspace_id:ws,initiative_id:c.initiativeId,data:c})));
+ return sql;
+}
+function replacementsFirst(claims){const byId=new Map(claims.map(c=>[c.id,c])),done=new Set(),out=[];const visit=c=>{if(done.has(c.id))return;done.add(c.id);const next=byId.get(c.supersededByClaimId);if(next)visit(next);out.push(c);};claims.forEach(visit);return out;}
 function snake(row){return Object.fromEntries(Object.entries(row).map(([key,value])=>[key.replace(/[A-Z]/g,c=>'_'+c.toLowerCase()),value]));}
 function insertRows(table,columns,rows){
  if(!rows.length)return '';
  return 'insert into public.'+table+' ('+columns.join(',')+') select '+columns.map(c=>'r.'+c).join(',')+' from jsonb_populate_recordset(null::public.'+table+', '+json(rows)+') r;\n';
 }
+/** Column-backed timestamps come back from PostgreSQL as e.g. 2026-07-27T15:00:00+00:00; JSON-stored ones keep their text. */
+function pgTimes(value){
+ if(Array.isArray(value))return value.map(pgTimes);
+ if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,pgTimes(v)]));
+ const m=typeof value==='string'&&/^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.(\d+))?Z$/.exec(value);
+ if(!m)return value;const fraction=(m[2]??'').replace(/0+$/,'');return m[1]+(fraction?'.'+fraction:'')+'+00:00';
+}
 function fixtureFor(plan){
- const demo=canonicalDemoData({workspaceId:plan.workspaceId,organizationId:plan.organizationId,reviewerMemberId:plan.reviewerMemberId,reviewerUserId:plan.reviewerUserId,asOf:plan.scenarioAt});
- // Match delivery_source's database projection and canonical ordering.
- const source=structuredClone(demo.source);
- for(const snap of source.snapshots){
-   snap.initiative.createdBy=plan.reviewerUserId;
-   snap.evidence.sort((a,b)=>a.id.localeCompare(b.id));snap.claims.sort((a,b)=>a.id.localeCompare(b.id));
-   for(const claim of snap.claims){claim.evidence.sort((a,b)=>a.id.localeCompare(b.id));claim.anchors?.sort((a,b)=>a.evidenceId.localeCompare(b.evidenceId));}
- }
+ const demo=canonicalDemoDataV3({workspaceId:plan.workspaceId,organizationId:plan.organizationId,reviewerMemberId:plan.reviewerMemberId,reviewerUserId:plan.reviewerUserId});
+ // Each review is re-frozen from its OWN frozen records in the database's ordering (delivery_source orders
+ // evidence, claims and claim evidence by id). Re-freezing a Final from today's records would rewrite history.
+ const dbOrder=snapshots=>{for(const snap of snapshots){snap.initiative={archivedAt:null,archivedBy:null,archiveReason:null,...snap.initiative,createdBy:plan.reviewerUserId};snap.evidence.sort((a,b)=>a.id.localeCompare(b.id));snap.claims.sort((a,b)=>a.id.localeCompare(b.id));for(const claim of snap.claims){claim.evidence.sort((a,b)=>a.id.localeCompare(b.id));claim.anchors?.sort((a,b)=>a.evidenceId.localeCompare(b.evidenceId));}}return snapshots;};
+ for(const snap of demo.source.snapshots)snap.initiative.createdBy=plan.reviewerUserId;
  for(const review of demo.deliveryState.reviews){
-   review.input=freezeInput(source,{...demo.deliveryState,facts:review.input.facts,events:review.input.events},plan.workspaceId,review.input.asOf);
+   const frozen=structuredClone(review.input);const source={...frozen,contexts:demo.productStore.contexts,snapshots:pgTimes(dbOrder(frozen.snapshots))};
+   review.input=freezeInput(source,{...demo.deliveryState,facts:frozen.facts,events:frozen.events},plan.workspaceId,frozen.asOf);
    for(const section of review.sections)section.sourceDigest=sectionDigest(review.input,section.initiativeId);
  }
  return demo;
@@ -96,7 +129,7 @@ export function preflightSql(plan,providerMustExist=false,allowPendingProvider=f
  where d.workspace_id=${literal(prior.workspaceId)}::uuid and d.organization_id=${literal(prior.organizationId)}::uuid and d.canonical_version=${literal(p.version)} and d.scenario_at=${literal(p.scenarioAt)}::timestamptz and o.status='ACTIVE' and w.status='ACTIVE' and cardinality(o.allowed_email_domains)=0 and o.allowed_exact_emails=array[${literal(EMAIL)}]::text[]) then raise exception 'REGISTERED_DEMO_TARGET_CHANGED';end if;
  if not exists(select 1 from public.organization_memberships where id=${literal(prior.reviewerMemberId)}::uuid and organization_id=${literal(prior.organizationId)}::uuid and user_id=${literal(p.reviewerUserId)}::uuid and role='ORG_OWNER' and active and not policy_override) then raise exception 'REGISTERED_DEMO_OWNER_CHANGED';end if;
  if exists(select 1 from public.workspaces where organization_id=${literal(prior.organizationId)}::uuid and id<>${literal(prior.workspaceId)}::uuid) then raise exception 'UNEXPECTED_DEMO_WORKSPACE';end if;
- if exists(select 1 from public.organization_memberships m join public.users u on u.id=m.user_id where m.organization_id=${literal(prior.organizationId)}::uuid and (u.platform_role is not null or m.user_id<>${literal(p.reviewerUserId)}::uuid)) then raise exception 'UNEXPECTED_DEMO_MEMBER';end if;
+ if exists(select 1 from public.organization_memberships m join public.users u on u.id=m.user_id where m.organization_id=${literal(prior.organizationId)}::uuid and (u.platform_role is not null or (m.user_id<>${literal(p.reviewerUserId)}::uuid and not (u.auth_user_id is null and lower(u.email) like '%@example.demo')))) then raise exception 'UNEXPECTED_DEMO_MEMBER';end if;
  if exists(select 1 from public.organization_memberships m join public.organizations o on o.id=m.organization_id where m.user_id=${literal(p.reviewerUserId)}::uuid and m.organization_id<>${literal(prior.organizationId)}::uuid and (m.active or o.status<>'ARCHIVED' or not exists(select 1 from public.demo_scenarios d where d.organization_id=o.id))) then raise exception 'FOREIGN_REVIEWER_MEMBERSHIP';end if;
  `}
  end $guard$;`;
@@ -113,15 +146,28 @@ insert into public.demo_scenarios(workspace_id,organization_id,canonical_version
 update public.organizations set status='ACTIVE' where id=${literal(p.organizationId)}::uuid;
 update public.workspaces set status='ACTIVE' where id=${literal(p.workspaceId)}::uuid;
 `;
- sql+=insertRows('initiatives',['id','workspace_id','slug','name','description','known_references','business_line','stage','overall_state','state_summary','is_demo','created_by','created_at','updated_at'],store.initiatives.map(row=>({...snake(row),created_by:p.reviewerUserId})));
+ // Fictional personas: Demo members who own and act on work. No provider identity, so they can never sign in.
+ // Reused across generations; an existing row must still be exactly a sign-in-less persona.
+ for(const x of demo.personas)sql+=`insert into public.users(id,email,display_name,auth_user_id,is_system,active) values(${literal(x.userId)}::uuid,${literal(x.email)},${literal(x.displayName)},null,false,true) on conflict (id) do nothing;
+do $$begin if not exists(select 1 from public.users where id=${literal(x.userId)}::uuid and lower(email)=${literal(x.email)} and auth_user_id is null and platform_role is null) then raise exception 'DEMO_PERSONA_IDENTITY_CHANGED';end if;end$$;\n`;
+ sql+=insertRows('organization_memberships',['id','organization_id','user_id','role','active','is_product_lead','policy_override','policy_override_reason','joined_via'],demo.personas.map(x=>({id:x.memberId,organization_id:p.organizationId,user_id:x.userId,role:x.role,active:true,is_product_lead:x.isProductLead,policy_override:true,policy_override_reason:'Synthetic Demo persona; cannot sign in.',joined_via:'PLATFORM'})));
+ sql+=insertRows('initiatives',['id','workspace_id','slug','name','description','known_references','business_line','stage','overall_state','state_summary','is_demo','created_by','created_at','updated_at','current_context_id'],store.initiatives.map(row=>({...snake(row),current_context_id:row.currentContextId??null,created_by:p.reviewerUserId})));
+ sql+=insertRows('initiative_contexts',['id','workspace_id','initiative_id','label','note','revision','created_at','updated_at','retired_at','created_by'],store.contexts.map(c=>({...snake(c),created_by:p.reviewerUserId})));
+
  sql+=insertRows('initiative_sources',['id','workspace_id','initiative_id','name','source_type','connection_state','last_synced_at','created_at','updated_at'],store.sources.map(snake));
  sql+=insertRows('evidence',['id','workspace_id','initiative_id','source_id','title','source_type','source_reference','source_url','content_summary','boundary','occurred_at','captured_at','last_verified_at','created_by','created_at','updated_at'],store.evidence.map(snake));
- sql+=insertRows('claims',['id','workspace_id','initiative_id','type','status','subject','attribute','value','domain','phase','confidence','superseded_by_claim_id','created_by','created_at','updated_at','origin','verified_at','verified_actor_id','verified_actor_label','verification_basis','verification_note'],store.claims.map(snake));
+ sql+=renderP1Rows(demo,p,'BEFORE_CLAIMS');
+ // A replacement claim is inserted before the claim it supersedes.
+ sql+=insertRows('claims',['id','workspace_id','initiative_id','type','status','subject','attribute','value','domain','phase','confidence','superseded_by_claim_id','created_by','created_at','updated_at','origin','verified_at','verified_actor_id','verified_actor_label','verification_basis','verification_note','evidence_submission_id','evidence_anchor_id','context_id','effective_date'],replacementsFirst(store.claims).map(c=>({...snake(c),context_id:c.contextId??null,effective_date:c.effectiveDate??null,evidence_submission_id:c.evidenceSubmissionId??null,evidence_anchor_id:c.evidenceAnchorId??null})));
  sql+=insertRows('claim_evidence',['workspace_id','claim_id','evidence_id','created_at','locator','excerpt'],store.claimEvidence.map(snake));
- const logs=[...store.activity.map(row=>({...snake(row),actor_id:p.reviewerUserId})),...demo.deliveryState.events.map(event=>({id:event.id,workspace_id:p.workspaceId,initiative_id:event.initiativeId,actor_id:p.reviewerUserId,actor_label:event.actor.label,event_type:'DELIVERY_FACT_RECORDED',summary:'Synthetic scenario delivery fact prepared',occurred_at:event.occurredAt,entity_type:'DELIVERY_FACT',entity_id:event.after.id,payload:{deliveryEvent:event}}))];
+ const personaIds=new Map(demo.personas.map(x=>[x.displayName,x.userId]));
+ const logs=[...store.activity.map(row=>({...snake(row),actor_id:personaIds.get(row.actorLabel)??p.reviewerUserId})),...demo.deliveryState.events.map(event=>({id:event.id,workspace_id:p.workspaceId,initiative_id:event.initiativeId,actor_id:personaIds.get(event.actor.label)??p.reviewerUserId,actor_label:event.actor.label,event_type:'DELIVERY_FACT_RECORDED',summary:'Synthetic scenario delivery fact prepared',occurred_at:event.occurredAt,entity_type:'DELIVERY_FACT',entity_id:event.after.id,payload:{deliveryEvent:event}}))];
  sql+=insertRows('activity_log',['id','workspace_id','initiative_id','actor_id','actor_label','event_type','summary','occurred_at','entity_type','entity_id','payload'],logs);
  sql+=insertRows('delivery_facts',['id','workspace_id','initiative_id','kind','revision','value_date','value_text','owner_member_id','data'],demo.deliveryState.facts.map(f=>({id:f.id,workspace_id:p.workspaceId,initiative_id:f.initiativeId,kind:f.kind,revision:f.revision,value_date:f.value.date,value_text:f.value.text,owner_member_id:f.value.memberId,data:f})));
  sql+=insertRows('weekly_reviews',['id','workspace_id','iso_week','status','revision','data'],demo.deliveryState.reviews.map(r=>({id:r.id,workspace_id:p.workspaceId,iso_week:r.week,status:r.status,revision:r.revision,data:r})));
+ sql+=renderP1Rows(demo,p,'AFTER_CLAIMS');
+ // Archiving is the last write: archived initiatives refuse further product rows. Pinned to this generation's workspace.
+ sql+=store.initiatives.filter(i=>i.archivedAt).map(i=>`update public.initiatives set archived_at=${literal(i.archivedAt)}::timestamptz,archived_by=${literal(i.archivedBy)}::uuid,archive_reason=${literal(i.archiveReason)} where id=${literal(i.id)}::uuid and workspace_id=${literal(p.workspaceId)}::uuid;\n`).join('');
  if(p.prior){
   sql+=`update public.organizations set status='ARCHIVED' where id=${literal(p.prior.organizationId)}::uuid;
 update public.workspaces set status='ARCHIVED' where id=${literal(p.prior.workspaceId)}::uuid and organization_id=${literal(p.prior.organizationId)}::uuid;
@@ -130,7 +176,7 @@ update public.workspace_sessions set expires_at=least(expires_at,clock_timestamp
 select public.platform_audit(${literal(p.actorId)}::uuid,${literal(p.prior.organizationId)}::uuid,${literal(p.prior.workspaceId)}::uuid,${literal(p.prior.workspaceId)},'DEMO_GENERATION_ARCHIVED',null,${json({replacedByWorkspaceId:p.workspaceId})},'Operator reset retained all prior synthetic business records and Final reviews; only old Demo access was retired.',false);
 `;
  }
- sql+=`select public.platform_audit(${literal(p.actorId)}::uuid,${literal(p.organizationId)}::uuid,${literal(p.workspaceId)}::uuid,${literal(p.reviewerUserId)},'DEMO_GENERATION_PREPARED',null,${json({version:p.version,scenarioAt:p.scenarioAt,role:'ORG_OWNER',platformRole:null,priorWorkspaceId:p.prior?.workspaceId??null})},'Explicit operator preparation of isolated synthetic graduation reviewer scenario.',false);
+ sql+=`select public.platform_audit(${literal(p.actorId)}::uuid,${literal(p.organizationId)}::uuid,${literal(p.workspaceId)}::uuid,${literal(p.reviewerUserId)},'DEMO_GENERATION_PREPARED',null,${json({version:p.version,dataset:DEMO_V3_VERSION,scenarioAt:p.scenarioAt,role:'ORG_OWNER',platformRole:null,priorWorkspaceId:p.prior?.workspaceId??null})},'Explicit operator preparation of isolated synthetic graduation reviewer scenario.',false);
 set constraints all immediate;
 commit;
 `;
@@ -163,7 +209,7 @@ function selfTest(){
  const prior={...initial,version:DEMO_CANONICAL_VERSION};
  const reset=makeHostedPlan({projectRef:ref,actorId,prior}),sql=renderHostedTransaction(reset);
  assert.equal(reset.reviewerUserId,initial.reviewerUserId);assert.equal(reset.authUserId,initial.authUserId);assert.notEqual(reset.organizationId,initial.organizationId);assert.notEqual(reset.workspaceId,initial.workspaceId);
- assert.ok(sql.includes("set status='ARCHIVED'"));assert.ok(sql.includes('workspace_sessions set expires_at'));assert.ok(!/\b(delete|truncate)\b/i.test(sql));assert.ok(!/update public\.(weekly_reviews|delivery_facts|claims|evidence|initiatives)\b/i.test(sql));
+ assert.ok(sql.includes("set status='ARCHIVED'"));assert.ok(sql.includes('workspace_sessions set expires_at'));assert.ok(!/\b(delete|truncate)\b/i.test(sql));for(const statement of sql.match(/update public\.(weekly_reviews|delivery_facts|claims|evidence|initiatives)\b[^\n]*\n/gi)??[])assert.ok(statement.includes(`workspace_id='${reset.workspaceId}'::uuid`),'business updates must be pinned to the new generation');
  assert.throws(()=>makeHostedPlan({projectRef:ref,actorId,prior:{...prior,platformRole:'PLATFORM_OWNER'}}));assert.throws(()=>makeHostedPlan({projectRef:ref,actorId,prior:{...prior,projectRef:'otherprojectabcdefgh'}}));
  assert.throws(()=>makeHostedPlan({projectRef:ref,actorId,prior,ids:{workspaceId:prior.workspaceId}}));
  validatePlan(reset,{projectRef:ref,actorId});assert.throws(()=>validatePlan({...reset,role:'ADMIN'},{projectRef:ref,actorId}));

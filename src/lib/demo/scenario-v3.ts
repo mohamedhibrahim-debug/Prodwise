@@ -65,7 +65,8 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
   const scoped = <T extends object>(v: T): Scoped<T> => ({ ...v, workspaceId });
 
   // ── Members: the reviewer plus fictional personas who own and act on work. ──
-  const personas: DemoPersona[] = PERSONAS.map(([key, displayName, title, lead]) => ({ key, memberId: id(`member:${key}`), userId: id(`user:${key}`), displayName, title, email: `${key}@example.demo`, role: "MEMBER", isProductLead: lead }));
+  // Persona users are one fixed identity across Demo generations (like the reviewer); memberships are per generation.
+  const personas: DemoPersona[] = PERSONAS.map(([key, displayName, title, lead]) => ({ key, memberId: id(`member:${key}`), userId: demoId("personas", `v3:user:${key}`), displayName, title, email: `${key}@example.demo`, role: "MEMBER", isProductLead: lead }));
   const members: DeliveryMember[] = [
     { id: reviewerMemberId, workspaceId, displayName: "Demo Reviewer", role: "ORG_OWNER", active: true, isProductLead: false },
     ...personas.map(p => ({ id: p.memberId, workspaceId, displayName: p.displayName, role: "MEMBER" as const, active: true, isProductLead: p.isProductLead })),
@@ -348,8 +349,8 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
         store.sourceContainers = lib.containers.map(c => ({ ...c, id: containerId.get(c.id)!, createdBy: reviewerUserId }));
         store.sourceItems = lib.items.map(it => ({ ...it, id: itemId.get(it.id)!, containerId: containerId.get(it.containerId)!, createdBy: reviewerUserId }));
         store.sourceMappings = lib.mappings.map(m => ({ ...m, id: id(`mapping:${m.initiativeId}:${itemId.get(m.itemId)}`), itemId: itemId.get(m.itemId)! }));
-        const rowsMapped = jiraRows;
-        log(i.slug, when, "SOURCE_MAPPED", `${rowsMapped.length} ${rowsMapped.length === 1 ? "reference" : "references"} mapped to this initiative`, "reviewer", { entityType: "SOURCE_MAPPING" });
+        // One event per mapping, as the product's own mapping path records it.
+        for (const m of store.sourceMappings.filter(x => x.initiativeId === i.id && x.linkedAt === when)) log(i.slug, when, "SOURCE_MAPPED", "Source item mapped to initiative", "reviewer", { entityType: "SOURCE_MAPPING", entityId: m.id, payload: { before: null, after: m } });
       }
     });
   }
@@ -658,7 +659,9 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
     const t = day("2026-09-25", "14:00");
     store.claimEvidence.push(scoped({ claimId: id("claim:tcp-cover-6"), evidenceId: id("evidence:tcp-mail"), createdAt: t, locator: null, excerpt: "coverage period for the first release is six months" }));
     const c = store.claims.find(x => x.id === id("claim:tcp-cover-6"))!; c.updatedAt = t;
-    log("terminal-care-plan", t, "FINDING_DISPOSITION_REOPENED", "Reopened: the compared entries changed after the deferral.", "fixture", { entityType: "finding" });
+    // Same shape the queue evaluator records when it observes the changed entries (hosted de-duplicates on dispositionId + reason).
+    const deferral = store.findingDispositions.find(d => d.id === id("disposition:tcp-defer"))!;
+    log("terminal-care-plan", t, "FINDING_DISPOSITION_REOPENED", "Reopened: evidence changed since deferral.", "fixture", { entityType: "finding", entityId: deferral.findingId, payload: { dispositionId: deferral.id, reopenReason: "evidence changed since deferral", observedByEvaluator: true } });
   });
   // A dismissed comparison: pricing notes that differ only because one is a draft percentage format.
   at(day("2026-09-19", "10:00"), () => {
