@@ -151,3 +151,50 @@ test("snapshots are capped at the evidence limit and say so", () => {
   const t = capText("x".repeat(30000));
   assert.ok(t.length <= 20000 && /shortened/.test(t));
 });
+
+import { withTokens, type TokenStore } from "./token-lifecycle.ts";
+/** In-memory token store: sealed = JSON, so tests can see exactly what was written. */
+function memoryStore(initial: { accessToken: string; refreshToken: string | null; expiresAt: number | null }, refresh: TokenStore["refresh"]) {
+  const state = { connected: true, sealed: JSON.stringify(initial) as string | null, expired: false, saves: 0 };
+  const store: TokenStore = {
+    current: async () => ({ connected: state.connected, sealed: state.sealed }),
+    open: s => JSON.parse(s), seal: t => JSON.stringify(t),
+    save: async s => { state.saves++; state.sealed = s; },
+    expire: async () => { state.expired = true; state.connected = false; state.sealed = null; },
+    refresh,
+  };
+  return { store, state };
+}
+
+test("token lifecycle: refresh before expiry and persist the rotated token", async () => {
+  const { store, state } = memoryStore({ accessToken: "old", refreshToken: "r1", expiresAt: 10 }, async () => ({ accessToken: "new", refreshToken: "r2", expiresAt: 999999 }));
+  assert.equal(await withTokens(store, state.sealed!, async a => a, () => 0), "new");
+  assert.equal(JSON.parse(state.sealed!).refreshToken, "r2");
+});
+
+test("token lifecycle: one refresh and retry on 401; a dead grant expires the connection", async () => {
+  let calls = 0;
+  const ok = memoryStore({ accessToken: "a", refreshToken: "r", expiresAt: null }, async () => ({ accessToken: "b", refreshToken: "r2", expiresAt: null }));
+  assert.equal(await withTokens(ok.store, ok.state.sealed!, async a => { calls++; if (a === "a") throw new ConnectorError("NEEDS_RECONNECT"); return a; }), "b");
+  assert.equal(calls, 2);
+  const dead = memoryStore({ accessToken: "a", refreshToken: "r", expiresAt: null }, async () => { throw new ConnectorError("NEEDS_RECONNECT"); });
+  await assert.rejects(withTokens(dead.store, dead.state.sealed!, async () => { throw new ConnectorError("NEEDS_RECONNECT"); }), (e: unknown) => e instanceof ConnectorError && e.code === "NEEDS_RECONNECT");
+  assert.equal(dead.state.expired, true);
+});
+
+test("token lifecycle: a concurrent rotation elsewhere is used instead of expiring", async () => {
+  const m = memoryStore({ accessToken: "a", refreshToken: "r1", expiresAt: 10 }, async () => {
+    // Another tab refreshed first: r1 is now invalid and the store holds r2.
+    m.state.sealed = JSON.stringify({ accessToken: "other", refreshToken: "r2", expiresAt: 999999 });
+    throw new ConnectorError("NEEDS_RECONNECT");
+  });
+  assert.equal(await withTokens(m.store, m.state.sealed!, async a => a, () => 0), "other");
+  assert.equal(m.state.expired, false);
+  assert.equal(JSON.parse(m.state.sealed!).refreshToken, "r2");
+});
+
+test("token lifecycle: a disconnect made during refresh wins; tokens are never written back", async () => {
+  const m = memoryStore({ accessToken: "a", refreshToken: "r1", expiresAt: 10 }, async () => { m.state.connected = false; m.state.sealed = null; return { accessToken: "b", refreshToken: "r2", expiresAt: 999999 }; });
+  await assert.rejects(withTokens(m.store, m.state.sealed!, async a => a, () => 0), (e: unknown) => e instanceof ConnectorError && e.code === "NOT_CONNECTED");
+  assert.equal(m.state.sealed, null); assert.equal(m.state.saves, 0);
+});

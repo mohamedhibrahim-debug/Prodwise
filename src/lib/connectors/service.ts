@@ -11,7 +11,8 @@ import type { SourceRole } from "@/lib/workspace/source-mapping";
 import { connectorKey, connectorSetup, getConnection, listConnections, saveConnection, tokenBinding } from "./connections";
 import { open, seal } from "./crypto";
 import { bearerCall, type ProviderCall } from "./http";
-import { authorizeUrl, credentialsFor, exchangeCode, needsRefresh, pkcePair, PROVIDERS, publicOrigin, redirectUri, refreshTokens } from "./oauth";
+import { withTokens } from "./token-lifecycle";
+import { authorizeUrl, credentialsFor, exchangeCode, pkcePair, PROVIDERS, publicOrigin, redirectUri, refreshTokens } from "./oauth";
 import { ACCESSIBLE_RESOURCES, issueSnapshot, listProjects, searchIssues, sitesFrom } from "./jira";
 import { searchThreads, threadSnapshot } from "./gmail";
 import { fileSnapshot, searchFiles } from "./drive";
@@ -91,15 +92,15 @@ async function withConnection<T>(ctx: WorkspaceAccess, connector: Connector, fn:
   const c = await getConnection(ctx.organizationId, ctx.actor.id, connector);
   if (!c || c.status === "DISCONNECTED" || !c.sealedTokens) throw new ConnectorError("NOT_CONNECTED");
   if (c.status === "NEEDS_RECONNECT") throw new ConnectorError("NEEDS_RECONNECT");
-  const creds = credentialsFor(connector, process.env)!;
-  let tokens = open<ProviderTokens>(connectorKey(), c.sealedTokens, tokenBinding(c)), refreshed = false;
-  const persist = async (t: ProviderTokens) => { tokens = t; refreshed = true; await saveConnection({ ...c, sealedTokens: seal(connectorKey(), t, tokenBinding(c)), updatedAt: new Date().toISOString(), lastErrorCode: null }); };
-  const expire = async () => { await saveConnection({ ...c, status: "NEEDS_RECONNECT", sealedTokens: null, updatedAt: new Date().toISOString(), lastErrorCode: "NEEDS_RECONNECT" }); };
-  try {
-    if (needsRefresh(tokens)) await persist(await refreshTokens(fetch, connector, creds, tokens));
-    try { return await fn(bearerCall(fetch, tokens.accessToken), c); }
-    catch (e) { if (!(e instanceof ConnectorError) || e.code !== "NEEDS_RECONNECT" || refreshed) throw e; await persist(await refreshTokens(fetch, connector, creds, tokens)); return await fn(bearerCall(fetch, tokens.accessToken), c); }
-  } catch (e) { if (e instanceof ConnectorError && e.code === "NEEDS_RECONNECT") await expire(); throw e; }
+  const creds = credentialsFor(connector, process.env)!, key = connectorKey();
+  return withTokens({
+    current: async () => { const now = await getConnection(ctx.organizationId, ctx.actor.id, connector); return { connected: now?.status === "CONNECTED", sealed: now?.sealedTokens ?? null }; },
+    open: sealed => open<ProviderTokens>(key, sealed, tokenBinding(c)),
+    seal: t => seal(key, t, tokenBinding(c)),
+    save: async sealed => { const now = await getConnection(ctx.organizationId, ctx.actor.id, connector); if (now?.status !== "CONNECTED") throw new ConnectorError("NOT_CONNECTED"); await saveConnection({ ...now, sealedTokens: sealed, updatedAt: new Date().toISOString(), lastErrorCode: null }); },
+    expire: async () => { const now = await getConnection(ctx.organizationId, ctx.actor.id, connector); if (now?.status === "CONNECTED") await saveConnection({ ...now, status: "NEEDS_RECONNECT", sealedTokens: null, updatedAt: new Date().toISOString(), lastErrorCode: "NEEDS_RECONNECT" }); },
+    refresh: t => refreshTokens(fetch, connector, creds, t),
+  }, c.sealedTokens, access => fn(bearerCall(fetch, access), c));
 }
 
 // ── Search and browse (read-only, current person's permissions) ─────────────

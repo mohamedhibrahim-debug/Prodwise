@@ -4,7 +4,7 @@ import {ScopeField} from '@/components/auth/WorkspaceScope';
 import {mapSourcesAction} from '@/app/initiatives/[slug]/manage/actions';
 import type {SourceProvider} from '@/lib/workspace/source-mapping';
 import styles from './source-mapper.module.css';
-const providers:[SourceProvider,string,string][]=[['JIRA','Jira','Map epics, stories or tasks by key'],['DOCUMENT','Document','BRD, scope or decision log'],['EMAIL','Email','Approvals and confirmations'],['MEETING_NOTES','Meeting notes','Keep meeting context connected'],['PASTED_EVIDENCE','Pasted evidence','A retained reference for your excerpt'],['OTHER_URL','Other source','An external reference or link']];
+const providers:[SourceProvider,string,string][]=[['JIRA','Jira','Map epics, stories or tasks by key'],['DOCUMENT','Document','BRD, scope or decision log'],['EMAIL','Email','Approvals and confirmations'],['FIGMA','Figma','Design files and frames by link — manual reference; no design approval is implied'],['MEETING_NOTES','Meeting notes','Keep meeting context connected'],['PASTED_EVIDENCE','Pasted evidence','A retained reference for your excerpt'],['OTHER_URL','Other source','An external reference or link']];
 type Item={reference:string;name:string;kind:string;url:string|null};
 export function SourceMapper({slug,name}:{slug:string;name:string}){
  const dialog=useRef<HTMLDialogElement>(null),trigger=useRef<HTMLButtonElement>(null),heading=useRef<HTMLHeadingElement>(null),error=useRef<HTMLParagraphElement>(null);
@@ -16,7 +16,7 @@ export function SourceMapper({slug,name}:{slug:string;name:string}){
  return <><button type="button" className={styles.trigger} ref={trigger} onClick={()=>{dialog.current?.showModal();heading.current?.focus();}}>Add source</button>
  <dialog ref={dialog} className={styles.dialog} aria-labelledby={`source-heading-${slug}`} onCancel={e=>{if(pending)e.preventDefault();else trigger.current?.focus();}}>
   <header className={styles.header}><div><h3 id={`source-heading-${slug}`} tabIndex={-1} ref={heading}>Map sources to {name}</h3><p>Manual references · no live Jira, Drive or mailbox connection.</p></div><button type="button" aria-label="Close source mapping" disabled={pending} onClick={close}>Close</button></header>
-  {!provider?<div className={styles.choices}>{providers.map(([id,label,description])=><button key={id} type="button" onClick={()=>{setProvider(id);setItems([{reference:'',name:'',kind:id==='JIRA'?'Epic':'Other',url:null}]);}}><strong>{label}</strong><span>{description}</span></button>)}</div>:<form action={action} className={styles.form}>
+  {!provider?<div className={styles.choices}>{providers.map(([id,label,description])=><button key={id} type="button" onClick={()=>{setProvider(id);setItems([{reference:'',name:'',kind:id==='JIRA'?'Epic':id==='FIGMA'?'FRAME':'Other',url:null}]);}}><strong>{label}</strong><span>{description}</span></button>)}</div>:<form action={action} className={styles.form}>
    <ScopeField/><input type="hidden" name="slug" value={slug}/><input type="hidden" name="provider" value={provider}/><input type="hidden" name="items" value={JSON.stringify(items)}/>
    <button type="button" className={styles.back} onClick={()=>setProvider(null)} disabled={pending}>← Change source type</button>
    {state.error&&<p ref={error} role="alert" tabIndex={-1} className={styles.error}>{state.error}</p>}
