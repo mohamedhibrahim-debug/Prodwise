@@ -30,7 +30,7 @@ try {
   NpmGate @("run", "typecheck")
   NpmGate @("run", "lint")
   NpmGate @("run", "build")
-  NpmGate @("run", "test:stage2-2-ui")
+  NpmGate @("run", "test:e2e")
   Write-Host "STAGE 2.2 FINAL GATE PASSED (local only)"
 } finally {
   if ($started) {

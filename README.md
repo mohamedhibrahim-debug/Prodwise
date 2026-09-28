@@ -58,7 +58,7 @@ local default) and Chrome or Edge (`PRODWISE_CHROME` overrides discovery). No ne
 packages are required. The gate creates and removes a disposable loopback-only
 PostgreSQL cluster and disposable browser/demo stores. It never uses hosted
 Supabase. Port 55432 must be free, or invoke the PowerShell script with `-Port`.
-Browser tests can be rerun after a build with `npm run test:stage2-2-ui`.
+Browser acceptance runs against a running local server with `npm run test:e2e` (see `scripts/e2e/acceptance.mjs`; it needs an existing Playwright/Chromium installation and resets nothing — run the local Demo reset afterwards).
 Screenshots and scenario coverage are in `docs/ui-review/stage2-2/`.
 
 | Command | Purpose |
