@@ -1,6 +1,7 @@
 'use client';
 import {useFormAction} from '@/components/forms/useFormAction';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { NOTIFICATIONS_CHANGED } from '@/components/notifications/events';
 import { listOrganizationContextsAction, switchOrganizationAction } from '@/app/account/organization-actions';
 import type { AuthorizedContext } from '@/lib/auth/service';
 import { organizationRoleLabel, type ShellIdentity } from './ShellIdentity';
@@ -10,6 +11,9 @@ export function OrganizationControl({identity,compact=false}:{identity:ShellIden
   const [contexts,setContexts]=useState<AuthorizedContext[]|null>(null);const [loadError,setLoadError]=useState('');const [loading,setLoading]=useState(false);
   const [state, action, pending, keepAction] = useFormAction(switchOrganizationAction,{});
   const switchable=!identity.guest&&contexts?.length!==1;
+  // This shell survives the client navigation that follows a switch: tell per-organization counts to re-read.
+  const shownOrganization=useRef(identity.presentation.organizationName);
+  useEffect(()=>{if(shownOrganization.current!==identity.presentation.organizationName){shownOrganization.current=identity.presentation.organizationName;window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED));}},[identity.presentation.organizationName]);
   async function open(){dialog.current?.showModal();setLoading(true);setLoadError('');try{const result=await listOrganizationContextsAction();setContexts(result);}catch{setLoadError('Organization choices could not be loaded. Your current organization is unchanged.');}finally{setLoading(false);}}
   function restoreFocus(){if(trigger.current)trigger.current.focus();else document.getElementById('main-content')?.focus();}
   function close(){dialog.current?.close();restoreFocus();}

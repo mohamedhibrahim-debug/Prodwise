@@ -66,7 +66,6 @@ export function CommandPalette({administration=false,canSwitch=false}:{administr
   const [initiatives, setInitiatives] = useState<NavInitiative[] | null>(null);
   const [failed, setFailed] = useState(false);
   /** Fetch guard: a ref, so requesting once never triggers a render. */
-  const requested = useRef(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -136,11 +135,12 @@ export function CommandPalette({administration=false,canSwitch=false}:{administr
     return () => window.removeEventListener(OPEN_PALETTE_EVENT, onRequest);
   }, []);
 
-  // Fetch once, on first open only. Guarded by a ref rather than state so the
-  // effect never sets state synchronously and cannot cascade a render.
+  // Re-read on every open: the list is small, and a list held for the whole
+  // session went stale — new initiatives were missing and, because this shell
+  // survives client navigation, a switched organization still showed the
+  // previous one's initiatives. The last list stays visible while it loads.
   useEffect(() => {
-    if (!open || requested.current) return;
-    requested.current = true;
+    if (!open) return;
     let cancelled = false;
 
     void (async () => {
@@ -158,7 +158,6 @@ export function CommandPalette({administration=false,canSwitch=false}:{administr
         // a confident claim produced by an error, in a product whose whole
         // thesis is that it never asserts what it does not know.
         if (!cancelled) {
-          requested.current = false;
           setFailed(true);
         }
       }
@@ -268,13 +267,18 @@ export function CommandPalette({administration=false,canSwitch=false}:{administr
   }, [initiatives, currentSlug, administration, canSwitch]);
 
   /* Plain case-insensitive substring matching. Nothing semantic, nothing fuzzy:
-     a navigation aid that guesses is worse than one that does not. */
+     a navigation aid that guesses is worse than one that does not. Order is
+     fixed and explainable: name starts with the query, then a word in the name
+     does, then the name contains it, then only a keyword does; ties keep list order. */
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return commands;
-    return commands.filter((c) =>
-      `${c.label} ${c.keywords}`.toLowerCase().includes(q),
-    );
+    const tier = (c: Command) => { const label = c.label.toLowerCase(); return label.startsWith(q) ? 0 : label.split(/[\s\-·/]+/).some((w) => w.startsWith(q)) ? 1 : label.includes(q) ? 2 : 3; };
+    return commands
+      .filter((c) => `${c.label} ${c.keywords}`.toLowerCase().includes(q))
+      .map((c, i) => ({ c, i, t: tier(c) }))
+      .sort((a, b) => a.t - b.t || a.i - b.i)
+      .map((x) => x.c);
   }, [commands, query]);
 
   const run = useCallback(
