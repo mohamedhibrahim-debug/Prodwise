@@ -16,7 +16,7 @@ const READS: Record<Connector, string> = {
   GOOGLE_DRIVE: "Searches files you can open and reads only the documents you select. Never edits or shares files.",
   FIGMA: "Reads the pages, frames, text and open comments of files you link. Never edits designs; a changed frame is never treated as approval.",
 };
-const KNOWN: ConnectorErrorCode[] = ["NOT_CONFIGURED", "NOT_CONNECTED", "NEEDS_RECONNECT", "NO_ACCESS", "NOT_FOUND", "RATE_LIMITED", "PROVIDER_UNAVAILABLE", "UNSUPPORTED", "INVALID_REQUEST", "DEMO_ORGANIZATION"];
+const KNOWN: ConnectorErrorCode[] = ["NOT_CONFIGURED", "NOT_CONNECTED", "NEEDS_RECONNECT", "NO_ACCESS", "NOT_FOUND", "RATE_LIMITED", "PROVIDER_UNAVAILABLE", "UNSUPPORTED", "INVALID_REQUEST", "DEMO_ORGANIZATION", "VIEW_ONLY"];
 
 export default async function Connections({ searchParams }: { searchParams: Promise<{ connected?: string; connector?: string; result?: string }> }) {
   const [ctx, q, { overview, isDemo }] = await Promise.all([requireWorkspaceAccess(), searchParams, connectorOverview()]);

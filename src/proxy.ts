@@ -13,6 +13,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
   catch (error) {
+    // The OAuth callback is a browser navigation, not an API call: send a signed-out person to sign in.
+    if (/^\/api\/connectors\/[^/]+\/callback$/.test(pathname) && error instanceof AccessError && error.code==='UNAUTHENTICATED') { const login = new URL('/login', request.url); login.searchParams.set('returnTo','/account/connections'); return NextResponse.redirect(login); }
     if (pathname.startsWith('/api/')) return NextResponse.json({ error: error instanceof AccessError ? error.message : 'Workspace access is unavailable.' }, { status: error instanceof AccessError && error.code==='UNAUTHENTICATED' ? 401 : 403, headers: { 'Cache-Control': 'no-store' } });
     const login = new URL('/login', request.url);
     if (error instanceof AccessError && error.code==='UNAUTHENTICATED') login.searchParams.set('returnTo',safeReturnPath(pathname+request.nextUrl.search));

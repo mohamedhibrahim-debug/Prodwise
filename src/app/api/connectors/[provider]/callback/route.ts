@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { finishConnect, stateCookieName } from "@/lib/connectors/service";
 import { ConnectorError, connectorFromSlug, CONNECTOR_SLUG } from "@/lib/connectors/types";
+import { AccessError, safeReturnPath } from "@/lib/auth/core";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +18,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   store.delete({ name, path: "/api/connectors" });
   try {
     const returnTo = await finishConnect(connector, request.nextUrl.searchParams, cookie);
-    const target = new URL(returnTo, request.nextUrl.origin); target.searchParams.set("connected", CONNECTOR_SLUG[connector]);
+    const target = new URL(safeReturnPath(returnTo), request.nextUrl.origin); if (target.origin !== request.nextUrl.origin) throw new Error("Unsafe return path"); target.searchParams.set("connected", CONNECTOR_SLUG[connector]);
     return back(`${target.pathname}${target.search}`);
   } catch (e) {
-    const code = e instanceof ConnectorError ? e.code : "PROVIDER_UNAVAILABLE";
-    if (!(e instanceof ConnectorError)) console.error("connector_callback_failed", { connector, kind: e instanceof Error ? e.name : "unknown" });
+    if (e instanceof AccessError && e.code === "UNAUTHENTICATED") return back("/login?returnTo=%2Faccount%2Fconnections");
+    const code = e instanceof ConnectorError ? e.code : e instanceof AccessError ? "VIEW_ONLY" : "PROVIDER_UNAVAILABLE";
+    if (!(e instanceof ConnectorError) && !(e instanceof AccessError)) console.error("connector_callback_failed", { connector, kind: e instanceof Error ? e.name : "unknown" });
     return back(`/account/connections?connector=${CONNECTOR_SLUG[connector]}&result=${code}`);
   }
 }

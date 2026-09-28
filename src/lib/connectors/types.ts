@@ -83,7 +83,7 @@ export function connectorFromSlug(slug: string): Connector | null {
 
 export type ConnectorErrorCode =
   | "NOT_CONFIGURED" | "NOT_CONNECTED" | "NEEDS_RECONNECT" | "NO_ACCESS" | "NOT_FOUND"
-  | "RATE_LIMITED" | "PROVIDER_UNAVAILABLE" | "UNSUPPORTED" | "INVALID_REQUEST" | "DEMO_ORGANIZATION";
+  | "RATE_LIMITED" | "PROVIDER_UNAVAILABLE" | "UNSUPPORTED" | "INVALID_REQUEST" | "DEMO_ORGANIZATION" | "VIEW_ONLY";
 
 export class ConnectorError extends Error {
   readonly code: ConnectorErrorCode;
@@ -103,6 +103,7 @@ export function connectorMessage(code: ConnectorErrorCode, connector: Connector)
     case "PROVIDER_UNAVAILABLE": return `${name} didn't respond. Try again shortly; nothing was saved.`;
     case "UNSUPPORTED": return `Prodwise can't read this ${name} item's content. Its link and details can still be recorded.`;
     case "INVALID_REQUEST": return `That ${name} search or selection isn't valid. Check it and try again.`;
+    case "VIEW_ONLY": return `You have view-only access in this organization, so ${name} can't be connected here. Nothing was changed.`;
     case "DEMO_ORGANIZATION": return "Connectors are off in the Demo organization: its sources are synthetic, and real data must never enter it.";
   }
 }

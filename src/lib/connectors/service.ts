@@ -4,7 +4,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { requireBusinessWriteAccess, requireWorkspaceAccess } from "@/lib/auth/access";
 import { adminClient, isLocalAuth } from "@/lib/auth/service";
 import { withRepositoryContext } from "@/lib/auth/repository-context";
-import type { WorkspaceAccess } from "@/lib/auth/core";
+import { safeReturnPath, type WorkspaceAccess } from "@/lib/auth/core";
 import { readStore, writeStoreAtomic } from "@/lib/data/store";
 import { readManagement } from "@/lib/data/management-read";
 import { workspacePresentation } from "@/lib/workspace/context";
@@ -39,7 +39,7 @@ export async function connectorOverview(): Promise<{ overview: ConnectorOverview
 // ── OAuth ──────────────────────────────────────────────────────────────────
 interface OAuthState { p: Connector; o: string; u: string; n: string; v: string | null; r: string; t: number }
 export const stateCookieName = (connector: Connector) => `prodwise_oauth_${connector.toLowerCase()}`;
-const safeReturn = (r: string) => (/^\/(?!\/)[A-Za-z0-9/_\-?=&.%]*$/.test(r) ? r : "/account/connections");
+const safeReturn = (r: string) => { const path = safeReturnPath(r); return path === "/" ? "/account/connections" : path; };
 
 export async function beginConnect(connector: Connector, returnTo: string): Promise<{ url: string; cookie: string }> {
   const ctx = await requireBusinessWriteAccess(); await guard(ctx); ready(connector);

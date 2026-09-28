@@ -134,7 +134,8 @@ export function unsignedToken(cookie: string | undefined, secret: string): strin
     return null; const expected = Buffer.from(signToken(token, secret).split('.')[1]!), supplied = Buffer.from(signature); return supplied.length === expected.length && timingSafeEqual(supplied, expected) ? token : null; }
 export function safeReturnPath(value: string | undefined) { if (!value?.startsWith('/') || value.startsWith('//') || /[\\\u0000-\u0020]/.test(value))
     return '/'; const target = new URL(value, 'https://prodwise.invalid'); if (target.origin !== 'https://prodwise.invalid' || /^\/(login|invite|auth)(\/|$)/.test(target.pathname))
-    return '/'; return target.pathname + target.search + target.hash; }
+    return '/'; const path = target.pathname + target.search + target.hash; // '/.//x' normalises to '//x', which a browser reads as another host.
+    return path.startsWith('//') ? '/' : path; }
 export function contextForMember(member: Member | undefined, workspaceId: string): WorkspaceAccess { if (!member || member.workspaceId !== workspaceId)
     throw new AccessError('ACCESS_DENIED', 'Organization access is unavailable.'); if (!member.active)
     throw new AccessError('DEACTIVATED', 'Your organization access has been deactivated.'); return { workspaceId, organizationId: member.organizationId, memberId: member.id, actor: { id: member.userId, label: member.displayName }, platformRole: member.platformRole, role: normalizeLegacyRole(member.role), isProductLead: member.isProductLead }; }

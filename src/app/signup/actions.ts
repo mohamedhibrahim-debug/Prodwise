@@ -2,9 +2,11 @@
 import {headers} from 'next/headers';
 import {redirect} from 'next/navigation';
 import {AccessError} from '@/lib/auth/core';
+import {appOrigin} from '@/lib/http/app-origin';
 import {startSignup,completeVerification,finishSignup} from '@/lib/auth/signup';
 export interface SignupFormState {error:string|null;status?:'SENT'|'NOT_ELIGIBLE';email?:string;}
-async function origin(){const h=await headers();const host=h.get('x-forwarded-host')??h.get('host')??'localhost';const proto=h.get('x-forwarded-proto')??(host.startsWith('localhost')||host.startsWith('127.')?'http':'https');return `${proto}://${host}`;}
+// The verification link is never built from caller-controlled Host headers.
+async function origin(){const o=appOrigin(process.env,(await headers()).get('host'));if(!o)throw new Error('Sign-up is temporarily unavailable. Please try again.');return o;}
 const message=(e:unknown,fallback:string)=>e instanceof AccessError?e.message:e instanceof Error&&/temporarily|could not|Too many/.test(e.message)?e.message:fallback;
 export async function startSignupAction(_s:SignupFormState,form:FormData):Promise<SignupFormState>{
  const email=String(form.get('email')??'');
