@@ -4,7 +4,7 @@ import {FloatingLayer,MenuButton,MenuHeader,MenuLink,MenuScope,MenuSeparator,Men
 import {InstrumentIcon} from './InstrumentIcon';
 import {ThemeMenuItems} from './ThemeToggle';
 import {openHelp,openOrganizationSwitcher} from './events';
-import {initials,roleShortLabel,type ShellIdentity} from './ShellIdentity';
+import {initials,roleShortLabel,splitActorLabel,type ShellIdentity} from './ShellIdentity';
 import styles from './AccountMenu.module.css';
 
 /**
@@ -15,7 +15,7 @@ import styles from './AccountMenu.module.css';
 export function AccountMenu({identity,collapsed=false}:{identity:ShellIdentity;collapsed?:boolean}){
  const popover=usePopover({placement:collapsed?'right-end':'top-start',kind:'menu'});
  const {access,presentation,guest}=identity;
- const name=access.actor.label;
+ const {name,note}=splitActorLabel(access.actor.label);
  const role=roleShortLabel(access.role,access.platformRole);
  const canSwitch=!guest&&(identity.contexts?.length??0)>1;
  return <div className={styles.account} data-collapsed={collapsed||undefined}>
@@ -29,7 +29,7 @@ export function AccountMenu({identity,collapsed=false}:{identity:ShellIdentity;c
     <MenuHeader>
      <div className={styles.identity}>
       <span className={styles.avatarLarge} aria-hidden="true">{initials(name)}</span>
-      <span><strong>{name}</strong>{identity.email&&<small>{identity.email}</small>}</span>
+      <span><strong>{name}</strong>{identity.email&&<small>{identity.email}</small>}{note&&<small>{note}</small>}</span>
      </div>
      <p className={styles.context}><span>{presentation.organizationName}</span><span className={styles.role}>{role}</span>{presentation.isDemo&&<span className={styles.demo}>Synthetic demo</span>}</p>
      {access.platformRole==='PLATFORM_OWNER'&&<p className={styles.platform}>Platform Owner · global authority</p>}
