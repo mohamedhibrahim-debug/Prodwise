@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {createContext,useContext,useState,useTransition,useRef} from 'react';
 import {ScopeField} from '@/components/auth/WorkspaceScope';
 import {questionAction,riskAction,type ContextActionState} from '@/app/initiatives/[slug]/context/actions';
+import {Button} from '@/components/primitives/Button';
 import styles from './context.module.css';
 
 type Status='OPEN'|'MITIGATING'|'ACCEPTED'|'CLOSED';
@@ -41,18 +42,18 @@ function RiskRow({r,slug,canManage,members,actions}:{r:RiskItem;slug:string;canM
   {t&&<dl className={styles.facts}><div><dt>Owner</dt><dd>{t.ownerName??'No owner recorded'}</dd></div><div><dt>Mitigation</dt><dd>{t.mitigation??(t.actionTitle?'':'No mitigation recorded')}{t.actionTitle&&<> {t.mitigation?'· ':''}<Link prefetch={false} href={`/initiatives/${slug}/actions?action=${t.actionId}`}>Commitment: {t.actionTitle}</Link></>}</dd></div></dl>}
   <p className={styles.source}>{r.source?<Link prefetch={false} href={r.source.href}>Source · {r.source.label}</Link>:'Source · entered by hand'} · <Link prefetch={false} href={`/initiatives/${slug}/knowledge?view=all#claim-${r.claimId}`}>Knowledge entry</Link></p>
   <div className={styles.actions}>
-   {r.state==='NOT_TRACKED'&&canManage&&<form action={act} onReset={keep}><Hidden slug={slug} op="START" requestId={requestId}/><input type="hidden" name="claimId" value={r.claimId}/><button className={styles.secondary} disabled={pending}>{pending?'Starting…':'Track this risk'}</button></form>}
+   {r.state==='NOT_TRACKED'&&canManage&&<form action={act} onReset={keep}><Hidden slug={slug} op="START" requestId={requestId}/><input type="hidden" name="claimId" value={r.claimId}/><Button type="submit" variant="secondary" disabled={pending}>{pending?'Starting…':'Track this risk'}</Button></form>}
    {r.state==='AWAITING_VERIFICATION'&&<Link prefetch={false} className={styles.secondary} href={`/initiatives/${slug}/knowledge?view=all#claim-${r.claimId}`}>Confirm in Knowledge</Link>}
-   {r.state==='SUPERSEDED'&&t&&canManage&&r.replacementClaimId&&<form action={act} onReset={keep}><Hidden slug={slug} op="CARRY" id={t.id} requestId={requestId}/><input type="hidden" name="claimId" value={r.replacementClaimId}/><button className={styles.secondary} disabled={pending}>Carry tracking forward</button></form>}
+   {r.state==='SUPERSEDED'&&t&&canManage&&r.replacementClaimId&&<form action={act} onReset={keep}><Hidden slug={slug} op="CARRY" id={t.id} requestId={requestId}/><input type="hidden" name="claimId" value={r.replacementClaimId}/><Button type="submit" variant="secondary" disabled={pending}>Carry tracking forward</Button></form>}
    {t&&r.state==='TRACKED'&&r.canStatus&&<details className={styles.more}><summary>Change status</summary><form action={act} onReset={keep} className={styles.sheet}><Hidden slug={slug} op="STATUS" id={t.id} revision={t.revision} requestId={requestId}/>
     <fieldset className={styles.statusChoice}><legend>Status</legend>{(Object.keys(STATUS) as Status[]).map(s=><label key={s}><input type="radio" name="status" value={s} checked={status===s} onChange={()=>setStatus(s)} disabled={s===t.status}/><span aria-hidden="true">{STATUS[s].glyph}</span> {STATUS[s].label}{s===t.status?' (current)':''}</label>)}</fieldset>
     {needsReason&&<label>Why is it {status==='ACCEPTED'?'accepted':'closed'}?<textarea name="reason" rows={2} maxLength={2000} required/></label>}
-    <button className={styles.primary} disabled={pending||status===t.status}>{pending?'Saving…':'Save status'}</button></form></details>}
+    <Button type="submit" variant="primary" disabled={pending||status===t.status}>{pending?'Saving…':'Save status'}</Button></form></details>}
    {t&&r.state==='TRACKED'&&canManage&&<details className={styles.more}><summary>Owner & mitigation</summary><form action={act} onReset={keep} className={styles.sheet}><Hidden slug={slug} op="UPDATE" id={t.id} revision={t.revision} requestId={requestId}/>
     <label>Owner<select name="ownerMemberId" defaultValue={t.ownerId??''}><option value="">No owner</option>{members.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label>
     <label>Mitigation <span className={styles.hint}>up to 500 characters</span><textarea name="mitigationText" rows={2} maxLength={500} defaultValue={t.mitigation??''}/></label>
     <label>Linked commitment<select name="mitigationActionId" defaultValue={t.actionId??''}><option value="">None</option>{actions.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}</select></label>
-    <button className={styles.primary} disabled={pending}>{pending?'Saving…':'Save'}</button></form></details>}
+    <Button type="submit" variant="primary" disabled={pending}>{pending?'Saving…':'Save'}</Button></form></details>}
   </div>
   <Feedback state={state}/>
  </li>;
@@ -70,12 +71,12 @@ function QuestionRow({q,slug,members,claims}:{q:QuestionItem;slug:string;members
    {q.status==='OPEN'&&q.canResolve&&<details className={styles.more} open={false}><summary className={styles.secondarySummary}>Answer</summary><form action={act} onReset={keep} className={styles.sheet}><Hidden slug={slug} op="ANSWER" id={q.id} revision={q.revision} requestId={requestId}/>
     <fieldset className={styles.statusChoice}><legend>How was it answered?</legend><label><input type="radio" checked={mode==='note'} onChange={()=>setMode('note')}/> With a note</label><label><input type="radio" checked={mode==='claim'} onChange={()=>setMode('claim')} disabled={!claims.length}/> By a confirmed Knowledge entry{!claims.length?' (none confirmed yet)':''}</label></fieldset>
     {mode==='note'?<label>Answer<textarea name="answerNote" rows={2} maxLength={2000} required/><span className={styles.hint}>Kept as an answer note. It does not become Knowledge or change delivery facts.</span></label>:<label>Knowledge entry<select name="answerClaimId" required defaultValue=""><option value="" disabled>Choose a confirmed entry…</option>{claims.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select><span className={styles.hint}>Only confirmed entries can answer a question. <Link prefetch={false} href={`/initiatives/${slug}/knowledge/new`}>Record the answer as Knowledge</Link>, confirm it, then link it here.</span></label>}
-    <button className={styles.primary} disabled={pending}>{pending?'Saving…':'Record answer'}</button></form></details>}
+    <Button type="submit" variant="primary" disabled={pending}>{pending?'Saving…':'Record answer'}</Button></form></details>}
    {q.status==='OPEN'&&(q.canDetails||q.canResolve)&&<details className={styles.more}><summary>More</summary><div className={styles.sheet}>
-    {q.canDetails&&<form action={act} onReset={keep} className={styles.subform}><Hidden slug={slug} op="EDIT" id={q.id} revision={q.revision} requestId={requestId}/><label>Question<textarea name="question" rows={2} maxLength={300} defaultValue={q.question} required/></label><div className={styles.two}><label>Who answers<select name="ownerMemberId" defaultValue={q.ownerId??''}><option value="">Not decided</option>{members.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label><label>Needed by<DateField name="dueDate" defaultValue={q.dueDate??''}/></label></div><button className={styles.secondary} disabled={pending}>Save changes</button></form>}
-    {q.canResolve&&<form action={act} onReset={keep} className={styles.subform}><Hidden slug={slug} op="WITHDRAW" id={q.id} revision={q.revision} requestId={requestId}/><label>Why is it no longer relevant?<textarea name="reason" rows={2} maxLength={2000} required/></label><button className={styles.quiet} data-tone="danger" disabled={pending}>Withdraw question</button></form>}
+    {q.canDetails&&<form action={act} onReset={keep} className={styles.subform}><Hidden slug={slug} op="EDIT" id={q.id} revision={q.revision} requestId={requestId}/><label>Question<textarea name="question" rows={2} maxLength={300} defaultValue={q.question} required/></label><div className={styles.two}><label>Who answers<select name="ownerMemberId" defaultValue={q.ownerId??''}><option value="">Not decided</option>{members.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label><label>Needed by<DateField name="dueDate" defaultValue={q.dueDate??''}/></label></div><Button type="submit" variant="secondary" disabled={pending}>Save changes</Button></form>}
+    {q.canResolve&&<form action={act} onReset={keep} className={styles.subform}><Hidden slug={slug} op="WITHDRAW" id={q.id} revision={q.revision} requestId={requestId}/><label>Why is it no longer relevant?<textarea name="reason" rows={2} maxLength={2000} required/></label><Button type="submit" variant="ghost" data-tone="danger" disabled={pending}>Withdraw question</Button></form>}
    </div></details>}
-   {q.status!=='OPEN'&&q.canResolve&&<details className={styles.more}><summary>Reopen</summary><form action={act} onReset={keep} className={styles.sheet}><Hidden slug={slug} op="REOPEN" id={q.id} revision={q.revision} requestId={requestId}/><label>Why reopen it?<textarea name="reason" rows={2} maxLength={2000} required/></label><button className={styles.secondary} disabled={pending}>Reopen question</button></form></details>}
+   {q.status!=='OPEN'&&q.canResolve&&<details className={styles.more}><summary>Reopen</summary><form action={act} onReset={keep} className={styles.sheet}><Hidden slug={slug} op="REOPEN" id={q.id} revision={q.revision} requestId={requestId}/><label>Why reopen it?<textarea name="reason" rows={2} maxLength={2000} required/></label><Button type="submit" variant="secondary" disabled={pending}>Reopen question</Button></form></details>}
   </div>
   <Feedback state={state}/>
  </li>;
@@ -84,7 +85,7 @@ function QuestionRow({q,slug,members,claims}:{q:QuestionItem;slug:string;members
 function Composer({slug,members}:{slug:string;members:Option[]}){
  const [text,setText]=useState('');const {run,pending,state,requestId,keep}=useCommand(questionAction,'new-question',()=>setText(''));
  return <form action={run} onReset={keep} className={styles.composer}><Hidden slug={slug} op="CREATE" requestId={requestId}/>
-  <label className={styles.srOnly} htmlFor="new-question">Ask an open question</label><div className={styles.composerLine}><input id="new-question" name="question" value={text} onChange={e=>setText(e.target.value)} maxLength={300} placeholder="Ask an open question…" autoComplete="off"/><button className={styles.primary} disabled={pending||!text.trim()}>{pending?'Adding…':'Add question'}</button>{!text.trim()&&<p className="disabled-reason">Type the question to add it.</p>}</div>
+  <label className={styles.srOnly} htmlFor="new-question">Ask an open question</label><div className={styles.composerLine}><input id="new-question" name="question" value={text} onChange={e=>setText(e.target.value)} maxLength={300} placeholder="Ask an open question…" autoComplete="off"/><Button type="submit" variant="primary" disabled={pending||!text.trim()}>{pending?'Adding…':'Add question'}</Button></div>
   {text.trim()&&<div className={styles.two}><label>Who answers <span className={styles.hint}>optional</span><select name="ownerMemberId" defaultValue=""><option value="">Not decided</option>{members.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}</select></label><label>Needed by <span className={styles.hint}>optional</span><DateField name="dueDate"/></label></div>}
   <Feedback state={state}/></form>;
 }
@@ -104,13 +105,11 @@ export function RisksQuestions({slug,risks,questions,members,claims,actions,canM
   <div className={styles.columns}>
    <section id="risks-panel" className={styles.panel} data-active={tab==='risks'} aria-labelledby="risks-heading">
     <header className={styles.panelHead}><h3 id="risks-heading">Risks</h3><p>{openRisks} open or mitigating{tracked('MITIGATING').length?` (${tracked('MITIGATING').length} being mitigated)`:''}</p></header>
-    <p className={styles.explain}>A risk is recorded in Knowledge first. Tracking adds status, an owner and mitigation; it never changes what the risk says.</p>
     {risks.length?renderGroups(riskGroups,r=><RiskRow key={r.claimId} r={r} slug={slug} canManage={canManageRisks} members={members} actions={actions}/>):<p className={styles.empty}>No risks recorded. Risks arrive from confirmed evidence or meeting notes, or from <Link prefetch={false} href={`/initiatives/${slug}/knowledge/new`}>a Knowledge entry you add</Link>.</p>}
     {!canManageRisks&&readOnlyReason&&<p className={styles.hint}>{readOnlyReason}</p>}
    </section>
    <section id="questions-panel" className={styles.panel} data-active={tab==='questions'} aria-labelledby="questions-heading">
     <header className={styles.panelHead}><h3 id="questions-heading">Open questions</h3><p>{open.length} open{open.some(q=>q.overdueDays)?` · ${open.filter(q=>q.overdueDays).length} overdue`:''}</p></header>
-    <p className={styles.explain}>Unresolved questions are tracked until answered. An answer becomes a fact only when it links a confirmed Knowledge entry.</p>
     {canAsk&&<Composer slug={slug} members={members}/>}
     {questions.length?renderGroups(questionGroups,q=><QuestionRow key={q.id} q={q} slug={slug} members={members} claims={claims}/>):<p className={styles.empty}>No open questions.</p>}
    </section>

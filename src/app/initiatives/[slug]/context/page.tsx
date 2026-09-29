@@ -11,6 +11,8 @@ import {isDemoWriteEnabled,WRITE_DISABLED_MESSAGE} from '@/lib/env';
 import {riskViews,canManageRisk,canChangeRiskStatus} from '@/lib/workspace/risks';
 import {canChangeQuestion,questionOverdueDays} from '@/lib/workspace/questions';
 import {RisksQuestions,type RiskItem,type QuestionItem} from '@/components/initiative/RisksQuestions';
+import {ButtonLink} from '@/components/primitives/Button';
+import {TabToolbar} from '@/components/workspace/TabToolbar';
 import styles from '@/components/initiative/context-page.module.css';
 export const metadata={title:'Risks & open questions'};export const dynamic='force-dynamic';
 const short=(iso:string)=>new Date(iso.length===10?`${iso}T12:00:00Z`:iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:iso.length===10?'UTC':'Africa/Cairo'});
@@ -30,8 +32,11 @@ export default async function Context({params}:{params:Promise<{slug:string}>}){
   origin:q.origin==='HUMAN_ENTRY'?{label:`Asked by ${q.createdByLabel}`,href:null}:{label:`From ${q.originLabel??(q.origin==='WEEKLY_REVIEW'?'Weekly Review':'saved evidence')}`,href:q.originHref},answerNote:q.answerNote,answerClaim:q.answerClaimId?claimLabel(q.answerClaimId):null,resolvedBy:q.resolvedByLabel,resolvedAt:q.resolvedAt,reason:q.resolutionReason,
   canDetails:writer&&canChangeQuestion(d.ctx,q,owner,'DETAILS'),canResolve:writer&&canChangeQuestion(d.ctx,q,owner,'RESOLVE')}));
  const people=d.source.members.filter(m=>m.active&&m.role!=='VIEWER').map(m=>({id:m.id,label:m.displayName}));
- return <div className={styles.page}><header className={styles.heading}><div><p className={styles.eyebrow}><Link prefetch={false} href={base}>{i.name}</Link> · Initiative context</p><h2>Risks & open questions</h2><p>What could go wrong, and what nobody has answered yet — tracked until someone resolves it.</p></div>
-  <nav className={styles.links} aria-label="Related">{writer&&<Link prefetch={false} href={`${base}/evidence/new?kind=meeting`}>Add meeting notes</Link>}<Link prefetch={false} href={`${base}/history?c=RISKS_QUESTIONS`}>History</Link></nav></header>
+ const openRisks=risks.filter(r=>r.state==='NOT_TRACKED'||r.state==='TRACKED'&&r.tracking?.status==='OPEN').length,mitigating=risks.filter(r=>r.state==='TRACKED'&&r.tracking?.status==='MITIGATING').length,awaiting=risks.filter(r=>r.state==='AWAITING_VERIFICATION').length;
+ const openQuestions=questions.filter(x=>x.status==='OPEN'),overdue=openQuestions.filter(x=>x.overdueDays).length;
+ return <div className={styles.page}>
+  <TabToolbar title="Risks & open questions" summary={<><strong>{openRisks}</strong> open {openRisks===1?'risk':'risks'}{mitigating?` · ${mitigating} mitigating`:''}{awaiting?` · ${awaiting} awaiting confirmation`:''} · <strong>{openQuestions.length}</strong> open {openQuestions.length===1?'question':'questions'}{overdue?<> · <span className={styles.late}>{overdue} overdue</span></>:null}</>}
+   actions={<>{writer&&<ButtonLink href={`${base}/evidence/new?kind=meeting`}>Add meeting notes</ButtonLink>}<ButtonLink variant="ghost" href={`${base}/history?c=RISKS_QUESTIONS`}>History</ButtonLink></>}/>
   {i.archivedAt&&<p className={styles.notice}>Archived — read-only. Restore the initiative to change risks or questions.</p>}
   <RisksQuestions slug={slug} risks={risks} questions={questions} members={people} claims={snap.claims.filter(c=>c.status==='ACTIVE').map(c=>({id:c.id,label:`${c.subject} · ${c.attribute}: ${c.value}`}))} actions={actions.filter(a=>a.status==='OPEN'||a.status==='IN_PROGRESS').map(a=>({id:a.id,label:a.title}))} canManageRisks={writer&&canManageRisk(d.ctx,owner)} canAsk={writer} readOnlyReason={!canBusinessWrite(d.ctx)?'Your role is read-only.':i.archivedAt?null:!isDemoWriteEnabled?WRITE_DISABLED_MESSAGE:'Tracking risks is for the initiative owner, a Product Lead or an administrator.'}/></div>;
 }
