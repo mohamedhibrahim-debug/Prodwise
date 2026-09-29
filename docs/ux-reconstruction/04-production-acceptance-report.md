@@ -2,6 +2,12 @@
 
 Date: 29 Sept 2026 · Stage: final production acceptance (no new scope)
 
+
+> **Final state (29 Sept 2026): Production Accepted with Non-Blocking Issues.**
+> - The Claude evidence-reading blocker is resolved in `9ad8496`, and final live verification passed: reading → proposals → Confirm → Reject. There is no remaining production blocker.
+> - Sections A–G below record the acceptance run *as it happened*, including the blocker, and the Addendum records its resolution.
+> - The cleanup build `0541fef` removes the temporary diagnostic and is ready for promotion. Relative to `d0dd2f9` its only change is the parsing fix.
+
 ## A. Release Candidate
 
 | Item | Value |
@@ -139,9 +145,9 @@ Full review: `03-final-ux-acceptance.md`. It is an independent reviewer on live 
 - **8-character URL suffix retained** (M10). The slug remains the stable identifier; the suffix is fixed at creation.
 - **Gmail and Figma are reflected as in scope in CLAUDE.md** (commit `d0dd2f9`). Both are read-only and evidence-only until a person confirms.
 
-## G. Final Verdict
+## G. Final Verdict (at the time of the acceptance run — superseded by the Addendum)
 
-**Production Blocked**
+**Production Blocked** *(resolved; see Addendum: now Production Accepted with Non-Blocking Issues)*
 
 Exact blocker:
 1. **Live Claude evidence reading fails on the promoted deployment.**
@@ -208,3 +214,8 @@ Once the Claude blocker is resolved and re-verified, the expected verdict is **P
   - Browser acceptance 23/23.
   - Privacy scan clean.
 - **Updated verdict: Production Accepted with Non-Blocking Issues.**
+- **Diagnostic removed.** Cleanup build `0541fefe7ebd51dbca7572f7a5f1331b85e136e3` restores `extract.ts`, `service.ts` and `extract.test.ts` to `d0dd2f9` and re-applies only `modelJson()` and its test.
+  - Checks: typecheck clean · lint 0 errors · unit tests 424/424 · build clean · privacy scan clean.
+  - It is ready for promotion. Production currently runs `9ad8496`, which is the fix plus the content-free diagnostic.
+- **Production test artifacts.** All 5 clearly labelled synthetic test initiatives are archived. The Demo holds its canonical 14 active initiatives. No test evidence or Knowledge remains on any active initiative. AMAN was not used by any test.
+- **Remaining production blockers: none.**

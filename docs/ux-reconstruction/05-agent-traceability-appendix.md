@@ -1,5 +1,7 @@
 # Appendix — Traceability of Agents and Specialists
 
+> **Final state:** Production Accepted with Non-Blocking Issues. The Claude evidence-reading blocker is resolved (`9ad8496`), final live verification passed, and no production blocker remains. See `04-production-acceptance-report.md` → Addendum.
+
 This appendix supports the Final Production Acceptance Report (`04-production-acceptance-report.md`). It covers every agent and specialist used in the post-production UX/UI reconstruction and the final acceptance, from 28 Sept 2026 (session start) to 29 Sept 2026.
 
 For each one it records the brief, the sources it used, what it produced, its findings, the decisions taken on those findings, what was merged, and how the result was verified.
@@ -306,6 +308,9 @@ Two launches ended at the first usage-limit interruption before creating a workt
 | 29 Sept | B1 neutral tone; Demo opening line derived from the live decision | `acfab85` |
 | 29 Sept | Lint gate: 7 pre-existing errors given justified suppressions; 3 acceptance assertions updated for new copy; search check hydration fix; `menuitemcheckbox` | `0f17738`, `ca97b27`, `891eda5` |
 | 29 Sept | CLAUDE.md: Gmail and Figma in scope (owner decision) | `d0dd2f9` |
+| 29 Sept | Production blocker: live Claude reading failed 3/3 after promotion. A content-free diagnostic (no Vercel or key access here) recorded `OUTPUT_NOT_JSON`: provider HTTP 200 and complete, but the JSON was fenced or wrapped. Region, env and account were ruled out. | `e1c4639` |
+| 29 Sept | Fix: tolerant model-JSON parsing (still quote-anchored). Live re-test on production: reading by `claude-sonnet-5` in 35 s → 3 proposals → Confirm (UNVERIFIED Knowledge, evidence-linked) → Reject | `9ad8496` |
+| 29 Sept | Cleanup: temporary diagnostic removed; only the fix remains. 424/424 tests, build clean. Ready for promotion. | `0541fef` |
 | 29 Sept | Production: Demo metrics applied and checksum-verified; latency before and after with log-based hop analysis; live smoke; connector refusals; 3 Claude reading attempts diagnosed as a persistent `READING_FAILED` (production blocker) | `04-production-acceptance-report.md` |
 
 ## Test-count progression (unit)
