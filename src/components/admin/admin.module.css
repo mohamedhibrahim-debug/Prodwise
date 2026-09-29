@@ -4,3 +4,33 @@
 .page[data-scope=platform] .masthead{background:var(--navy-900);color:var(--navy-ink);padding:var(--s-5) var(--s-6);border-radius:var(--r-sm)}
 .page[data-scope=platform] .masthead :is(h1,.eyebrow,.intro,.breadcrumb){color:var(--navy-ink)}
 .page[data-scope=platform] .scope{color:var(--navy-ink);border-color:var(--navy-ink)}
+
+/* Table grammar shared with the workspace lists: one baseline, no wrapping
+   headers or pills, compact rows, hover, and the row's "Open" link covers the row. */
+.page{padding-top:var(--s-6)}
+.tableWrap{border:1px solid var(--rule);border-top:1px solid var(--rule);border-radius:var(--r-lg);background:var(--surface)}
+.table{font-variant-numeric:tabular-nums}
+.table th,.table td{padding:var(--s-3);vertical-align:top;overflow-wrap:normal}
+.table thead th{height:36px;padding-block:0;vertical-align:middle;white-space:nowrap;background:var(--surface-sunken);border-bottom:1px solid var(--rule-strong);color:var(--ink-500)}
+.table tbody tr{position:relative;transition:background-color var(--dur-fast) var(--ease)}
+.table tbody tr:hover{background:var(--surface-hover)}
+.table a{min-height:0;display:inline;white-space:nowrap}
+.table td:last-child{white-space:nowrap;text-align:right}
+.table thead th:last-child{text-align:right}
+.table tbody tr:has(td:last-child>a:only-child) td:last-child>a::after{content:"";position:absolute;inset:0}
+.table tbody tr:has(td:last-child>a:only-child) :is(td,th):not(:last-child) :is(a,button,form){position:relative;z-index:1}
+.table tbody tr:focus-within{background:var(--surface-selected)}
+.table :is(td,th) span[class]{white-space:nowrap}
+.table td small{overflow-wrap:anywhere}
+.masthead{border-bottom:1px solid var(--rule)}
+
+/* Button system (tokens): one accent primary, outlined secondary; navy is chrome. */
+.primary,.secondary,.danger{min-height:var(--control-md);padding:0 var(--s-3);border-radius:var(--r-md);font-size:var(--t-sm);font-weight:var(--fw-semibold)}
+.primary{background:var(--accent-600);border-color:var(--accent-600);color:var(--surface)}
+.primary:hover:not(:disabled){background:var(--accent-700);border-color:var(--accent-700)}
+.secondary{background:var(--surface);border-color:var(--rule-strong);color:var(--ink-900)}
+.secondary:hover:not(:disabled){background:var(--surface-hover)}
+@media(max-width:780px){.primary,.secondary,.danger{min-height:var(--control-touch)}}
+.scope{padding:2px var(--s-2);border:1px solid var(--rule);border-radius:var(--r-pill);font-size:var(--t-xs);font-weight:var(--fw-semibold);color:var(--ink-700);background:var(--surface-sunken)}
+.table td:last-child,.table thead th:last-child{padding-right:var(--s-4)}
+@media(min-width:781px){.toolbar input,.toolbar select{min-height:var(--control-lg);padding-block:0}}
