@@ -7,3 +7,23 @@
 .contextDelta{margin:var(--s-5) 0;padding:var(--s-4);border:1px solid var(--rule-strong);border-inline-start:3px solid var(--navy-900);background:var(--panel)}.contextDelta h4{font-size:var(--t-sm);font-weight:var(--fw-semibold);margin-bottom:var(--s-2)}.contextDelta ul{list-style:none;margin:0;padding:0;display:grid;gap:var(--s-1)}.contextDelta li{font-size:var(--t-sm);line-height:var(--lh-body)}.contextDelta li a{color:var(--ink-900)}.contextDelta li a:hover{color:var(--accent-700)}.contextDelta li[data-kind=overdue] a{color:var(--attention-fg);font-weight:var(--fw-medium)}.contextDelta li::before{content:"· ";color:var(--ink-500)}.contextDelta p{font-size:var(--t-xs);color:var(--ink-500);margin-top:var(--s-2)}
 
 .confirm{margin-top:var(--s-3);padding:var(--s-4);border:1px solid var(--rule-strong);border-inline-start:3px solid var(--navy-900);background:var(--panel);display:grid;gap:var(--s-2);max-width:60ch}.confirm p{line-height:var(--lh-body)}.confirmActions{display:flex;flex-wrap:wrap;gap:var(--s-3);margin-top:var(--s-2)}
+
+/* Page head: one title, one status line, compact week stepper. */
+.pageHead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:var(--s-3) var(--s-6);padding-bottom:var(--s-3);border-bottom:1px solid var(--rule)}
+.pageHead h1{font-size:var(--t-h1);line-height:var(--lh-tight);letter-spacing:var(--ls-tight)}
+.pageHead .meta{margin-top:var(--s-1);font-variant-numeric:tabular-nums}
+.pageHead .week{align-items:center;gap:var(--s-1)}
+.pageHead .week input{min-height:var(--control-sm);padding:0 var(--s-2);font-size:var(--t-sm);border:1px solid var(--rule-strong);border-radius:var(--r-md)}
+.status{border-radius:var(--r-pill);font-weight:var(--fw-semibold);padding:1px var(--s-2);font-size:var(--t-xs)}
+.status[data-status=FINAL]{background:var(--state-ready-bg);border-color:var(--state-ready-edge);color:var(--state-ready-fg)}
+.progress{display:grid;gap:var(--s-2)}
+.progress p{font-size:var(--t-sm);color:var(--ink-700);font-variant-numeric:tabular-nums}
+.meter{display:block;height:4px;max-width:360px;border-radius:var(--r-pill);background:var(--rule);overflow:hidden}
+.meter>span{display:block;height:100%;background:var(--accent-600)}
+.receipt{border-top:1px solid var(--rule);border-left:3px solid var(--state-ready-mark);padding:var(--s-4) var(--s-5);background:var(--surface-sunken);border-radius:0 var(--r-lg) var(--r-lg) 0}
+.receipt h2{font-size:var(--t-h2)}
+.lockNote{margin-left:var(--s-2);font-size:var(--t-xs);font-weight:var(--fw-medium);color:var(--ink-500)}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2)}
+.warning,.error{background:var(--attention-bg);color:var(--attention-fg);border-left-color:var(--attention-rule);font-size:var(--t-sm)}
+.links a,.index a,.record a{color:var(--accent-700)}
+.header h1{font-size:var(--t-h1)}
