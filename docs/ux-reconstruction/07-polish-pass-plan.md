@@ -157,3 +157,9 @@ New `src/components/assistant/**`; one mount line in `src/components/shell/Appli
 ### Merge log
 - `e673451` Wave 1 foundation (lead) · `88f9582` recommendation engine (lead) · `496539c` Wave 4 batch (lead)
 - `b3d9403` Agent E Wave 2 backend · `54ba297` Agent B core surfaces · `c49f339` Agent D administration/integrations (conflict in AccountMenu resolved: m9 + m12 both kept)
+- `18d162e` Agent E Wave 3 panel (Ask Prodwise: pill, panel, sheet, Account preferences)
+
+### Known items carried to the final report (from agent reports)
+- Ask Prodwise: recommendations inside Arabic answers stay English (`recommend()` is English-only); the proactive dot's probe counts against the rate limit; metric names are not passed to term isolation; the model path could not be rendered locally (no provider key) — to be exercised on Production after promotion.
+- Agent B: m1 input sizes in the decision panel come from `FindingRow.module.css` (44px) while buttons are 36px; the record-update success path was not exercised on the sparse local dataset.
+- Agent D: live Figma connection needs the owner's app configuration (D4); the import provider strip does not auto-scroll the current tab into view at 390px.
