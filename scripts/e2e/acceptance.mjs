@@ -91,7 +91,9 @@ const expect = (cond, message) => { if (!cond) throw new Error(message); };
     expect(/\b27\b/.test(t) && /\b30\b/.test(t) && /Values differ|record different values/i.test(t), "value difference not raised");
   });
   await check("search", "search re-reads, ranks name matches first and labels archived work", async () => {
-    await go(page, "/"); await page.keyboard.press("Control+k"); await page.keyboard.type("Merchant"); await page.waitForTimeout(1200);
+    await go(page, "/"); const input = page.getByRole("combobox").or(page.locator("input[placeholder^='Jump to']")).first();
+    for (let i = 0; i < 10 && !(await input.isVisible().catch(() => false)); i++) { await page.keyboard.press("Control+k"); await page.waitForTimeout(500); } // pressed only once the page has hydrated
+    await page.keyboard.type("Merchant"); await page.locator("[role=option]").nth(1).waitFor({ timeout: 10000 }).catch(() => {});
     const names = (await page.locator("[role=option]").allInnerTexts()).map(t => t.split("\n")[0]);
     expect(names.length >= 2 && names.slice(0, names.findIndex(n => !n.startsWith("Merchant")) >>> 0).every(n => n.startsWith("Merchant")), names.join(", "));
     await page.keyboard.press("Control+a"); await page.keyboard.type("cashback"); await page.waitForTimeout(600);

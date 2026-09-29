@@ -204,7 +204,7 @@ export function MenuLink({href,icon,description,trailing,children,prefetch=false
 
 export function MenuButton({onSelect,icon,description,trailing,children,disabled,tone,checked,keepOpen}:{onSelect?:()=>void;icon?:ReactNode;description?:ReactNode;trailing?:ReactNode;children:ReactNode;disabled?:boolean;tone?:'danger';checked?:boolean;keepOpen?:boolean}){
  const menu=useMenu();
- return <button type="button" role={checked===undefined?'menuitem':'menuitemradio'} aria-checked={checked} tabIndex={-1} className={styles.item} data-menu-tone={tone} disabled={disabled} onClick={()=>{if(!keepOpen)menu?.close({returnFocus:true});onSelect?.();}}><ItemBody icon={icon} description={description} trailing={trailing}>{children}</ItemBody></button>;
+ return <button type="button" role={checked===undefined?'menuitem':keepOpen?'menuitemcheckbox':'menuitemradio'} aria-checked={checked} tabIndex={-1} className={styles.item} data-menu-tone={tone} disabled={disabled} onClick={()=>{if(!keepOpen)menu?.close({returnFocus:true});onSelect?.();}}><ItemBody icon={icon} description={description} trailing={trailing}>{children}</ItemBody></button>;
 }
 
 /**
