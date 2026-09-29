@@ -51,3 +51,4 @@
 .item:hover .go{color:var(--accent-700)}
 .meta{margin-top:2px}
 @media(max-width:780px){.go{display:none}.item{grid-template-columns:auto minmax(0,1fr)}}
+.chip[aria-pressed=true]{background:var(--accent-050);border-color:var(--accent-600);color:var(--ink-900)}

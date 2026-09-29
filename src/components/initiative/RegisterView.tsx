@@ -27,9 +27,6 @@ const TARGET_OPTIONS = [
 ];
 const SETUP_OPTIONS = [{ value: 'incomplete', label: 'Setup incomplete' }, { value: 'ready', label: 'Setup complete' }];
 const RECORD_OPTIONS = [{ value: 'archived', label: 'Archived only' }, { value: 'all', label: 'Active and archived' }];
-const SORTS: { key: string; label: string }[] = [
-  { key: 'name', label: 'Initiative' }, { key: 'attention', label: 'Attention' }, { key: 'target', label: 'Target Live' }, { key: 'updated', label: 'Updated' },
-];
 
 export function RegisterView({ rows, initial, options, stageLabel }: {
   rows: RegisterRow[]; initial: ListFilterState; options: RegisterOptions; stageLabel: Record<string, string>;
