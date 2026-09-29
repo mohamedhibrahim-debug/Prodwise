@@ -8,6 +8,7 @@ import {HelpPanel} from './HelpPanel';
 import {NavigationProgress} from './NavigationProgress';
 import {ShellShortcuts} from './ShellShortcuts';
 import {TooltipLayer} from '@/components/primitives/TooltipLayer';
+import {AskProdwise} from '@/components/assistant/AskProdwise';
 import {WorkspaceScopeProvider} from '@/components/auth/WorkspaceScope';
 import type {ShellIdentity} from './ShellIdentity';
 import styles from '@/app/layout.module.css';
@@ -30,6 +31,7 @@ export function ApplicationShell({children,identity,writesEnabled}:{children:Rea
    <main className={styles.main} id="main-content" tabIndex={-1}>{children}</main>
   </div>
   <HelpPanel identity={identity}/>
+  <AskProdwise identity={identity}/>
   <ShellShortcuts/>
   <TooltipLayer/>
   <CommandPalette key={`${identity.access.organizationId}:${identity.access.actor.id}`} administration={!identity.guest&&(['ORG_OWNER','ADMIN'].includes(identity.access.role??'')||identity.access.platformRole==='PLATFORM_OWNER')} canSwitch={!identity.guest&&(identity.contexts?.length??0)>1}/>
