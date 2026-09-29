@@ -105,7 +105,7 @@ export async function OrganizationConsole({access,section,path,query}:{access:Ac
    <div className={styles.linkRow}><Link prefetch={false} className={styles.textLink} href="/account">Choose appearance in My account →</Link></div>
   </Section>
   <Section title="Ask Prodwise" description="Ask Prodwise is configured in My account. There is no organization-wide setting.">
-   <div className={styles.linkRow}><Link prefetch={false} className={styles.textLink} href="/account">My account →</Link></div>
+   <div className={styles.linkRow}><Link prefetch={false} className={styles.textLink} href="/account#ask-prodwise">Ask Prodwise preferences in My account →</Link></div>
   </Section>
  </>);
 

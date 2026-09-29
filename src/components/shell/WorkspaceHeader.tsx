@@ -25,7 +25,7 @@ export async function WorkspaceHeader({initiative}:{initiative:Initiative}){
  const [d,m,rel]=await Promise.all([readDelivery(),readManagement(),readRelationships()]);const row=buildPortfolioProjection({source:d.source,state:d.state,workspaceId:d.ctx.workspaceId,asOf:d.presentation.scenarioAt??new Date().toISOString(),management:m,relationships:rel.relationships}).rows.find(x=>x.initiative.id===initiative.id);const ownerId=ownerFor(d.state.facts.filter(f=>f.workspaceId===d.ctx.workspaceId),initiative.id);const owner=d.source.members.find(m=>m.id===ownerId);
  const viewer=d.ctx.role==='VIEWER';
  return <header className={styles.header}>
-  <PublishInitiativeTitle slug={initiative.slug} name={initiative.name}/>
+  <PublishInitiativeTitle slug={initiative.slug} name={initiative.name} stage={STAGE_LABEL[initiative.stage]}/>
   <div className={styles.inner}>
    <div className={styles.titleRow}>
     <h1 data-workspace-title title={initiative.name}>{initiative.name}</h1>
