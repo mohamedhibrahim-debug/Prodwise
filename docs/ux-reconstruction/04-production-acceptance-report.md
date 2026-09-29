@@ -186,3 +186,25 @@ Once the Claude blocker is resolved and re-verified, the expected verdict is **P
   - "Claude recheck smoke — synthetic".
 - Archived initiatives are read-only and absent from Home, Notifications, Roadmap and Analysis lists. A Demo generation reset removes them.
 - No AMAN data was read beyond connector status, and none was written.
+
+---
+
+## Addendum (29 Sept) — Blocker resolved, verdict updated
+
+- **Root cause.** A diagnostic build (`e1c4639`) recorded `READING_FAILED:OUTPUT_NOT_JSON:4003ms`. The provider answered HTTP 200 with a complete response. Prodwise's `JSON.parse(raw)` rejected Claude's JSON because it was wrapped (fenced or with surrounding prose). Authentication, model availability, account limits, environment variables and the London region were all ruled out.
+- **Fix.** Commit `9ad8496` (`src/lib/evidence/extract.ts`) adds `modelJson()`, which reads a bare, fenced or prose-wrapped JSON object. Candidates are still anchored to exact quotes, and non-JSON still fails honestly. The content-free diagnostic remains, marked temporary.
+- **Live production re-test on `9ad8496`** (synthetic "Claude fix verification — synthetic", archived afterwards):
+  - Evidence saved.
+  - Reading completed: "Read by Claude (claude-sonnet-5)" in ~35 s.
+  - 3 grounded proposals were generated.
+  - Confirm → a Knowledge entry, UNVERIFIED / HUMAN_ENTRY, linked to its evidence.
+  - Reject → REJECTED.
+  - The count went 3 → 2 → 1 consistently.
+- **Regression checks:**
+  - Typecheck clean.
+  - Lint clean.
+  - Unit tests 425/425.
+  - Build clean.
+  - Browser acceptance 23/23.
+  - Privacy scan clean.
+- **Updated verdict: Production Accepted with Non-Blocking Issues.**
