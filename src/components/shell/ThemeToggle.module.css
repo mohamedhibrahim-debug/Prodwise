@@ -1,0 +1,38 @@
+/* Appearance choice on My account: two swatches, one checked. */
+.choice { display: flex; flex-wrap: wrap; gap: var(--s-3); }
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 220px;
+  padding: var(--s-3);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  color: var(--ink-900);
+  text-align: left;
+  cursor: pointer;
+}
+.option:hover { border-color: var(--ink-500); }
+.option[aria-checked="true"] { border-color: var(--accent-600); box-shadow: inset 0 0 0 1px var(--accent-600); background: var(--surface-selected); }
+.option:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.text { display: grid; gap: 2px; }
+.text strong { font-size: var(--t-sm); font-weight: var(--fw-semibold); }
+.text small { font-size: var(--t-xs); color: var(--ink-500); }
+/* A miniature of the shell: rail, sheet, one accent line. Fixed colours on purpose — each swatch previews its own theme. */
+.swatch {
+  flex: none;
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  width: 52px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+}
+.swatch i { display: block; }
+.swatch i:first-child { grid-row: span 2; background: #061a2c; }
+.swatch[data-theme="light"] i:nth-child(2) { background: #ffffff; }
+.swatch[data-theme="light"] i:nth-child(3) { background: #f3f6f8; border-top: 2px solid #00aec7; }
+.swatch[data-theme="dark"] i:nth-child(2) { background: #16242f; }
+.swatch[data-theme="dark"] i:nth-child(3) { background: #0e1a27; border-top: 2px solid #22c0d6; }

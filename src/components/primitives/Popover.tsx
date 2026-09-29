@@ -154,7 +154,7 @@ export function menuKeyDown(close:(o?:CloseOptions)=>void){
   else if(e.key==='ArrowUp')move(index<0?list.length-1:index-1);
   else if(e.key==='Home')move(0);
   else if(e.key==='End')move(list.length-1);
-  else if(e.key==='Tab')close();
+  else if(e.key==='Tab')close({returnFocus:true});
   else if(e.key===' '&&index>=0){e.preventDefault();list[index]!.click();}
   else if(e.key.length===1&&/\S/.test(e.key)&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
    const key=e.key.toLowerCase();const order=[...list.slice(index+1),...list.slice(0,index+1)];
@@ -193,8 +193,11 @@ export function MenuScope({close,children}:{close:(o?:CloseOptions)=>void;childr
 
 function useMenu(){return useContext(MenuContext);}
 
-function ItemBody({icon,children,description,trailing}:{icon?:ReactNode;children:ReactNode;description?:ReactNode;trailing?:ReactNode}){
- return <>{icon!==undefined&&<span className={styles.icon} aria-hidden="true">{icon}</span>}<span className={styles.text}><span className={styles.title}>{children}</span>{description&&<small>{description}</small>}</span>{trailing&&<span className={styles.trailing}>{trailing}</span>}</>;
+function CheckMark({checked,radio}:{checked:boolean;radio:boolean}){
+ return <span className={styles.check} data-radio={radio||undefined} aria-hidden="true">{checked&&(radio?<i/>:<svg viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-6.5"/></svg>)}</span>;
+}
+function ItemBody({icon,children,description,trailing,checked,radio}:{icon?:ReactNode;children:ReactNode;description?:ReactNode;trailing?:ReactNode;checked?:boolean;radio?:boolean}){
+ return <>{checked!==undefined&&<CheckMark checked={checked} radio={Boolean(radio)}/>}{icon!==undefined&&<span className={styles.icon} aria-hidden="true">{icon}</span>}<span className={styles.text}><span className={styles.title}>{children}</span>{description&&<small>{description}</small>}</span>{trailing&&<span className={styles.trailing}>{trailing}</span>}</>;
 }
 
 export function MenuLink({href,icon,description,trailing,children,prefetch=false,tone}:{href:string;icon?:ReactNode;description?:ReactNode;trailing?:ReactNode;children:ReactNode;prefetch?:boolean;tone?:'danger'}){
@@ -204,7 +207,7 @@ export function MenuLink({href,icon,description,trailing,children,prefetch=false
 
 export function MenuButton({onSelect,icon,description,trailing,children,disabled,tone,checked,keepOpen}:{onSelect?:()=>void;icon?:ReactNode;description?:ReactNode;trailing?:ReactNode;children:ReactNode;disabled?:boolean;tone?:'danger';checked?:boolean;keepOpen?:boolean}){
  const menu=useMenu();
- return <button type="button" role={checked===undefined?'menuitem':keepOpen?'menuitemcheckbox':'menuitemradio'} aria-checked={checked} tabIndex={-1} className={styles.item} data-menu-tone={tone} disabled={disabled} onClick={()=>{if(!keepOpen)menu?.close({returnFocus:true});onSelect?.();}}><ItemBody icon={icon} description={description} trailing={trailing}>{children}</ItemBody></button>;
+ return <button type="button" role={checked===undefined?'menuitem':keepOpen?'menuitemcheckbox':'menuitemradio'} aria-checked={checked} tabIndex={-1} className={styles.item} data-menu-tone={tone} disabled={disabled} onClick={()=>{if(!keepOpen)menu?.close({returnFocus:true});onSelect?.();}}><ItemBody icon={icon} description={description} trailing={trailing} checked={checked} radio={checked!==undefined&&!keepOpen}>{children}</ItemBody></button>;
 }
 
 /**
@@ -213,7 +216,7 @@ export function MenuButton({onSelect,icon,description,trailing,children,disabled
  * submission. The action's navigation closes the menu instead.
  */
 export function MenuSubmit({icon,description,trailing,children,disabled,tone,checked,name,value,pending}:{icon?:ReactNode;description?:ReactNode;trailing?:ReactNode;children:ReactNode;disabled?:boolean;tone?:'danger';checked?:boolean;name?:string;value?:string;pending?:boolean}){
- return <button type="submit" name={name} value={value} role={checked===undefined?'menuitem':'menuitemradio'} aria-checked={checked} aria-busy={pending||undefined} tabIndex={-1} className={styles.item} data-menu-tone={tone} disabled={disabled}><ItemBody icon={pending?<span className="pw-spinner"/>:icon} description={description} trailing={trailing}>{children}</ItemBody></button>;
+ return <button type="submit" name={name} value={value} role={checked===undefined?'menuitem':'menuitemradio'} aria-checked={checked} aria-busy={pending||undefined} tabIndex={-1} className={styles.item} data-menu-tone={tone} disabled={disabled}><ItemBody icon={pending?<span className="pw-spinner"/>:icon} description={description} trailing={trailing} checked={checked} radio={checked!==undefined}>{children}</ItemBody></button>;
 }
 
 export function MenuSeparator(){return <div role="separator" className={styles.separator}/>;}

@@ -23,7 +23,7 @@
   place-items: center;
   border-radius: 50%;
   background: var(--accent-600);
-  color: var(--surface);
+  color: var(--on-accent);
   font-weight: var(--fw-semibold);
   line-height: 1;
 }

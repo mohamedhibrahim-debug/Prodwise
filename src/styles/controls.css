@@ -82,7 +82,7 @@
 .pw-btn:hover { text-decoration: none; }
 
 /* Primary: the one main action in a view. */
-.pw-btn[data-variant="primary"] { background: var(--accent-600); color: var(--surface); font-weight: var(--fw-semibold); }
+.pw-btn[data-variant="primary"] { background: var(--accent-600); color: var(--on-accent); font-weight: var(--fw-semibold); }
 .pw-btn[data-variant="primary"]:hover:not(:disabled,[aria-disabled="true"]) { background: var(--accent-700); }
 .pw-btn[data-variant="primary"]:active:not(:disabled,[aria-disabled="true"]) { background: var(--accent-800); }
 
@@ -102,7 +102,7 @@
 .pw-btn[data-variant="destructive"] { background: var(--surface); color: var(--state-blocked-fg); border-color: var(--state-blocked-edge); }
 .pw-btn[data-variant="destructive"]:hover:not(:disabled,[aria-disabled="true"]) { background: var(--state-blocked-bg); border-color: var(--state-blocked-mark); }
 /* The confirm step of a destructive action. */
-.pw-btn[data-variant="danger"] { background: var(--state-blocked-fg); color: var(--surface); font-weight: var(--fw-semibold); }
+.pw-btn[data-variant="danger"] { background: var(--state-blocked-fg); color: var(--on-accent); font-weight: var(--fw-semibold); }
 .pw-btn[data-variant="danger"]:hover:not(:disabled,[aria-disabled="true"]) { background: var(--sev-critical); filter: brightness(0.92); }
 
 /* On the navy chrome (rail, mobile bar). */

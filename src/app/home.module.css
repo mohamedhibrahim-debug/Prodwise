@@ -32,13 +32,8 @@
   color: var(--ink-500);
   font-variant-numeric: tabular-nums;
 }
-/* ── Pulse band ─────────────────────────────────────────────────────────── */
-.pulse {
-  background: var(--panel);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-lg);
-  margin-bottom: var(--s-5);
-}
+/* ── Pulse band: the shared stat-strip grammar ─────────────────────────── */
+.pulse { margin-bottom: var(--s-5); }
 .pulse ul {
   list-style: none;
   margin: 0;

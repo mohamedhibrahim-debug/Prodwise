@@ -5,12 +5,12 @@
    status or readiness — so the ramp avoids READY green, BLOCKED red, AT_RISK
    amber and brand orange. Every badge also carries a glyph and Jira's own name. */
 .workspace,.typeBadge{
-  --type-epic-fg:#5b3f9e;--type-epic-bg:#efeaf9;
-  --type-story-fg:#1f6b5c;--type-story-bg:#e3f2ee;
-  --type-task-fg:#1f5a8a;--type-task-bg:#e5eef7;
-  --type-bug-fg:#8a2f5a;--type-bug-bg:#f7e8ef;
-  --type-subtask-fg:#3d5670;--type-subtask-bg:#e8edf2;
-  --type-initiative-fg:#3a4a9a;--type-initiative-bg:#e8eaf7;
+  --type-epic-fg:var(--kind-decision-fg);--type-epic-bg:var(--kind-decision-bg);
+  --type-story-fg:var(--kind-work-fg);--type-story-bg:var(--kind-work-bg);
+  --type-task-fg:var(--kind-dependency-fg);--type-task-bg:var(--kind-dependency-bg);
+  --type-bug-fg:var(--kind-risk-fg);--type-bug-bg:var(--kind-risk-bg);
+  --type-subtask-fg:var(--kind-evidence-fg);--type-subtask-bg:var(--kind-evidence-bg);
+  --type-initiative-fg:var(--kind-initiative-fg);--type-initiative-bg:var(--kind-initiative-bg);
   --type-other-fg:var(--ink-700);--type-other-bg:var(--surface-subtle);
   --import-bar-z:5;
 }

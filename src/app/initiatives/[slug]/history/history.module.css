@@ -23,7 +23,7 @@
 .event:first-child::before{top:var(--s-5)}.event:last-child::before{bottom:calc(100% - var(--s-5))}
 .marker{position:relative;z-index:1;width:36px;height:36px;border-radius:var(--r-pill);display:grid;place-items:center;background:var(--panel);border:1.5px solid var(--rule-strong);color:var(--ink-700);font-size:var(--t-sm)}
 .event[data-category=delivery] .marker{border-color:var(--accent-500);color:var(--accent-700)}
-.event[data-category=decisions] .marker,.event[data-category=lifecycle] .marker{border-color:var(--navy-900);color:var(--navy-900)}
+.event[data-category=decisions] .marker,.event[data-category=lifecycle] .marker{border-color:var(--navy-900);color: var(--ink-navy)}
 .body{min-width:0;display:grid;gap:var(--s-1);padding-top:2px}
 .meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-3);font-size:var(--t-xs);color:var(--ink-500)}
 .kind{font-weight:var(--fw-semibold);color:var(--ink-900);text-transform:uppercase;letter-spacing:var(--ls-micro)}
@@ -31,7 +31,7 @@
 .rationale{margin:var(--s-1) 0 0;padding:var(--s-2) var(--s-3);border-inline-start:3px solid var(--rule-strong);background:var(--surface-subtle);font-size:var(--t-sm);color:var(--ink-700);line-height:var(--lh-body);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .links{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-4);font-size:var(--t-sm)}.links a{color:var(--accent-700);min-height:32px;display:inline-flex;align-items:center}.links span{color:var(--ink-500);display:inline-flex;align-items:center}
 .more{display:flex;gap:var(--s-4);align-items:center;margin-top:var(--s-6);font-size:var(--t-sm);color:var(--ink-500)}.more a{color:var(--accent-700)}
-.loadEarlier{min-height:var(--control-lg);display:inline-flex;align-items:center;padding:0 var(--s-4);border:1px solid var(--navy-900);border-radius:var(--r-sm);font-weight:var(--fw-semibold);color:var(--navy-900)!important;background:var(--panel)}
+.loadEarlier{min-height:var(--control-lg);display:inline-flex;align-items:center;padding:0 var(--s-4);border:1px solid var(--navy-900);border-radius:var(--r-sm);font-weight:var(--fw-semibold);color: var(--ink-navy)!important;background:var(--panel)}
 @media(max-width:767px){
  .page{padding-top:var(--s-5)}.heading{flex-direction:column;align-items:flex-start;gap:var(--s-2)}.heading h2{font-size:var(--t-h2)}
  .filters{flex-direction:column;align-items:stretch}.search input{width:100%}

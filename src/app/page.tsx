@@ -16,10 +16,12 @@ import {readRelationships} from '@/lib/data/relationships';
 import {readQuestions} from '@/lib/data/questions';
 import {ownerAttention} from '@/lib/workspace/owner-attention';
 import {Button,ButtonLink} from '@/components/primitives/Button';
+import {StatStrip,type StatTone} from '@/components/workspace/StatStrip';
 import styles from './home.module.css';
 export const metadata:Metadata={title:'Home'};
 export const dynamic='force-dynamic';
 const shortWeek=(week:string)=>week.replace(/^\d{4}-/,'');
+const PULSE_TONE:Record<string,StatTone>={attention:'attention',decision:'decision',blocker:'attention',past:'attention',upcoming:'schedule',unknown:'unknown',setup:'neutral'};
 const VERB:Record<string,string>={DECISION:'Review decision',DEPENDENCY:'Review dependency',BLOCKER:'Open delivery facts',PAST_TARGET:'Update delivery facts',PAST_MILESTONE:'Update delivery facts',SUPPORT_CHANGED:'Inspect support'};
 export default async function Home({searchParams}:{searchParams:Promise<{organizationChanged?:string}>}){
  const [d,activity,query,guest,management,rel,qs]=await Promise.all([readDelivery(),getRepository().listRecentActivity(100),searchParams,isDemoGuestSession(),readManagement(),readRelationships(),readQuestions()]);
@@ -57,7 +59,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{organiz
    <p className={styles.meta}>{p.summary.total} active {p.summary.total===1?'initiative':'initiatives'} · {d.presentation.isDemo?'dated to the Demo scenario day shown above':<>As of <time dateTime={p.today}>{displayDate(p.today)}</time></>}</p></div>
   {writer&&<ButtonLink href="/initiatives/new">Create initiative</ButtonLink>}
  </header>
- {p.summary.total>0&&<nav className={styles.pulse} aria-label="Portfolio pulse">{pulse.length?<ul>{pulse.map(item=><li key={item.key}><Link prefetch={false} href={item.href} data-tone={item.tone}><strong>{item.count}</strong><span>{item.label}</span></Link></li>)}</ul>:<p>Nothing is flagged under the current checks. This is not a readiness assessment.</p>}</nav>}
+ {p.summary.total>0&&<nav className={styles.pulse} aria-label="Portfolio pulse">{pulse.length?<StatStrip label="Portfolio pulse" dense items={pulse.map(item=>({key:item.key,value:item.count,label:item.label,href:item.href,tone:PULSE_TONE[item.key]??'neutral'}))}/>:<p>Nothing is flagged under the current checks. This is not a readiness assessment.</p>}</nav>}
  {!p.summary.total?<section className={styles.firstRun}><h2>No initiatives recorded in {d.presentation.organizationName} yet.</h2><p>Record an initiative to build its scope, sources and delivery facts.</p>{writer&&<ButtonLink variant="primary" href="/initiatives/new">Create initiative</ButtonLink>}</section>:
  <div className={styles.grid}>
   <div className={styles.main}>

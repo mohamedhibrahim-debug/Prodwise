@@ -2,6 +2,7 @@
 import {logoutAction} from '@/app/login/actions';
 import {FloatingLayer,MenuButton,MenuHeader,MenuLink,MenuScope,MenuSeparator,MenuSubmit,menuKeyDown,usePopover} from '@/components/primitives/Popover';
 import {InstrumentIcon} from './InstrumentIcon';
+import {ThemeMenuItems} from './ThemeToggle';
 import {openHelp,openOrganizationSwitcher} from './events';
 import {initials,roleShortLabel,type ShellIdentity} from './ShellIdentity';
 import styles from './AccountMenu.module.css';
@@ -37,6 +38,8 @@ export function AccountMenu({identity,collapsed=false}:{identity:ShellIdentity;c
     {canSwitch&&<MenuButton icon={<InstrumentIcon name="switch"/>} onSelect={()=>requestAnimationFrame(openOrganizationSwitcher)}>Switch organization</MenuButton>}
     <MenuLink href="/account" icon={<InstrumentIcon name="user"/>}>My account</MenuLink>
     <MenuLink href="/account/connections" icon={<InstrumentIcon name="plug"/>}>Connected sources</MenuLink>
+    <MenuSeparator/>
+    <ThemeMenuItems/>
     <MenuSeparator/>
     <MenuButton icon={<InstrumentIcon name="keyboard"/>} trailing={<kbd className="pw-kbd">?</kbd>} onSelect={()=>openHelp('shortcuts')}>Keyboard shortcuts</MenuButton>
     <MenuButton icon={<InstrumentIcon name="help"/>} onSelect={()=>openHelp()}>Help</MenuButton>

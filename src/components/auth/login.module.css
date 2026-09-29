@@ -120,7 +120,7 @@
   cursor: pointer;
   transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
 }
-.primaryButton:not(#_) { color: var(--surface); background: var(--accent-600); margin-top: var(--s-1); }
+.primaryButton:not(#_) { color: var(--on-accent); background: var(--accent-600); margin-top: var(--s-1); }
 .primaryButton:not(#_):hover:not(:disabled) { background: var(--accent-700); }
 .demoButton:not(#_) { color: var(--ink-900); background: var(--surface); border-color: var(--rule-strong); }
 .demoButton:not(#_):hover:not(:disabled) { background: var(--surface-hover); border-color: var(--ink-400); }
@@ -159,7 +159,7 @@
 .steps li[aria-current="step"] { color: var(--ink-900); font-weight: var(--fw-semibold); }
 .steps li[aria-current="step"] span { background: var(--chrome-900); border-color: var(--chrome-900); color: var(--chrome-ink); }
 .steps li[data-done] { color: var(--ink-700); }
-.steps li[data-done] span { background: var(--accent-600); border-color: var(--accent-600); color: var(--surface); }
+.steps li[data-done] span { background: var(--accent-600); border-color: var(--accent-600); color: var(--on-accent); }
 
 .verified { display: inline-flex; align-items: center; gap: var(--s-2); margin-block-end: var(--s-5); font-size: var(--t-sm); color: var(--state-ready-fg); font-weight: var(--fw-medium); overflow-wrap: anywhere; }
 .orgCard { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: var(--s-4); align-items: center; padding: var(--s-4); border: 1px solid var(--rule-strong); border-radius: var(--r-lg); background: var(--surface-subtle); }

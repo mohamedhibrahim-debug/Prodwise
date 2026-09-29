@@ -9,13 +9,13 @@
 .eyebrow, .kicker { margin: 0; text-transform: uppercase; letter-spacing: var(--ls-micro); font-size: var(--t-micro); font-weight: var(--fw-semibold); color: var(--ink-500); }
 .subtitle { margin: 0; font-size: var(--t-sm); color: var(--ink-700); max-width: 72ch; line-height: var(--lh-body); }
 .cutoff { margin: 0; flex-shrink: 0; text-align: right; display: grid; gap: var(--s-1); }
-.cutoff strong { font-family: var(--font-mono); font-size: var(--t-body); font-weight: var(--fw-medium); color: var(--navy-900); }
+.cutoff strong { font-family: var(--font-mono); font-size: var(--t-body); font-weight: var(--fw-medium); color: var(--ink-navy); }
 .cutoff span { font-size: var(--t-xs); color: var(--ink-500); }
 .cutoffLabel { text-transform: uppercase; letter-spacing: var(--ls-micro); font-size: var(--t-micro) !important; font-weight: var(--fw-semibold); }
 .nav { display: flex; gap: var(--s-6); border-bottom: 1px solid var(--rule-strong); margin-bottom: var(--s-6); }
 .nav a { display: flex; min-height: 44px; align-items: center; border-bottom: 3px solid transparent; font-weight: var(--fw-semibold); font-size: var(--t-sm); color: var(--ink-700); }
-.nav a:hover { color: var(--navy-900); }
-.nav a[aria-current] { color: var(--navy-900); border-bottom-color: var(--accent-600); }
+.nav a:hover { color: var(--ink-navy); }
+.nav a[aria-current] { color: var(--ink-navy); border-bottom-color: var(--accent-600); }
 
 /* ── Shared section furniture ────────────────────────────────────────── */
 .section { margin-top: var(--s-10); }
@@ -30,7 +30,7 @@
 .emptyLine a { color: var(--accent-700); font-weight: var(--fw-semibold); }
 .note { font-size: var(--t-xs); color: var(--ink-700); line-height: var(--lh-body); margin: 0 0 var(--s-4); padding-left: var(--s-3); border-left: 2px solid var(--rule-strong); }
 .synthetic { font-size: var(--t-xs); color: var(--ink-700); margin: 0 0 var(--s-3); line-height: var(--lh-body); }
-.synthetic strong { color: var(--navy-900); }
+.synthetic strong { color: var(--ink-navy); }
 
 /* ── Portfolio: summary band ─────────────────────────────────────────── */
 .band { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); background: var(--navy-900); border-radius: var(--r-sm); }

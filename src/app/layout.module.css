@@ -6,11 +6,12 @@
   transition: margin-inline-start var(--dur) var(--ease);
 }
 
-/* The work sheet: every page renders on white, never on the gutter. */
+/* The work sheet: every page renders on the sheet tint, never on the gutter;
+   panels are white on it, so grouped areas read without nested cards. */
 .main {
   min-height: calc(100vh - var(--command-h) - var(--sheet-gap));
   margin: 0 var(--sheet-gap) var(--sheet-gap);
-  background: var(--surface);
+  background: var(--sheet);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-sheet);
   outline: none;
@@ -21,7 +22,7 @@
   .canvas {
     margin-inline-start: 0;
     min-height: auto;
-    background: var(--surface);
+    background: var(--sheet);
   }
   .main {
     min-height: calc(100dvh - var(--mobile-global-h));

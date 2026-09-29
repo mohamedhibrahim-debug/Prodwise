@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ApplicationShell } from "@/components/shell/ApplicationShell";
 import { RAIL_BOOT_SCRIPT } from "@/components/shell/rail-preference";
+import { THEME_BOOT_SCRIPT } from "@/components/shell/theme-preference";
 import { contextForRequest, currentIdentityPresentation, isDemoGuestSession, listAuthorizedContexts } from "@/lib/auth/service";
 import { workspacePresentation } from "@/lib/workspace/context";
 import { isDemoWriteEnabled } from "@/lib/env";
@@ -44,8 +45,8 @@ export default async function RootLayout({
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
-        {/* Applies a remembered collapsed sidebar before first paint. */}
-        <script dangerouslySetInnerHTML={{ __html: RAIL_BOOT_SCRIPT }} />
+        {/* Applies a remembered collapsed sidebar and appearance before first paint. */}
+        <script dangerouslySetInnerHTML={{ __html: RAIL_BOOT_SCRIPT + THEME_BOOT_SCRIPT }} />
       </head>
       <body>
         <ApplicationShell

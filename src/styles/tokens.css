@@ -52,6 +52,8 @@
   --navy-ink-dim: var(--chrome-ink-dim);
   --navy-ink-faint: var(--chrome-ink-faint);
   --navy-rule: var(--chrome-rule);
+  /* Navy used as heading ink (not as a surface): the darkest text in Light, the lightest in Dark. */
+  --ink-navy: var(--chrome-900);
 
   /* ── Identity accent · cyan / teal ─────────────────────────────────────
      Primary actions, focus, the current navigation item. Never state. */
@@ -138,6 +140,56 @@
   --sev-high: #8f5c00;
   --sev-medium: #4a6b86;
   --sev-low: #5f6c78;
+
+  /* ── Information-type roles ────────────────────────────────────────────
+     What kind of thing a mark is, not how it is doing. Each role is a hue
+     paired with a glyph in the component that uses it, so the type of a
+     record is readable without colour. None of these is a status hue and
+     none is the brand orange (CLAUDE.md §16). */
+  --kind-decision-fg: #4a3a99;      /* a decision, a difference awaiting one */
+  --kind-decision-bg: #eeeaf9;
+  --kind-decision-mark: #6a56c2;
+  --kind-evidence-fg: #3d5670;      /* evidence, provenance, a source */
+  --kind-evidence-bg: #e9eef3;
+  --kind-evidence-mark: #5f7a95;
+  --kind-risk-fg: #8a2f5a;          /* a recorded risk (not AT_RISK) */
+  --kind-risk-bg: #f8e9f0;
+  --kind-risk-mark: #b8497f;
+  --kind-dependency-fg: #1f5a8a;    /* a relationship between initiatives */
+  --kind-dependency-bg: #e6eef7;
+  --kind-dependency-mark: #3a7fb8;
+  --kind-work-fg: #1f6b5c;          /* a unit of delivery work (story, task) */
+  --kind-work-bg: #e3f2ee;
+  --kind-initiative-fg: #3a4a9a;    /* an initiative-level container (epic, portfolio item) */
+  --kind-initiative-bg: #e8eaf7;
+  --kind-schedule: var(--accent-600);      /* time on a timeline */
+  --kind-schedule-soft: var(--accent-200);
+  --kind-target: var(--ink-800);           /* a planned date or approved target line */
+  --kind-actual: var(--chrome-700);        /* what actually happened */
+  --kind-progress-track: var(--rule);
+  --kind-progress-fill: var(--accent-600);
+  --kind-metric-series: var(--accent-600);
+  --kind-metric-compare: var(--ink-300);
+  --fresh-fg: var(--ink-500);              /* freshness reads as meta text… */
+  --stale-fg: var(--state-at-risk-fg);     /* …until it is old enough to matter */
+  --stale-bg: var(--state-at-risk-bg);
+  /* Review state of a section (Weekly Review): reviewed · needs review · needs re-check. */
+  --review-done-fg: var(--state-ready-fg);
+  --review-done-mark: var(--state-ready-mark);
+  --review-todo-fg: var(--ink-500);
+  --review-todo-mark: var(--ink-300);
+  --review-recheck-fg: var(--state-at-risk-fg);
+  --review-recheck-mark: var(--state-at-risk-mark);
+
+  /* ── Tinted working areas ─────────────────────────────────────────────
+     A grouped area gets one quiet tint instead of a nested white card. */
+  --sheet: #f7f9fb;                 /* the page itself; panels are white on it */
+  --tint-quiet: #f3f6f8;
+  --tint-accent: var(--accent-050);
+  --tint-attention: var(--attention-bg);
+  --tint-decision: var(--kind-decision-bg);
+  --tint-evidence: var(--kind-evidence-bg);
+  --on-accent: #ffffff;             /* text on --accent-600 / status fills */
 
   /* ── Typography ────────────────────────────────────────────────────── */
   --font-sans: var(--font-inter, Inter), -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -280,4 +332,122 @@
     --t-display: 1.375rem;
     --t-h1: 1.375rem;
   }
+}
+
+/* ============================================================================
+   DARK MODE — designed through the same semantic tokens, never inverted.
+   Chosen in the account menu or My account and remembered per browser; Light
+   stays the default. The chrome (rail) stays navy in both, so the dark sheet
+   is a step lighter than the chrome and the gutter sits between the two.
+   Contrast (computed): --ink-900 on --panel 14.6:1 · --ink-500 6.0:1 ·
+   --ink-400 on --surface-sunken 4.6:1 · --accent-700 on --panel 8.1:1 ·
+   --chrome-900 on --accent-500 6.6:1 (primary actions) ·
+   status fg on its bg: ready 7.4 · at-risk 7.9 · blocked 6.9 · unknown 6.3.
+   ========================================================================= */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --chrome-950: #030d16;
+  --chrome-900: #05131f;
+  --chrome-850: #081a2a;
+  --chrome-800: #0f2437;
+  --chrome-700: #183650;
+  --chrome-rule: #17314a;
+  --chrome-ink: #e9eff5;
+  --chrome-ink-dim: #a3b4c5;
+  --chrome-ink-faint: #8a9db0;
+  --chrome-hover: rgb(255 255 255 / 7%);
+  --navy-600: #a9b8c6;
+  --navy-500: #96a7b6;
+
+  --accent-800: #a6e7ef;
+  --accent-700: #6fd6e5;
+  --accent-600: #00aec7;
+  --accent-500: #00aec7;
+  --accent-400: #22c0d6;
+  --accent-200: #0d5563;
+  --accent-100: #0b3f4a;
+  --accent-050: #0d2f39;
+  --on-accent: #04131f;
+
+  --brand-orange: #ea935f;
+  --brand-orange-soft: #3a2418;
+
+  --app-canvas: #08121c;
+  --app-canvas-rule: #142334;
+  --sheet: #0e1a27;
+  --surface: #13202e;
+  --panel: #16242f;
+  --canvas: #1a2937;
+  --surface-subtle: #1a2937;
+  --surface-sunken: #1f2f3e;
+  --surface-inset: #263848;
+  --surface-hover: #1e2f3f;
+  --surface-selected: var(--accent-050);
+  --overlay: #1a2836;
+  --scrim: rgb(0 0 0 / 66%);
+  --tint-quiet: #172533;
+
+  --rule: #26384a;
+  --rule-strong: #34495d;
+
+  --ink-900: #e9eef4;
+  --ink-800: #d6dfe8;
+  --ink-700: #c2cdd8;
+  --ink-600: #adbac8;
+  --ink-500: #9aabbb;
+  --ink-400: #8d9fb0;
+  --ink-300: #4c6073;
+  --ink-navy: var(--ink-900);
+
+  --state-ready-fg: #8ddcae;
+  --state-ready-bg: #10291b;
+  --state-ready-mark: #3fbf78;
+  --state-ready-edge: #1f4d33;
+  --state-at-risk-fg: #f0c65e;
+  --state-at-risk-bg: #33260a;
+  --state-at-risk-mark: #d9a52a;
+  --state-at-risk-edge: #5a4413;
+  --state-blocked-fg: #f7a49b;
+  --state-blocked-bg: #3b1613;
+  --state-blocked-mark: #e25d50;
+  --state-blocked-edge: #5e2622;
+  --state-unknown-fg: #b7c3ce;
+  --state-unknown-bg: #1f2b36;
+  --state-unknown-mark: #8a9aa8;
+  --state-unknown-edge: #34434f;
+  --chip-bg: #22303e;
+
+  --sev-critical: #f7a49b;
+  --sev-high: #e8bd55;
+  --sev-medium: #93b8d6;
+  --sev-low: #a4b2be;
+
+  --kind-decision-fg: #bcadf3;
+  --kind-decision-bg: #261e47;
+  --kind-decision-mark: #9f8ce8;
+  --kind-evidence-fg: #b8c8d8;
+  --kind-evidence-bg: #1d2b39;
+  --kind-evidence-mark: #7f99b3;
+  --kind-risk-fg: #f2a8c8;
+  --kind-risk-bg: #3b1a2b;
+  --kind-risk-mark: #d777a3;
+  --kind-dependency-fg: #a0c9ef;
+  --kind-dependency-bg: #172c40;
+  --kind-dependency-mark: #6daadf;
+  --kind-work-fg: #8fd6c2;
+  --kind-work-bg: #143129;
+  --kind-initiative-fg: #aeb8f0;
+  --kind-initiative-bg: #1e2447;
+  --kind-schedule: var(--accent-400);
+  --kind-schedule-soft: var(--accent-200);
+  --kind-target: var(--ink-700);
+  --kind-actual: #7fb3d6;
+  --kind-progress-fill: var(--accent-400);
+  --kind-metric-series: var(--accent-400);
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 30%);
+  --shadow-sheet: 0 1px 2px rgb(0 0 0 / 35%), 0 0 0 1px rgb(255 255 255 / 4%);
+  --shadow-popover: 0 12px 28px -8px rgb(0 0 0 / 65%), 0 0 0 1px rgb(255 255 255 / 9%);
+  --shadow-panel: -16px 0 40px -16px rgb(0 0 0 / 65%), 0 0 0 1px rgb(255 255 255 / 8%);
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent-400);
 }

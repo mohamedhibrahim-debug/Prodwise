@@ -108,7 +108,7 @@
 .reviewSection .field textarea { background:var(--surface-subtle); min-height:6rem; }
 .reviewSection .meta { margin:0; }
 .recordedReviewFacts { padding:var(--s-4); background:var(--surface-subtle); border-top:2px solid var(--navy-900); display:grid; gap:var(--s-4); }
-.recordedReviewFacts h3,.pmNarrative h3 { margin:0; font-size:var(--t-sm); color:var(--navy-900); display:flex; flex-wrap:wrap; gap:var(--s-2) var(--s-4); justify-content:space-between; }
+.recordedReviewFacts h3,.pmNarrative h3 { margin:0; font-size:var(--t-sm); color: var(--ink-navy); display:flex; flex-wrap:wrap; gap:var(--s-2) var(--s-4); justify-content:space-between; }
 .recordedReviewFacts h3 span,.pmNarrative h3 span { font-size:var(--t-xs); font-weight:400; color:var(--ink-500); }
 .recordedReviewFacts .facts { padding:0; }
 .recordedReviewFacts .movement { margin:0; }

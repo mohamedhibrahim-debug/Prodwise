@@ -14,6 +14,7 @@ import {metricCoverage} from "@/lib/analysis/metric-view";
 import {AnalysisFrame,styles} from "@/components/analysis/AnalysisFrame";
 import {CoverageMarks} from "@/components/analysis/MetricParts";
 import {DataTable} from "@/components/admin/AdminUI";
+import {StatStrip,type StatTone} from "@/components/workspace/StatStrip";
 import { cairoDay } from "@/lib/delivery/model";
 export const metadata={title:"Portfolio Analysis"};
 
@@ -25,14 +26,14 @@ export default async function PortfolioAnalysis(){
  // The same shared projection as Home, Initiatives and Roadmap: counts are never recomputed here.
  const p=buildPortfolioProjection({source,state,workspaceId:ctx.workspaceId,asOf,management,relationships:relationships.relationships});
  const active=filterPortfolioRows(p.rows,{},p.today);
- const counts=[
-  ["Initiatives",p.summary.total,"","Active records in this workspace"],
-  ["Need attention",p.summary.attentionInitiatives,"attention=any","With at least one recorded reason"],
-  ["Setup incomplete",p.summary.setupIncomplete,"setup=incomplete","One or more setup requirements unrecorded"],
-  ["Targets in 28 days",p.summary.upcomingTargets,"target=upcoming","Target Live today through day 28"],
-  ["No Target Live",p.summary.unknownTargets,"target=unknown","Planned date not recorded"],
-  ["Target revised",filterPortfolioRows(p.rows,{target:"moved"},p.today).length,"target=moved","Target Live moved in the last 28 days"],
- ] as const;
+ const counts:[string,number,string,string,StatTone][]=[
+  ["Initiatives",p.summary.total,"","Active records in this workspace","neutral"],
+  ["Need attention",p.summary.attentionInitiatives,"attention=any","With at least one recorded reason","attention"],
+  ["Setup incomplete",p.summary.setupIncomplete,"setup=incomplete","One or more setup requirements unrecorded","neutral"],
+  ["Targets in 28 days",p.summary.upcomingTargets,"target=upcoming","Target Live today through day 28","schedule"],
+  ["No Target Live",p.summary.unknownTargets,"target=unknown","Planned date not recorded","unknown"],
+  ["Target revised",filterPortfolioRows(p.rows,{target:"moved"},p.today).length,"target=moved","Target Live moved in the last 28 days","schedule"],
+ ];
  const upcoming=filterPortfolioRows(p.rows,{target:"upcoming",sort:"target"},p.today);
  const allowed=new Map(p.rows.map(r=>[r.initiative.id,r.initiative]));
  const revisions=state.events.filter(e=>e.workspaceId===ctx.workspaceId&&allowed.has(e.initiativeId)&&e.after.kind==="TARGET_LIVE"&&e.before?.state==="SET"&&e.after.state==="SET"&&e.before.value.date&&e.after.value.date&&e.before.value.date!==e.after.value.date&&dayDifference(cairoDay(e.occurredAt),p.today)<=28).sort((a,b)=>b.occurredAt.localeCompare(a.occurredAt));
@@ -43,7 +44,7 @@ export default async function PortfolioAnalysis(){
  const configured=coverageRows.filter(c=>c.coverage.configured>0).length;
  const synthetic=metrics.some(m=>m.origin==="SYNTHETIC_DEMO");
  return <AnalysisFrame active="portfolio" title="Portfolio Analysis" subtitle="Position, attention and measurement coverage, from the same records as Home." organizationName={presentation.organizationName} asOf={asOf} synthetic={presentation.isDemo}>
-  <ul className={styles.band} aria-label="Portfolio summary">{counts.map(([label,count,filter,hint])=><li key={label}><Link prefetch={false} href={"/initiatives"+(filter?"?"+filter:"")}><strong>{count}</strong><span className={styles.bandLabel}>{label}</span><span className={styles.bandHint}>{hint}</span></Link></li>)}</ul>
+  <StatStrip label="Portfolio summary" items={counts.map(([label,count,filter,hint,tone])=>({key:label,value:count,label,hint,tone,href:"/initiatives"+(filter?"?"+filter:"")}))}/>
   <div className={styles.split}>
    <section className={styles.panel} aria-labelledby="lifecycle-heading">
     <div className={styles.sectionHead}><h2 id="lifecycle-heading">Lifecycle distribution</h2><span className={styles.count}>{p.summary.total} initiatives</span></div>

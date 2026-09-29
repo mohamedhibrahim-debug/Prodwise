@@ -83,7 +83,7 @@
 .label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .navItem:hover { background: var(--chrome-hover); color: var(--chrome-ink); }
 /* One indicator for the current item: a filled row with a cyan edge. */
-.navItem[aria-current="page"] { background: var(--chrome-800); color: var(--surface); }
+.navItem[aria-current="page"] { background: var(--chrome-800); color: var(--on-accent); }
 .navItem[aria-current="page"]::before {
   content: "";
   position: absolute;
@@ -205,7 +205,7 @@
     margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; display: grid; place-items: center;
     border-radius: var(--r-pill); background: var(--accent-500); color: var(--chrome-900); font-size: var(--t-micro); font-weight: var(--fw-bold);
   }
-  .drawerBell :global(a[data-notifications][aria-current="page"]) { background: var(--chrome-800); color: var(--surface); }
+  .drawerBell :global(a[data-notifications][aria-current="page"]) { background: var(--chrome-800); color: var(--on-accent); }
 }
 @keyframes drawer-in { from { transform: translateX(-24px); opacity: 0; } }
 .drawer :focus-visible, .mobileBar :focus-visible { box-shadow: var(--focus-ring-dark); outline: none; }

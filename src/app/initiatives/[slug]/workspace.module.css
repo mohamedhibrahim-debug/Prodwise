@@ -350,7 +350,7 @@
 .pageTitle {
   font-size: 26px;
   margin-bottom: 8px;
-  color: var(--navy-900);
+  color: var(--ink-navy);
 }
 .contextMeta{font-size:var(--t-xs);color:var(--ink-500);font-weight:var(--fw-regular)}
 

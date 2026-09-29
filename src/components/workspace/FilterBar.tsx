@@ -1,6 +1,6 @@
 'use client';
 import { useRef } from 'react';
-import { Menu, MenuButton } from '@/components/primitives/Popover';
+import { Menu, MenuButton, MenuLabel, MenuSeparator } from '@/components/primitives/Popover';
 import { activeFilterCount, clearListState, setFacet, toggleFacetValue, type ListFilterState } from '@/lib/workspace/list-filter';
 import styles from './FilterBar.module.css';
 
@@ -56,10 +56,12 @@ function FacetChip({ facet, selected, onToggle, onClear }: { facet: FilterFacet;
   const live = (value: string) => (facet.counts?.get(value) ?? 1) > 0 || selected.includes(value);
   const options = [...facet.options].sort((a, b) => Number(live(b.value)) - Number(live(a.value)));
   return <div className={styles.chipWrap}>
-    <Menu label={`${facet.label} filter`} triggerClassName={styles.chip} triggerAttributes={{ 'data-active': selected.length ? '' : undefined }} width={240}
+    <Menu label={`${facet.label} filter`} triggerClassName={styles.chip} triggerAttributes={{ 'data-active': selected.length ? '' : undefined }} width={250}
       trigger={<><span className={styles.chipLabel}>{facet.label}</span>{summary && <span className={styles.chipValue}>{summary}</span>}<svg aria-hidden="true" viewBox="0 0 12 12" className={styles.caret}><path d="m3 4.5 3 3 3-3" /></svg></>}>
+      <MenuLabel>{facet.label}{selected.length ? ` · ${selected.length} selected` : facet.single ? ' · choose one' : ' · choose any'}</MenuLabel>
       {options.map(o => <MenuButton key={o.value} checked={selected.includes(o.value)} keepOpen={!facet.single} onSelect={() => onToggle(o.value)}
         trailing={facet.counts ? <span className={styles.optionCount}>{facet.counts.get(o.value) ?? 0}</span> : undefined}>{o.label}</MenuButton>)}
+      {selected.length > 0 && <><MenuSeparator /><MenuButton onSelect={onClear}>Clear {facet.label.toLowerCase()} filter</MenuButton></>}
     </Menu>
     {selected.length > 0 && <button type="button" className={styles.chipClear} onClick={onClear} aria-label={`Clear ${facet.label} filter`}>×</button>}
   </div>;

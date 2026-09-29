@@ -16,7 +16,7 @@
 .role { padding:var(--s-4); background:var(--surface-subtle); border-left:3px solid var(--accent-500); }
 .account { display:flex; gap:var(--s-4); align-items:center; justify-content:space-between; color:var(--ink-700); font-size:var(--t-sm); padding:var(--s-2) var(--gutter); background:var(--surface-inset); border-bottom:1px solid var(--rule-strong); min-width:0; }
 .workspaceIdentity { display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap;min-width:0; }
-.workspaceIdentity strong { color:var(--navy-900); }
+.workspaceIdentity strong { color: var(--ink-navy); }
 .workspaceIdentity>span { font-size:var(--t-xs); }
 .viewOnly { color:var(--ink-900);border-inline-start:2px solid var(--accent-700);padding-inline-start:var(--s-2); }
 .environment { color:var(--attention-fg); }

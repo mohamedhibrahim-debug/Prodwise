@@ -8,7 +8,7 @@ export type InstrumentIconName =
   | "home" | "initiatives" | "roadmap" | "weekly" | "analysis" | "reporting" | "search" | "demo" | "menu" | "pin"
   | "event" | "evidence" | "decision" | "administration" | "bell" | "help" | "sidebar-collapse" | "sidebar-expand"
   | "logout" | "user" | "keyboard" | "plug" | "check" | "chevrons" | "chevron-down" | "switch" | "close" | "plus"
-  | "restart" | "book" | "initiative";
+  | "restart" | "book" | "initiative" | "sun" | "moon";
 
 export function InstrumentIcon({ name, ...props }: SVGProps<SVGSVGElement> & { name: InstrumentIconName }) {
   const c = { fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -36,6 +36,8 @@ export function InstrumentIcon({ name, ...props }: SVGProps<SVGSVGElement> & { n
     {name === "user" && <><circle cx="10" cy="7" r="3" {...c}/><path d="M4 16.5c.8-3 3.2-4.5 6-4.5s5.2 1.5 6 4.5" {...c}/></>}
     {name === "keyboard" && <><rect x="2.5" y="5" width="15" height="10" rx="1.5" {...c}/><path d="M5.5 8h.01M8.5 8h.01M11.5 8h.01M14.5 8h.01M6.5 12h7" {...c} strokeWidth={1.8}/></>}
     {name === "plug" && <><path d="M7 2.5v4M13 2.5v4M5 6.5h10v3a5 5 0 0 1-10 0z" {...c}/><path d="M10 14.5v3" {...c}/></>}
+    {name === "sun" && <><circle cx="10" cy="10" r="3.5" {...c}/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4" {...c}/></>}
+    {name === "moon" && <path d="M16 12.2A6.5 6.5 0 0 1 7.8 4a6.5 6.5 0 1 0 8.2 8.2z" {...c}/>}
     {name === "check" && <path d="m4.5 10.5 3.5 3.5 7.5-8" {...c} strokeWidth={1.8}/>}
     {name === "chevrons" && <path d="m7 8 3-3 3 3M7 12l3 3 3-3" {...c}/>}
     {name === "chevron-down" && <path d="m6 8 4 4 4-4" {...c}/>}

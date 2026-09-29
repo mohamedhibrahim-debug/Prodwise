@@ -569,7 +569,7 @@
 }
 .needsDecision {
   border: 1px solid var(--navy-900);
-  color: var(--navy-900);
+  color: var(--ink-navy);
   padding: 3px 8px;
   border-radius: var(--r-sm);
 }
@@ -583,7 +583,7 @@
 .value {
   font-size: clamp(30px,4.5vw,64px);
   line-height: 1.1;
-  color: var(--navy-900);
+  color: var(--ink-navy);
 }
 .versus {
   top: 12px;
@@ -801,7 +801,7 @@
 
 /* Button system: the one primary action (Make a decision / submit) uses the
    accent fill; navy is chrome, never an action. Secondary controls are outlined. */
-.decisionPanel .primaryDecision,.decisionPanel .primarySubmit{background:var(--accent-600);color:var(--surface);border-color:var(--accent-600);font-weight:var(--fw-semibold)}
+.decisionPanel .primaryDecision,.decisionPanel .primarySubmit{background:var(--accent-600);color:var(--on-accent);border-color:var(--accent-600);font-weight:var(--fw-semibold)}
 .decisionPanel .primaryDecision:hover,.decisionPanel .primarySubmit:hover:not(:disabled){background:var(--accent-700);border-color:var(--accent-700)}
 .decisionForm[open]>.primaryDecision{background:var(--surface);color:var(--ink-900);border-color:var(--rule-strong)}
 .decisionPanel{background:var(--surface-sunken);border-radius:var(--r-lg)}

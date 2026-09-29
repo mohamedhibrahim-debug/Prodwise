@@ -48,6 +48,24 @@
 .item[data-menu-tone="danger"]:hover, .item[data-menu-tone="danger"]:focus { color: var(--state-blocked-fg); background: var(--state-blocked-bg); }
 .item:disabled:not(#_) { opacity: 0.5; cursor: not-allowed; background: transparent; }
 .item[aria-busy="true"]:not(#_) { opacity: 1; cursor: progress; }
+/* Checkable items (filters, appearance): the selection is visible, not only announced. */
+.check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: var(--r-xs);
+  background: var(--panel);
+  color: var(--on-accent);
+}
+.check[data-radio] { border-radius: 50%; }
+.check svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.check i { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--on-accent); }
+.item[aria-checked="true"] { color: var(--ink-900); font-weight: var(--fw-semibold); background: var(--surface-selected); }
+.item[aria-checked="true"] .check { background: var(--accent-600); border-color: var(--accent-600); }
+.item[aria-checked="true"]:hover, .item[aria-checked="true"]:focus { background: var(--accent-100); }
 .icon {
   flex: none;
   display: grid;

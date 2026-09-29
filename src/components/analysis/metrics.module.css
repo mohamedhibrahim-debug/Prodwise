@@ -32,7 +32,7 @@
 .tileFallback { font-size: var(--t-xs); color: var(--ink-500); }
 .tileTarget { font-size: var(--t-xs); color: var(--ink-500); font-variant-numeric: tabular-nums; }
 
-.value { display: inline-flex; align-items: baseline; gap: var(--s-1); color: var(--navy-900); margin: var(--s-1) 0 0; line-height: var(--lh-display); }
+.value { display: inline-flex; align-items: baseline; gap: var(--s-1); color: var(--ink-navy); margin: var(--s-1) 0 0; line-height: var(--lh-display); }
 .value[data-size="tile"] .valueNumber { font-size: var(--t-h1); font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); letter-spacing: var(--ls-tight); }
 .value[data-size="hero"] .valueNumber { font-size: var(--t-display); font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); letter-spacing: var(--ls-tight); }
 .valueUnit { font-size: var(--t-sm); color: var(--ink-700); }
@@ -124,7 +124,7 @@
   font-variant-numeric: tabular-nums;
   font-weight: var(--fw-semibold);
   font-size: var(--t-xs);
-  color: var(--navy-900);
+  color: var(--ink-navy);
   background: var(--panel);
   padding: 0 var(--s-1);
 }
@@ -170,7 +170,7 @@
 .table th, .table td { text-align: left; padding: var(--s-2) var(--s-3) var(--s-2) 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
 .table thead th { color: var(--ink-500); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--ls-micro); font-size: var(--t-micro); }
 .table tbody th { font-weight: var(--fw-semibold); white-space: nowrap; color: var(--ink-900); }
-.table td:nth-child(2) { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--navy-900); }
+.table td:nth-child(2) { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink-navy); }
 .table td:nth-child(3) { white-space: nowrap; color: var(--ink-500); }
 .table td:last-child { color: var(--ink-700); min-width: 16rem; }
 .table tr[data-missing] td:nth-child(2) { color: var(--state-unknown-fg); font-family: var(--font-sans); font-weight: var(--fw-semibold); }
