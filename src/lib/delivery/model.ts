@@ -6,6 +6,7 @@ import { runReview } from "../review/engine.ts";
 import { applyFindingStates } from "../review/merge.ts";
 import type { MemoryClaim } from "../domain/types.ts";
 import { CLAIM_STATUS_LABEL } from "../domain/labels.ts";
+import { confirmationNote, dateValid, factValueProblem, needsScopeFirst, SCOPE_PREREQUISITE } from "./fact-rules.ts";
 import { FACT_KINDS, type AiDraft, type Change, type DeliveryFact, type DeliveryState, type FactKind, type FactValue, type PortfolioInput, type PortfolioSource, type Reference, type ReviewSection, type SectionEdit, type WeeklyReview, type WorkspaceAccess } from "./types.ts";
 
 export class DeliveryError extends Error { readonly code:string; constructor(code: string, message: string) { super(message); this.code=code; } }
@@ -33,7 +34,7 @@ export function assertFinalizer(ctx: WorkspaceAccess): void {
   assertWriter(ctx);
   if (!hasOrganizationAdminAuthority(ctx) && !ctx.isProductLead) fail("FINALIZE_ACCESS", "An Owner, Admin or Product Lead must finalize the shared review.");
 }
-export function dateValid(value: string): boolean { return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0,10) === value; }
+export { dateValid };
 export function cairoDay(asOf: string): string { return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(asOf)); }
 export function dayDifference(from: string, to: string): number { return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`))/86400000); }
 export function isoWeek(asOf: string): string {
@@ -72,7 +73,7 @@ export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: W
     if (!hasOrganizationAdminAuthority(ctx) && !ctx.isProductLead) fail("OWNER_ACCESS", "An Owner, Admin or Product Lead assigns initiative owners.");
     if (!input.retract && !source.members.some(m => m.id === input.value.memberId && m.workspaceId === ctx.workspaceId && m.active && m.role !== "VIEWER")) fail("OWNER_MEMBER", "Choose an active workspace Owner, Admin or Member.");
   } else if (!hasOrganizationAdminAuthority(ctx) && ownerFor(state.facts,input.initiativeId) !== ctx.memberId) fail("SECTION_ACCESS", "Only the assigned PM, Owner or Admin can update this initiative's delivery facts.");
-  if (!input.note.trim() || input.note.length > 2000) fail("CONFIRMATION_NOTE", "Record the confirmation or change reason (up to 2,000 characters).");
+  if (input.note.length > 2000) fail("CONFIRMATION_NOTE", "Keep the confirmation or change reason under 2,000 characters.");
   if (input.basis !== "EVIDENCE" && input.basis !== "DIRECT_KNOWLEDGE") fail("BASIS", "Choose how you confirmed this fact.");
   if (input.basis === "EVIDENCE") {
     const evidence = snap.evidence.find(e => e.id === input.evidenceId);
@@ -81,21 +82,14 @@ export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: W
   if (input.locator && input.locator.length > 500) fail("LOCATOR", "Keep the source location under 500 characters.");
   if (!input.retract) {
     const v = input.value;
-    if (v.unknown && (!['TARGET_LIVE','NEXT_MILESTONE','DEV_STARTED'].includes(input.kind) || v.date || v.text || v.memberId || v.extent || v.dateUnknown)) fail('UNKNOWN_SHAPE','Unknown must be recorded separately from a known value.');
-    if (v.dateUnknown && (input.kind !== 'NEXT_MILESTONE' || v.date || !v.text?.trim() || v.unknown)) fail('UNKNOWN_DATE','An unknown milestone date requires its recorded name and no date.');
-    if (v.date && !dateValid(v.date)) fail("DATE", "Enter a valid calendar date.");
-    if (v.text && v.text.length > 2000) fail("TEXT", "Keep the delivery note under 2,000 characters.");
-    if (["SOLUTION_DEFINED","DEV_STARTED","TARGET_LIVE","ACTUAL_LIVE"].includes(input.kind) && !v.date && !v.unknown) fail("DATE_REQUIRED", "Record the date or explicitly mark this fact unknown.");
-    if (["SCOPE","NEXT_MILESTONE","BLOCKER","NEXT_STEP"].includes(input.kind) && !v.text?.trim() && !v.unknown) fail("TEXT_REQUIRED", "Record a descriptive label or note.");
-    if (["SOLUTION_DEFINED","DEV_STARTED","ACTUAL_LIVE"].includes(input.kind) && v.date! > cairoDay(now)) fail("FUTURE_ACTUAL", "An actual milestone cannot be in the future.");
-    if (input.kind === "ACTUAL_LIVE" && (!v.extent || (v.extent === "PARTIAL" && !v.text?.trim()))) fail("ROLLOUT_SCOPE", "State full or partial launch and describe partial rollout scope.");
-    if (input.kind !== "SCOPE" && input.kind !== "OWNER" && !factFor(state.facts,input.initiativeId,"SCOPE")) fail("SCOPE_REQUIRED", "Confirm the delivery phase or scope before recording delivery facts.");
+    const problem = factValueProblem(input.kind, v, cairoDay(now)); if (problem) fail(problem.code, problem.message);
+    if (needsScopeFirst(input.kind, Boolean(factFor(state.facts,input.initiativeId,"SCOPE")))) fail("SCOPE_REQUIRED", SCOPE_PREREQUISITE);
     if (input.kind === "SCOPE" && old?.value.text !== v.text && state.facts.some(f => f.initiativeId === input.initiativeId && f.state === "SET" && !["SCOPE","OWNER"].includes(f.kind))) fail("SCOPE_HAS_FACTS", "Retract dates and delivery facts from the earlier scope before changing the scope label.");
   } else if (input.kind === "SCOPE" && state.facts.some(f => f.initiativeId === input.initiativeId && f.state === "SET" && !["SCOPE","OWNER"].includes(f.kind))) fail("SCOPE_HAS_FACTS", "Retract the scoped delivery facts before withdrawing their scope.");
   const applies=validateApplicability({contextId:input.contextId===undefined?old?.contextId:input.contextId,effectiveDate:input.effectiveDate===undefined?old?.effectiveDate:input.effectiveDate},source.contexts??[],ctx.workspaceId,input.initiativeId,old);
   const fact: DeliveryFact = {...applies, id:old?.id ?? randomUUID(), workspaceId:ctx.workspaceId, initiativeId:input.initiativeId, kind:input.kind, revision:(old?.revision ?? 0)+1,
     value:input.retract ? { date:null,text:null,memberId:null,extent:null } : input.value, state:input.retract ? "RETRACTED" : "SET",
-    basis:input.basis, note:input.note.trim(), evidenceId:input.basis === "EVIDENCE" ? input.evidenceId : null, locator:input.basis === "EVIDENCE" ? input.locator : null,
+    basis:input.basis, note:confirmationNote(input.note), evidenceId:input.basis === "EVIDENCE" ? input.evidenceId : null, locator:input.basis === "EVIDENCE" ? input.locator : null,
     supportDigest:input.basis === "EVIDENCE" ? supportDigest(source,input.initiativeId,input.evidenceId,input.locator) : null,
     confirmedByMemberId:ctx.memberId, confirmedByUserId:ctx.actor.id, confirmedByLabel:ctx.actor.label, updatedAt:now };
   return { ...state, facts:[...state.facts.filter(f => f.id !== fact.id),fact], events:[...state.events,{ id:randomUUID(), workspaceId:ctx.workspaceId, initiativeId:input.initiativeId, occurredAt:now, actor:ctx.actor, before:old ?? null, after:fact }] };

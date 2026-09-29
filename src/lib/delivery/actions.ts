@@ -1,4 +1,5 @@
 "use server";
+import {confirmationNote} from "./fact-rules";
 import { safeMessage } from '@/lib/errors/safe-message';
 import { revalidatePath } from "next/cache";
 import { mutateDelivery, readDeliveryFresh } from "./repository";
@@ -67,7 +68,7 @@ export async function applyRecordUpdatesAction(_previous:DeliveryActionState,for
     const snapshot=read.source.snapshots.find(s=>s.initiative.id===initiativeId);
     if(!snapshot||!review||review.status!=="DRAFT"||review.revision!==expectedReviewRevision||!review.sections.some(s=>s.initiativeId===initiativeId))throw new Error("The shared Draft changed. Reload before applying initiative updates.");
     const basis=text(form,"recordBasis");if(basis!=="DIRECT_KNOWLEDGE"&&basis!=="EVIDENCE")throw new Error("Choose a confirmation basis.");
-    const note=text(form,"recordReason");if(!note||note.length>2000)throw new Error("Record a confirmation reason of up to 2,000 characters.");
+    const note=text(form,"recordReason");if(note.length>2000)throw new Error("Keep the confirmation reason under 2,000 characters.");
     const evidenceId=text(form,"recordEvidenceId")||null,locator=text(form,"recordLocator")||null;if(locator&&locator.length>500)throw new Error("Keep the source locator under 500 characters.");if(text(form,"decisionPhase").length>300)throw new Error("Keep decision phase under 300 characters.");
     if(basis==="EVIDENCE"&&!snapshot.evidence.some(e=>e.id===evidenceId&&e.boundary==="CURRENT_SCOPE"))throw new Error("Choose current-scope evidence in this initiative.");
     const facts:RecordFactInput[]=selected.filter(field=>!["STAGE","DECISION"].includes(field)).map(field=>({initiativeId,kind:field as FactKind,expectedRevision:revision(form,`${field}:revision`),value:{date:text(form,`${field}:date`)||null,text:text(form,`${field}:text`)||null,memberId:null,extent:text(form,`${field}:extent`)==="FULL"?"FULL":text(form,`${field}:extent`)==="PARTIAL"?"PARTIAL":null},retract:field==="BLOCKER"&&form.get("BLOCKER:retract")==="yes",basis,note,evidenceId,locator}));
@@ -78,7 +79,7 @@ export async function applyRecordUpdatesAction(_previous:DeliveryActionState,for
     const decision={subject:text(form,"decisionSubject"),attribute:text(form,"decisionAttribute"),value:text(form,"decisionValue"),domain:text(form,"decisionDomain") as Domain};
     if(selected.includes("DECISION")&&(!decision.subject||!decision.attribute||!decision.value||decision.subject.length>300||decision.attribute.length>300||decision.value.length>4000||!DOMAINS.includes(decision.domain)))throw new Error("Complete the decision subject, attribute, value and domain.");
     if(selected.includes("STAGE")) {
-      activeField="STAGE";await updateInitiativeStage({initiativeId,stage,expectedUpdatedAt:text(form,"initiativeUpdatedAt"),reason:note,scopeWorkspaceId:ctx.workspaceId});productChanged=true;mark("STAGE","APPLIED","Initiative stage updated and audited.");
+      activeField="STAGE";await updateInitiativeStage({initiativeId,stage,expectedUpdatedAt:text(form,"initiativeUpdatedAt"),reason:confirmationNote(note),scopeWorkspaceId:ctx.workspaceId});productChanged=true;mark("STAGE","APPLIED","Initiative stage updated and audited.");
     }
     if(selected.includes("DECISION")) {
       activeField="DECISION";await scope(form);const repo=getRepository();
