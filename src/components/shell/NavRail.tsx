@@ -111,6 +111,7 @@ export function NavRail({identity,writesEnabled}:{identity:ShellIdentity;writesE
    <Link href="/" className={styles.mobileBrand} aria-label="Prodwise home"><BrandMark size={20}/></Link>
    <p className={styles.mobileTitle}>{initiativeTitle&&initiativeSlug?initiativeTitle:sectionTitle(pathname)}</p>
    <button type="button" className="pw-btn" data-variant="chrome" data-icon-only="" onClick={openPalette} aria-label="Search"><InstrumentIcon name="search"/></button>
+   <div id="ask-prodwise-slot-mobile" className={styles.askSlot}/>
    <div className={styles.mobileBell}><NotificationBell compact/></div>
   </header>
 

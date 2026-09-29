@@ -141,7 +141,7 @@ export default async function Brief({params,searchParams}:{params:Promise<{slug:
    {relRows.length?<ul className={styles.relations}>{relRows.map(x=><li key={x.relationship.id}>{x.other?<Link prefetch={false} href={`/initiatives/${x.other.slug}`} className={styles.relChip} data-late={x.late||undefined}><span className={styles.relType}>{x.late?'⇢ ':''}{GROUP_LABEL[x.group]}</span><span className={styles.relName}>{x.other.name}{x.other.archived?' · archived':''}</span></Link>:<span className={styles.relChip}><span className={styles.relType}>{GROUP_LABEL[x.group]}</span><span className={styles.relName}>An initiative you can’t access</span></span>}{x.group==='DEPENDS_ON'&&x.impactText&&<small data-late={x.late||undefined}>{x.impactText}</small>}</li>)}</ul>:<p className={styles.panelNote}>None recorded.</p>}
   </section>
   <nav className={styles.records} aria-label="Records">
-   <Link prefetch={false} href={`${base}/knowledge`}><span>Knowledge</span><strong>{snapshot.claims.filter(c=>c.status==='ACTIVE').length}</strong><small>confirmed</small></Link>
+   <Link prefetch={false} href={`${base}/knowledge`}><span>Knowledge</span><strong>{snapshot.claims.filter(c=>c.status==='ACTIVE').length}</strong><small>active</small></Link>
    <Link prefetch={false} href={`${base}/sources`}><span>Sources</span><strong>{snapshot.evidence.length}</strong><small>recorded</small></Link>
    <Link prefetch={false} href={`${base}/decisions`}><span>Decisions</span><strong>{openDecisions}</strong><small>open</small></Link>
   </nav>

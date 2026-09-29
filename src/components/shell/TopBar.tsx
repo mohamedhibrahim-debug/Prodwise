@@ -45,6 +45,7 @@ export function TopBar({identity}:{identity:ShellIdentity}){
    {identity.access.role==='VIEWER'&&<span className={styles.chip} data-tip="You can read everything in this organization; changes need a Member role or above.">Viewer · read-only</span>}
    <DemoContextPill identity={identity}/>
    <button type="button" className={styles.search} onClick={openPalette} aria-label="Search" aria-keyshortcuts={mac?'Meta+K':'Control+K'}><InstrumentIcon name="search"/><span>Search…</span><kbd className="pw-kbd">{mac?'⌘':'Ctrl'}</kbd><kbd className="pw-kbd">K</kbd></button>
+   <div id="ask-prodwise-slot" className={styles.askSlot}/>
    <div className={styles.bell} data-tip="Notifications" data-tip-kbd="G N"><NotificationBell compact/></div>
    <button type="button" className="pw-btn" data-variant="ghost" data-icon-only="" onClick={()=>openHelp()} aria-label="Help" aria-expanded={helpOpen} aria-controls="help-panel" data-tip="Help" data-tip-kbd="?"><InstrumentIcon name="help"/></button>
   </div>

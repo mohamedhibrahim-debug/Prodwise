@@ -31,7 +31,11 @@
   color: var(--attention-fg);
   font-weight: var(--fw-medium);
 }
-.glyph { font-size: 0.7em; }
+.glyph { font-size: 0.8em; }
+.attention[data-tone="decision"] { color: var(--kind-decision-fg); }
+.attention[data-tone="blocker"] { color: var(--state-blocked-fg); }
+.attention[data-tone="dependency"] { color: var(--kind-dependency-fg); }
+.attention[data-tone="support"] { color: var(--kind-evidence-fg); }
 .more {
   margin-left: var(--s-1);
   padding: 0 var(--s-1);

@@ -50,7 +50,7 @@ export async function OperatorConsole({access,section,path,query,organizationNam
   const count=(s:string)=>state.organizations.filter(o=>o.status===s).length;
   return frame(<>
    <StatStrip label="Organizations by status" dense items={[
-    {key:"active",value:count("ACTIVE"),label:organizationStatusLabel("ACTIVE"),hint:"Owner assigned, open for work",href:`${base}/organizations?status=ACTIVE`,tone:"ready"},
+    {key:"active",value:count("ACTIVE"),label:organizationStatusLabel("ACTIVE"),hint:"Owner assigned, open for work",href:`${base}/organizations?status=ACTIVE`,tone:"neutral"},
     {key:"bootstrapping",value:count("BOOTSTRAPPING"),label:organizationStatusLabel("BOOTSTRAPPING"),hint:"Created; no Org Owner yet",href:`${base}/organizations?status=BOOTSTRAPPING`,tone:count("BOOTSTRAPPING")?"attention":"neutral"},
     {key:"archived",value:count("ARCHIVED"),label:organizationStatusLabel("ARCHIVED"),hint:"Read-only; nothing is deleted",href:`${base}/organizations?status=ARCHIVED`,tone:"unknown"},
    ]}/>

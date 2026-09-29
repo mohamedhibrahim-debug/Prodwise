@@ -1,6 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { useMemo } from 'react';
+
+/** The same glyph and tone for a reason as Home and the Brief: a decision is ?, not a warning triangle. */
+const REASON: Record<string, { glyph: string; tone: string }> = { decision: { glyph: '?', tone: 'decision' }, blocker: { glyph: '■', tone: 'blocker' }, 'past-target': { glyph: '▲', tone: 'past' }, 'past-milestone': { glyph: '▲', tone: 'past' }, dependency: { glyph: '⇢', tone: 'dependency' }, 'support-changed': { glyph: '↻', tone: 'support' } };
+const reason = (kind: string) => REASON[kind] ?? { glyph: '▲', tone: 'past' };
 import { BusinessLine } from '@/components/primitives/BusinessLine';
 import { FilterBar, type FilterFacet } from '@/components/workspace/FilterBar';
 import { useListState } from '@/components/workspace/useListState';
@@ -65,7 +69,7 @@ export function RegisterView({ rows, initial, options, stageLabel }: {
             <td><span className={styles.stage}>{stageLabel[r.stage] ?? r.stage}</span></td>
             <td className={r.ownerId ? undefined : table.muted}>{r.ownerLabel}</td>
             <td>{r.attention.length ? <span className={styles.attention} title={r.attention.map(a => a.label).join(' · ')}>
-              <span aria-hidden="true" className={styles.glyph}>▲</span>{r.attention[0]!.label}{r.attention.length > 1 && <span className={styles.more}>+{r.attention.length - 1}<span className="visually-hidden"> more: {r.attention.slice(1).map(a => a.label).join(', ')}</span></span>}
+              <span aria-hidden="true" className={styles.glyph}>{reason(r.attention[0]!.kind).glyph}</span>{r.attention[0]!.label}{r.attention.length > 1 && <span className={styles.more}>+{r.attention.length - 1}<span className="visually-hidden"> more: {r.attention.slice(1).map(a => a.label).join(', ')}</span></span>}
             </span> : <><span aria-hidden="true" className={table.dash}>—</span><span className="visually-hidden">No attention reasons recorded</span></>}</td>
             <td className={table.num}><span className={r.target.date ? undefined : table.muted}>{r.target.text}</span>{r.target.moved && <span className={styles.moved}>Moved {r.target.moved}</span>}</td>
             <td><Setup row={r} /></td>
@@ -77,7 +81,7 @@ export function RegisterView({ rows, initial, options, stageLabel }: {
         <Link href={`/initiatives/${r.slug}`} className={styles.mobileLink}>
           <span className={styles.mobileName}>{r.name}</span>
           <span className={styles.mobileMeta}><span className={styles.stage}>{stageLabel[r.stage] ?? r.stage}</span><span>{r.ownerLabel}</span><span className={table.num}>{r.target.date ? r.target.text : `Target ${r.target.text.toLowerCase()}`}</span></span>
-          {r.attention.length > 0 && <span className={styles.attention}><span aria-hidden="true" className={styles.glyph}>▲</span>{r.attention[0]!.label}{r.attention.length > 1 ? ` +${r.attention.length - 1}` : ''}</span>}
+          {r.attention.length > 0 && <span className={styles.attention} data-tone={reason(r.attention[0]!.kind).tone}><span aria-hidden="true" className={styles.glyph}>{reason(r.attention[0]!.kind).glyph}</span>{r.attention[0]!.label}{r.attention.length > 1 ? ` +${r.attention.length - 1}` : ''}</span>}
         </Link></li>)}</ul>
     </> : <div className={`${table.wrap} ${table.empty}`}><strong>{rows.length ? 'No initiatives match these filters.' : 'No initiatives recorded yet.'}</strong>{rows.length ? <button type="button" className={styles.linkButton} onClick={() => setState({ q: '', filters: {}, sort: state.sort })}>Clear filters</button> : null}</div>}
   </>;

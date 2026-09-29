@@ -11,15 +11,18 @@ import type { AnswerBlock, AnswerItem, AnswerLanguage, AnswerLink } from './type
 export type Intent = 'next' | 'missing' | 'navigate';
 export interface Deterministic { blocks: AnswerBlock[]; links: AnswerLink[] }
 
-const NEXT = /next best action|what should i do|what do i do|what('s| is) next\b|what to do (next|now|first)|recommended next action|أعمل إيه|اعمل ايه|اعمل ايه|بعد كده|الخطوة (الجاية|التالية|القادمة)|الإجراء التالي|التوصية/i;
+const NEXT = /next best action|what should i do( next| first| now)?\s*[?.!]*$|what do i do( next| now)?\s*[?.!]*$|^\s*what('s| is) next\s*[?.!]*$|what to do (next|now|first)\s*[?.!]*$|recommended next action|أعمل إيه|اعمل ايه|اعمل ايه|بعد كده|الخطوة (الجاية|التالية|القادمة)|الإجراء التالي|التوصية/i;
 const MISSING = /what am i missing|what('s| is) missing|what is (still )?(left|remaining) (to|in) (set ?up|record|setup)|(left|still) to set up|left in (the )?setup|what is not recorded|إيه الناقص|الناقص|مش مسجل|غير مسجل|الباقي في الإعداد|لسه محتاج إعداد/i;
 const NAVIGATE = /\b(where|how) (do|can|should|would) i\b|\bhow to\b|\bwhere (is|are)\b|فين|إزاي|ازاي|إزّاي|كيف/i;
+
+/** Questions about a specific value, meaning or reason need the record read, not a canned route. */
+const CONTENT = /\b(date|when|why|what does|what is the|interpret|mean|means|meaning|value|status of|how (is|are)|how much|how many|explain)\b|ليه|لماذا|يعني إيه|معنى|تاريخ|إمتى|امتى|حال/i;
 
 export function classifyIntent(question: string): Intent | null {
   const q = question.trim();
   if (MISSING.test(q)) return 'missing';
   if (NEXT.test(q)) return 'next';
-  if (NAVIGATE.test(q) && navigationTopic(q)) return 'navigate';
+  if (NAVIGATE.test(q) && navigationTopic(q) && !CONTENT.test(q)) return 'navigate';
   return null;
 }
 
@@ -53,10 +56,10 @@ const T = {
   notRecorded: { en: 'Not recorded', ar: 'غير مسجل' },
   pending: { en: 'Pending confirmation', ar: 'في انتظار التأكيد' },
   missingIntro: { en: (what: string) => `What is not recorded on ${what}. Absence of a record is not evidence that the thing does not exist — only that nobody has recorded it in Prodwise.`, ar: (what: string) => `ما هو غير مسجل في ${what}. غياب السجل ليس دليلًا على أن الشيء غير موجود — فقط أن أحدًا لم يسجله في Prodwise.` },
-  complete: { en: (what: string) => `Every setup requirement and delivery fact on ${what} is recorded. Setup coverage is not release approval.`, ar: (what: string) => `كل متطلبات الإعداد والـ delivery facts في ${what} مسجلة. اكتمال الإعداد ليس موافقة على الإطلاق.` },
+  complete: { en: (what: string) => `On ${what}, every setup requirement is recorded, and Target Live, Actual Live, the next milestone, the next step and development start each have a recorded value. This checks recorded fields only; it is not a readiness or release judgement.`, ar: (what: string) => `في ${what}، كل متطلبات الإعداد مسجلة، ولكل من Target Live وActual Live والـ next milestone والـ next step وDevelopment start قيمة مسجلة. هذا فحص للحقول المسجلة فقط، وليس حكمًا على الجاهزية أو الإطلاق.` },
   awaiting: { en: (n: number) => `${n} Knowledge ${n === 1 ? 'entry is' : 'entries are'} awaiting confirmation and ${n === 1 ? 'is' : 'are'} not Product Truth yet.`, ar: (n: number) => `${n} من إدخالات الـ Knowledge في انتظار التأكيد وليست Product Truth بعد.` },
   proposals: { en: (n: number, src: string | null) => `${n} pending ${n === 1 ? 'proposal' : 'proposals'}${src ? ` from “${src}”` : ''} — not part of Product Truth until a person confirms or rejects ${n === 1 ? 'it' : 'them'}.`, ar: (n: number, src: string | null) => `${n} ${n === 1 ? 'اقتراح معلق' : 'اقتراحات معلقة'}${src ? ` من "${src}"` : ''} — ليست جزءًا من Product Truth حتى يؤكدها شخص أو يرفضها.` },
-  portfolioIncomplete: { en: (n: number, unknown: number) => `${n} ${n === 1 ? 'initiative has' : 'initiatives have'} setup incomplete${unknown ? `, and ${unknown} ${unknown === 1 ? 'has' : 'have'} an explicitly unknown Target Live` : ''}.`, ar: (n: number, unknown: number) => `${n} ${n === 1 ? 'مبادرة إعدادها' : 'مبادرات إعدادها'} غير مكتمل${unknown ? `، و${unknown} منها لها Target Live مسجل صراحةً كـ Unknown` : ''}.` },
+  portfolioIncomplete: { en: (n: number, unknown: number) => `${n} ${n === 1 ? 'initiative has' : 'initiatives have'} setup incomplete${unknown ? `, and ${unknown} ${unknown === 1 ? 'has' : 'have'} no dated Target Live recorded` : ''}.`, ar: (n: number, unknown: number) => `${n} ${n === 1 ? 'مبادرة إعدادها' : 'مبادرات إعدادها'} غير مكتمل${unknown ? `، و${unknown} منها بدون Target Live بتاريخ مسجل` : ''}.` },
   goTo: { en: 'Go to', ar: 'اذهب إلى' },
 };
 
@@ -121,7 +124,7 @@ function missingItems(c: AssistantContext): AnswerItem[] {
     const i = c.initiative;
     for (const g of i.setupGaps) items.push({ text: `${g.label}: ${g.detail}`, href: g.href });
     const d = i.delivery;
-    for (const [label, value] of [['Actual Live', d.actualLive], ['Next step', d.nextStep], ['Development start', d.developmentStart]] as const) if (value === 'Not recorded' && !items.some(x => x.text.startsWith(label))) items.push({ text: `${label}: Not recorded`, href: d.href });
+    for (const [label, value] of [['Target Live', d.targetLive], ['Actual Live', d.actualLive], ['Next milestone', d.nextMilestone], ['Next step', d.nextStep], ['Development start', d.developmentStart]] as const) if (value === 'Not recorded' && !items.some(x => x.text.startsWith(label))) items.push({ text: `${label}: Not recorded`, href: d.href });
     if (i.scope === 'Not recorded' && !i.setupGaps.some(g => g.label === 'Current scope / phase')) items.push({ text: 'Current scope / phase: Not recorded', href: `${i.href}/manage?section=context` });
   } else {
     for (const q of c.portfolio.setupQueue) items.push({ text: `${q.label}: ${q.detail}`, href: q.href });

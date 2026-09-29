@@ -17,7 +17,10 @@ import { FAILURE_MESSAGE, HISTORY_LIMIT, HISTORY_TURN_LIMIT, QUESTION_LIMIT, typ
  * shown unvalidated, and no provider text is surfaced on failure.
  */
 export const PROVIDER_TIMEOUT_MS = 25_000;
+/** The answer itself stays short (the prompt and validator hold it to ~600 tokens); the request allows more,
+ *  because on current models any reasoning counts against max_tokens and a tight cap would cut answers off. */
 export const MAX_OUTPUT_TOKENS = 600;
+export const PROVIDER_MAX_TOKENS = 4000;
 
 export interface AskInput { question: string; context: AssistantContext; preferredLanguage?: LanguagePreference; history?: HistoryTurn[] }
 export interface AskDeps { fetcher?: typeof fetch; env?: { ANTHROPIC_API_KEY?: string; ANTHROPIC_MODEL?: string } }
@@ -47,7 +50,7 @@ export async function askProdwise(input: AskInput, deps: AskDeps = {}): Promise<
   try {
     const response = await fetcher('https://api.anthropic.com/v1/messages', {
       method: 'POST', headers: { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', 'x-api-key': key },
-      body: JSON.stringify({ model, max_tokens: MAX_OUTPUT_TOKENS, output_config: { effort: 'low', format: OUTPUT_FORMAT }, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: userMessage({ question, answerLanguage: language, context, history: boundHistory(input.history) }) }] }),
+      body: JSON.stringify({ model, max_tokens: PROVIDER_MAX_TOKENS, output_config: { effort: 'low', format: OUTPUT_FORMAT }, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: userMessage({ question, answerLanguage: language, context, history: boundHistory(input.history) }) }] }),
       signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     });
     if (!response.ok) return fail('PROVIDER_FAILED', language);

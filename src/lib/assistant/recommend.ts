@@ -56,7 +56,7 @@ export function recommend(input: RecommendInput): Recommendation[] {
   for (const kind of ['DECISION', 'BLOCKER'] as const) for (const r of rows) {
     const a = r.attention.find(x => x.kind === kind); if (!a) continue;
     push(kind === 'DECISION'
-      ? { key: `decision:${r.initiative.id}`, kind: 'decision', action: `Decide the recorded difference on ${r.initiative.name}.`, why: `Two recorded values disagree: ${a.detail}. Until a person decides, both stay in Knowledge and the difference is carried into every review.`, href: a.href, go: 'Review decision', initiative: initiative(r) }
+      ? { key: `decision:${r.initiative.id}`, kind: 'decision', action: `Decide the recorded difference on ${r.initiative.name}.`, why: `Two recorded values differ: ${a.detail}. Whether they conflict in practice is not assessed; the difference stays open in Knowledge and in the weekly review until a person records a decision.`, href: a.href, go: 'Review decision', initiative: initiative(r) }
       : { key: `blocker:${r.initiative.id}`, kind: 'blocker', action: `Clear or update the recorded blocker on ${r.initiative.name}.`, why: `A blocker is recorded: ${a.detail}. It stays until someone withdraws it or records what changed.`, href: a.href, go: 'Open delivery facts', initiative: initiative(r) });
   }
 
@@ -93,7 +93,7 @@ export function recommend(input: RecommendInput): Recommendation[] {
     const w = input.review;
     if (w.status === 'DRAFT' && w.pending > 0) push({ key: `review:${w.week}`, kind: 'review', action: `Review ${w.pending} of ${w.total} sections in the ${shortWeek(w.week)} review.`, why: `The Draft is prepared; ${w.pending} ${w.pending === 1 ? 'section is' : 'sections are'} not yet reviewed, so it cannot be finalized.`, href: `/weekly-review?week=${w.week}`, go: 'Continue review', initiative: null });
     else if (w.status === 'DRAFT' && w.pending === 0 && input.me.canFinalize) push({ key: `finalize:${w.week}`, kind: 'review', action: `Finalize the ${shortWeek(w.week)} review.`, why: 'Every section is reviewed. Finalizing freezes the week’s record and makes it the next baseline.', href: `/weekly-review?week=${w.week}`, go: 'Open review', initiative: null });
-    else if (w.status === 'NONE' && w.started && rows.length > 0) push({ key: `prepare:${w.week}`, kind: 'review', action: `Prepare the ${shortWeek(w.week)} weekly review.`, why: 'The week has started and no review is prepared, so changes since the last Final are not yet on record.', href: `/weekly-review?week=${w.week}`, go: 'Prepare review', initiative: null });
+    else if (w.status === 'NONE' && w.started && rows.length > 0) push({ key: `prepare:${w.week}`, kind: 'review', action: `Prepare the ${shortWeek(w.week)} weekly review.`, why: 'The week has started and no review is prepared, so there is no frozen record of this week yet.', href: `/weekly-review?week=${w.week}`, go: 'Prepare review', initiative: null });
     else if (w.status === 'FINAL' && w.next?.started && !w.next.exists) push({ key: `prepare:${w.next.week}`, kind: 'review', action: `Prepare the ${shortWeek(w.next.week)} weekly review.`, why: `${shortWeek(w.week)} is Final and ${shortWeek(w.next.week)} has started.`, href: `/weekly-review?week=${w.next.week}`, go: 'Prepare review', initiative: null });
   }
 
@@ -107,20 +107,23 @@ export function recommend(input: RecommendInput): Recommendation[] {
   // 9. Setup gaps that block planning: an owner, then a Target Live.
   for (const r of rows) {
     const next = r.setup.next; if (!next) continue;
-    if (next.key === 'owner') push({ key: `owner:${r.initiative.id}`, kind: 'setup', action: `Assign an owner to ${r.initiative.name}.`, why: 'No active owner is recorded, so nothing on it can be routed to a person.', href: next.href, go: 'Assign owner', initiative: initiative(r) });
+    if (next.key === 'owner') push({ key: `owner:${r.initiative.id}`, kind: 'setup', action: `Assign an owner to ${r.initiative.name}.`, why: 'No active owner is recorded, so unassigned work and questions on it are routed to no one.', href: next.href, go: 'Assign owner', initiative: initiative(r) });
     else if (next.key === 'target' || (!r.target?.value.date && !r.target?.value.unknown && r.setup.requirements.some(x => x.key === 'target' && !x.met))) push({ key: `target:${r.initiative.id}`, kind: 'setup', action: `Set a Target Live for ${r.initiative.name}.`, why: 'No Target Live is recorded, so it cannot be placed on the Roadmap or compared in a review.', href: `/initiatives/${r.initiative.slug}/setup?step=delivery`, go: 'Record Target Live', initiative: initiative(r) });
   }
 
   // 10. Live with nothing measured.
   for (const m of input.metrics ?? []) {
     const r = byId.get(m.initiativeId); if (!r || m.configured > 0 || !r.actual?.value.date) continue;
-    push({ key: `metric:${r.initiative.id}`, kind: 'metric', action: `Define a first metric for ${r.initiative.name}.`, why: `It went live on ${displayDate(r.actual.value.date)} and has no metric definition, so Analysis cannot measure it.`, href: `/analysis/projects/${r.initiative.slug}`, go: 'Open Analysis', initiative: initiative(r) });
+    push({ key: `metric:${r.initiative.id}`, kind: 'metric', action: `Define a first metric for ${r.initiative.name}.`, why: `It went ${r.actual.value.extent === 'PARTIAL' ? 'partially live' : 'live'} on ${displayDate(r.actual.value.date)} and has no metric definition, so Analysis has nothing to measure it against.`, href: `/analysis/projects/${r.initiative.slug}`, go: 'Open Analysis', initiative: initiative(r) });
   }
 
   // One recommendation per initiative first, so a busy initiative does not crowd out the rest.
   const perInitiative = new Set<string>();
   const first = out.filter(r => { const k = r.initiative?.slug ?? `:${r.kind}`; if (perInitiative.has(k)) return false; perInitiative.add(k); return true; });
-  return [...first, ...out.filter(r => !first.includes(r))].slice(0, limit);
+  const ranked = [...first, ...out.filter(r => !first.includes(r))].slice(0, limit);
+  if (input.me.writer) return ranked;
+  const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1).replace(/\.$/, '');
+  return ranked.map(r => ({ ...r, action: `Ask someone with write access to ${lower(r.action)}.`, why: `${r.why} Your role here is read-only.`, go: 'View record' }));
 }
 
 /** Setup and coverage gaps for a sparse workspace, as a short prioritized queue with direct links. */

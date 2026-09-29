@@ -76,7 +76,7 @@ const expect = (cond, message) => { if (!cond) throw new Error(message); };
   await check("demo", "Home answers the five-second questions and labels the shared Demo", async () => {
     await go(page, "/"); const t = await text(page);
     const body = await page.locator("body").innerText();
-    expect(t.includes("Needs attention") && body.includes("Synthetic demo") && body.includes("Demo dataset V3") && /scenario \d{1,2} \w+ \d{4}/.test(body), "demo notice or heading missing");
+    expect(t.includes("Needs attention") && body.includes("Synthetic demo") && body.includes("Demo dataset V4") && /scenario \d{1,2} \w+ \d{4}/.test(body), "demo notice or heading missing");
   });
   await check("consistency", "attention count agrees: Home, initiative header, Brief", async () => {
     await go(page, MFF); const header = (await page.locator("header a[data-tone]").last().innerText()).match(/(\d+) need attention/)?.[1];
@@ -101,7 +101,7 @@ const expect = (cond, message) => { if (!cond) throw new Error(message); };
     await page.keyboard.press("Escape");
   });
   await check("notifications", "Notifications list, count and read marks work", async () => {
-    await go(page, "/notifications?scope=all"); const t = await text(page); expect(/\d+ new in .* derived from current records/.test(t), "intro missing");
+    await go(page, "/notifications?scope=all"); const t = await text(page); expect(/\d+ new for you · \d+ new across .* derived from current records/.test(t), "intro missing");
     const count = await page.request.get(base + "/api/notifications/count"); expect(count.ok() && typeof (await count.json()).unread === "number", "count API");
     const bogus = await page.request.get(base + "/notifications/open?f=" + "a".repeat(32), { maxRedirects: 0 }); expect([302, 303, 307, 308, 404].includes(bogus.status()), `open accepted an unknown fingerprint: ${bogus.status()}`);
   });

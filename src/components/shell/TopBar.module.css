@@ -92,3 +92,6 @@
   .search span, .search kbd { display: none; }
 }
 @media (max-width: 780px) { .bar { display: none; } }
+
+/* Ask Prodwise sits with the other global tools; the assistant portals its control here. */
+.askSlot { display: contents; }

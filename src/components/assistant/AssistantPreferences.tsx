@@ -34,8 +34,13 @@ export function AssistantPreferencesSection({actorId,guest}:{actorId:string;gues
  return <div className={styles.fields}>
   {FIELDS.map(f=><div key={f.key} className={styles.field}>
    <div className={styles.fieldText}><strong id={`ask-pref-${f.key}`}>{f.label}</strong><small>{f.description}</small></div>
-   <div className={styles.choice} role="radiogroup" aria-labelledby={`ask-pref-${f.key}`}>
-    {f.options.map(o=><button key={String(o.value)} type="button" role="radio" aria-checked={prefs[f.key]===o.value} className={styles.option} disabled={!ready} onClick={()=>{void choose(f.key,o.value as never);}}>
+   <div className={styles.choice} role="radiogroup" aria-labelledby={`ask-pref-${f.key}`} onKeyDown={e=>{
+    // One tab stop per group; arrow keys move and select.
+    const step=e.key==='ArrowRight'||e.key==='ArrowDown'?1:e.key==='ArrowLeft'||e.key==='ArrowUp'?-1:0;if(!step||!ready)return;
+    e.preventDefault();const i=f.options.findIndex(o=>prefs[f.key]===o.value),n=(Math.max(0,i)+step+f.options.length)%f.options.length,group=e.currentTarget;
+    void choose(f.key,f.options[n]!.value as never);requestAnimationFrame(()=>group.querySelectorAll<HTMLButtonElement>('[role=radio]')[n]?.focus());
+   }}>
+    {f.options.map((o,oi)=><button key={String(o.value)} type="button" role="radio" tabIndex={prefs[f.key]===o.value||(!f.options.some(x=>prefs[f.key]===x.value)&&oi===0)?0:-1} aria-checked={prefs[f.key]===o.value} className={styles.option} disabled={!ready} onClick={()=>{void choose(f.key,o.value as never);}}>
      <span className={styles.mark} aria-hidden="true"><i/></span>
      <span className={styles.optionText}><span>{o.label}</span>{o.hint&&<small lang={f.key==='language'&&o.value==='ar'?'ar':undefined}>{o.hint}</small>}</span>
     </button>)}

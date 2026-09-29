@@ -11,7 +11,7 @@ const base=(p:ReturnType<typeof fixture>['p']):RecommendInput=>({today:p.today,m
 test('a recorded difference awaiting a decision ranks first and says why',()=>{
  const {p}=fixture();const out=recommend(base(p));
  assert.ok(out.length>=1&&out.length<=3);
- assert.equal(out[0]!.kind,'decision');assert.match(out[0]!.why,/Two recorded values disagree/);assert.ok(out[0]!.href.startsWith('/initiatives/'));
+ assert.equal(out[0]!.kind,'decision');assert.match(out[0]!.why,/Two recorded values differ/);assert.doesNotMatch(out[0]!.why,/disagree|conflict in practice is (?!not)/);assert.ok(out[0]!.href.startsWith('/initiatives/'));
 });
 test('nothing recorded means no recommendation is manufactured',()=>{
  const {p}=fixture();const rows=p.rows.map(r=>({...r,attention:[],setup:{...r.setup,next:null,requirements:r.setup.requirements.map(x=>({...x,met:true}))},target:undefined,actual:undefined,nextStep:undefined}));
@@ -32,9 +32,10 @@ test('the list is capped and spreads across initiatives before repeating one',()
  const {p}=fixture();const out=recommend({...base(p),limit:3});
  assert.ok(out.length<=3);const slugs=out.map(r=>r.initiative?.slug??r.kind);assert.equal(new Set(slugs).size,slugs.length);
 });
-test('a viewer is never told to prepare or finalize a review',()=>{
+test('a viewer is never told to prepare or finalize a review, and is pointed to who can act',()=>{
  const {p}=fixture();const out=recommend({...base(p),me:{memberId:null,writer:false,canFinalize:false},review:{week:'2026-W40',status:'NONE',pending:0,total:0,started:true,next:null},limit:10});
  assert.ok(!out.some(r=>r.kind==='review'));
+ for(const r of out){assert.match(r.action,/^Ask someone with write access to /);assert.match(r.why,/read-only/);}
 });
 test('the setup queue names gaps with direct links and never invents readiness',()=>{
  const {p}=fixture();const q=setupQueue(p.rows,{week:'2026-W40',status:'NONE',pending:0,total:0,started:true,next:null},true);

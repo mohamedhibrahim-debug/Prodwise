@@ -2,6 +2,7 @@
 import dynamic from 'next/dynamic';
 import {usePathname} from 'next/navigation';
 import {useCallback,useEffect,useRef,useState,useSyncExternalStore} from 'react';
+import {createPortal} from 'react-dom';
 import type {ShellIdentity} from '@/components/shell/ShellIdentity';
 import {useInitiativeContext} from '@/components/shell/shell-title';
 import {answerLanguage} from '@/lib/assistant/language';
@@ -9,7 +10,6 @@ import {contextLine,historyFor,initialOpen,resultFromResponse,screenFromPath,sho
 import {FAILURE_MESSAGE,QUESTION_LIMIT} from '@/lib/assistant/types';
 import type {AssistantPreferences} from '@/lib/assistant/preferences-model';
 import {AskControl} from './AskControl';
-import styles from './ask.module.css';
 import {loadPreferences,usePreferenceState} from './preferences-store';
 import {probeRecommendations,useProbe} from './probe-store';
 
@@ -54,6 +54,8 @@ function AskSurface({identity,preferences,configured}:{identity:ShellIdentity;pr
  const probeKey=`${screen.screen}|${screen.tab??''}|${screen.initiativeSlug??''}`;
  useEffect(()=>{if(preferences.proactive)void probeRecommendations(probeKey,{screen:screen.screen,tab:screen.tab,initiativeSlug:screen.initiativeSlug});},[preferences.proactive,probeKey,screen.screen,screen.tab,screen.initiativeSlug]);
  const recommendations=useProbe(probeKey);
+ // The phone sheet is modal: the page behind it does not scroll (R1-m4).
+ useEffect(()=>{if(!open||!sheet)return;const root=document.documentElement,before=root.style.overflow;root.style.overflow='hidden';return()=>{root.style.overflow=before;};},[open,sheet]);
  const dot=showsDot(preferences.proactive,recommendations);
 
  const busy=turns.some(t=>t.role==='pending');
@@ -92,9 +94,11 @@ function AskSurface({identity,preferences,configured}:{identity:ShellIdentity;pr
  const retry=useCallback((turnId:string)=>{const t=turns.find(x=>x.id===turnId);if(t&&t.role==='failure')void send(t.question,turnId);},[turns,send]);
 
  const terms=[initiative?.name,identity.presentation.organizationName].filter((t):t is string=>Boolean(t));
+ // The control docks with the other global tools: the top bar on desktop, the mobile bar on phones. It never floats over the page.
+ const slot=useSyncExternalStore(subscribeSheet,()=>document.getElementById(window.matchMedia(SHEET_QUERY).matches?'ask-prodwise-slot-mobile':'ask-prodwise-slot'),()=>null);
+ const control=<AskControl ref={controlRef} open={open} dot={dot} compact={sheet} onToggle={()=>open?close():setOpen(true)}/>;
  return <>
-  <div className={styles.spacer} aria-hidden="true"/>
-  <AskControl ref={controlRef} open={open} dot={dot} onToggle={()=>open?close():setOpen(true)}/>
+  {slot?createPortal(control,slot):null}
   {open&&<AskPanel
    sheet={sheet}
    contextLine={contextLine(screen,initiative)}

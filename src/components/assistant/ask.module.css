@@ -8,7 +8,7 @@
   --ask-edge: var(--s-6);
   --ask-control-h: var(--control-touch);
   --ask-width: 390px;
-  --ask-height: min(600px, 72vh);
+  --ask-height: min(620px, calc(100vh - var(--command-h) - var(--s-8)));
   --ask-rec-decision: var(--kind-decision-fg);
   --ask-rec-decision-bg: var(--kind-decision-bg);
   --ask-rec-blocker: var(--state-blocked-fg);
@@ -25,33 +25,35 @@
   --ask-rec-setup-bg: var(--state-unknown-bg);
 }
 
-/* Rendered after the shell while the control is mounted: the document grows by the control's clearance, so the
-   last row of any screen can scroll above it. Phones already pad the main region, so it is not needed there. */
-.spacer { height: calc(var(--control-touch) + var(--s-6)); background: var(--app-canvas); }
-@media (max-width: 780px) { .spacer { display: none; } }
-
-/* ── Collapsed control ─────────────────────────────────────────────────── */
+/* ── Collapsed control: docked in the top bar (desktop) or the mobile bar ── */
 .control {
-  position: fixed;
-  right: var(--ask-edge);
-  bottom: var(--ask-edge);
-  z-index: var(--ask-z);
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
-  height: var(--ask-control-h);
-  padding: 0 var(--s-4) 0 var(--s-3);
+  height: var(--control-md);
+  padding: 0 var(--s-3) 0 var(--s-2);
   border: 1px solid var(--rule-strong);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   background: var(--panel);
-  color: var(--ink-700);
+  color: var(--ink-800);
   font-size: var(--t-sm);
   font-weight: var(--fw-medium);
-  box-shadow: var(--shadow-card);
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
 }
-.control:hover { color: var(--ink-900); border-color: var(--ink-300); background: var(--surface-hover); }
+.control[data-compact] {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--chrome-ink-dim);
+}
+.control[data-compact] .controlLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.control[data-compact]:hover, .control[data-compact][aria-expanded="true"] { background: var(--chrome-hover); color: var(--chrome-ink); border-color: transparent; }
+@media (min-width: 781px) and (max-width: 1100px) { .control:not([data-compact]) .controlLabel { display: none; } .control:not([data-compact]) { padding: 0 var(--s-2); } }
+.control:not([data-compact]):hover { color: var(--ink-900); border-color: var(--ink-400); background: var(--surface-hover); }
 .control[aria-expanded="true"] { color: var(--ink-900); border-color: var(--accent-600); }
 .control:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .controlMark { position: relative; display: grid; place-items: center; width: 16px; height: 16px; }
@@ -68,12 +70,14 @@
   background: var(--accent-500);
   box-shadow: 0 0 0 2px var(--panel);
 }
+.control[data-compact] .dot { box-shadow: 0 0 0 2px var(--chrome-900);
+}
 
 /* ── Panel ─────────────────────────────────────────────────────────────── */
 .panel {
   position: fixed;
-  right: var(--ask-edge);
-  bottom: calc(var(--ask-edge) + var(--ask-control-h) + var(--s-2));
+  right: calc(var(--sheet-gap) + var(--s-4));
+  top: calc(var(--command-h) + var(--s-1));
   z-index: var(--ask-z);
   display: flex;
   flex-direction: column;
@@ -88,7 +92,7 @@
   outline: none;
   animation: ask-in var(--dur) var(--ease-out);
 }
-@keyframes ask-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes ask-in { from { opacity: 0; transform: translateY(-6px); } }
 .head {
   display: flex;
   align-items: center;
@@ -288,8 +292,8 @@
 @keyframes ask-scrim-in { from { opacity: 0; } }
 .grabber { display: block; flex: none; width: 36px; height: 4px; margin: var(--s-2) auto 0; border-radius: var(--r-pill); background: var(--rule-strong); }
 @media (max-width: 780px) {
-  .control { --ask-edge: var(--s-4); bottom: calc(var(--ask-edge) + env(safe-area-inset-bottom)); }
   .panel[data-sheet] {
+    top: auto;
     right: 0;
     left: 0;
     bottom: 0;
