@@ -1,20 +1,86 @@
-import {formatDate} from '@/lib/domain/labels';
-import {factDate} from '@/lib/delivery/display';
-import {readRelationships} from '@/lib/data/relationships';
-import {readManagement} from '@/lib/data/management-read';
 import Link from "next/link";
+import {formatDate,STAGE_LABEL} from "@/lib/domain/labels";
+import {factDate} from "@/lib/delivery/display";
+import {readRelationships} from "@/lib/data/relationships";
+import {readManagement} from "@/lib/data/management-read";
 import {readDelivery} from "@/lib/delivery/repository";
 import {buildPortfolioProjection,filterPortfolioRows} from "@/lib/workspace/portfolio";
 import {STAGES} from "@/lib/domain/types";
-import {STAGE_LABEL} from "@/lib/domain/labels";
 import {dayDifference} from "@/lib/delivery/model";
 import {safeUserLabel} from "@/lib/demo/presentation";
 import {displayDate} from "@/lib/delivery/roadmap";
+import {listProjectMetrics} from "@/lib/analysis/metrics";
+import {metricCoverage} from "@/lib/analysis/metric-view";
 import {AnalysisFrame,styles} from "@/components/analysis/AnalysisFrame";
+import {CoverageMarks} from "@/components/analysis/MetricParts";
 import {DataTable} from "@/components/admin/AdminUI";
 export const metadata={title:"Portfolio Analysis"};
-export default async function PortfolioAnalysis(){const {ctx,source,state,presentation}=await readDelivery();const asOf=presentation.scenarioAt??new Date().toISOString();const p=buildPortfolioProjection({source,state,workspaceId:ctx.workspaceId,asOf,management:await readManagement(),relationships:(await readRelationships()).relationships});
- const counts=[["Initiatives",p.summary.total,""],["Need attention",p.summary.attentionInitiatives,"attention=any"],["Setup incomplete",p.summary.setupIncomplete,"coverage=incomplete"],["Targets in 28 days",p.summary.upcomingTargets,"target=upcoming"],["No Target Live",p.summary.unknownTargets,"target=unknown"],["Target revised in 28 days",filterPortfolioRows(p.rows,{target:"moved"},p.today).length,"target=moved"]] as const;
- const upcoming=filterPortfolioRows(p.rows,{target:"upcoming",sort:"target"},p.today);const allowed=new Map(p.rows.map(r=>[r.initiative.id,r.initiative]));const revisions=state.events.filter(e=>e.workspaceId===ctx.workspaceId&&allowed.has(e.initiativeId)&&e.after.kind==="TARGET_LIVE"&&e.before?.state==="SET"&&e.after.state==="SET"&&e.before.value.date&&e.after.value.date&&e.before.value.date!==e.after.value.date&&dayDifference(e.occurredAt.slice(0,10),p.today)<=28).sort((a,b)=>b.occurredAt.localeCompare(a.occurredAt));
- return <AnalysisFrame active="portfolio" title="Portfolio Analysis" organizationName={presentation.organizationName} asOf={asOf} synthetic={presentation.isDemo}><div className={styles.stats}>{counts.map(([label,count,filter])=><Link prefetch={false} key={label} href={"/initiatives"+(filter?"?"+filter:"")}><strong>{count}</strong>{label}</Link>)}</div><div className={styles.columns}><section><h2>Recorded lifecycle stages</h2><p className={styles.meta}>Position in the lifecycle does not establish readiness or business success.</p><ol className={styles.stageList}>{STAGES.map(stage=>{const count=p.rows.filter(r=>r.initiative.stage===stage).length;return <li key={stage}><Link prefetch={false} href={"/initiatives?stage="+stage}><span>{STAGE_LABEL[stage]}</span><span className={styles.track} aria-hidden="true"><i style={{width:(p.summary.total?count/p.summary.total*100:0)+"%"}}/></span><strong>{count}</strong></Link></li>;})}</ol></section><aside className={styles.attention}><h2>Attention by recorded reason</h2>{[["decision","Decision needed"],["blocker","Recorded blocker"],["past-target","Past target · update needed"],["past-milestone","Past milestone · update needed"],["dependency","Dependency date impact"],["support-changed","Supporting evidence changed"]].map(([key,label])=><Link prefetch={false} key={key} href={"/initiatives?attention="+key}><span>{label}</span><strong>{filterPortfolioRows(p.rows,{attention:key},p.today).length}</strong></Link>)}<p className={styles.meta}>Counts are initiatives, and categories may overlap. Missing Actual Live asks for an update; it does not establish a missed launch.</p></aside></div><section className={styles.section}><h2>Upcoming Target Live</h2><p className={styles.meta}>Today through the next 28 days · planned dates, excluding a confirmed full launch.</p><DataTable caption="Upcoming confirmed Target Live dates" columns={["Initiative","Recorded stage","Target Live","Owner"]} rows={upcoming.map(r=>({key:r.initiative.id,cells:[<Link prefetch={false} key="name" href={"/initiatives/"+r.initiative.slug}>{r.initiative.name}</Link>,STAGE_LABEL[r.initiative.stage],factDate(r.target),r.ownerLabel]}))} empty="No confirmed Target Live dates in the next 28 days."/></section><section className={styles.section}><h2>Target Live revisions</h2><p className={styles.meta}>Recorded in the past 28 days. One initiative can have several revisions.</p><DataTable caption="Recorded Target Live revisions" columns={["Initiative","Previous → current","Movement","Recorded by","Recorded on"]} rows={revisions.map(e=>({key:e.id,cells:[<Link prefetch={false} key="name" href={"/initiatives/"+allowed.get(e.initiativeId)!.slug+"/delivery"}>{allowed.get(e.initiativeId)!.name}</Link>,displayDate(e.before!.value.date)+" → "+factDate(e.after),(dayDifference(e.before!.value.date!,e.after.value.date!)>0?"+":"")+dayDifference(e.before!.value.date!,e.after.value.date!)+" days",safeUserLabel({preparedAsFixture:e.after.preparedAsFixture,confirmedByLabel:e.actor.label}),formatDate(e.occurredAt)]}))} empty="No known-to-known Target Live revisions recorded in this window."/></section><details className={styles.definitions}><summary>How these counts are calculated</summary><dl><div><dt>Scope</dt><dd>All initiative records in the current workspace. No active or health status is inferred.</dd></div><div><dt>Targets</dt><dd>Current human-confirmed planned dates. Unknown dates are counted separately. Upcoming uses today through day 28 inclusive; revisions use recorded changes in the last 28 days.</dd></div><div><dt>Coverage</dt><dd>A current-scope source, recorded Knowledge and confirmation are needed for checks. No open differences does not imply business readiness.</dd></div><div><dt>Drilldown</dt><dd>Each count opens the initiative register using the same shared calculation. Business outcomes belong in Projects with approved metric definitions.</dd></div></dl></details></AnalysisFrame>;
+
+const REASONS=[["decision","Decision needed"],["blocker","Recorded blocker"],["past-target","Past target · update needed"],["past-milestone","Past milestone · update needed"],["dependency","Dependency date impact"],["support-changed","Supporting evidence changed"]] as const;
+
+export default async function PortfolioAnalysis(){
+ const [{ctx,source,state,presentation},management,relationships,metrics]=await Promise.all([readDelivery(),readManagement(),readRelationships(),listProjectMetrics()]);
+ const asOf=presentation.scenarioAt??new Date().toISOString();
+ // The same shared projection as Home, Initiatives and Roadmap: counts are never recomputed here.
+ const p=buildPortfolioProjection({source,state,workspaceId:ctx.workspaceId,asOf,management,relationships:relationships.relationships});
+ const active=filterPortfolioRows(p.rows,{},p.today);
+ const counts=[
+  ["Initiatives",p.summary.total,"","Active records in this workspace"],
+  ["Need attention",p.summary.attentionInitiatives,"attention=any","With at least one recorded reason"],
+  ["Setup incomplete",p.summary.setupIncomplete,"setup=incomplete","One or more setup requirements unrecorded"],
+  ["Targets in 28 days",p.summary.upcomingTargets,"target=upcoming","Target Live today through day 28"],
+  ["No Target Live",p.summary.unknownTargets,"target=unknown","Planned date not recorded"],
+  ["Target revised",filterPortfolioRows(p.rows,{target:"moved"},p.today).length,"target=moved","Target Live moved in the last 28 days"],
+ ] as const;
+ const upcoming=filterPortfolioRows(p.rows,{target:"upcoming",sort:"target"},p.today);
+ const allowed=new Map(p.rows.map(r=>[r.initiative.id,r.initiative]));
+ const revisions=state.events.filter(e=>e.workspaceId===ctx.workspaceId&&allowed.has(e.initiativeId)&&e.after.kind==="TARGET_LIVE"&&e.before?.state==="SET"&&e.after.state==="SET"&&e.before.value.date&&e.after.value.date&&e.before.value.date!==e.after.value.date&&dayDifference(e.occurredAt.slice(0,10),p.today)<=28).sort((a,b)=>b.occurredAt.localeCompare(a.occurredAt));
+ const stages=STAGES.map(stage=>({stage,count:active.filter(r=>r.initiative.stage===stage).length}));
+ const reasons=REASONS.map(([key,label])=>({key,label,count:filterPortfolioRows(p.rows,{attention:key},p.today).length}));
+ const maxReason=Math.max(1,...reasons.map(r=>r.count));
+ const coverageRows=active.map(r=>{const own=metrics.filter(m=>m.initiativeId===r.initiative.id);return {row:r,coverage:metricCoverage(own)};}).sort((a,b)=>Number(b.coverage.configured>0)-Number(a.coverage.configured>0)||a.row.initiative.name.localeCompare(b.row.initiative.name));
+ const configured=coverageRows.filter(c=>c.coverage.configured>0).length;
+ const synthetic=metrics.some(m=>m.origin==="SYNTHETIC_DEMO");
+ return <AnalysisFrame active="portfolio" title="Portfolio Analysis" subtitle="Position, attention and measurement coverage, from the same records as Home." organizationName={presentation.organizationName} asOf={asOf} synthetic={presentation.isDemo}>
+  <ul className={styles.band} aria-label="Portfolio summary">{counts.map(([label,count,filter,hint])=><li key={label}><Link prefetch={false} href={"/initiatives"+(filter?"?"+filter:"")}><strong>{count}</strong><span className={styles.bandLabel}>{label}</span><span className={styles.bandHint}>{hint}</span></Link></li>)}</ul>
+  <div className={styles.split}>
+   <section className={styles.panel} aria-labelledby="lifecycle-heading">
+    <div className={styles.sectionHead}><h2 id="lifecycle-heading">Lifecycle distribution</h2><span className={styles.count}>{p.summary.total} initiatives</span></div>
+    <div className={styles.stack} role="img" aria-label={stages.filter(s=>s.count).map(s=>`${STAGE_LABEL[s.stage]} ${s.count}`).join(", ")}>{stages.filter(s=>s.count).map(s=><span key={s.stage} data-stage={s.stage} style={{flexGrow:s.count}} title={`${STAGE_LABEL[s.stage]}: ${s.count}`}/>)}</div>
+    <ol className={styles.stageLegend}>{stages.map(s=><li key={s.stage} data-empty={s.count===0||undefined}><Link prefetch={false} href={"/initiatives?stage="+s.stage}><i data-stage={s.stage} aria-hidden="true"/><span>{STAGE_LABEL[s.stage]}</span><b>{s.count}</b></Link></li>)}</ol>
+    <p className={styles.meta}>Recorded stage only. Position in the lifecycle does not establish readiness or business success.</p>
+   </section>
+   <section className={styles.panel} aria-labelledby="attention-heading">
+    <div className={styles.sectionHead}><h2 id="attention-heading">Attention by recorded reason</h2><Link prefetch={false} href="/initiatives?attention=any">{p.summary.attentionInitiatives} {p.summary.attentionInitiatives===1?"initiative":"initiatives"} →</Link></div>
+    <ul className={styles.reasons}>{reasons.map(r=><li key={r.key} data-empty={r.count===0||undefined}><Link prefetch={false} href={"/initiatives?attention="+r.key}><span>{r.label}</span><span className={styles.reasonBar} aria-hidden="true"><i style={{width:`${(r.count/maxReason)*100}%`}}/></span><b>{r.count}</b></Link></li>)}</ul>
+    <p className={styles.meta}>Counts are initiatives; one initiative can have several reasons. A missing Actual Live asks for an update — it does not establish a missed launch.</p>
+   </section>
+  </div>
+  <section className={styles.section} aria-labelledby="upcoming-heading">
+   <div className={styles.sectionHead}><h2 id="upcoming-heading">Upcoming Target Live</h2><span className={styles.count}>Today through the next 28 days</span></div>
+   <DataTable caption="Upcoming confirmed Target Live dates" columns={["Initiative","Stage","Target Live","In","Owner"]} rows={upcoming.map(r=>({key:r.initiative.id,cells:[<Link prefetch={false} key="name" href={"/initiatives/"+r.initiative.slug}>{r.initiative.name}</Link>,STAGE_LABEL[r.initiative.stage],factDate(r.target),r.target?.value.date?(()=>{const d=dayDifference(p.today,r.target!.value.date!);return d===0?"Today":`${d} ${d===1?"day":"days"}`;})():"—",r.ownerLabel]}))} empty="No confirmed Target Live dates in the next 28 days."/>
+  </section>
+  <section className={styles.section} aria-labelledby="coverage-heading">
+   <div className={styles.sectionHead}><h2 id="coverage-heading">Business metrics coverage</h2><span className={styles.count}>{configured} of {active.length} initiatives measured</span></div>
+   {configured>0&&<p className={styles.lead}>Status is each metric’s latest recorded period against its approved target. An unrecorded period is not assessed, and a metric without an approved target is never counted as missed.{synthetic&&" Metric values in this workspace are synthetic demo records."}</p>}
+   {configured===0?<p className={styles.emptyLine}>No business metrics are configured for any initiative yet. Each initiative’s analysis page lists what a metric needs; nothing is shown as zero in the meantime. <Link prefetch={false} href="/analysis/projects">Open Initiative Analysis →</Link></p>:
+   <DataTable caption="Business metrics coverage by initiative" columns={["Initiative","Stage","Metrics","Latest vs target","Last captured"]} rows={coverageRows.map(({row,coverage})=>({key:row.initiative.id,cells:[
+    <Link prefetch={false} key="name" href={`/analysis/projects/${row.initiative.slug}?back=${encodeURIComponent("/analysis/portfolio")}`}>{row.initiative.name}</Link>,
+    STAGE_LABEL[row.initiative.stage],
+    coverage.configured?`${coverage.configured} configured`:<span key="none" className={styles.muted}>Not configured</span>,
+    coverage.configured?<CoverageMarks key="marks" coverage={coverage}/>:<span key="none" className={styles.muted}>No metric definitions recorded</span>,
+    coverage.lastCaptured?formatDate(coverage.lastCaptured):coverage.configured?"No observations yet":"—",
+   ]}))} empty="No active initiatives are recorded."/>}
+  </section>
+  <section className={styles.section} aria-labelledby="revisions-heading">
+   <div className={styles.sectionHead}><h2 id="revisions-heading">Target Live revisions</h2><span className={styles.count}>Recorded in the past 28 days</span></div>
+   <DataTable caption="Recorded Target Live revisions" columns={["Initiative","Previous → current","Movement","Recorded by","Recorded on"]} rows={revisions.map(e=>({key:e.id,cells:[<Link prefetch={false} key="name" href={"/initiatives/"+allowed.get(e.initiativeId)!.slug+"/delivery"}>{allowed.get(e.initiativeId)!.name}</Link>,displayDate(e.before!.value.date)+" → "+factDate(e.after),(dayDifference(e.before!.value.date!,e.after.value.date!)>0?"+":"")+dayDifference(e.before!.value.date!,e.after.value.date!)+" days",safeUserLabel({preparedAsFixture:e.after.preparedAsFixture,confirmedByLabel:e.actor.label}),formatDate(e.occurredAt)]}))} empty="No known-to-known Target Live revisions recorded in this window."/>
+  </section>
+  <details className={styles.definitions}><summary>How these counts are calculated</summary><dl>
+   <div><dt>Scope</dt><dd>Active initiative records in the current workspace; archived records are excluded. No health status is inferred.</dd></div>
+   <div><dt>Targets</dt><dd>Current human-confirmed planned dates. Unknown dates are counted separately. Upcoming uses today through day 28 inclusive; revisions use recorded changes in the last 28 days.</dd></div>
+   <div><dt>Attention and setup</dt><dd>The same shared calculation as Home and the initiative register. Each count opens the register with that filter.</dd></div>
+   <div><dt>Metrics</dt><dd>Only recorded metric definitions and observations. Missing observations are not zero, and delivery dates are not performance measures.</dd></div>
+  </dl></details>
+ </AnalysisFrame>;
 }

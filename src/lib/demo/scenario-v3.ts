@@ -11,6 +11,7 @@
  * derives from the same canonical records. Nothing here is a dashboard number.
  */
 import { createHash } from "node:crypto";
+import { demoPortfolioMetrics } from "./metric-fixtures.ts";
 import { canonicalDemoDataV2, demoId, DEMO_CUTOFF, DEMO_ORGANIZATION_NAME, type DemoIdentity } from "./canonical.ts";
 import { FIXTURE_ORIGIN_LABEL } from "./presentation.ts";
 import type { ActivityEntry, ClaimRecord, ClaimTrust, ClaimType, ClaimStatus, Domain, EvidenceRecord, EvidenceRelation, EvidenceSourceType, FindingState, Initiative, InitiativeSnapshot, InitiativeSource, MemoryClaim } from "../domain/types.ts";
@@ -765,6 +766,7 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
     version: DEMO_V3_VERSION, organization: { id: organizationId, name: DEMO_ORGANIZATION_NAME }, workspaceId,
     productStore: store, deliveryState: state, source: source(), members, personas,
     reviewer: { userId: reviewerUserId, memberId: reviewerMemberId, role: "ORG_OWNER" as const, platformRole: null },
-    metrics: base.metrics, cutoff: DEMO_V3_CUTOFF,
+    // Synthetic business measures: the V2 onboarding pair plus the V3 portfolio set. Records, never display defaults.
+    metrics: [...base.metrics, ...demoPortfolioMetrics(workspaceId, slug => bySlug(slug).id, id)], cutoff: DEMO_V3_CUTOFF,
   };
 }

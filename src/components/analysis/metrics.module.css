@@ -1,0 +1,197 @@
+/* Metric tiles, trend charts and contracts. Tokens only; structure is 1px rules and whitespace. */
+.tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 1px;
+  padding: 1px;
+}
+.tile { min-width: 0; background: var(--panel); outline: 1px solid var(--rule); }
+.tileLink {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  height: 100%;
+  padding: var(--s-4) var(--s-5) var(--s-3);
+  color: var(--ink-900);
+  text-decoration: none;
+  transition: background var(--dur-fast) var(--ease);
+}
+.tileLink:hover { background: var(--surface-subtle); }
+.tileLink:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent-700); }
+.tileName {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--ink-700);
+  line-height: var(--lh-tight);
+  min-height: calc(var(--t-xs) * 2.5);
+}
+.tilePeriod { font-size: var(--t-xs); color: var(--ink-500); }
+.tileFallback { font-size: var(--t-xs); color: var(--ink-500); }
+.tileTarget { font-size: var(--t-xs); color: var(--ink-500); font-variant-numeric: tabular-nums; }
+
+.value { display: inline-flex; align-items: baseline; gap: var(--s-1); color: var(--navy-900); margin: var(--s-1) 0 0; line-height: var(--lh-display); }
+.value[data-size="tile"] .valueNumber { font-size: var(--t-h1); font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); letter-spacing: var(--ls-tight); }
+.value[data-size="hero"] .valueNumber { font-size: var(--t-display); font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); letter-spacing: var(--ls-tight); }
+.valueUnit { font-size: var(--t-sm); color: var(--ink-700); }
+.valueMissing {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-semibold);
+  color: var(--state-unknown-fg);
+  padding: var(--s-1) var(--s-2);
+  background: repeating-linear-gradient(135deg, var(--state-unknown-bg) 0 var(--s-1), var(--panel) var(--s-1) var(--s-2));
+  border: 1px dashed var(--state-unknown-mark);
+  border-radius: var(--r-xs);
+}
+.value[data-size="tile"][data-missing] { min-height: calc(var(--t-h1) * 1.12); align-items: center; }
+
+.delta { margin: 0; font-size: var(--t-xs); color: var(--ink-700); font-variant-numeric: tabular-nums; font-weight: var(--fw-medium); display: flex; flex-wrap: wrap; gap: 0 var(--s-1); align-items: baseline; }
+.delta span[aria-hidden] { font-size: var(--t-micro); color: var(--ink-500); }
+.delta[data-direction="none"] { font-family: var(--font-sans); color: var(--ink-500); }
+.deltaBase { font-family: var(--font-sans); color: var(--ink-500); }
+
+.status { display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--t-xs); font-weight: var(--fw-semibold); flex-wrap: wrap; }
+.statusGlyph {
+  display: inline-grid;
+  place-items: center;
+  width: var(--s-4);
+  height: var(--s-4);
+  border-radius: var(--r-pill);
+  font-size: var(--t-micro);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.status[data-kind="MET"] { color: var(--state-ready-fg); }
+.status[data-kind="MET"] .statusGlyph { background: var(--state-ready-mark); color: var(--panel); }
+.status[data-kind="NOT_MET"] { color: var(--state-at-risk-fg); }
+.status[data-kind="NOT_MET"] .statusGlyph { background: var(--state-at-risk-mark); color: var(--panel); }
+.status:is([data-kind="NOT_RECORDED"], [data-kind="NO_OBSERVATIONS"], [data-kind="NO_TARGET"]) { color: var(--state-unknown-fg); }
+.status:is([data-kind="NOT_RECORDED"], [data-kind="NO_OBSERVATIONS"], [data-kind="NO_TARGET"]) .statusGlyph { border: 1px solid var(--state-unknown-mark); background: var(--state-unknown-bg); }
+.statusDetail { flex-basis: 100%; font-weight: var(--fw-regular); color: var(--ink-700); }
+.tileLink .status { margin-top: var(--s-2); }
+
+.spark { display: block; width: 100%; height: var(--s-8); margin-top: auto; padding-top: var(--s-2); overflow: visible; }
+.sparkLine { fill: none; stroke: var(--accent-600); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.sparkDot { stroke: var(--accent-600); stroke-width: 4; stroke-linecap: round; }
+.sparkGap { fill: var(--state-unknown-bg); stroke: var(--state-unknown-mark); stroke-dasharray: 2 2; stroke-width: 1; vector-effect: non-scaling-stroke; }
+
+/* ── Trend chart ─────────────────────────────────────────────────────── */
+.chart { overflow-x: clip; --chart-h: calc(var(--s-16) * 3); --axis-w: calc(var(--s-16) + var(--s-2)); margin: 0; min-width: 0; }
+.chartBody { display: grid; grid-template-columns: var(--axis-w) minmax(0, 1fr); }
+.axisY { position: relative; height: var(--chart-h); }
+.axisY span {
+  position: absolute;
+  right: var(--s-3);
+  transform: translateY(-50%);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-500);
+  white-space: nowrap;
+}
+.plot { position: relative; height: var(--chart-h); border-bottom: 1px solid var(--rule-strong); }
+.plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.grid { stroke: var(--rule); stroke-width: 1; }
+.hatchLine { stroke: var(--state-unknown-mark); stroke-width: 2; }
+.gap { stroke: var(--state-unknown-edge); stroke-width: 1; }
+.target { stroke: var(--ink-700); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.live { stroke: var(--navy-700); stroke-width: 1; stroke-dasharray: 2 3; }
+.line { fill: none; stroke: var(--accent-600); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.markerRing { stroke: var(--panel); stroke-width: 12; stroke-linecap: round; }
+.marker { stroke: var(--accent-600); stroke-width: 8; stroke-linecap: round; }
+.marker[data-latest] { stroke: var(--navy-900); stroke-width: 10; }
+.gapLabel, .targetLabel, .liveLabel, .pointLabel {
+  position: absolute;
+  font-size: var(--t-micro);
+  line-height: var(--lh-tight);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.gapLabel {
+  top: var(--s-6);
+  transform: translateX(-50%);
+  color: var(--state-unknown-fg);
+  font-weight: var(--fw-semibold);
+  background: var(--panel);
+  padding: 0 var(--s-1);
+}
+.targetLabel { right: 0; transform: translateY(-120%); color: var(--ink-700); font-weight: var(--fw-semibold); background: var(--panel); padding: 0 var(--s-1); }
+.liveLabel[data-side="left"] { transform: translateX(calc(-100% - var(--s-1))); }
+.liveLabel { top: var(--s-1); transform: translateX(var(--s-1)); color: var(--navy-700); background: var(--panel); padding: 0 var(--s-1); }
+.pointLabel {
+  transform: translate(-50%, calc(-100% - var(--s-3)));
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-semibold);
+  font-size: var(--t-xs);
+  color: var(--navy-900);
+  background: var(--panel);
+  padding: 0 var(--s-1);
+}
+.pointLabel[data-side="left"] { transform: translate(calc(-100% + var(--s-2)), calc(-100% - var(--s-3))); }
+.axisX {
+  list-style: none;
+  margin: 0 0 0 var(--axis-w);
+  padding: var(--s-2) 0 0;
+  display: grid;
+}
+.axisX li { text-align: center; font-size: var(--t-micro); color: var(--ink-500); white-space: nowrap; }
+.legend { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); margin: var(--s-4) 0 0 var(--axis-w); font-size: var(--t-xs); color: var(--ink-700); }
+.legend span { display: inline-flex; align-items: center; gap: var(--s-2); }
+.legend i { display: inline-block; width: var(--s-5); flex-shrink: 0; }
+.legendLine { height: 2px; background: var(--accent-600); }
+.legendTarget { height: 0; border-top: 2px dashed var(--ink-700); }
+.legendGap { height: var(--s-3); border: 1px solid var(--state-unknown-mark); background: repeating-linear-gradient(135deg, var(--state-unknown-mark) 0 1px, var(--state-unknown-bg) 1px var(--s-1)); }
+.legendLive { height: var(--s-3); width: 0 !important; border-left: 1px dashed var(--navy-700); }
+.chartEmpty {
+  padding: var(--s-6);
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+  line-height: var(--lh-body);
+  border: 1px dashed var(--state-unknown-mark);
+  background: var(--state-unknown-bg);
+}
+
+/* ── Observation table ───────────────────────────────────────────────── */
+.table { margin-top: var(--s-5); border-top: 1px solid var(--rule); min-width: 0; overflow: hidden; }
+.table summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--accent-700);
+}
+.table summary span { font-weight: var(--fw-regular); color: var(--ink-500); font-size: var(--t-xs); }
+.tableWrap { overflow-x: auto; }
+.table table { width: 100%; border-collapse: collapse; font-size: var(--t-xs); }
+.table th, .table td { text-align: left; padding: var(--s-2) var(--s-3) var(--s-2) 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.table thead th { color: var(--ink-500); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: var(--ls-micro); font-size: var(--t-micro); }
+.table tbody th { font-weight: var(--fw-semibold); white-space: nowrap; color: var(--ink-900); }
+.table td:nth-child(2) { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--navy-900); }
+.table td:nth-child(3) { white-space: nowrap; color: var(--ink-500); }
+.table td:last-child { color: var(--ink-700); min-width: 16rem; }
+.table tr[data-missing] td:nth-child(2) { color: var(--state-unknown-fg); font-family: var(--font-sans); font-weight: var(--fw-semibold); }
+
+/* ── Contract ────────────────────────────────────────────────────────── */
+.contract { background: var(--surface-subtle); padding: var(--s-5); align-self: start; border-top: 2px solid var(--navy-900); }
+.contract h3 { margin: 0 0 var(--s-3); font-size: var(--t-micro); text-transform: uppercase; letter-spacing: var(--ls-micro); color: var(--ink-500); }
+.contract dl { margin: 0; }
+.contract dl > div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: var(--s-3); padding: var(--s-3) 0; border-top: 1px solid var(--rule); font-size: var(--t-xs); line-height: var(--lh-body); }
+.contract dt { font-weight: var(--fw-semibold); color: var(--ink-700); }
+.contract dd { margin: 0; color: var(--ink-900); overflow-wrap: anywhere; }
+.contract dd span { display: block; color: var(--ink-500); margin-top: var(--s-1); }
+.contract a { color: var(--accent-700); font-weight: var(--fw-semibold); }
+.contract a:focus-visible, .table summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+@media (max-width: 780px) {
+  .chart { --chart-h: calc(var(--s-16) * 2.5); --axis-w: var(--s-12); }
+  .chart[data-dense] .axisX li:nth-child(even) { visibility: hidden; }
+  .contract dl > div { grid-template-columns: 1fr; gap: var(--s-1); }
+  .tileLink { padding: var(--s-3) var(--s-4); }
+  .targetLabel { transform: translateY(-110%); }
+}
+.marks { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); }
+.marks .status { font-weight: var(--fw-medium); }
