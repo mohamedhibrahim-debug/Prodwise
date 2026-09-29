@@ -38,6 +38,33 @@ export interface ProviderResult {
   updatedAt: string | null;
   /** Short factual line: status, sender, owner, page. */
   detail: string;
+  /** Jira only: the issue's own fields, exactly as Jira returned them. Nothing here is inferred. */
+  jira?: JiraResultMeta;
+}
+
+/** Jira's fixed status-category keys: To Do, In Progress, Done. */
+export type JiraStatusCategory = "new" | "indeterminate" | "done";
+export interface JiraResultMeta {
+  key: string;
+  /** Issue type name as the Jira site names it; null when Jira did not return one. */
+  type: string | null;
+  /** Jira's own sub-task flag for the issue type. */
+  subtask: boolean;
+  status: string | null;
+  statusCategory: JiraStatusCategory | null;
+  assignee: string | null;
+  /** YYYY-MM-DD, only when set in Jira. */
+  dueDate: string | null;
+  project: { key: string; name: string } | null;
+  parent: { key: string; summary: string | null } | null;
+}
+
+/** A search's rows, plus how many matches could not be read (never silently dropped). */
+export interface SearchOutcome {
+  results: ProviderResult[];
+  omitted: number;
+  /** The provider said more matches exist beyond this page (no total is claimed). */
+  more: boolean;
 }
 
 export type EvidenceSourceKind = "JIRA" | "EMAIL" | "DOCUMENT" | "DESIGN";
@@ -81,9 +108,20 @@ export function connectorFromSlug(slug: string): Connector | null {
   return (Object.entries(CONNECTOR_SLUG).find(([, s]) => s === slug)?.[0] as Connector | undefined) ?? null;
 }
 
+/** The read-only scopes each provider app must allow, as requested in oauth.ts (kept equal by a test). */
+export const REQUIRED_ACCESS: Record<Connector, string[]> = {
+  JIRA: ["read:jira-work", "read:jira-user", "offline_access"],
+  GMAIL: ["openid", "email", "https://www.googleapis.com/auth/gmail.readonly"],
+  GOOGLE_DRIVE: ["openid", "email", "https://www.googleapis.com/auth/drive.readonly"],
+  FIGMA: ["current_user:read", "file_content:read", "file_comments:read"],
+};
+const scopeName = (s: string) => s.replace("https://www.googleapis.com/auth/", "");
+
 export type ConnectorErrorCode =
   | "NOT_CONFIGURED" | "NOT_CONNECTED" | "NEEDS_RECONNECT" | "NO_ACCESS" | "NOT_FOUND"
-  | "RATE_LIMITED" | "PROVIDER_UNAVAILABLE" | "UNSUPPORTED" | "INVALID_REQUEST" | "DEMO_ORGANIZATION" | "VIEW_ONLY";
+  | "RATE_LIMITED" | "PROVIDER_UNAVAILABLE" | "UNSUPPORTED" | "INVALID_REQUEST" | "DEMO_ORGANIZATION" | "VIEW_ONLY"
+  /** The provider refused the requested scopes during sign-in (OAuth error=invalid_scope). */
+  | "SCOPE_REFUSED";
 
 export class ConnectorError extends Error {
   readonly code: ConnectorErrorCode;
@@ -104,6 +142,7 @@ export function connectorMessage(code: ConnectorErrorCode, connector: Connector)
     case "UNSUPPORTED": return `Prodwise can't read this ${name} item's content. Its link and details can still be recorded.`;
     case "INVALID_REQUEST": return `That ${name} search or selection isn't valid. Check it and try again.`;
     case "VIEW_ONLY": return `You have view-only access in this organization, so ${name} can't be connected here. Nothing was changed.`;
+    case "SCOPE_REFUSED": return `${name} refused the requested read-only access. The ${name} app must allow: ${REQUIRED_ACCESS[connector].map(scopeName).join(", ")}. Nothing was connected.`;
     case "DEMO_ORGANIZATION": return "Connectors are off in the Demo organization: its sources are synthetic, and real data must never enter it.";
   }
 }

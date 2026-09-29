@@ -1,5 +1,5 @@
-import { capText, clip, type ProviderCall } from "./http.ts";
-import { ConnectorError, type ProviderResult, type ProviderSnapshot } from "./types.ts";
+import { capText, clip, settleLimited, type ProviderCall } from "./http.ts";
+import { ConnectorError, type ProviderSnapshot, type SearchOutcome } from "./types.ts";
 
 /**
  * Gmail, read-only (gmail.readonly). Only an explicit search is ever run and only
@@ -23,15 +23,21 @@ export function searchQuery(query: string): string {
   return q;
 }
 
-export async function searchThreads(call: ProviderCall, query: string): Promise<ProviderResult[]> {
-  const list = await call(`${API}/threads?maxResults=15&q=${encodeURIComponent(searchQuery(query))}`) as { threads?: { id?: string }[] };
+/** Metadata for at most 15 threads, five at a time, each bounded: a search always finishes. */
+export async function searchThreads(call: ProviderCall, query: string): Promise<SearchOutcome> {
+  const list = await call(`${API}/threads?maxResults=15&q=${encodeURIComponent(searchQuery(query))}`) as { threads?: { id?: string }[]; nextPageToken?: string };
   const ids = (list.threads ?? []).map(t => t.id).filter((id): id is string => typeof id === "string" && THREAD_ID.test(id));
-  const threads = await Promise.all(ids.map(id => call(`${API}/threads/${id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`) as Promise<Thread>));
-  return threads.flatMap(t => {
-    const first = t.messages?.[0], last = t.messages?.at(-1); if (!t.id || !first) return [];
+  const settled = await settleLimited(ids, 5, id => call(`${API}/threads/${id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`, { timeoutMs: 10000 }) as Promise<Thread>);
+  const failed = settled.filter(r => r.status === "rejected") as PromiseRejectedResult[];
+  // Every thread failing is a failed search (reconnect, rate limit…), not an empty one.
+  if (ids.length && failed.length === ids.length) throw failed[0]!.reason;
+  const results = settled.flatMap(r => {
+    if (r.status !== "fulfilled") return [];
+    const t = r.value, first = t.messages?.[0], last = t.messages?.at(-1); if (!t.id || !first) return [];
     return [{ reference: t.id, name: clip(header(first.payload, "Subject") || "(no subject)", 200), kind: "Email thread", url: `https://mail.google.com/mail/#all/${t.id}`, updatedAt: iso(last?.internalDate),
       detail: [`From ${clip(header(first.payload, "From") ?? "unknown sender", 80)}`, `${t.messages?.length ?? 1} ${(t.messages?.length ?? 1) === 1 ? "message" : "messages"}`].join(" · ") }];
   });
+  return { results, omitted: failed.length, more: typeof list.nextPageToken === "string" };
 }
 
 export function decodeBody(data: string | undefined): string {

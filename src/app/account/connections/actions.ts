@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { beginConnect, disconnect, stateCookieName } from "@/lib/connectors/service";
-import { ConnectorError, connectorFromSlug, connectorMessage } from "@/lib/connectors/types";
+import { CONNECTOR_SLUG, ConnectorError, connectorFromSlug, connectorMessage } from "@/lib/connectors/types";
 
 export interface ConnectionActionState { error: string | null; message: string | null }
 
@@ -14,7 +14,8 @@ export async function connectAction(_previous: ConnectionActionState, form: Form
   let url: string;
   try {
     const started = await beginConnect(connector, String(form.get("returnTo") ?? "/account/connections"));
-    (await cookies()).set(stateCookieName(connector), started.cookie, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/api/connectors", maxAge: 600 });
+    // No cookie only in local fixture mode, where there is no provider sign-in to return from.
+    if (started.cookie) (await cookies()).set(stateCookieName(connector), started.cookie, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/api/connectors", maxAge: 600 });
     url = started.url;
   } catch (e) {
     return { error: e instanceof ConnectorError ? connectorMessage(e.code, connector) : "The connection could not be started. Nothing changed.", message: null };
@@ -27,5 +28,6 @@ export async function disconnectAction(_previous: ConnectionActionState, form: F
   if (!connector) return { error: "Choose a supported source.", message: null };
   try { await disconnect(connector); } catch { return { error: "The connection could not be removed. Try again.", message: null }; }
   revalidatePath("/account/connections");
-  return { error: null, message: "Disconnected. Prodwise deleted its stored access; sources you imported and their snapshots stay." };
+  // The row re-renders as "Not connected", so the confirmation travels with the page, not the button.
+  redirect(`/account/connections?disconnected=${CONNECTOR_SLUG[connector]}#connector-${CONNECTOR_SLUG[connector]}`);
 }
