@@ -45,7 +45,7 @@
   box-shadow: none;
 }
 .item:focus-visible { box-shadow: inset 0 0 0 2px var(--accent-600); }
-.item[data-tone="danger"]:hover, .item[data-tone="danger"]:focus { color: var(--state-blocked-fg); background: var(--state-blocked-bg); }
+.item[data-menu-tone="danger"]:hover, .item[data-menu-tone="danger"]:focus { color: var(--state-blocked-fg); background: var(--state-blocked-bg); }
 .item:disabled:not(#_) { opacity: 0.5; cursor: not-allowed; background: transparent; }
 .item[aria-busy="true"]:not(#_) { opacity: 1; cursor: progress; }
 .icon {

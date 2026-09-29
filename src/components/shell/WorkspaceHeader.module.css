@@ -108,6 +108,7 @@
   .headerActions { width: 100%; }
   .headerActions > * { flex: 1; }
   .metaRow { margin-top: var(--s-2); }
+  .signal { min-height: 28px; height: 28px; }
   .tab { height: 44px; }
   .header[data-condensed="true"] :is(.metaRow, .headerActions, .archived) { display: none; }
   .header[data-condensed="true"] .titleRow h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

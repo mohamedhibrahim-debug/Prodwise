@@ -199,12 +199,12 @@ function ItemBody({icon,children,description,trailing}:{icon?:ReactNode;children
 
 export function MenuLink({href,icon,description,trailing,children,prefetch=false,tone}:{href:string;icon?:ReactNode;description?:ReactNode;trailing?:ReactNode;children:ReactNode;prefetch?:boolean;tone?:'danger'}){
  const menu=useMenu();
- return <Link href={href} prefetch={prefetch} role="menuitem" tabIndex={-1} className={styles.item} data-tone={tone} data-typeahead={typeof children==='string'?children:undefined} onClick={()=>menu?.close()}><ItemBody icon={icon} description={description} trailing={trailing}>{children}</ItemBody></Link>;
+ return <Link href={href} prefetch={prefetch} role="menuitem" tabIndex={-1} className={styles.item} data-menu-tone={tone} data-typeahead={typeof children==='string'?children:undefined} onClick={()=>menu?.close()}><ItemBody icon={icon} description={description} trailing={trailing}>{children}</ItemBody></Link>;
 }
 
 export function MenuButton({onSelect,icon,description,trailing,children,disabled,tone,checked,keepOpen}:{onSelect?:()=>void;icon?:ReactNode;description?:ReactNode;trailing?:ReactNode;children:ReactNode;disabled?:boolean;tone?:'danger';checked?:boolean;keepOpen?:boolean}){
  const menu=useMenu();
- return <button type="button" role={checked===undefined?'menuitem':'menuitemradio'} aria-checked={checked} tabIndex={-1} className={styles.item} data-tone={tone} disabled={disabled} onClick={()=>{if(!keepOpen)menu?.close({returnFocus:true});onSelect?.();}}><ItemBody icon={icon} description={description} trailing={trailing}>{children}</ItemBody></button>;
+ return <button type="button" role={checked===undefined?'menuitem':'menuitemradio'} aria-checked={checked} tabIndex={-1} className={styles.item} data-menu-tone={tone} disabled={disabled} onClick={()=>{if(!keepOpen)menu?.close({returnFocus:true});onSelect?.();}}><ItemBody icon={icon} description={description} trailing={trailing}>{children}</ItemBody></button>;
 }
 
 /**
@@ -213,7 +213,7 @@ export function MenuButton({onSelect,icon,description,trailing,children,disabled
  * submission. The action's navigation closes the menu instead.
  */
 export function MenuSubmit({icon,description,trailing,children,disabled,tone,checked,name,value,pending}:{icon?:ReactNode;description?:ReactNode;trailing?:ReactNode;children:ReactNode;disabled?:boolean;tone?:'danger';checked?:boolean;name?:string;value?:string;pending?:boolean}){
- return <button type="submit" name={name} value={value} role={checked===undefined?'menuitem':'menuitemradio'} aria-checked={checked} aria-busy={pending||undefined} tabIndex={-1} className={styles.item} data-tone={tone} disabled={disabled}><ItemBody icon={pending?<span className="pw-spinner"/>:icon} description={description} trailing={trailing}>{children}</ItemBody></button>;
+ return <button type="submit" name={name} value={value} role={checked===undefined?'menuitem':'menuitemradio'} aria-checked={checked} aria-busy={pending||undefined} tabIndex={-1} className={styles.item} data-menu-tone={tone} disabled={disabled}><ItemBody icon={pending?<span className="pw-spinner"/>:icon} description={description} trailing={trailing}>{children}</ItemBody></button>;
 }
 
 export function MenuSeparator(){return <div role="separator" className={styles.separator}/>;}

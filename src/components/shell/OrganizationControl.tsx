@@ -55,7 +55,7 @@ export function OrganizationControl({identity,collapsed=false}:{identity:ShellId
     <form action={action} onReset={keepAction} onSubmit={e=>{const submitter=(e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement|null;setTarget(submitter?.value??null);}} aria-busy={pending||undefined}>
      <input type="hidden" name="scopeWorkspaceId" value={access.workspaceId}/>
      {contexts?.map(ctx=>{
-      const row={icon:<span className={styles.rowAvatar} data-demo={ctx.isDemo||undefined}>{initials(ctx.organizationName)}</span>,description:<>{ctx.role?roleShortLabel(ctx.role):'Platform access · not a member'}{ctx.isDemo&&<> · <span className={styles.inlineTag}>Synthetic demo</span></>}</>,trailing:ctx.current?<InstrumentIcon name="check"/>:undefined};
+      const row={icon:<span className={styles.rowAvatar} data-demo={ctx.isDemo||undefined}>{initials(ctx.organizationName)}</span>,description:<>{ctx.role?roleShortLabel(ctx.role):'Platform access'}{ctx.isDemo&&<> · <span className={styles.inlineTag}>Synthetic demo</span></>}</>,trailing:ctx.current?<InstrumentIcon name="check"/>:undefined};
       return ctx.current
        ?<MenuButton key={ctx.workspaceId} checked {...row}>{ctx.organizationName}</MenuButton>
        :<MenuSubmit key={ctx.workspaceId} name="workspaceId" value={ctx.workspaceId} checked={false} disabled={pending} pending={pending&&target===ctx.workspaceId} {...row}>{ctx.organizationName}</MenuSubmit>;
