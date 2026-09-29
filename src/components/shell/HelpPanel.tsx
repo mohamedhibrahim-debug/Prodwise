@@ -3,7 +3,7 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import {usePathname,useRouter} from 'next/navigation';
 import {RESTART_ORIENTATION,orientationStorageKey} from './FirstRunOrientation';
 import {InstrumentIcon} from './InstrumentIcon';
-import {OPEN_HELP} from './events';
+import {OPEN_HELP,setHelpOpen} from './events';
 import {SHORTCUT_GROUPS} from './shortcuts';
 import type {ShellIdentity} from './ShellIdentity';
 import styles from './HelpPanel.module.css';
@@ -20,6 +20,7 @@ export function HelpPanel({identity}:{identity:ShellIdentity}){
  const panel=useRef<HTMLElement>(null);const origin=useRef<HTMLElement|null>(null);const shortcuts=useRef<HTMLHeadingElement>(null);const title=useRef<HTMLHeadingElement>(null);
  const path=usePathname();const router=useRouter();
  const close=useCallback((restore=true)=>{setOpen(false);if(restore)origin.current?.focus?.({preventScroll:true});},[]);
+ useEffect(()=>{setHelpOpen(open);return()=>setHelpOpen(false);},[open]);
 
  useEffect(()=>{
   function show(e:Event){
@@ -41,7 +42,7 @@ export function HelpPanel({identity}:{identity:ShellIdentity}){
  },[open,close]);
 
  const about=helpFor(path);
- return <aside ref={panel} className={styles.panel} data-open={open||undefined} aria-labelledby="help-title" role="complementary" hidden={!open}>
+ return <aside ref={panel} className={styles.panel} data-open={open||undefined} id="help-panel" aria-labelledby="help-title" role="complementary" hidden={!open}>
   <header className={styles.head}><h2 id="help-title" ref={title} tabIndex={-1}>Help</h2><button type="button" className="pw-btn" data-variant="ghost" data-size="sm" data-icon-only="" onClick={()=>close()} aria-label="Close Help" data-tip="Close" data-tip-kbd="Esc"><InstrumentIcon name="close"/></button></header>
   <div className={styles.body}>
    <section><h3>On this page</h3><p>{about}</p></section>

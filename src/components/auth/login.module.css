@@ -151,9 +151,13 @@
 .forms > a.primaryButton { margin-block-start: var(--s-4); }
 
 /* Sign-up stepper: a horizontal track with connecting lines. */
-.steps { display: flex; align-items: center; margin: 0 0 var(--s-6); padding: 0; list-style: none; }
+.steps { display: flex; align-items: center; min-width: 0; max-width: 100%; margin: 0 0 var(--s-6); padding: 0; list-style: none; }
+/* Only the current step spells its full name; the others keep a short one, so the row never widens the column. */
+.steps li:not([aria-current]) .stepLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.stepShort { display: none; }
+.steps li:not([aria-current]) .stepShort { display: inline; }
 .steps li { display: flex; align-items: center; gap: var(--s-2); font-size: var(--t-xs); font-weight: var(--fw-medium); color: var(--ink-500); white-space: nowrap; }
-.steps li + li::before { content: ""; width: 28px; height: 1px; margin-inline: var(--s-2); background: var(--rule-strong); }
+.steps li + li::before { content: ""; width: 20px; height: 1px; margin-inline: var(--s-2); background: var(--rule-strong); }
 .steps li[data-done] + li::before { background: var(--accent-600); }
 .steps li span { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; font-size: var(--t-micro); font-weight: var(--fw-semibold); border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink-600); }
 .steps li[aria-current="step"] { color: var(--ink-900); font-weight: var(--fw-semibold); }
@@ -192,5 +196,4 @@
 @media (max-width: 480px) {
   .steps { flex-wrap: wrap; row-gap: var(--s-2); max-width: 100%; }
   .steps li + li::before { width: 16px; margin-inline: var(--s-1); }
-  .steps li:not([aria-current]) .stepLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }

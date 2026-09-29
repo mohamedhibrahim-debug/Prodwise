@@ -38,9 +38,11 @@ export function BrandMark({ size = 24, tile = true, className }: { size?: number
   const { stroke, segments } = arcSegments(size);
   return <svg viewBox="0 0 32 32" width={size} height={size} className={className} aria-hidden="true" focusable="false">
     {tile && <>
-      <rect x="0" y="0" width="32" height="32" rx="8" fill="var(--chrome-800)" />
+      <rect x="0" y="0" width="32" height="32" rx="8" fill="var(--chrome-700)" />
       <rect x="0.5" y="0.5" width="31" height="31" rx="7.5" fill="none" stroke="rgb(255 255 255 / 10%)" />
     </>}
+    {/* The centre point reads as the dial's pivot, so a lit segment is a position, not motion. */}
+    <circle cx="16" cy="16" r={size <= 26 ? 1.9 : 1.6} fill="var(--accent-400)" />
     {segments.map((s, i) => <path key={i} d={s.d} fill="none" stroke={s.current ? "var(--accent-400)" : "var(--chrome-ink)"} strokeOpacity={s.current ? 1 : 0.62} strokeWidth={s.current ? stroke + 0.6 : stroke} strokeLinecap="butt" />)}
   </svg>;
 }

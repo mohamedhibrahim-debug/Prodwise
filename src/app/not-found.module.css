@@ -26,5 +26,8 @@
 }
 
 .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
   margin-top: var(--s-6);
 }

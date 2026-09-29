@@ -5,7 +5,7 @@ import {Fragment,useSyncExternalStore} from 'react';
 import {NotificationBell} from '@/components/notifications/NotificationBell';
 import {InstrumentIcon} from './InstrumentIcon';
 import {DemoContextPill} from './OrganizationControl';
-import {openHelp,openPalette} from './events';
+import {openHelp,openPalette,isHelpOpen,subscribeHelp} from './events';
 import {useInitiativeTitle} from './shell-title';
 import type {ShellIdentity} from './ShellIdentity';
 import styles from './TopBar.module.css';
@@ -34,6 +34,7 @@ export function TopBar({identity}:{identity:ShellIdentity}){
  const path=usePathname();
  const slug=/^\/initiatives\/([^/]+)/.exec(path)?.[1];const initiativeSlug=slug&&slug!=='new'?slug:null;
  const title=useInitiativeTitle(initiativeSlug);
+ const helpOpen=useSyncExternalStore(subscribeHelp,isHelpOpen,()=>false);
  const mac=useSyncExternalStore(noSubscription,isApplePlatform,()=>true);
  const trail=crumbs(path,initiativeSlug,title);
  return <header className={styles.bar}>
@@ -43,7 +44,7 @@ export function TopBar({identity}:{identity:ShellIdentity}){
    <DemoContextPill identity={identity}/>
    <button type="button" className={styles.search} onClick={openPalette} aria-label="Search" aria-keyshortcuts={mac?'Meta+K':'Control+K'}><InstrumentIcon name="search"/><span>Search…</span><kbd className="pw-kbd">{mac?'⌘':'Ctrl'}</kbd><kbd className="pw-kbd">K</kbd></button>
    <div className={styles.bell} data-tip="Notifications" data-tip-kbd="G N"><NotificationBell compact/></div>
-   <button type="button" className="pw-btn" data-variant="ghost" data-icon-only="" onClick={()=>openHelp()} aria-label="Help" data-tip="Help" data-tip-kbd="?"><InstrumentIcon name="help"/></button>
+   <button type="button" className="pw-btn" data-variant="ghost" data-icon-only="" onClick={()=>openHelp()} aria-label="Help" aria-expanded={helpOpen} aria-controls="help-panel" data-tip="Help" data-tip-kbd="?"><InstrumentIcon name="help"/></button>
   </div>
  </header>;
 }

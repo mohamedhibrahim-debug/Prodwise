@@ -1,6 +1,8 @@
 .desktop table { table-layout: fixed; }
 /* Names and the latest-change sentence keep one line; every other value wraps to a second line rather than being cut. */
-.desktop tbody th, .desktop tbody td { white-space: normal; overflow-wrap: break-word; vertical-align: top; }
+.desktop tbody th, .desktop tbody td { white-space: normal; overflow-wrap: normal; hyphens: none; vertical-align: top; }
+/* Only the name column may break a single long token (a reference or a pasted key). */
+.desktop tbody th { overflow-wrap: anywhere; }
 .desktop tbody th > a { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cName { width: 22%; }
 .cStage { width: 14.5%; }
@@ -70,7 +72,8 @@
 .desktop tr[data-archived] th, .desktop tr[data-archived] td { opacity: 0.75; }
 @media (min-width: 781px) and (max-width: 1180px) {
   .cUpdated, .desktop th:last-child, .desktop td:last-child { display: none; }
-  .cName { width: 30%; }
+  .cName { width: 28%; }
+  .cOwner { width: 7.5rem; }
 }
 @media (max-width: 780px) {
   .desktop { display: none; }

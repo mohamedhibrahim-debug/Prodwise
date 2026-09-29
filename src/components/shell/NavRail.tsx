@@ -107,7 +107,7 @@ export function NavRail({identity,writesEnabled}:{identity:ShellIdentity;writesE
 
  return <>
   <header className={styles.mobileBar}>
-   <button ref={menuButton} type="button" className="pw-btn" data-variant="chrome" data-icon-only="" onClick={()=>drawer.current?.showModal()} aria-label="Open navigation"><InstrumentIcon name="menu"/></button>
+   <button ref={menuButton} type="button" className="pw-btn" data-variant="chrome" data-icon-only="" onClick={()=>drawer.current?.showModal()} aria-label="Open navigation" aria-haspopup="dialog"><InstrumentIcon name="menu"/></button>
    <Link href="/" className={styles.mobileBrand} aria-label="Prodwise home"><BrandMark size={20}/></Link>
    <p className={styles.mobileTitle}>{initiativeTitle&&initiativeSlug?initiativeTitle:sectionTitle(pathname)}</p>
    <button type="button" className="pw-btn" data-variant="chrome" data-icon-only="" onClick={openPalette} aria-label="Search"><InstrumentIcon name="search"/></button>
