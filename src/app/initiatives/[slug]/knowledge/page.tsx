@@ -12,6 +12,8 @@ import { attentionSentence } from "@/lib/workspace/copy";
 import { CLAIM_STATUS_LABEL, CLAIM_TYPE_LABEL, DOMAIN_LABEL, EVIDENCE_SOURCE_TYPE_LABEL, EVIDENCE_RELATION_LABEL, formatDate, displaySourceReference } from "@/lib/domain/labels";
 import { trustLine } from "@/lib/domain/trust";
 import { decisionMarkers, groupKnowledge, replacementLineage, type KnowledgeValueGroup } from "@/lib/workspace/knowledge";
+import { ButtonLink } from "@/components/primitives/Button";
+import { Segmented, TabToolbar, ToolbarChip } from "@/components/workspace/TabToolbar";
 import styles from "./knowledge.module.css";
 
 export const metadata: Metadata = { title: "Knowledge" };
@@ -31,7 +33,7 @@ export default async function KnowledgePage({ params, searchParams }: {
   if (!initiative) notFound();
   const snapshot = await repo.getInitiativeSnapshot(initiative.id);
   if (!snapshot) notFound();
-  const { claims, findingStates: states } = snapshot;const skipped=notCompared(claims);const contexts=(await readManagement()).contexts;
+  const { claims, findingStates: states } = snapshot;const skipped=notCompared(claims);const awaiting=claims.filter(c => c.status === "UNVERIFIED" || c.status === "DRAFT").length;const contexts=(await readManagement()).contexts;
   const mismatches = deriveInstrumentSnapshot(snapshot).findings.filter(finding => finding.type === "CONFLICT" && finding.status === "OPEN" && finding.actionable);
   const mismatchItems = new Map(mismatches
     .map((finding) => [JSON.stringify([normalise(finding.subject), normalise(finding.claims[0]?.attribute ?? ""), finding.phase]), finding.fingerprint]));
@@ -47,21 +49,19 @@ export default async function KnowledgePage({ params, searchParams }: {
   }
   const base = `/initiatives/${slug}/knowledge`;
   return <div className={styles.page}>
-    <div className={styles.head}><div><p className={styles.eyebrow}>Structured ledger</p><h2>Knowledge record</h2><p>What is recorded as true, its context, and the sources behind it.</p></div>
-      {isDemoWriteEnabled ? <Link prefetch={false} className={styles.action} href={`${base}/new`}>Add Knowledge entry</Link> : null}</div>
-    {skipped.length>0&&<aside className={styles.attentionBanner}>{skipped.map(pair=><p key={pair.claimIds.join('-')}>Claims about {pair.attribute} weren't compared: applicability differs or isn't recorded. <Link prefetch={false} href={`${base}?view=all#claim-${pair.claimIds[0]}`}>Review applicability</Link></p>)}</aside>}
+    <TabToolbar title="Knowledge"
+      controls={<><Segmented label="Knowledge views" items={[
+        { key: "confirmed", label: "Confirmed", count: claims.filter(c => c.status === "ACTIVE").length, href: base, current: view === "confirmed" },
+        { key: "all", label: "All current", count: claims.filter(c => c.status !== "SUPERSEDED").length, href: `${base}?view=all`, current: view === "all" },
+        { key: "replaced", label: "Replaced", count: claims.filter(c => c.status === "SUPERSEDED").length, href: `${base}?view=replaced`, current: view === "replaced" },
+      ]} />
+        {mismatchItems.size && view !== "replaced" ? <ToolbarChip tone="attention" href={`/initiatives/${slug}/decisions${mismatchItems.size === 1 ? `?item=${encodeURIComponent([...mismatchItems.values()][0]!)}` : ""}`}><span aria-hidden="true">▲</span> {mismatches.length === 1 ? "1 value differs" : `${mismatches.length} values differ`} · Decide →</ToolbarChip> : null}
+        {awaiting && view === "confirmed" ? <ToolbarChip href={`${base}?view=all`}>○ {awaiting} awaiting confirmation →</ToolbarChip> : null}
+        {skipped.length > 0 ? <ToolbarChip href={`${base}?view=all#claim-${skipped[0]!.claimIds[0]}`}>{skipped.length === 1 ? "1 pair not compared" : `${skipped.length} pairs not compared`} · applicability →</ToolbarChip> : null}</>}
+      actions={isDemoWriteEnabled ? <ButtonLink variant="primary" href={`${base}/new`}>Add Knowledge entry</ButtonLink> : null} />
+    {mismatches.length === 1 && view !== "replaced" ? <p className={styles.differs}>{attentionSentence(mismatches[0]!)}</p> : null}
     {claims.some(c=>c.contextId||c.effectiveDate)&&<details className={styles.scoped}><summary>Where entries apply — scope or start date ({claims.filter(c=>c.contextId||c.effectiveDate).length}, including replaced entries)</summary><ul>{claims.filter(c=>c.contextId||c.effectiveDate).map(c=><li key={c.id}><Link href={`${base}?view=all&contextId=${c.contextId??''}#claim-${c.id}`}>{c.subject}: {contexts.find(x=>x.id===c.contextId)?.label??'Scope not recorded'}{c.effectiveDate?` · from ${formatDate(c.effectiveDate)}`:''}</Link></li>)}</ul></details>}
-    <nav className={styles.filters} aria-label="Record filters">
-      <Link prefetch={false} href={base} aria-current={view === "confirmed" ? "page" : undefined}>Confirmed ({claims.filter(c => c.status === "ACTIVE").length} {claims.filter(c=>c.status==='ACTIVE').length===1?'entry':'entries'})</Link>
-      <Link prefetch={false} href={`${base}?view=all`} aria-current={view === "all" ? "page" : undefined}>All current ({claims.filter(c => c.status !== "SUPERSEDED").length} {claims.filter(c=>c.status!=='SUPERSEDED').length===1?'entry':'entries'})</Link>
-      <Link prefetch={false} href={`${base}?view=replaced`} aria-current={view === "replaced" ? "page" : undefined}>Replaced ({claims.filter(c => c.status === "SUPERSEDED").length} {claims.filter(c=>c.status==='SUPERSEDED').length===1?'entry':'entries'})</Link>
-    </nav>
-    {mismatchItems.size && view !== "replaced" ? <div className={styles.attentionBanner}>
-      <strong>{mismatches.length === 1 ? attentionSentence(mismatches[0]!) : `Recorded values differ in ${mismatches.length} comparisons.`}</strong>
-      <Link prefetch={false} href={`/initiatives/${slug}/decisions${mismatchItems.size === 1 ? `?item=${encodeURIComponent([...mismatchItems.values()][0]!)}` : ""}`}>Review in Decisions →</Link>
-    </div> : null}
     <div className={styles.recordLayout}><div>
-    {view === "confirmed" && claims.some(c => c.status === "UNVERIFIED" || c.status === "DRAFT") && <p className={styles.awaiting} role="note"><strong>{claims.filter(c => c.status === "UNVERIFIED" || c.status === "DRAFT").length} {claims.filter(c => c.status === "UNVERIFIED" || c.status === "DRAFT").length === 1 ? "entry is" : "entries are"} waiting for confirmation.</strong> Accepted proposals and new entries start here. <Link prefetch={false} href={`${base}?view=all`}>Review them in All current →</Link></p>}
     {subjects.size ? <div className={styles.ledgerHead}><span>Attribute / context</span><span>Recorded value</span><span>Confirmation</span><span>Provenance</span><span>Inspect</span></div> : null}
     {subjects.size ? [...subjects].map(([subject, attributes]) => { const single = [...attributes.values()].reduce((n, phases) => n + [...phases.values()].reduce((m, values) => m + values.length, 0), 0) === 1; return <section className={styles.subject} data-single={single || undefined} key={subject}>
       <h2 className={single ? styles.srOnly : undefined}>{subject}</h2>{[...attributes].map(([attribute, phases]) => <div className={styles.attribute} key={attribute}>
@@ -116,15 +116,7 @@ export default async function KnowledgePage({ params, searchParams }: {
           {values.length > 1 && view !== "replaced" && mismatchItems.has(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null])) ?
             <Link prefetch={false} className={styles.mismatch} href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(mismatchItems.get(JSON.stringify([normalise(subject), normalise(attribute), phaseKey || null]))!)}`}><span aria-hidden="true">⚠</span> Values differ in this phase — compare them in Decisions →</Link> : null}
         </div>)}</div>)}</section>; }) : <p className={styles.empty}>{view === "confirmed" ? "No confirmed Knowledge entries yet." : "No Knowledge entries in this view."}</p>}
-    </div><aside className={styles.recordContext} aria-label="Record context">
-      <h2>Recorded Knowledge</h2>
-      <dl><div><dt>Confirmed entries</dt><dd>{claims.filter(entry => entry.status === "ACTIVE").length}</dd></div>
-        <div><dt>Other current entries</dt><dd>{claims.filter(entry => entry.status !== "ACTIVE" && entry.status !== "SUPERSEDED").length}</dd></div>
-        <div><dt>Replaced entries</dt><dd>{claims.filter(entry => entry.status === "SUPERSEDED").length}</dd></div>
-      </dl>
-      <p>Confirmed records retain their original provenance. Confirmation does not guarantee that a statement is correct.</p>
-      <p>Open Sources and details to inspect each entry’s confirmation history, phase, domain and replacement lineage.</p>
-      <Link prefetch={false} href={`${base}/sources`}>Browse Sources →</Link>
-    </aside></div>
+    </div></div>
+    <p className={styles.footnote}>Confirmed entries keep their original provenance; confirmation does not guarantee a statement is correct. <Link prefetch={false} href={`${base}/sources`}>Browse Sources →</Link></p>
   </div>;
 }

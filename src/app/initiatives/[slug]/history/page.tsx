@@ -1,4 +1,3 @@
-import { SharedDemoNotice } from '@/components/demo/SharedDemoNotice';
 import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {readDelivery} from '@/lib/delivery/repository';
@@ -9,6 +8,7 @@ import {readRelationships} from '@/lib/data/relationships';
 import {readRisks} from '@/lib/data/risks';
 import {readEvidence} from '@/lib/evidence/service';
 import {buildInitiativeHistory,pageHistory,weekOf,HISTORY_CATEGORIES,CATEGORY_LABEL,type HistoryCategory,type HistoryEvent} from '@/lib/workspace/history';
+import {TabToolbar} from '@/components/workspace/TabToolbar';
 import styles from './history.module.css';
 import { cairoDay } from "@/lib/delivery/model";
 export const metadata={title:'History'};export const dynamic='force-dynamic';
@@ -28,20 +28,15 @@ export default async function History({params,searchParams}:{params:Promise<{slu
  const weeks:{key:string;label:string;events:HistoryEvent[]}[]=[];for(const e of page.events){const w=weekOf(e.at);const last=weeks.at(-1);if(last?.key===w.key)last.events.push(e);else weeks.push({...w,events:[e]});}
  const created=all.find(e=>e.label==='Created');
  return <div className={styles.page}>
-  <header className={styles.heading}><div><p className={styles.eyebrow}>{i.name}</p><h2>History</h2><p>How this initiative evolved — decisions, delivery movement, commitments, questions and relationships, each with who changed it and why.</p><SharedDemoNotice presentation={d.presentation}/></div><p className={styles.count}><strong>{all.length}</strong> recorded {all.length===1?'event':'events'}<br/>Times in Cairo time</p></header>
-  <form className={styles.filters} action={`${base}/history`}>
-   <details className={styles.filterSheet} open><summary>Filters{selected.length?` · ${selected.length}`:''}</summary>
-    <div className={styles.chips} role="group" aria-label="Filter by kind"><Link prefetch={false} href={href({c:[]})} className={styles.chip} aria-pressed={selected.length===0}>All<span className={styles.chipCount}>{all.length}</span></Link>{HISTORY_CATEGORIES.filter(c=>counts[c]).map(c=><Link key={c} prefetch={false} href={toggle(c)} className={styles.chip} aria-pressed={selected.includes(c)}><span aria-hidden="true">{GLYPH[c]}</span>{CATEGORY_LABEL[c]}<span className={styles.chipCount}>{counts[c]}</span></Link>)}{(selected.length>0||text)&&<Link prefetch={false} className={styles.clear} href={`${base}/history`}>Clear</Link>}</div>
-   </details>
-   {selected.length>0&&<input type="hidden" name="c" value={selected.join(',')}/>}
-   <label className={styles.search}><span className={styles.srOnly}>Search history</span><input type="search" name="q" defaultValue={text} placeholder="Search history…"/></label>
-  </form>
+  <TabToolbar title="History" summary={<><strong>{all.length}</strong> recorded {all.length===1?'event':'events'} · times in Cairo</>}
+   actions={<form className={styles.search} action={`${base}/history`}>{selected.length>0&&<input type="hidden" name="c" value={selected.join(',')}/>}<label><span className={styles.srOnly}>Search history</span><input type="search" name="q" defaultValue={text} placeholder="Search history…"/></label></form>}/>
+  <div className={styles.chips} role="group" aria-label="Filter by kind"><Link prefetch={false} href={href({c:[]})} className={styles.chip} aria-pressed={selected.length===0}>All<span className={styles.chipCount}>{all.length}</span></Link>{HISTORY_CATEGORIES.filter(c=>counts[c]).map(c=><Link key={c} prefetch={false} href={toggle(c)} className={styles.chip} aria-pressed={selected.includes(c)}><span aria-hidden="true">{GLYPH[c]}</span>{CATEGORY_LABEL[c]}<span className={styles.chipCount}>{counts[c]}</span></Link>)}{(selected.length>0||text)&&<Link prefetch={false} className={styles.clear} href={`${base}/history`}>Clear</Link>}{(selected.length>0||text)&&<span className={styles.chipCount}>{page.total} matching</span>}</div>
   {!all.length?<p className={styles.empty}>{created?`Created by ${created.actor}, ${time(created.at)}. Changes will appear here.`:'Nothing has been recorded for this initiative yet. Changes will appear here as people confirm facts, decisions and commitments.'}</p>
   :!page.events.length?<p className={styles.empty}>No events match these filters. <Link prefetch={false} href={`${base}/history`}>Clear filters</Link></p>
   :<ol className={styles.timeline} aria-label={`History of ${i.name}, newest first`}>{weeks.map(w=><li key={w.key} className={styles.week}><h3 className={styles.weekHead}>{w.label}</h3><ol>{w.events.map(e=><li key={e.id} className={styles.event} data-category={e.category.toLowerCase()}>
    <span className={styles.marker} aria-hidden="true">{GLYPH[e.category]}</span>
-   <div className={styles.body}><p className={styles.meta}><span className={styles.kind}>{e.label}</span><time dateTime={e.at}>{time(e.at)}</time><span>{e.actor}</span></p>
-    <p className={styles.sentence}>{e.sentence}</p>
+   <div className={styles.body}><p className={styles.sentence}>{e.sentence}</p>
+    <p className={styles.meta}><span className={styles.kind}>{e.label}</span><span>{e.actor}</span><time dateTime={e.at}>{time(e.at)}</time></p>
     {e.rationale&&<blockquote className={styles.rationale}>{e.rationale}</blockquote>}
     {(e.href||e.provenance)&&<p className={styles.links}>{e.href&&<Link prefetch={false} href={e.href}>{e.hrefLabel??'Open'} →</Link>}{e.provenance&&(e.provenance.href?<Link prefetch={false} href={e.provenance.href}>{e.provenance.label}</Link>:<span>{e.provenance.label}</span>)}</p>}
    </div></li>)}</ol></li>)}</ol>}

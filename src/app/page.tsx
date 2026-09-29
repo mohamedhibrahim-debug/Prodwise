@@ -51,7 +51,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{organiz
  <FirstRunOrientation identity={{access:d.ctx,presentation:d.presentation,guest}}/>
  <header className={styles.header}>
   <div><h1 tabIndex={query.organizationChanged?-1:undefined}>{d.presentation.organizationName}</h1>
-   <p className={styles.meta}>{p.summary.total} active {p.summary.total===1?'initiative':'initiatives'} · {d.presentation.isDemo?<>Synthetic demo · scenario date <time dateTime={p.today}>{displayDate(p.today)}</time></>:<>As of <time dateTime={p.today}>{displayDate(p.today)}</time></>}</p></div>
+   <p className={styles.meta}>{p.summary.total} active {p.summary.total===1?'initiative':'initiatives'} · {d.presentation.isDemo?'dated to the Demo scenario day shown above':<>As of <time dateTime={p.today}>{displayDate(p.today)}</time></>}</p></div>
   {writer&&<ButtonLink href="/initiatives/new">Create initiative</ButtonLink>}
  </header>
  {p.summary.total>0&&<nav className={styles.pulse} aria-label="Portfolio pulse">{pulse.length?<ul>{pulse.map(item=><li key={item.key}><Link prefetch={false} href={item.href} data-tone={item.tone}><strong>{item.count}</strong><span>{item.label}</span></Link></li>)}</ul>:<p>Nothing is flagged under the current checks. This is not a readiness assessment.</p>}</nav>}

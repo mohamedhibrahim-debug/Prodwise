@@ -21,3 +21,16 @@
 .possibleDuplicate{margin-top:var(--s-1);font-size:var(--t-xs);color:var(--state-at-risk-fg)}
 .awaiting{margin:var(--s-3) 0;padding:var(--s-3) var(--s-4);border-inline-start:3px solid var(--state-at-risk-edge);background:var(--state-at-risk-bg);font-size:var(--t-sm);line-height:var(--lh-body)}.awaiting a{color:var(--accent-700);font-weight:var(--fw-semibold)}
 .scoped{margin:var(--s-2) 0;font-size:var(--t-sm)}.scoped summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var(--accent-700);font-weight:var(--fw-semibold)}.scoped ul{list-style:none;padding:0;display:grid;gap:var(--s-1)}.scoped a{color:var(--accent-700)}
+
+/* Tab toolbar layout (replaces the tab-level heading, view tabs and banners). */
+.page{padding-top:0}
+.differs{margin:0 0 var(--s-3);font-size:var(--t-sm);color:var(--attention-fg)}
+.scoped{margin-bottom:var(--s-3);font-size:var(--t-sm)}
+.recordLayout>div{border:1px solid var(--rule);border-top:1px solid var(--rule);border-radius:var(--r-lg);overflow:hidden}
+.ledgerHead{font-size:var(--t-xs);text-transform:none;letter-spacing:0;font-weight:var(--fw-semibold);background:var(--surface-sunken);border-bottom:1px solid var(--rule-strong);white-space:nowrap}
+.ledgerHead span{overflow:hidden;text-overflow:ellipsis}
+.value{padding-block:var(--s-2)}
+.subject>h2{color:var(--ink-900);background:var(--surface-subtle);border-block:1px solid var(--rule)}
+.rowStatus>span{border-radius:var(--r-pill);font-size:var(--t-xs)}
+.footnote{margin-top:var(--s-3);font-size:var(--t-xs);color:var(--ink-500)}
+.footnote a{color:var(--accent-700)}

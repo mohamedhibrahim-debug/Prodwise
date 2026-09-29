@@ -298,8 +298,11 @@
 }
 .contextNotice {
   font-size: var(--t-xs);
-  color: var(--ink-400);
+  color: var(--ink-500);
   line-height: var(--lh-body);
+  padding: 2px var(--s-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
 }
 @media (min-width: 1200px) {
   .reviewLayout {
@@ -350,3 +353,6 @@
   color: var(--navy-900);
 }
 .contextMeta{font-size:var(--t-xs);color:var(--ink-500);font-weight:var(--fw-regular)}
+
+/* Tab page frame: same gutter as the persistent initiative header, content starts under the tab toolbar. */
+.tabPage{max-width:var(--content-max);margin:auto;padding:0 var(--gutter) var(--s-12)}

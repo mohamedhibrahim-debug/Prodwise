@@ -798,3 +798,18 @@
 .decisionPanel .primaryDecision{background:var(--navy-900);color:var(--panel);border-color:var(--navy-900);font-weight:600}.decisionForm[open]>.primaryDecision{background:var(--panel);color:var(--ink-900);border-color:var(--rule-strong)}.decisionPanel .submit{background:var(--panel);color:var(--ink-900);border-color:var(--rule-strong)}.decisionPanel .primarySubmit{background:var(--navy-900);color:var(--panel);border-color:var(--navy-900)}.decisionPanel .noteTrigger{border:0;background:transparent;padding:0;display:grid;gap:var(--s-1);text-align:left;color:var(--accent-700)}.noteTrigger>span{text-decoration:underline;text-underline-offset:3px}.noteTrigger small{color:var(--ink-500);font-size:var(--t-xs);font-weight:400}.mobileDecisionJump{background:var(--panel);color:var(--accent-700);border:1px solid var(--rule-strong);border-radius:var(--r-sm)}
 .decisionPanel .submit:not(.primarySubmit):hover:not(:disabled){background:var(--surface-subtle);color:var(--ink-900);border-color:var(--accent-700)}
 .decisionPanel .resolveDisclosure{width:100%;margin-inline:0;justify-self:stretch;display:block}
+
+/* Button system: the one primary action (Make a decision / submit) uses the
+   accent fill; navy is chrome, never an action. Secondary controls are outlined. */
+.decisionPanel .primaryDecision,.decisionPanel .primarySubmit{background:var(--accent-600);color:var(--surface);border-color:var(--accent-600);font-weight:var(--fw-semibold)}
+.decisionPanel .primaryDecision:hover,.decisionPanel .primarySubmit:hover:not(:disabled){background:var(--accent-700);border-color:var(--accent-700)}
+.decisionForm[open]>.primaryDecision{background:var(--surface);color:var(--ink-900);border-color:var(--rule-strong)}
+.decisionPanel{background:var(--surface-sunken);border-radius:var(--r-lg)}
+.panelHeading{background:none;color:var(--ink-900);border-bottom:1px solid var(--rule)}
+.panelHeading h3{color:var(--ink-900)}
+.comparisonPanel{border:1px solid var(--rule);border-top:3px solid var(--attention-rule);border-radius:var(--r-lg)}
+.lineage{border-top:3px solid var(--rule-strong)}
+.versus{background:var(--ink-700)}
+.kindLabel{background:none}
+.readOnlyNote{margin-top:var(--s-3);font-size:var(--t-xs);color:var(--ink-500)}
+@media(max-width:780px){.mobileDecisionJump{background:var(--surface);color:var(--accent-700)}}

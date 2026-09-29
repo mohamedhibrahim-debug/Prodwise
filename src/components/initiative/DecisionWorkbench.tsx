@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import type { DecisionLaneKey } from "@/lib/workspace/decision-lanes";
+import { Segmented, TabToolbar } from "@/components/workspace/TabToolbar";
 import styles from "./DecisionWorkbench.module.css";
 
 export interface WorkbenchLane {
@@ -12,9 +13,13 @@ export interface WorkbenchLane {
   empty: ReactNode;
 }
 
-/** Presentation only: server-rendered records and existing action forms remain intact. */
-export function DecisionWorkbench({ lanes, initialItem, children }: {
-  lanes: WorkbenchLane[]; initialItem?: string; children: ReactNode;
+/**
+ * Presentation only: server-rendered records and existing action forms remain
+ * intact. The lanes are a segmented control in the tab toolbar; a lane with
+ * several items shows a compact list beside the selected item.
+ */
+export function DecisionWorkbench({ lanes, initialItem, summary, actions }: {
+  lanes: WorkbenchLane[]; initialItem?: string; summary?: ReactNode; actions?: ReactNode;
 }) {
   const [selection, setSelection] = useState<{ lane: DecisionLaneKey; id?: string } | null>(null);
   const requested = selection ? selection.id : initialItem;
@@ -40,27 +45,21 @@ export function DecisionWorkbench({ lanes, initialItem, children }: {
   }, [lanes]);
 
   return <div className={styles.workbench}>
-    <nav className={styles.queue} aria-label="Decision lanes">
-      <p className={styles.label}>Decision queue</p>
-      {lanes.map(lane => <div key={lane.key}>
-        <button type="button" className={styles.lane} aria-current={current.key === lane.key ? "true" : undefined}
-          aria-controls={`lane-${lane.key}`} onClick={() => setSelection({ lane: lane.key, id: lane.items[0]?.id })}>
-          <strong>{lane.title}</strong><b>{lane.items.length}</b><span>{lane.description}</span>
-        </button>
-        {current.key === lane.key && lane.items.length > 1 ? <ul className={styles.items}>{lane.items.map(item => <li key={item.id}>
-          <button type="button" aria-pressed={activeId === item.id} onClick={() => {
-            setSelection({ lane: lane.key, id: item.id });
-            requestAnimationFrame(() => document.getElementById(`item-${item.id}`)?.focus());
-          }}><strong>{item.title}</strong><span>{item.value}</span></button>
-        </li>)}</ul> : null}
-      </div>)}
-      {children}
-    </nav>
-    <div className={styles.panes}>
-      {lanes.map(lane => <section id={`lane-${lane.key}`} key={lane.key} hidden={current.key !== lane.key} aria-label={lane.title}>
-        {!lane.items.length && <div className={styles.heading}><h2>{lane.title}</h2><p>{lane.description}</p></div>}
-        {lane.items.length ? lane.items.map(item => <div key={item.id} hidden={activeId !== item.id}><ul>{item.body}</ul></div>) : <div className={styles.empty}>{lane.empty}</div>}
-      </section>)}
-    </div>
+    <TabToolbar title="Decisions" summary={summary}
+      controls={<Segmented label="Decision lanes" items={lanes.map(lane => ({ key: lane.key, label: lane.title, count: lane.items.length, current: current.key === lane.key, onSelect: () => setSelection({ lane: lane.key, id: lane.items[0]?.id }) }))} />}
+      actions={actions} />
+    {lanes.map(lane => <section id={`lane-${lane.key}`} key={lane.key} hidden={current.key !== lane.key} aria-label={lane.title}>
+      <p className={styles.laneNote}>{lane.description}</p>
+      {!lane.items.length ? <div className={styles.empty}>{lane.empty}</div>
+        : <div className={lane.items.length > 1 ? styles.split : undefined}>
+          {lane.items.length > 1 ? <ul className={styles.items} aria-label={`${lane.title} items`}>{lane.items.map(item => <li key={item.id}>
+            <button type="button" aria-pressed={activeId === item.id} onClick={() => {
+              setSelection({ lane: lane.key, id: item.id });
+              requestAnimationFrame(() => document.getElementById(`item-${item.id}`)?.focus());
+            }}><strong>{item.title}</strong><span>{item.value}</span></button>
+          </li>)}</ul> : null}
+          <div className={styles.detail}>{lane.items.map(item => <div key={item.id} hidden={activeId !== item.id}><ul className={styles.bodyList}>{item.body}</ul></div>)}</div>
+        </div>}
+    </section>)}
   </div>;
 }
