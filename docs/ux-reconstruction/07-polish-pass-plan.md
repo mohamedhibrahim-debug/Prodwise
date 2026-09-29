@@ -123,3 +123,22 @@ Label "Ask Prodwise"; no persona, no provider name in the UI; existing mark, nav
 | D7 | Rate-limit storage | DB-backed counter table on hosted; in-memory locally |
 | D8 | Assistant preferences storage | `users.preferences jsonb` (one migration) |
 | D9 | Demo guests | Allowed with a lower limit; answers labelled synthetic |
+
+## Execution: waves and workstreams (source of truth for ownership)
+
+Wave 1 — shared foundations: **done** (`e673451`): tokens and semantic roles, Light rework, Dark Mode + preference, filter selection, StatStrip, `src/lib/assistant/recommend.ts` (deterministic Next Best Actions).
+
+Wave 2 — parallel product surfaces, each in its own worktree from the same base:
+
+| Agent | Owns (may edit) | Must not edit |
+|---|---|---|
+| B — Core product experience | `src/app/page.tsx`, `src/app/home.module.css`, `src/app/initiatives/[slug]/page.tsx` + `brief.module.css`, `src/app/weekly-review/**`, `src/components/weekly/**`, `src/components/initiative/OverviewBlocks*`, `src/app/notifications/**`, `src/components/shell/CommandPalette*` (polish only), `src/components/shell/WorkspaceTabs.tsx` (m4/m5), `src/lib/assistant/recommend*` (consumer fixes), new `src/components/workspace/LifecycleStrip*`, `src/components/initiative/DeliveryRow*` | tokens/global/controls CSS, Popover, StatStrip, Roadmap, Analysis, admin, connectors |
+| C — Planning & measurement | `src/components/roadmap/**`, `src/lib/workspace/roadmap-layout*`, `src/app/roadmap/**`, `src/app/analysis/**`, `src/components/analysis/**`, `src/lib/analysis/**`, `src/lib/demo/**` (v4 generation), `scripts/demo/**`, new migration `supabase/migrations/0045_*.sql` (metric setup), new metric actions | tokens/global/controls CSS, Popover, StatStrip, Home/Brief/Weekly, admin, connectors |
+| D — Administration & integrations | `src/app/administration/**`, `src/app/platform/**`, `src/app/users/**`, `src/components/admin/**`, `src/app/account/connections/**`, `src/components/connectors/**`, `src/lib/connectors/**` (recovery copy, scope verification only), `src/app/api/connectors/**` | tokens/global/controls CSS, Popover, StatStrip, auth authorization semantics, product surfaces |
+| E — Ask Prodwise (Wave 2: backend + language + tests only; Wave 3: panel + shell mount) | new `src/lib/assistant/{context,starters,language,answer,preferences}*`, new `src/app/api/assistant/**`, Wave 3: new `src/components/assistant/**`, one mount line in `ApplicationShell`, an Account section, a preferences migration | everything else |
+
+Shared-file rule: a workstream that needs a new token or a change to a shared primitive adds a component-local custom property derived from existing tokens, and lists it in its final report; the lead folds it into tokens.css at merge. No agent edits `tokens.css`, `global.css`, `controls.css`, `Popover.*`, `StatStrip.*`, `theme-preference.*`.
+
+Merge order: B → C → D → E, each merged by the lead after its gates, with a rendered check in both themes.
+
+Wave 3 — Ask Prodwise UI integration. Wave 4 — brand, responsive, accessibility sweep across all surfaces (lead + A). Wave 5 — final integrated acceptance.
