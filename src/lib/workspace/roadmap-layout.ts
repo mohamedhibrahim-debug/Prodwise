@@ -135,6 +135,15 @@ export function rowMarks(item: RoadmapItem, w: RoadmapWindow): RowMarks | null {
   };
 }
 
+/**
+ * "Dependency date impact" is the shared portfolio attention reason, counted per
+ * initiative on either end of a late dependency — the same number Analysis,
+ * Home and the register show. Never a count of relationship rows.
+ */
+export function hasDependencyImpact(item: Pick<RoadmapItem, 'attention'>): boolean {
+  return item.attention.some(a => a.kind === 'DEPENDENCY');
+}
+
 export function applyFilters(items: RoadmapItem[], f: Pick<RoadmapFilters, 'businessLine' | 'owner' | 'view'>): RoadmapItem[] {
   return items.filter(i =>
     (!f.businessLine || i.businessLine === f.businessLine) &&
@@ -142,7 +151,7 @@ export function applyFilters(items: RoadmapItem[], f: Pick<RoadmapFilters, 'busi
     (f.view === 'attention' ? i.attention.length > 0
       : f.view === 'unknown' ? !i.target
       : f.view === 'moved' ? Boolean(i.movement)
-      : f.view === 'dependency' ? i.dependencies.some(d => d.late)
+      : f.view === 'dependency' ? hasDependencyImpact(i)
       : true));
 }
 

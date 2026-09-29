@@ -15,7 +15,7 @@ export function DecisionRecord({ state, slug }: { state: FindingState; slug: str
     <p className={styles.resolutionText}>{state.resolution}</p>
     <p className={styles.facts}>Confirmed with: {state.confirmedWith ?? "Not recorded"}</p>
     <p className={styles.facts}>Recorded by {state.actorLabel ?? "Not recorded"}
-      {state.resolvedAt ? ` · ${formatDateTime(state.resolvedAt)} UTC` : ""}</p>
+      {state.resolvedAt ? ` · ${formatDateTime(state.resolvedAt)} Cairo` : ""}</p>
     {claimId ? <Link className={styles.claimLink} href={`/initiatives/${slug}/knowledge?view=all#claim-${claimId}`}>Open value in Knowledge →</Link> : null}
   </li>;
 }

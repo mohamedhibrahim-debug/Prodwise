@@ -37,13 +37,12 @@ export async function WorkspaceHeader({initiative}:{initiative:Initiative}){
    <div className={styles.metaRow}>
     <span className={styles.chip} data-kind="stage"><InitiativeArc stage={initiative.stage} size={16}/>{STAGE_LABEL[initiative.stage]}</span>
     <span className={styles.chip}><BusinessLine code={initiative.businessLine}/></span>
-    <span className={styles.chip} data-kind="owner">{owner?<><span className={styles.avatar} aria-hidden="true">{initials(owner.displayName)}</span><span><span className="visually-hidden">Owner </span>{owner.displayName}</span></>:<span className={styles.muted}>No owner recorded</span>}</span>
+    <span className={styles.chip} data-kind="owner">{owner?<><span className={styles.avatar} aria-hidden="true">{initials(owner.displayName)}</span><span><span className="visually-hidden">Owner </span>{owner.displayName}</span></>:<span className={styles.muted}><span className="visually-hidden">Owner </span>Unassigned</span>}</span>
     {row&&<>
      {!row.setup.ready&&<Link prefetch={false} className={styles.signal} data-tone="open" href={`/initiatives/${initiative.slug}/setup?step=review`}><span aria-hidden="true">○</span>{row.setup.label} · {row.setup.completed}/{row.setup.total}</Link>}
      <Link prefetch={false} className={styles.signal} data-tone={row.attention.length?'attention':'neutral'} href={`/initiatives/${initiative.slug}#attention`}><span aria-hidden="true">{row.attention.length?'▲':'·'}</span>{row.attention.length?`${row.attention.length} need attention`:row.snapshot.claims.length?'No open items in current checks':'Not assessed'}</Link>
     </>}
     {initiative.isDemo&&<span className={styles.chip} data-kind="demo">Synthetic demo</span>}
-    {viewer&&<span className={styles.chip}>Viewer · read-only</span>}
    </div>
    {initiative.archivedAt&&<p role="status" className={styles.archived}>Archived · read-only. Records and history are preserved. An administrator can restore this initiative in Manage initiative.</p>}
    <WorkspaceTabs slug={initiative.slug}/>

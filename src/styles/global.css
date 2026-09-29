@@ -183,7 +183,9 @@ a:has(> .link-pending){position:relative}
 
 /* Business line (see BusinessLine): codes shown exactly, as a quiet identifier chip. */
 .business-line{display:inline-flex;align-items:baseline;gap:var(--s-1);white-space:nowrap}
-.business-line[data-code]{font-size:var(--t-xs);font-weight:var(--fw-semibold);letter-spacing:var(--ls-micro);padding:0 var(--s-1);border:1px solid var(--rule-strong);border-radius:var(--r-xs);color:var(--ink-700);line-height:1.5}
+/* Every recorded business line reads the same way — a quiet tag, code or name alike. */
+.business-line:not([data-empty]){font-size:var(--t-xs);font-weight:var(--fw-medium);padding:0 var(--s-1);border:1px solid var(--rule-strong);border-radius:var(--r-xs);color:var(--ink-700);line-height:1.5}
+.business-line[data-code]{font-weight:var(--fw-semibold);letter-spacing:var(--ls-micro)}
 .business-line small{font-weight:var(--fw-regular);color:var(--ink-500);letter-spacing:normal}
 .business-line[data-empty]{color:var(--ink-500)}
 

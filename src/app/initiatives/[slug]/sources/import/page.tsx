@@ -5,6 +5,7 @@ import { businessWritePresentation } from "@/lib/auth/presentation";
 import { connectorOverview, readSyncs } from "@/lib/connectors/service";
 import { CONNECTOR_LABEL, CONNECTOR_SLUG, CONNECTORS, connectorFromSlug, connectorMessage, type Connector } from "@/lib/connectors/types";
 import { ConnectorButton } from "@/components/connectors/ConnectorButton";
+import { ButtonLink } from "@/components/primitives/Button";
 import { ImportWorkspace } from "@/components/connectors/ImportWorkspace";
 import { ProviderIcon } from "@/components/connectors/icons";
 import { ConnectionPill } from "@/components/connectors/ConnectionPill";
@@ -45,7 +46,7 @@ export default async function ImportSources({ params, searchParams }: { params: 
     {isDemo ? <p className={styles.notice} role="status">{connectorMessage("DEMO_ORGANIZATION", connector)}</p>
     : initiative.archivedAt ? <p className={styles.notice} role="status">Archived — restore this initiative to import sources.</p>
     : !write.enabled ? <p className={styles.notice} role="status">{write.message} Importing sources changes the initiative’s evidence.</p>
-    : !o.ready ? <div className={styles.notice}><p>{connectorMessage("NOT_CONFIGURED", connector)}</p><Link prefetch={false} href={`/initiatives/${slug}/knowledge/sources/new`}>Record a reference instead</Link></div>
+    : !o.ready ? <div className={styles.notice}><p>{connectorMessage("NOT_CONFIGURED", connector)}</p><ButtonLink variant="secondary" size="sm" href={`/initiatives/${slug}/knowledge/sources/new`}>Record a reference instead</ButtonLink></div>
     : o.status !== "CONNECTED" ? <div className={styles.connectPanel}>
         <ProviderIcon connector={connector} size={28} />
         <div><h3>{o.status === "NEEDS_RECONNECT" ? `Reconnect ${label}` : `Connect ${label}`}</h3><p>{o.status === "NEEDS_RECONNECT" ? connectorMessage("NEEDS_RECONNECT", connector) : connectorMessage("NOT_CONNECTED", connector)} You’ll come straight back here.</p></div>

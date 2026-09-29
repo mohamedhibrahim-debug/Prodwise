@@ -2,7 +2,10 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
-import { applyFilters, filtersToQuery, groupItems, type RoadmapFilters, type RoadmapItem, type RoadmapView as ViewKey } from "@/lib/workspace/roadmap-layout";
+import { DateChip, FilterBar, type FilterFacet } from "@/components/workspace/FilterBar";
+import { formatDate } from "@/lib/domain/labels";
+import type { ListFilterState } from "@/lib/workspace/list-filter";
+import { applyFilters, filtersToQuery, hasDependencyImpact, groupItems, type RoadmapFilters, type RoadmapItem, type RoadmapView as ViewKey } from "@/lib/workspace/roadmap-layout";
 import { RoadmapTimeline } from "./RoadmapTimeline";
 import { RoadmapDetails } from "./RoadmapDetails";
 import styles from "./RoadmapView.module.css";
@@ -24,7 +27,7 @@ const VIEWS: { value: ViewKey; label: string; count: (items: RoadmapItem[]) => n
   { value: "", label: "All initiatives", count: i => i.length },
   { value: "attention", label: "Needs attention", count: i => i.filter(x => x.attention.length).length },
   { value: "moved", label: "Target changes", count: i => i.filter(x => x.movement).length },
-  { value: "dependency", label: "Dependency date impact", count: i => i.filter(x => x.dependencies.some(d => d.late)).length },
+  { value: "dependency", label: "Dependency date impact", count: i => i.filter(hasDependencyImpact).length },
   { value: "unknown", label: "No Target Live", count: i => i.filter(x => !x.target).length },
 ];
 
@@ -52,6 +55,13 @@ export function RoadmapView({ items, lines, owners, initial, cutoff, explicitCut
   const visible = useMemo(() => applyFilters(items, filters), [items, filters]);
   const grouped = useMemo(() => groupItems(visible, filters.group), [visible, filters.group]);
   const filtered = Boolean(filters.businessLine || filters.owner || filters.view);
+  // The register's filter grammar: single-choice chips over the same rows, counted given the other filters.
+  const listState: ListFilterState = { q: "", sort: null, filters: { ...(filters.businessLine ? { businessLine: [filters.businessLine] } : {}), ...(filters.owner ? { owner: [filters.owner] } : {}) } };
+  const countFor = (key: "businessLine" | "owner", value: string) => applyFilters(items, { ...filters, [key]: value }).length;
+  const facets: FilterFacet[] = [
+    ...(lines.length > 1 ? [{ key: "businessLine", label: "Business line", single: true, options: lines.map(l => ({ value: l.value, label: l.label })), counts: new Map(lines.map(l => [l.value, countFor("businessLine", l.value)])) }] : []),
+    { key: "owner", label: "Owner", single: true, options: [...owners, { value: "unassigned", label: "Unassigned" }], counts: new Map([...owners.map(o => o.value), "unassigned"].map(v => [v, countFor("owner", v)])) },
+  ];
 
   return <div className={styles.root}>
     <div className={styles.toolbar}>
@@ -63,32 +73,17 @@ export function RoadmapView({ items, lines, owners, initial, cutoff, explicitCut
           </button>;
         })}
       </div>
-      <div className={styles.controls}>
-        <label className={styles.field}><span>Business line</span>
-          <select value={filters.businessLine} onChange={e => update({ businessLine: e.target.value })}>
-            <option value="">All business lines</option>
-            {lines.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-          </select>
-        </label>
-        <label className={styles.field}><span>Owner</span>
-          <select value={filters.owner} onChange={e => update({ owner: e.target.value })}>
-            <option value="">All owners</option>
-            {owners.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            <option value="unassigned">Unassigned</option>
-          </select>
-        </label>
-        <label className={styles.field}><span>Review cutoff</span>
-          <input type="date" defaultValue={cutoff} key={cutoff} onChange={e => changeCutoff(e.target.value)} aria-describedby="roadmap-cutoff-note" />
-        </label>
-        <div className={styles.field} role="group" aria-label="Group by">
-          <span aria-hidden="true">Group by</span>
-          <div className={styles.segment}>
-            <button type="button" aria-pressed={filters.group === "businessLine"} onClick={() => update({ group: "businessLine" })}>Business line</button>
-            <button type="button" aria-pressed={filters.group === "owner"} onClick={() => update({ group: "owner" })}>Owner</button>
+      <FilterBar state={listState} onChange={next => update({ businessLine: next.filters.businessLine?.[0] ?? "", owner: next.filters.owner?.[0] ?? "" })}
+        facets={facets} search={false} searchLabel="Filter the roadmap" result={`${visible.length} of ${items.length} ${items.length === 1 ? "initiative" : "initiatives"}`}>
+        <div className={styles.trailing}>
+          <DateChip label={cutoffLabel} value={cutoff} display={formatDate(cutoff)} active={Boolean(explicitCutoff)}
+            onChange={changeCutoff} onReset={() => changeCutoff("")} resetLabel={`Return to the ${reference.label.toLowerCase()}`} />
+          <div className={styles.segment} role="group" aria-label="Group by">
+            <button type="button" aria-pressed={filters.group === "businessLine"} onClick={() => update({ group: "businessLine" })}>By business line</button>
+            <button type="button" aria-pressed={filters.group === "owner"} onClick={() => update({ group: "owner" })}>By owner</button>
           </div>
         </div>
-        {filtered && <Button type="button" variant="ghost" className={styles.clear} onClick={() => update({ businessLine: "", owner: "", view: "" })}>Clear filters</Button>}
-      </div>
+      </FilterBar>
     </div>
     <p id="roadmap-cutoff-note" className={styles.note} aria-live="polite">{pending ? "Updating to the selected cutoff…" : note}</p>
 

@@ -183,7 +183,7 @@ function ConflictRow({
         <p>{finding.previousDecision.outcome === "CHOSE_EXISTING" ? "Chosen value" : "Corrected value"}: {finding.previousDecision.decidedValue}</p>
         <p>{finding.previousDecision.rationale}</p>
         <p>Confirmed with: {previousConfirmedWith ?? "Not recorded"}</p>
-        <p>{formatDateTime(finding.previousDecision.decidedAt)} UTC</p>
+        <p>{formatDateTime(finding.previousDecision.decidedAt)} Cairo</p>
       </details> : null}
       <ResolutionNote finding={finding} />
       </div>

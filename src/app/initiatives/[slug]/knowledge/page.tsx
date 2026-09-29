@@ -48,6 +48,7 @@ export default async function KnowledgePage({ params, searchParams }: {
     phases.set(phaseKey, [...(phases.get(phaseKey) ?? []), group]);
   }
   const base = `/initiatives/${slug}/knowledge`;
+  const legacyUnverified = visible.some(c => !c.verifiedAt && c.origin === "LEGACY" && !decisionMarkers(c, states).some(m => m.resolvedAt));
   return <div className={styles.page}>
     <TabToolbar title="Knowledge"
       controls={<><Segmented label="Knowledge views" items={[
@@ -63,6 +64,7 @@ export default async function KnowledgePage({ params, searchParams }: {
     {claims.some(c=>c.contextId||c.effectiveDate)&&<details className={styles.scoped}><summary>Where entries apply — scope or start date ({claims.filter(c=>c.contextId||c.effectiveDate).length}, including replaced entries)</summary><ul>{claims.filter(c=>c.contextId||c.effectiveDate).map(c=><li key={c.id}><Link href={`${base}?view=all&contextId=${c.contextId??''}#claim-${c.id}`}>{c.subject}: {contexts.find(x=>x.id===c.contextId)?.label??'Scope not recorded'}{c.effectiveDate?` · from ${formatDate(c.effectiveDate)}`:''}</Link></li>)}</ul></details>}
     <div className={styles.recordLayout}><div>
     {subjects.size ? <div className={styles.ledgerHead}><span>Attribute / context</span><span>Recorded value</span><span>Confirmation</span><span>Provenance</span><span>Inspect</span></div> : null}
+    {legacyUnverified ? <p className={styles.legend}><span aria-hidden="true">—</span> Verification history not recorded — these entries predate confirmation tracking.</p> : null}
     {subjects.size ? [...subjects].map(([subject, attributes]) => { const single = [...attributes.values()].reduce((n, phases) => n + [...phases.values()].reduce((m, values) => m + values.length, 0), 0) === 1; return <section className={styles.subject} data-single={single || undefined} key={subject}>
       <h2 className={single ? styles.srOnly : undefined}>{subject}</h2>{[...attributes].map(([attribute, phases]) => <div className={styles.attribute} key={attribute}>
         {[...phases].map(([phaseKey, values]) => <div className={styles.phase} key={phaseKey}>
@@ -79,7 +81,10 @@ export default async function KnowledgePage({ params, searchParams }: {
                 </div>; })}
               </div>
               <div role="group" aria-label="Confirmation" className={styles.rowStatus}><span data-status={allSameStatus ? first.status : undefined}>{allSameStatus ? `${first.status === "ACTIVE" ? "✓ " : first.status === "SUPERSEDED" ? "↻ " : "○ "}${CLAIM_STATUS_LABEL[first.status]}` : "Entry statuses in details"}</span>
-                {entries.map(entry => <p key={entry.id}>{entry.verifiedAt ? `${entry.verifiedActorLabel ?? "Actor not recorded"} · ${formatDate(entry.verifiedAt)}` : entry.origin === "LEGACY" ? "Verification history not recorded." : "Not yet confirmed."}</p>)}</div>
+                {entries.map(entry => { const decided = entry.verifiedAt ? null : decisionMarkers(entry, states).filter(m => m.resolvedAt).sort((a, b) => b.resolvedAt!.localeCompare(a.resolvedAt!))[0];
+                  return <p key={entry.id}>{entry.verifiedAt ? `${entry.verifiedActorLabel ?? "Actor not recorded"} · ${formatDate(entry.verifiedAt)}`
+                    : decided ? <>Decided on {formatDate(decided.resolvedAt!)}{decided.fingerprint ? <> · <Link prefetch={false} href={`/initiatives/${slug}/decisions?item=${encodeURIComponent(decided.fingerprint)}`}>View decision</Link></> : null}</>
+                    : entry.origin === "LEGACY" ? <><span aria-hidden="true" className={styles.legacyMark}>—</span><span className={styles.srOnly}>Verification history not recorded.</span></> : "Not yet confirmed."}</p>; })}</div>
               <div role="group" aria-label="Provenance" className={styles.sourceIdentity}><span>{sources.length ? `${sources.length} linked ${sources.length === 1 ? "source" : "sources"}` : "No source linked"}</span>
                 {sources.map(source => <Link prefetch={false} key={source.id} href={`/initiatives/${slug}/sources#source-${source.id}`}>{displaySourceReference(source.sourceReference) ?? source.title}{source.boundary === "EXCLUDED" ? " · Excluded" : ""}</Link>)}</div>
               <details><summary aria-label={`Details for ${subject} · ${attribute} (${value})`}>Details</summary>

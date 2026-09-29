@@ -34,3 +34,6 @@
 .rowStatus>span{border-radius:var(--r-pill);font-size:var(--t-xs)}
 .footnote{margin-top:var(--s-3);font-size:var(--t-xs);color:var(--ink-500)}
 .footnote a{color:var(--accent-700)}
+.legacyMark{color:var(--ink-500)}
+.legend{margin:0;padding:var(--s-2) var(--s-4);font-size:var(--t-xs);color:var(--ink-600);background:var(--panel);border-bottom:1px solid var(--rule)}
+.legend>span{color:var(--ink-500);margin-inline-end:var(--s-1)}

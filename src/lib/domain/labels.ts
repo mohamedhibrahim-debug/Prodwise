@@ -139,6 +139,13 @@ export const EVIDENCE_RELATION_NOTE: Record<EvidenceRelation, string> = {
   EXCLUDED: "Explicitly excluded by a user.",
 };
 
+/** An ISO week ("2026-W39") as the product writes it ("W39"); the year is added only when it differs from `currentYear`. */
+export function weekLabel(week: string, currentYear?: string): string {
+  const m = /^(\d{4})-W(\d{2})$/.exec(week);
+  if (!m) return week;
+  return currentYear && m[1] !== currentYear ? `W${m[2]} ${m[1]}` : `W${m[2]}`;
+}
+
 /** The organization day and clock used for every timestamp shown. */
 export const ORG_TIME_ZONE = "Africa/Cairo";
 

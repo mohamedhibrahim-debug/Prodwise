@@ -79,6 +79,20 @@
   font-weight: var(--fw-semibold);
   color: var(--accent-700);
 }
+.chip[data-date]:not([data-active]) .chipValue { color: var(--ink-900); }
+.chip[data-date]:not([data-active]) .chipLabel::after { content: ":"; }
+/* The native picker's anchor: present for showPicker(), invisible and out of the tab order. */
+.dateInput {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
 .caret { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; }
 .chipClear {
   height: 34px;

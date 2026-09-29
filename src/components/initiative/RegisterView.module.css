@@ -1,12 +1,14 @@
 .desktop table { table-layout: fixed; }
-.desktop tbody th, .desktop tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.desktop tbody th > a { display: block; overflow: hidden; text-overflow: ellipsis; }
-.cName { width: 24%; }
-.cStage { width: 13%; }
-.cOwner { width: 11%; }
+/* Names and the latest-change sentence keep one line; every other value wraps to a second line rather than being cut. */
+.desktop tbody th, .desktop tbody td { white-space: normal; overflow-wrap: break-word; vertical-align: top; }
+.desktop tbody th > a { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cName { width: 22%; }
+.cStage { width: 14.5%; }
+.cOwner { width: 12%; }
 .cAttention { width: 17%; }
 .cTarget { width: 12%; }
-.cSetup { width: 9%; }
+/* Setup is a number: sized for "10/10" and its meter, never ellipsised. */
+.cSetup { width: 6.75rem; }
 .cUpdated { width: 14%; }
 .stage {
   display: inline-block;
@@ -17,7 +19,8 @@
   color: var(--ink-700);
   font-size: var(--t-xs);
   font-weight: var(--fw-medium);
-  white-space: nowrap;
+  max-width: 100%;
+  white-space: normal;
 }
 .attention {
   display: inline;
@@ -41,7 +44,7 @@
   color: var(--ink-500);
   font-size: var(--t-xs);
 }
-.setup { display: inline-flex; align-items: center; gap: var(--s-2); color: var(--ink-700); }
+.setup { display: inline-flex; align-items: center; gap: var(--s-2); color: var(--ink-700); white-space: nowrap; }
 .meter {
   position: relative;
   display: inline-block;

@@ -19,6 +19,7 @@ import {riskViews,RISK_STATUS_LABEL} from '@/lib/workspace/risks';
 import {questionOverdueDays} from '@/lib/workspace/questions';
 import {canChangeCommitment} from '@/lib/workspace/commitment-policy';
 import {relationshipsFor,GROUP_LABEL} from '@/lib/workspace/relationship-view';
+import {latestDecisionAt,recordedBeforeDecision} from '@/lib/workspace/decision-followup';
 import {ButtonLink} from '@/components/primitives/Button';
 import {CompleteCommitment} from '@/components/initiative/CompleteCommitment';
 import styles from './brief.module.css';
@@ -44,6 +45,11 @@ export default async function Brief({params,searchParams}:{params:Promise<{slug:
  const context=management.contexts.find(c=>c.id===i.currentContextId&&!c.retiredAt)?.label??(scope?.value.text?`${scope.value.text} (earlier scope text)`:null);
  const skipped=notCompared(snapshot.claims).length;
  const setupNext=r.setup.next;
+ // Recorded delivery facts are never changed by a decision; a fact written before the latest decision only gets asked about.
+ const decisionAt=latestDecisionAt(snapshot.findingStates);
+ const nextStepCheck=recordedBeforeDecision(r.nextStep?.value.text?r.nextStep:null,decisionAt),blockerCheck=recordedBeforeDecision(get('BLOCKER'),decisionAt);
+ const factsHref=`${base}/delivery?returnTo=${encodeURIComponent(base)}`;
+ const checkNote=(at:string)=><p className={styles.decisionCheck}><span aria-hidden="true" className={styles.glyph}>◆</span>Recorded before the decision on {formatDate(at)} — still accurate?{factWriter&&!i.archivedAt?<> <Link prefetch={false} href={factsHref}>Update delivery facts</Link></>:null}</p>;
  return <div className={styles.page}>
  {q.created==='1'&&<p role="status" className={styles.created}><strong>{i.name} was created.</strong> {setupNext?<>Next: {setupNext.label.toLowerCase()} — <Link prefetch={false} href={setupNext.href}>continue setup</Link>. Each step can wait; setup resumes where you left off.</>:'Setup is complete.'}</p>}
  <div className={styles.cockpit}>
@@ -54,14 +60,14 @@ export default async function Brief({params,searchParams}:{params:Promise<{slug:
    {i.description&&<p className={styles.objective}><span>Objective</span> {i.description}</p>}
    <div className={styles.next} aria-label="Next step">
     <span className={styles.nextLabel}>Next step</span>
-    {r.nextStep?.value.text?<><p className={styles.nextText}>{r.nextStep.value.text}</p><p className={styles.nextMeta}>{r.nextStep.preparedAsFixture?'Prepared by':'Confirmed by'} {safeUserLabel(r.nextStep)} · {formatDate(r.nextStep.updatedAt)}</p></>:<p className={styles.nextEmpty}>No next step recorded.</p>}
+    {r.nextStep?.value.text?<><p className={styles.nextText}>{r.nextStep.value.text}</p><p className={styles.nextMeta}>{r.nextStep.preparedAsFixture?'Prepared by':'Confirmed by'} {safeUserLabel(r.nextStep)} · {formatDate(r.nextStep.updatedAt)}</p>{nextStepCheck&&checkNote(nextStepCheck)}</>:<p className={styles.nextEmpty}>No next step recorded.</p>}
     {!i.archivedAt&&<div className={styles.nextActions}>{r.attention[0]?<ButtonLink variant="primary" href={r.attention[0].href}>{VERB[r.attention[0].kind]??'Inspect record'}</ButtonLink>:null}{factWriter&&<ButtonLink variant={r.attention[0]?'ghost':'secondary'} href={`${base}/delivery?returnTo=${encodeURIComponent(base)}`}>{r.nextStep?.value.text?'Update next step':'Record next step'}</ButtonLink>}</div>}
    </div>
   </section>
 
   <section className={styles.section} aria-labelledby="attention">
    <div className={styles.head}><h2 id="attention">Needs attention</h2><span>{r.attention.length} recorded {r.attention.length===1?'reason':'reasons'}</span></div>
-   {r.attention.length?<ul className={styles.list}>{r.attention.map((a,n)=><li key={n}><Link prefetch={false} href={a.href} className={styles.item}><span className={styles.itemLabel} data-tone="attention"><span aria-hidden="true" className={styles.glyph}>▲</span>{a.label}</span><span className={styles.itemText}>{a.detail}</span><span className={styles.itemGo}>{VERB[a.kind]??'Inspect record'} <span aria-hidden="true">→</span></span></Link></li>)}</ul>
+   {r.attention.length?<ul className={styles.list}>{r.attention.map((a,n)=><li key={n}><Link prefetch={false} href={a.href} className={styles.item}><span className={styles.itemLabel} data-tone="attention"><span aria-hidden="true" className={styles.glyph}>▲</span>{a.label}</span><span className={styles.itemText}>{a.detail}</span><span className={styles.itemGo}>{VERB[a.kind]??'Inspect record'} <span aria-hidden="true">→</span></span></Link>{a.kind==='BLOCKER'&&blockerCheck&&checkNote(blockerCheck)}</li>)}</ul>
     :<p className={styles.empty}>No open differences or delivery attention under the current checks. This is not a readiness assessment.</p>}
    {skipped>0&&<p className={styles.note}>Some Knowledge entries were not compared because applicability differs or is not recorded. <Link prefetch={false} href={`${base}/knowledge?view=all`}>Review applicability</Link></p>}
   </section>
@@ -88,7 +94,7 @@ export default async function Brief({params,searchParams}:{params:Promise<{slug:
    <div className={styles.setupHead}><h2 id="setup-heading">Setup</h2><span className={styles.setupCount}>{r.setup.completed} of {r.setup.total}</span></div>
    <span className={styles.meter} aria-hidden="true"><span style={{inlineSize:`${(r.setup.completed/Math.max(1,r.setup.total))*100}%`}} data-ready={r.setup.ready||undefined}/></span>
    {i.archivedAt?<p className={styles.panelNote}>Read-only while archived · restore in Manage initiative.</p>:setupNext?<p className={styles.panelNote}>Next: <Link prefetch={false} href={setupNext.href}>{setupNext.label}</Link></p>:<p className={styles.panelNote}>All setup requirements recorded. Setup coverage is not release approval.</p>}
-   {!i.archivedAt&&!r.setup.ready&&<Link prefetch={false} className={styles.panelLink} href={setupNext?.href??`${base}/setup?step=review`}>Complete setup →</Link>}
+   {!i.archivedAt&&!r.setup.ready&&writer&&<Link prefetch={false} className={styles.panelLink} href={setupNext?.href??`${base}/setup?step=review`}>Complete setup →</Link>}
   </section>
   <section className={styles.panel} aria-labelledby="facts-heading">
    <div className={styles.setupHead}><h2 id="facts-heading">Delivery facts</h2>{factWriter?<Link prefetch={false} className={styles.panelLink} href={`${base}/delivery?returnTo=${encodeURIComponent(base)}`}>Update</Link>:<Link prefetch={false} className={styles.panelLink} href={`${base}/delivery`}>View</Link>}</div>
@@ -103,7 +109,7 @@ export default async function Brief({params,searchParams}:{params:Promise<{slug:
    <p className={styles.panelNote}>Missing Actual Live does not establish whether the initiative launched.</p>
   </section>
   <section className={styles.panel} aria-labelledby="rel-heading">
-   <div className={styles.setupHead}><h2 id="rel-heading">Relationships</h2>{!i.archivedAt&&<Link prefetch={false} className={styles.panelLink} href={`${base}/manage?section=relationships#relationships`}>{relRows.length?'Manage':'Record'}</Link>}</div>
+   <div className={styles.setupHead}><h2 id="rel-heading">Relationships</h2>{!i.archivedAt&&writer?<Link prefetch={false} className={styles.panelLink} href={`${base}/manage?section=relationships#relationships`}>{relRows.length?'Manage':'Record'}</Link>:null}</div>
    {relRows.length?<ul className={styles.relations}>{relRows.map(x=><li key={x.relationship.id}><span className={styles.relType}>{GROUP_LABEL[x.group]}</span>{x.other?<Link prefetch={false} href={`/initiatives/${x.other.slug}`}>{x.other.name}</Link>:'An initiative you can’t access'}{x.other?.archived&&' · archived'}{x.group==='DEPENDS_ON'&&x.impactText&&<small data-late={x.late||undefined}>{x.late?'▲ ':''}{x.impactText}</small>}</li>)}</ul>:<p className={styles.panelNote}>None recorded.</p>}
   </section>
   <nav className={styles.records} aria-label="Records">

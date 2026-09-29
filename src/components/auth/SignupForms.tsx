@@ -7,7 +7,7 @@ import {startSignupAction,finishSignupAction,verifySignupAction,type SignupFormS
 import { EyeIcon } from './EyeIcon';
 import styles from './login.module.css';
 
-export function SignupSteps({step}:{step:1|2|3}){const steps=['Work email','Verify email','Your account'];return <ol className={styles.steps} aria-label="Sign-up progress">{steps.map((s,n)=><li key={s} aria-current={step===n+1?'step':undefined} data-done={n+1<step||undefined}><span aria-hidden="true">{n+1<step?'✓':n+1}</span>{s}</li>)}</ol>;}
+export function SignupSteps({step}:{step:1|2|3}){const steps=['Work email','Verify email','Your account'];return <ol className={styles.steps} aria-label="Sign-up progress">{steps.map((s,n)=><li key={s} aria-current={step===n+1?'step':undefined} data-done={n+1<step||undefined}><span aria-hidden="true">{n+1<step?'✓':n+1}</span><b className={styles.stepLabel}>{s}</b></li>)}</ol>;}
 
 export function SignupStart(){
  const [state, action, pending, keepAction] = useFormAction(startSignupAction,{error:null} as SignupFormState);const [email,setEmail]=useState('');const id=useId(),err=useId();

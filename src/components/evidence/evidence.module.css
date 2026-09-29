@@ -161,3 +161,6 @@
 .page .primary{background:var(--accent-600);color:var(--surface);border-color:var(--accent-600);font-weight:var(--fw-semibold)}
 .page .primary:hover:not(:disabled){background:var(--accent-700);border-color:var(--accent-700)}
 @media(min-width:781px){.page button,.page input,.page select{min-height:var(--control-md)}}
+/* The way forward when nothing is read automatically: real buttons, one row. */
+.recordRow{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2);margin:var(--s-3) 0;padding:var(--s-3) var(--s-4);background:var(--surface-subtle);border-inline-start:3px solid var(--accent-600)}
+.recordLabel{font-size:var(--t-sm);font-weight:var(--fw-semibold);color:var(--ink-900);margin-inline-end:var(--s-2)}

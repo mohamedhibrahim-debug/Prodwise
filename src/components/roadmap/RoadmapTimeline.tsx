@@ -159,7 +159,7 @@ export function RoadmapTimeline({ groups, unscheduled, grouping, cutoff, cutoffL
   const row = (i: RoadmapItem) => <li key={i.id} className={styles.row}>
     <div className={styles.name}>
       <Link prefetch={false} href={deliveryHref(i.slug)} className={styles.nameLink} title={i.name}>{i.name}</Link>
-      <span className={styles.meta}>{i.stage} · {grouping === "owner" ? i.businessLineLabel : i.ownerLabel}</span>
+      <span className={styles.meta}>{i.stage} · {grouping === "owner" ? <BusinessLine code={i.businessLine as BusinessLineCode} /> : i.ownerLabel}</span>
       <AttentionChips item={i} />
     </div>
     <div className={styles.track}>

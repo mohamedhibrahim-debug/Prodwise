@@ -27,3 +27,12 @@
 .warning,.error{background:var(--attention-bg);color:var(--attention-fg);border-left-color:var(--attention-rule);font-size:var(--t-sm)}
 .links a,.index a,.record a{color:var(--accent-700)}
 .header h1{font-size:var(--t-h1)}
+/* Week: ‹ [W39 · range ▾] › — one control; the menu lists recorded reviews. */
+.weekTrigger{gap:var(--s-2)}
+.weekRange{font-weight:var(--fw-regular);color:var(--ink-600)}
+.weekCaret{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.5}
+.withReason{display:grid;gap:var(--s-1);max-width:36ch}
+/* The save confirmation stays in view next to the work, whatever the scroll position. */
+.savedToast:global(.saved-notice){position:fixed;top:auto;bottom:var(--s-5);left:50%;transform:translateX(-50%);z-index:60;max-width:min(560px,calc(100vw - 2 * var(--s-4)));border-radius:var(--r-md);box-shadow:var(--shadow-popover)}
+.savedToast:global(.saved-notice):empty{display:none}
+

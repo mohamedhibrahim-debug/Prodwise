@@ -26,9 +26,10 @@ export default async function DecisionsPage({ params, searchParams }: { params: 
   const repo = getRepository();
   const initiative = await repo.getInitiativeBySlug(slug);
   if (!initiative) notFound();
-  const { claims, queue } = await loadDecisions(initiative.id);
+  const { claims, queue, states } = await loadDecisions(initiative.id);
   // Decisions people recorded (from meetings or by hand) live in Knowledge; they are listed here too.
-  const recorded = claims.filter(c => c.type === "DECISION" && (c.status === "ACTIVE" || c.status === "UNVERIFIED"));
+  // Decisions in Knowledge: entries recorded as decisions, plus entries a decision here chose or set — so recording one updates the count.
+  const recorded = claims.filter(c => (c.status === "ACTIVE" || c.status === "UNVERIFIED") && (c.type === "DECISION" || states.some(s => s.outcome && (s.chosenClaimId === c.id || s.decisionClaimId === c.id))));
   const sourceCount = claims.length === 0 ? (await repo.listEvidence(initiative.id)).length : 0;
   const row=(item:(typeof queue.lanes.open)[number])=><FindingRow key={item.finding.fingerprint} finding={item.finding} slug={slug} canResolve={isDemoWriteEnabled} records={claims} queue={item.effective}/>;
   const historyBody=(entry:(typeof queue.history)[number])=><li key={entry.id}><h3>{entry.reopenReason?`Reopened: ${entry.reopenReason}`:entry.row.kind==='WITHDRAWN'?'Returned to Open':entry.row.kind==='DEFERRED'?'Deferred':'Dismissed'}</h3><p>{entry.row.reason||'No additional reason recorded.'} · {entry.row.actor.label} · {formatDateTime(entry.row.at)}</p><p>Bound to the exact compared claims and supporting evidence.</p>{entry.row.claimIds.map(id=><Link prefetch={false} key={id} href={`/initiatives/${slug}/knowledge?view=all#claim-${id}`}>Knowledge entry → </Link>)}{entry.row.evidenceIds.map(id=><Link prefetch={false} key={id} href={`/initiatives/${slug}/knowledge/sources#source-${id}`}>Supporting source → </Link>)}</li>;
@@ -48,7 +49,7 @@ export default async function DecisionsPage({ params, searchParams }: { params: 
       <DecisionWorkbench initialItem={item} lanes={DECISION_LANES.map(lane => ({ ...lane, items: laneItems[lane.key], empty: empty[lane.key] }))}
         summary={<><strong>{queue.lanes.open.length}</strong> {queue.lanes.open.length === 1 ? "difference needs" : "differences need"} a decision</>}
         actions={<>{!isDemoWriteEnabled ? <span className={styles.contextNotice} title={WRITE_DISABLED_MESSAGE}>Read-only</span> : null}
-          <ButtonLink variant="ghost" href={`/initiatives/${slug}/knowledge?view=all`}>{recorded.length ? `Recorded decisions · ${recorded.length}` : "Knowledge"}</ButtonLink></>} />
+          <ButtonLink variant="ghost" href={`/initiatives/${slug}/knowledge?view=all`}>{recorded.length ? `Decisions in Knowledge · ${recorded.length}` : "Knowledge"}</ButtonLink></>} />
     </div>
   </div>;
 }

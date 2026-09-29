@@ -31,3 +31,18 @@ test('a late dependency is one attention reason in the shared model, counted the
  const without=run([]),withRel=run([rel]);
  assert.equal(withRel.attention.filter(x=>x.kind==='DEPENDENCY').length,1);assert.equal(withRel.attention.length,without.attention.length+1);
 });
+
+test('Roadmap and Analysis count "Dependency date impact" identically: initiatives on either end, not relationship rows',async()=>{
+ const {applyFilters,hasDependencyImpact}=await import('./roadmap-layout.ts');
+ const d=fixture();const [a,b,c]=d.source.snapshots;const base=d.deliveryState.facts.find(f=>f.kind==='TARGET_LIVE')!;
+ const mk=(id:string,kind:'TARGET_LIVE'|'NEXT_MILESTONE',date:string)=>({...base,id:`${id}-${kind}`,initiativeId:id,kind,state:'SET' as const,value:{date,text:kind==='NEXT_MILESTONE'?'Milestone':null,memberId:null,extent:null}});
+ const ids=[a!,b!,c!].map(s=>s.initiative.id);
+ d.deliveryState.facts=[...d.deliveryState.facts.filter(f=>!(ids.includes(f.initiativeId)&&(f.kind==='NEXT_MILESTONE'||f.kind==='TARGET_LIVE'))),mk(ids[0]!,'NEXT_MILESTONE','2099-01-01'),mk(ids[1]!,'TARGET_LIVE','2099-02-01'),mk(ids[2]!,'NEXT_MILESTONE','2099-01-01')];
+ const rel=(id:string,from:string,to:string)=>({id,workspaceId:identity.workspaceId,fromInitiativeId:from,toInitiativeId:to,type:'DEPENDS_ON' as const,rationale:'x',providerFactKind:'TARGET_LIVE' as const,neededByFactKind:'NEXT_MILESTONE' as const,evidenceId:null,evidenceAnchorId:null,originProposalId:null,originHref:null,status:'ACTIVE' as const,createdBy:'u',confirmedBy:'u',confirmedByLabel:'U',confirmedAt:'2026-01-01',endedBy:null,endedByLabel:null,endedAt:null,endReason:null,updatedAt:'2026-01-01',revision:1});
+ // Two late relationship rows over three initiatives (a→b, c→b): the count is 3 initiatives, never 2 rows.
+ const p=buildPortfolioProjection({source:d.source,state:d.deliveryState,workspaceId:identity.workspaceId,activity:d.productStore.activity,asOf:DEMO_CUTOFF,relationships:[rel('r1',ids[0]!,ids[1]!),rel('r2',ids[2]!,ids[1]!)]});
+ const analysis=filterPortfolioRows(p.rows,{attention:'dependency'},p.today).length;
+ const items=p.rows.filter(r=>!r.initiative.archivedAt).map(r=>({attention:r.attention.map(x=>({kind:x.kind,label:x.label,detail:x.detail,href:x.href})),businessLine:r.initiative.businessLine,ownerId:r.ownerId,target:null,movement:null}));
+ const roadmap=applyFilters(items as unknown as Parameters<typeof applyFilters>[0],{businessLine:'',owner:'',view:'dependency'}).length;
+ assert.equal(analysis,3);assert.equal(roadmap,analysis);assert.equal(items.filter(hasDependencyImpact).length,analysis);
+});

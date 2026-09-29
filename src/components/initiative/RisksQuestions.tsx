@@ -32,7 +32,7 @@ function useCommand(action:(p:ContextActionState,f:FormData)=>Promise<ContextAct
 function Feedback({state}:{state:ContextActionState}){return <>{state.error&&<p role="alert" className={styles.error}>{state.error}</p>}{state.message&&!state.error&&<p role="status" className={styles.ok}>✓ {state.message}</p>}</>;}
 function Hidden({slug,op,id,revision,requestId}:{slug:string;op:string;id?:string;revision?:number;requestId:string}){return <><ScopeField/><input type="hidden" name="slug" value={slug}/><input type="hidden" name="operation" value={op}/>{id&&<input type="hidden" name="id" value={id}/>}<input type="hidden" name="expectedRevision" value={revision??0}/><input type="hidden" name="requestId" value={requestId}/></>;}
 
-function RiskRow({r,slug,canManage,members,actions}:{r:RiskItem;slug:string;canManage:boolean;members:Option[];actions:Option[]}){
+function RiskRow({r,slug,canManage,canConfirm,members,actions}:{r:RiskItem;slug:string;canManage:boolean;canConfirm:boolean;members:Option[];actions:Option[]}){
  const {run:act,pending,state,requestId,keep}=useCommand(riskAction,`risk-${r.claimId}`);const [status,setStatus]=useState<Status>(r.tracking?.status??'OPEN');
  const t=r.tracking;const needsReason=status==='ACCEPTED'||status==='CLOSED';
  return <li className={styles.item} id={`risk-${r.claimId}`} data-status={t?.status.toLowerCase()??r.state.toLowerCase()}>
@@ -43,7 +43,7 @@ function RiskRow({r,slug,canManage,members,actions}:{r:RiskItem;slug:string;canM
   <p className={styles.source}>{r.source?<Link prefetch={false} href={r.source.href}>Source · {r.source.label}</Link>:'Source · entered by hand'} · <Link prefetch={false} href={`/initiatives/${slug}/knowledge?view=all#claim-${r.claimId}`}>Knowledge entry</Link></p>
   <div className={styles.actions}>
    {r.state==='NOT_TRACKED'&&canManage&&<form action={act} onReset={keep}><Hidden slug={slug} op="START" requestId={requestId}/><input type="hidden" name="claimId" value={r.claimId}/><Button type="submit" variant="secondary" disabled={pending}>{pending?'Starting…':'Track this risk'}</Button></form>}
-   {r.state==='AWAITING_VERIFICATION'&&<Link prefetch={false} className={styles.secondary} href={`/initiatives/${slug}/knowledge?view=all#claim-${r.claimId}`}>Confirm in Knowledge</Link>}
+   {r.state==='AWAITING_VERIFICATION'&&<Link prefetch={false} className={styles.secondary} href={`/initiatives/${slug}/knowledge?view=all#claim-${r.claimId}`}>{canConfirm?'Confirm in Knowledge':'View in Knowledge'}</Link>}
    {r.state==='SUPERSEDED'&&t&&canManage&&r.replacementClaimId&&<form action={act} onReset={keep}><Hidden slug={slug} op="CARRY" id={t.id} requestId={requestId}/><input type="hidden" name="claimId" value={r.replacementClaimId}/><Button type="submit" variant="secondary" disabled={pending}>Carry tracking forward</Button></form>}
    {t&&r.state==='TRACKED'&&r.canStatus&&<details className={styles.more}><summary>Change status</summary><form action={act} onReset={keep} className={styles.sheet}><Hidden slug={slug} op="STATUS" id={t.id} revision={t.revision} requestId={requestId}/>
     <fieldset className={styles.statusChoice}><legend>Status</legend>{(Object.keys(STATUS) as Status[]).map(s=><label key={s}><input type="radio" name="status" value={s} checked={status===s} onChange={()=>setStatus(s)} disabled={s===t.status}/><span aria-hidden="true">{STATUS[s].glyph}</span> {STATUS[s].label}{s===t.status?' (current)':''}</label>)}</fieldset>
@@ -105,7 +105,7 @@ export function RisksQuestions({slug,risks,questions,members,claims,actions,canM
   <div className={styles.columns}>
    <section id="risks-panel" className={styles.panel} data-active={tab==='risks'} aria-labelledby="risks-heading">
     <header className={styles.panelHead}><h3 id="risks-heading">Risks</h3><p>{openRisks} open or mitigating{tracked('MITIGATING').length?` (${tracked('MITIGATING').length} being mitigated)`:''}</p></header>
-    {risks.length?renderGroups(riskGroups,r=><RiskRow key={r.claimId} r={r} slug={slug} canManage={canManageRisks} members={members} actions={actions}/>):<p className={styles.empty}>No risks recorded. Risks arrive from confirmed evidence or meeting notes, or from <Link prefetch={false} href={`/initiatives/${slug}/knowledge/new`}>a Knowledge entry you add</Link>.</p>}
+    {risks.length?renderGroups(riskGroups,r=><RiskRow key={r.claimId} r={r} slug={slug} canManage={canManageRisks} canConfirm={canAsk} members={members} actions={actions}/>):<p className={styles.empty}>No risks recorded. Risks arrive from confirmed evidence or meeting notes, or from <Link prefetch={false} href={`/initiatives/${slug}/knowledge/new`}>a Knowledge entry you add</Link>.</p>}
     {!canManageRisks&&readOnlyReason&&<p className={styles.hint}>{readOnlyReason}</p>}
    </section>
    <section id="questions-panel" className={styles.panel} data-active={tab==='questions'} aria-labelledby="questions-heading">
