@@ -12,7 +12,7 @@ import {displayDate} from "@/lib/delivery/roadmap";
 import {listProjectMetrics} from "@/lib/analysis/metrics";
 import {metricCoverage} from "@/lib/analysis/metric-view";
 import {AnalysisFrame,styles} from "@/components/analysis/AnalysisFrame";
-import {CoverageMarks} from "@/components/analysis/MetricParts";
+import {CoverageBar,Freshness} from "@/components/analysis/MetricParts";
 import {DataTable} from "@/components/admin/AdminUI";
 import {StatStrip,type StatTone} from "@/components/workspace/StatStrip";
 import { cairoDay } from "@/lib/delivery/model";
@@ -43,8 +43,8 @@ export default async function PortfolioAnalysis(){
  const coverageRows=active.map(r=>{const own=metrics.filter(m=>m.initiativeId===r.initiative.id);return {row:r,coverage:metricCoverage(own)};}).sort((a,b)=>Number(b.coverage.configured>0)-Number(a.coverage.configured>0)||a.row.initiative.name.localeCompare(b.row.initiative.name));
  const configured=coverageRows.filter(c=>c.coverage.configured>0).length;
  const synthetic=metrics.some(m=>m.origin==="SYNTHETIC_DEMO");
- return <AnalysisFrame active="portfolio" title="Portfolio Analysis" subtitle="Position, attention and measurement coverage, from the same records as Home." organizationName={presentation.organizationName} asOf={asOf} synthetic={presentation.isDemo}>
-  <StatStrip label="Portfolio summary" items={counts.map(([label,count,filter,hint,tone])=>({key:label,value:count,label,hint,tone,href:"/initiatives"+(filter?"?"+filter:"")}))}/>
+ return <AnalysisFrame active="portfolio" title="Portfolio Analysis" organizationName={presentation.organizationName} asOf={asOf} synthetic={presentation.isDemo}>
+  <StatStrip label="Portfolio summary" dense items={counts.map(([label,count,filter,hint,tone])=>({key:label,value:count,label,hint,tone,href:"/initiatives"+(filter?"?"+filter:"")}))}/>
   <div className={styles.split}>
    <section className={styles.panel} aria-labelledby="lifecycle-heading">
     <div className={styles.sectionHead}><h2 id="lifecycle-heading">Lifecycle distribution</h2><span className={styles.count}>{p.summary.total} initiatives</span></div>
@@ -65,13 +65,13 @@ export default async function PortfolioAnalysis(){
   <section className={styles.section} aria-labelledby="coverage-heading">
    <div className={styles.sectionHead}><h2 id="coverage-heading">Business metrics coverage</h2><span className={styles.count}>{configured} of {active.length} initiatives measured</span></div>
    {configured>0&&<p className={styles.lead}>Status is each metric’s latest recorded period against its approved target. An unrecorded period is not assessed, and a metric without an approved target is never counted as missed.{synthetic&&" Metric values in this workspace are synthetic demo records."}</p>}
-   {configured===0?<p className={styles.emptyLine}>No business metrics are configured for any initiative yet. Each initiative’s analysis page lists what a metric needs; nothing is shown as zero in the meantime. <Link prefetch={false} href="/analysis/projects">Open Initiative Analysis →</Link></p>:
+   {configured===0?<p className={styles.emptyLine}>No business metrics are recorded for any initiative yet. A metric is defined on an initiative’s analysis page; nothing is shown as zero in the meantime. <Link prefetch={false} href="/analysis/projects">Open Initiative Analysis →</Link></p>:
    <DataTable caption="Business metrics coverage by initiative" columns={["Initiative","Stage","Metrics","Latest vs target","Last captured"]} rows={coverageRows.map(({row,coverage})=>({key:row.initiative.id,cells:[
-    <Link prefetch={false} key="name" href={`/analysis/projects/${row.initiative.slug}?back=${encodeURIComponent("/analysis/portfolio")}`}>{row.initiative.name}</Link>,
+    <Link prefetch={false} key="name" href={`/analysis/projects/${row.initiative.slug}?back=${encodeURIComponent("/analysis/portfolio")}`} className={styles.wrapName}>{row.initiative.name}</Link>,
     STAGE_LABEL[row.initiative.stage],
     coverage.configured?`${coverage.configured} configured`:<span key="none" className={styles.muted}>Not configured</span>,
-    coverage.configured?<CoverageMarks key="marks" coverage={coverage}/>:<span key="none" className={styles.muted}>No metric definitions recorded</span>,
-    coverage.lastCaptured?formatDate(coverage.lastCaptured):coverage.configured?"No observations yet":"—",
+    coverage.configured?<CoverageBar key="marks" coverage={coverage}/>:<span key="none" className={styles.muted}>No metric definitions recorded</span>,
+    <Freshness key="fresh" captured={coverage.lastCaptured} asOf={asOf} configured={coverage.configured>0} compact/>,
    ]}))} empty="No active initiatives are recorded."/>}
   </section>
   <section className={styles.section} aria-labelledby="revisions-heading">

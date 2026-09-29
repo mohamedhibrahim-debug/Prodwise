@@ -62,6 +62,8 @@ function activityCategory(e:ActivityEntry):{category:HistoryCategory;label:strin
  if(t.startsWith('FINDING_')){const kind=t.replace('FINDING_','').replace('DISPOSITION_','');return {category:'DECISIONS',label:kind==='DEFERRED'?'Decision deferred':kind==='DISMISSED'?'Decision dismissed':kind==='REOPENED'?'Decision reopened':kind==='RESOLVED'?'Reviewed — note only':kind==='CONFIRMER_ASSIGNED'?'Confirmer assigned':'Decision updated'};}
  if(t==='DELIVERY_UPDATE')return {category:'DELIVERY',label:'Delivery update'};
  if(t==='DEPENDENCY_FLAGGED')return {category:'RELATIONSHIPS',label:'Dependency flagged'};
+ if(t==='METRIC_DEFINED')return {category:'DELIVERY',label:'Metric defined'};
+ if(t==='METRIC_OBSERVED')return {category:'DELIVERY',label:'Observation recorded'};
  return null;
 }
 
@@ -86,7 +88,7 @@ export function buildInitiativeHistory(src:HistorySources):HistoryEvent[]{
  for(const e of src.activity){if(e.initiativeId!==id)continue;const c=activityCategory(e);if(!c)continue;
   const payload=(e.payload??{}) as Record<string,unknown>;const sub=typeof payload.submissionId==='string'?src.evidence.find(x=>x.submissionId===payload.submissionId):undefined;
   out.push({id:`a:${e.id}`,at:e.occurredAt,...c,sentence:clipSentence(e.eventType==='INITIATIVE_CREATED'?'Initiative created in Prodwise':e.eventType.startsWith('AI_PROPOSAL_')?proposalSentence(e.summary):activitySummary(e)),actor:e.actorLabel??'Recorded actor',rationale:typeof payload.reason==='string'&&payload.reason?payload.reason:null,
-   href:c.category==='KNOWLEDGE'?`${base}/knowledge?view=all`:c.category==='DECISIONS'?`${base}/decisions`:c.category==='SOURCES'?(sub?`${base}/evidence/${sub.submissionId}`:`${base}/sources`):c.category==='LIFECYCLE'?`${base}/manage`:null,hrefLabel:c.category==='SOURCES'&&sub?'Open evidence':c.category==='KNOWLEDGE'?'Open Knowledge':c.category==='DECISIONS'?'Open Decisions':null,
+   href:e.eventType.startsWith('METRIC_')?`/analysis/projects/${src.slug}`:c.category==='KNOWLEDGE'?`${base}/knowledge?view=all`:c.category==='DECISIONS'?`${base}/decisions`:c.category==='SOURCES'?(sub?`${base}/evidence/${sub.submissionId}`:`${base}/sources`):c.category==='LIFECYCLE'?`${base}/manage`:null,hrefLabel:e.eventType.startsWith('METRIC_')?'Open Analysis':c.category==='SOURCES'&&sub?'Open evidence':c.category==='KNOWLEDGE'?'Open Knowledge':c.category==='DECISIONS'?'Open Decisions':null,
    provenance:c.category!=='SOURCES'&&sub?{label:`from ${sub.title}, ${displayDate(sub.date)}`,href:`${base}/evidence/${sub.submissionId}`}:null});}
  for(const e of src.deliveryEvents){if(e.initiativeId!==id)continue;const s=deliverySentence(e,member);if(!s)continue;
   out.push({id:`d:${e.id}`,at:e.occurredAt,category:e.after.kind==='OWNER'?'LIFECYCLE':'DELIVERY',label:s.label,sentence:s.sentence,actor:e.after.preparedAsFixture?'Prodwise demo setup':e.actor.label,rationale:e.after.note||null,href:`${base}/delivery#delivery-history`,hrefLabel:'Delivery facts',provenance:e.after.basis==='EVIDENCE'?ev(e.after.evidenceId)??{label:'from recorded evidence',href:null}:null});}

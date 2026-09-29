@@ -8,7 +8,7 @@ import { LocalAuthStore, contextForMember, passwordMatches } from '../../src/lib
 import { LocalDeliveryStore } from '../../src/lib/delivery/local-store.ts';
 import { canonicalDemoData, assertDemoResetTarget, DEMO_ORGANIZATION_NAME, DEMO_CANONICAL_VERSION, DEMO_CUTOFF } from '../../src/lib/demo/canonical.ts';
 import { canonical } from '../../src/lib/delivery/model.ts';
-import { canonicalDemoDataV3, DEMO_V3_VERSION } from '../../src/lib/demo/scenario-v3.ts';
+import { canonicalDemoDataV4, DEMO_V4_VERSION } from '../../src/lib/demo/scenario-v4.ts';
 
 const require=createRequire(import.meta.url);
 require('@next/env').loadEnvConfig(process.cwd(),true,{info(){},error(){}});
@@ -80,11 +80,11 @@ function createBackup(label,access){
 }
 async function restore(access,label){
  const target=guard(access),foreignBefore=canonical(foreignRows(target.rows,access.workspaceId));
- const demo=canonicalDemoDataV3(access),deliveryPath=join(privateRoot,'delivery',access.workspaceId+'.json');
+ const demo=canonicalDemoDataV4(access),deliveryPath=join(privateRoot,'delivery',access.workspaceId+'.json');
  const previous=existsSync(deliveryPath)?JSON.parse(readFileSync(deliveryPath,'utf8')):null;
  if(previous && ['facts','events','reviews'].some(key=>previous[key].some(row=>row.workspaceId!==access.workspaceId))) throw new Error('Demo delivery file contains foreign workspace records.');
  const backup=createBackup(label,access),productBefore=fileHash(productPath);
- // Every collection is replaced for this workspace only: v3 includes the P1 collections too.
+ // Every collection is replaced for this workspace only: v4 includes the P1 collections too.
  const keys=[...new Set([...Object.keys(target.rows),...Object.keys(demo.productStore)])];
  const next=Object.fromEntries(keys.map(key=>[key,[...(target.rows[key]??[]).filter(row=>row.workspaceId!==access.workspaceId),...(demo.productStore[key]??[])]]));
  writePersonas(access,demo.personas);
@@ -111,7 +111,7 @@ async function restore(access,label){
  const actualRows=Object.fromEntries(Object.keys(demo.productStore).map(key=>[key,(product()[key]??[]).filter(row=>row.workspaceId===access.workspaceId)]));
  assert.equal(canonical(actualRows),canonical(demo.productStore),'Demo product records did not restore canonically.');
  const auditPath=join(privateRoot,'demo-reset-audit.json'),audit=existsSync(auditPath)?JSON.parse(readFileSync(auditPath,'utf8')):[];
- audit.push({action:label,actorId:actor.actor.id,organizationId:access.organizationId,workspaceId:access.workspaceId,fixtureVersion:DEMO_V3_VERSION,at:new Date().toISOString(),backup,foreignProductUnchanged:true,legacyDeliveryUnchanged:true,environmentUnchanged:true});
+ audit.push({action:label,actorId:actor.actor.id,organizationId:access.organizationId,workspaceId:access.workspaceId,fixtureVersion:DEMO_V4_VERSION,at:new Date().toISOString(),backup,foreignProductUnchanged:true,legacyDeliveryUnchanged:true,environmentUnchanged:true});
  privateWrite(auditPath,audit);
  return demo;
 }

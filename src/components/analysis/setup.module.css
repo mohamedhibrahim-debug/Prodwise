@@ -1,0 +1,66 @@
+/* Metric setup forms: a tinted working area with 1px rules, the workspace form grammar. Tokens only. */
+.define { display: grid; gap: var(--s-3); justify-items: start; min-width: 0; }
+/* Open, the panel takes the whole section width instead of the space beside the heading. */
+.define[data-open] { flex: 1 1 100%; width: 100%; }
+.denied { margin: 0; font-size: var(--t-xs); color: var(--ink-500); }
+.done { margin: 0; font-size: var(--t-sm); color: var(--state-ready-fg); line-height: var(--lh-body); max-width: 80ch; }
+.panel {
+  width: 100%;
+  min-width: 0;
+  padding: var(--s-5) var(--s-6) var(--s-4);
+  background: var(--tint-quiet);
+  border-top: 2px solid var(--accent-600);
+  border-bottom: 1px solid var(--rule);
+}
+.panelHead { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s-4); margin-bottom: var(--s-4); }
+.panelHead h3 { margin: 0; font-size: var(--t-h2); letter-spacing: var(--ls-tight); color: var(--ink-900); }
+.lede { margin: var(--s-1) 0 0; font-size: var(--t-sm); color: var(--ink-700); line-height: var(--lh-body); max-width: 78ch; }
+.form { display: grid; gap: var(--s-4); min-width: 0; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4) var(--s-6); }
+.field { display: grid; gap: var(--s-1); min-width: 0; align-content: start; }
+.field[data-wide] { grid-column: 1 / -1; }
+.field > label { font-size: var(--t-xs); font-weight: var(--fw-semibold); color: var(--ink-700); }
+.control { display: grid; gap: var(--s-2); }
+.control input:not([type="checkbox"]), .control select, .control textarea {
+  width: 100%;
+  min-height: var(--control-lg);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--panel);
+  color: var(--ink-900);
+  font: inherit;
+  font-size: var(--t-body);
+  box-sizing: border-box;
+  min-width: 0;
+}
+.control textarea { resize: vertical; line-height: var(--lh-body); }
+.control input:disabled { background: var(--surface-sunken); color: var(--ink-500); }
+.field[data-invalid] .control input, .field[data-invalid] .control select, .field[data-invalid] .control textarea { border-color: var(--state-blocked-mark); }
+.control :is(input, select, textarea):focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.help { margin: 0; font-size: var(--t-xs); color: var(--ink-500); line-height: var(--lh-body); }
+.fieldError { margin: 0; font-size: var(--t-xs); color: var(--state-blocked-fg); font-weight: var(--fw-medium); line-height: var(--lh-body); }
+.stacked { margin-top: var(--s-1); }
+.targetBlock { margin: 0; padding: var(--s-4) 0 0; border: 0; border-top: 1px solid var(--rule); display: grid; gap: var(--s-3); min-width: 0; }
+.choice { display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--t-sm); font-weight: var(--fw-semibold); color: var(--ink-900); }
+.choice input { width: var(--s-4); height: var(--s-4); accent-color: var(--accent-600); margin: 0; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); padding-top: var(--s-2); }
+.who { font-size: var(--t-xs); color: var(--ink-500); }
+.summary { margin: 0; display: grid; }
+.summary > div { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: var(--s-3); padding: var(--s-3) 0; border-top: 1px solid var(--rule); font-size: var(--t-sm); line-height: var(--lh-body); }
+.summary dt { font-weight: var(--fw-semibold); color: var(--ink-700); }
+.summary dd { margin: 0; color: var(--ink-900); overflow-wrap: anywhere; }
+.summary dd span { display: block; color: var(--ink-500); font-size: var(--t-xs); margin-top: var(--s-1); }
+.error { margin: 0; padding: var(--s-3) var(--s-4); background: var(--state-blocked-bg); color: var(--state-blocked-fg); border-left: 3px solid var(--state-blocked-mark); font-size: var(--t-sm); line-height: var(--lh-body); }
+.footnote { margin: var(--s-4) 0 0; font-size: var(--t-xs); color: var(--ink-500); line-height: var(--lh-body); }
+.footnote a { color: var(--accent-700); font-weight: var(--fw-medium); }
+.observe { display: grid; gap: var(--s-3); justify-items: start; margin-top: var(--s-4); }
+.observeForm { width: 100%; padding: var(--s-4) var(--s-5); background: var(--tint-quiet); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+@media (max-width: 780px) {
+  .panel { padding: var(--s-4); }
+  .grid { grid-template-columns: 1fr; }
+  .summary > div { grid-template-columns: 1fr; gap: var(--s-1); }
+  .control input:not([type="checkbox"]), .control select, .control textarea { min-height: var(--control-touch); font-size: 16px; }
+}
+.helpLink { border: 0; background: none; padding: 0; font: inherit; font-size: inherit; color: var(--accent-700); font-weight: var(--fw-semibold); cursor: pointer; border-radius: var(--r-xs); }
+.helpLink:focus-visible { outline: none; box-shadow: var(--focus-ring); }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyFilters, axis, computeWindow, drawnDates, filtersToQuery, groupItems, monthCount, parseFilters, rowMarks, xOf, type RoadmapItem } from './roadmap-layout.ts';
+import { applyFilters, axis, computeWindow, crowded, depLabelSide, drawnDates, filtersToQuery, groupItems, labelRoom, monthCount, parseFilters, rowMarks, xOf, type RoadmapItem } from './roadmap-layout.ts';
 
 function item(over: Partial<RoadmapItem> = {}): RoadmapItem {
   return {
@@ -110,4 +110,36 @@ test('Filter URL state round-trips and omits defaults', () => {
   assert.equal(filtersToQuery(f, null), '?owner=m1&view=moved&group=owner');
   assert.equal(filtersToQuery(parseFilters({ view: 'bogus' }), null), '');
   assert.equal(filtersToQuery(parseFilters({}), '2026-09-20'), '?cutoff=2026-09-20');
+});
+
+test('A label is raised when another mark falls under its extent, so labels never paint over markers', () => {
+  const w = { start: '2026-06-01', end: '2026-11-01' };
+  // Actual Live three days before its target: the "Live 28 Aug" label would cover the target diamond.
+  const m = rowMarks(item({ devStart: '2026-06-01', target: '2026-08-31', actual: '2026-08-28', actualExtent: 'FULL' }), w)!;
+  assert.deepEqual(m.markXs, [m.target!.x, m.live!.x]);
+  assert.equal(crowded(m.live!.x, m.markXs, labelRoom('Live 28 Aug'.length)), true);
+  // A milestone a few days after the target crowds its label; one well after does not.
+  const near = rowMarks(item({ target: '2026-09-10', milestone: { date: '2026-09-14', dateText: '', text: 'UAT' } }), w)!;
+  assert.equal(crowded(near.target!.x, near.markXs, labelRoom(6)), true);
+  const far = rowMarks(item({ target: '2026-09-10', milestone: { date: '2026-10-20', dateText: '', text: 'UAT' } }), w)!;
+  assert.equal(crowded(far.target!.x, far.markXs, labelRoom(6)), false);
+  // Marks to the left never crowd a right-hand label; longer labels need more room, capped.
+  assert.equal(crowded(10, [5, 30], 8), false);
+  assert.equal(labelRoom(6), 4.2);
+  assert.equal(labelRoom(40), 14);
+});
+
+test('A milestone under the target or live marker is nudged above the bar; one further away is not', () => {
+  const w = { start: '2026-09-01', end: '2026-12-01' };
+  assert.equal(rowMarks(item({ target: '2026-10-05', milestone: { date: '2026-10-04', dateText: '', text: 'Test' } }), w)!.milestone!.nudged, true);
+  assert.equal(rowMarks(item({ target: '2026-10-05', milestone: { date: '2026-10-20', dateText: '', text: 'Test' } }), w)!.milestone!.nudged, false);
+  assert.equal(rowMarks(item({ target: '2026-10-20', actual: '2026-10-01', actualExtent: 'PARTIAL', milestone: { date: '2026-10-01', dateText: '', text: 'Wave' } }), w)!.milestone!.nudged, true);
+});
+
+test('Dependency labels read after the arrow unless that would leave the window', () => {
+  assert.equal(depLabelSide(40), 'right');
+  assert.equal(depLabelSide(80), 'left');
+  const w = { start: '2026-09-01', end: '2026-11-01' };
+  const m = rowMarks(item({ target: '2026-10-09', dependencies: [{ id: 'd', otherName: 'X', otherSlug: 'x', late: true, text: 'late', neededDate: '2026-10-02', providerDate: '2026-10-14', days: 12 }] }), w)!;
+  assert.equal(m.dependencies[0]!.labelSide, 'right');
 });

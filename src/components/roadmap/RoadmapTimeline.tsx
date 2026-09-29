@@ -5,7 +5,7 @@ import { BusinessLine } from "@/components/primitives/BusinessLine";
 import { Button } from "@/components/primitives/Button";
 import { displayDate } from "@/lib/delivery/display";
 import type { BusinessLine as BusinessLineCode } from "@/lib/domain/types";
-import { axis, computeWindow, monthCount, rowMarks, xOf, type RoadmapGroup, type RoadmapGrouping, type RoadmapItem, type RoadmapWindow } from "@/lib/workspace/roadmap-layout";
+import { axis, computeWindow, crowded, labelRoom, monthCount, rowMarks, xOf, type RoadmapGroup, type RoadmapGrouping, type RoadmapItem, type RoadmapWindow } from "@/lib/workspace/roadmap-layout";
 import { ATTENTION_MARK, shortDate } from "./attention";
 import styles from "./RoadmapTimeline.module.css";
 
@@ -41,6 +41,9 @@ function Marks({ item, w, onOpen, onClose, describedBy }: { item: RoadmapItem; w
   const targetLabel = item.target && !item.actual
     ? (m.target!.past ? `▲ ${shortDate(item.target)} · past target` : shortDate(item.target)) : null;
   const liveLabel = item.actual ? `${item.actualExtent === "PARTIAL" ? "Partial live" : "Live"} ${shortDate(item.actual)}` : null;
+  // A label is raised above the bar when another mark would sit under it; it never covers a marker.
+  const targetRaised = targetLabel !== null && m.labelSide === "right" && crowded(m.target!.x, m.markXs, labelRoom(targetLabel.length));
+  const liveRaised = liveLabel !== null && m.live !== null && m.live.x <= 86 && crowded(m.live.x, m.markXs, labelRoom(liveLabel.length));
   const summary = [`${item.name}.`, `Target Live ${item.targetText}.`, item.actual ? `${liveLabel}.` : "Actual Live not recorded.",
     item.attention.length ? `${item.attention.length} attention ${item.attention.length === 1 ? "reason" : "reasons"}.` : "", "Open delivery."].filter(Boolean).join(" ");
   return <>
@@ -50,19 +53,22 @@ function Marks({ item, w, onOpen, onClose, describedBy }: { item: RoadmapItem; w
       {m.ghost && <>
         <span className={styles.ghostLine} style={{ left: pct(Math.min(m.ghost.x, m.ghost.toX)), width: pct(Math.abs(m.ghost.toX - m.ghost.x)) }} />
         <span className={styles.ghost} style={{ left: pct(m.ghost.x) }} />
-        <span className={styles.moveLabel} style={{ left: pct((m.ghost.x + m.ghost.toX) / 2) }}>Target {signed(m.ghost.days)}</span>
+        <span className={styles.moveLabel} data-below={targetRaised || m.milestone?.nudged || undefined} style={{ left: pct((m.ghost.x + m.ghost.toX) / 2) }}>Target {signed(m.ghost.days)}</span>
       </>}
-      {m.milestone && <span className={styles.milestone} style={{ left: pct(m.milestone.x) }} />}
+      {m.milestone && <span className={styles.milestone} data-nudged={m.milestone.nudged || undefined} style={{ left: pct(m.milestone.x) }} />}
       {m.dependencies.map(d => <Fragment key={d.id}>
         <span className={styles.depLine} style={{ left: pct(Math.min(d.fromX, d.toX)), width: pct(Math.abs(d.toX - d.fromX)) }} />
         <span className={styles.depStart} style={{ left: pct(d.fromX) }} />
         <span className={styles.depEnd} style={{ left: pct(d.toX) }} />
-        <span className={styles.depLabel} data-side={d.toX > 60 ? "left" : "right"} style={{ left: pct(d.toX > 60 ? d.toX : d.fromX) }}>⇢ Needs {d.name} · lands {d.days !== null ? `${signed(d.days)} after needed` : "after needed"}</span>
+        <span className={styles.depLabel} data-side={d.labelSide} style={{ left: pct(d.labelSide === "left" ? Math.min(d.fromX, d.toX) : Math.max(d.fromX, d.toX)) }}>
+          <span className={styles.depLong}>⇢ Needs {d.name} · lands {d.days !== null ? `${signed(d.days)} after needed` : "after needed"}</span>
+          <span className={styles.depShort}>⇢ {d.days !== null ? `${signed(d.days)} late` : "late"}</span>
+        </span>
       </Fragment>)}
       <span className={m.target!.past ? `${styles.target} ${styles.targetPast}` : styles.target} style={{ left: pct(m.target!.x) }} />
       {m.live && <span className={m.live.partial ? `${styles.live} ${styles.partial}` : styles.live} style={{ left: pct(m.live.x) }} />}
-      {targetLabel && <span className={styles.label} data-side={m.labelSide} data-past={m.target!.past || undefined} style={{ left: pct(m.target!.x) }}>{targetLabel}</span>}
-      {liveLabel && m.live && <span className={`${styles.label} ${styles.liveLabel}`} data-side={m.live.x > 86 ? "left" : "right"} style={{ left: pct(m.live.x) }}>{liveLabel}</span>}
+      {targetLabel && <span className={styles.label} data-side={m.labelSide} data-raised={targetRaised || undefined} data-past={m.target!.past || undefined} style={{ left: pct(m.target!.x) }}>{targetLabel}</span>}
+      {liveLabel && m.live && <span className={`${styles.label} ${styles.liveLabel}`} data-side={m.live.x > 86 ? "left" : "right"} data-raised={liveRaised || undefined} style={{ left: pct(m.live.x) }}>{liveLabel}</span>}
     </div>
     <Link prefetch={false} href={deliveryHref(item.slug)} className={styles.hit} aria-label={summary} aria-describedby={describedBy}
       style={{ left: `calc(${pct(m.hit.x)} - var(--s-3))`, width: `calc(${pct(m.hit.width)} + var(--s-6))` }}
@@ -112,6 +118,8 @@ export function RoadmapTimeline({ groups, unscheduled, grouping, cutoff, cutoffL
   const popId = useId();
   const closeTimer = useRef<number | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  // The month header lives in its own sticky strip and follows the body's horizontal scroll (E-3).
+  const headScroller = useRef<HTMLDivElement>(null);
   const [laneOpen, setLaneOpen] = useState(true);
   const all = useMemo(() => new Map([...scheduled, ...unscheduled].map(i => [i.id, i])), [scheduled, unscheduled]);
 
@@ -138,7 +146,7 @@ export function RoadmapTimeline({ groups, unscheduled, grouping, cutoff, cutoffL
   // When the timeline is wider than its container, open it with the cutoff in view.
   const toCutoff = useCallback((smooth: boolean) => {
     const el = scroller.current; if (!el || el.scrollWidth <= el.clientWidth) return;
-    const nameW = (el.querySelector(`.${styles.corner}`) as HTMLElement | null)?.offsetWidth ?? 0;
+    const nameW = (headScroller.current?.querySelector(`.${styles.corner}`) as HTMLElement | null)?.offsetWidth ?? 0;
     const trackW = el.scrollWidth - nameW, visible = el.clientWidth - nameW;
     el.scrollTo({ left: Math.max(0, today / 100 * trackW - visible * 0.4), behavior: smooth ? "smooth" : "auto" });
   }, [today]);
@@ -148,7 +156,9 @@ export function RoadmapTimeline({ groups, unscheduled, grouping, cutoff, cutoffL
     const check = () => setOverflowing(el.scrollWidth > el.clientWidth + 1);
     check(); toCutoff(false);
     const ro = new ResizeObserver(check); ro.observe(el);
-    return () => ro.disconnect();
+    const sync = () => { if (headScroller.current) headScroller.current.scrollLeft = el.scrollLeft; };
+    sync(); el.addEventListener("scroll", sync, { passive: true });
+    return () => { ro.disconnect(); el.removeEventListener("scroll", sync); };
   }, [toCutoff]);
 
   const flagX = Math.max(7, Math.min(93, today));
@@ -172,17 +182,21 @@ export function RoadmapTimeline({ groups, unscheduled, grouping, cutoff, cutoffL
       <span>{months[0] ? `${months[0].label} ${months[0].year} – ${months.at(-1)!.label} ${months.at(-1)!.year}` : ""} · window from recorded dates</span>
       {overflowing && <Button type="button" variant="ghost" className={styles.jump} onClick={() => toCutoff(true)}>Go to {cutoffLabel.toLowerCase()}</Button>}
     </div>
-    <div className={styles.scroller} ref={scroller} tabIndex={-1}>
+    <div className={styles.headScroller} ref={headScroller} aria-hidden="true">
       <div className={styles.canvas} style={canvasStyle}>
         <div className={styles.head}>
           <div className={styles.corner}>Initiative</div>
-          <div className={styles.axis} aria-hidden="true">
+          <div className={styles.axis}>
             <div className={styles.quarters}>{quarters.map(q => <span key={q.key} style={{ left: pct(q.x), width: pct(q.width) }}>{q.label}</span>)}</div>
             <div className={styles.months}>{months.map(m => <span key={m.key} style={{ left: pct(m.x), width: pct(m.width) }}>{m.label}{m.label === "Jan" || m === months[0] ? <small> {m.year}</small> : null}</span>)}</div>
             {showReference && <span className={`${styles.flag} ${styles.refFlag}`} data-lower={Math.abs(refFlagX - flagX) < 14 || undefined} style={{ left: pct(refFlagX) }}>{reference.label} · {shortDate(reference.date)}</span>}
             <span className={styles.flag} data-cutoff={showReference || undefined} style={{ left: pct(flagX) }}>{cutoffLabel} · {shortDate(cutoff)}</span>
           </div>
         </div>
+      </div>
+    </div>
+    <div className={styles.scroller} ref={scroller} tabIndex={-1}>
+      <div className={styles.canvas} style={canvasStyle}>
         <div className={styles.body}>
           <div className={styles.grid} aria-hidden="true">
             {months.map(m => <span key={m.key} className={m.label === "Jan" || m.label === "Apr" || m.label === "Jul" || m.label === "Oct" ? styles.quarterLine : styles.monthLine} style={{ left: pct(m.x) }} />)}
@@ -226,7 +240,7 @@ export function RoadmapTimeline({ groups, unscheduled, grouping, cutoff, cutoffL
       <li><span className={`${styles.keyMark} ${styles.live}`} aria-hidden="true" />Actual Live</li>
       <li><span className={`${styles.keyMark} ${styles.live} ${styles.partial}`} aria-hidden="true" />Partial live</li>
       <li><span className={`${styles.keyMark} ${styles.ghost}`} aria-hidden="true" />Previous target</li>
-      <li><span className={`${styles.keyMark} ${styles.milestone}`} aria-hidden="true" />Next milestone</li>
+      <li><span className={`${styles.keyMark} ${styles.milestone}`} aria-hidden="true" />Next milestone · lifted when it falls on the target or live marker</li>
       <li><span className={`${styles.key} ${styles.keyDep}`} aria-hidden="true" />⇢ Dependency lands after it is needed</li>
       {showReference && <li><span className={`${styles.key} ${styles.keyReference}`} aria-hidden="true" />{reference.label}</li>}
       <li><span className={showReference ? `${styles.key} ${styles.keyToday} ${styles.keyCutoff}` : `${styles.key} ${styles.keyToday}`} aria-hidden="true" />{cutoffLabel}</li>

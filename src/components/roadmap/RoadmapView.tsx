@@ -2,6 +2,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
+import { InstrumentIcon } from "@/components/shell/InstrumentIcon";
 import { DateChip, FilterBar, type FilterFacet } from "@/components/workspace/FilterBar";
 import { formatDate } from "@/lib/domain/labels";
 import type { ListFilterState } from "@/lib/workspace/list-filter";
@@ -99,12 +100,12 @@ export function RoadmapView({ items, lines, owners, initial, cutoff, explicitCut
           : <RoadmapTimeline groups={grouped.groups} unscheduled={grouped.unscheduled} grouping={filters.group} cutoff={cutoff} cutoffLabel={cutoffLabel} reference={reference} />}
     </section>
 
-    {visible.length > 0 && <section aria-labelledby="roadmap-details-title" className={styles.section}>
-      <div className={styles.sectionHead}>
-        <h2 id="roadmap-details-title">Details</h2>
-        <p>The recorded facts behind every mark, per initiative.</p>
-      </div>
+    {visible.length > 0 && <details className={styles.details}>
+      <summary className={styles.detailsSummary}>
+        <InstrumentIcon name="chevron-down" className={styles.detailsChevron} />
+        <span className={styles.sectionHead}><h2>Details</h2><p>The recorded facts behind every mark, per initiative · {visible.length} {visible.length === 1 ? "initiative" : "initiatives"}</p></span>
+      </summary>
       <RoadmapDetails groups={grouped.groups} unscheduled={grouped.unscheduled} grouping={filters.group} />
-    </section>}
+    </details>}
   </div>;
 }

@@ -185,6 +185,30 @@ export function datePosition(observations: MetricObservation[], date: string | n
   return (i + offset / length) / n;
 }
 
+/* ── Label placement in the trend chart ──────────────────────────────── */
+
+export interface ChartLabelPlan {
+  /** The target line's label sits at the right edge unless the latest point's label would collide with it. */
+  targetSide: "left" | "right";
+  /** The latest value's label sits above its point unless that would leave the plot. */
+  pointBelow: boolean;
+}
+/** Both labels are one line high; `lineHeight` is that height in chart units. */
+export function chartLabelPlan(latest: { x: number; y: number } | null, targetY: number | null, width: number, lineHeight = 16): ChartLabelPlan {
+  const pointBelow = latest !== null && latest.y < lineHeight * 1.5;
+  const targetSide = latest !== null && targetY !== null && latest.x > width * 0.72 && Math.abs(targetY - latest.y) < lineHeight * 2.4 ? "left" : "right";
+  return { targetSide, pointBelow };
+}
+
+/* ── Freshness ───────────────────────────────────────────────────────── */
+
+/** A metric whose last capture is older than this, as of the scenario date or today, is shown as stale. */
+export const STALE_AFTER_DAYS = 42;
+export function isStale(capturedAt: string | null, asOf: string): boolean {
+  if (!capturedAt) return false;
+  return Date.parse(asOf) - Date.parse(capturedAt) > STALE_AFTER_DAYS * 86400000;
+}
+
 /* ── Portfolio coverage ──────────────────────────────────────────────── */
 
 export interface MetricCoverage { configured: number; met: number; notMet: number; notAssessed: number; noTarget: number; lastCaptured: string | null; synthetic: boolean }
