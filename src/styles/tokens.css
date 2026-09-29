@@ -8,141 +8,163 @@
    (navy #002A47/#091A33, cyan #00AEC7, orange #DC6B2F, Inter) has been
    re-derived rather than copied, so this reads as inspired-by, not cloned.
    See CLAUDE.md §16.
+
+   Three surface tiers (darker and more separated than before):
+     1. chrome   deep navy rail + mobile bar            --chrome-*
+     2. canvas   blue-grey gutter around the work sheet --app-canvas
+     3. sheet    white work surface for all content     --surface / --panel
+   Inside the sheet, table headers and filter bars are --surface-sunken.
+
+   Contrast (WCAG 2.1, computed; text on its intended ground):
+     --ink-900 on white 17.5:1 · --ink-700 10.4:1 · --ink-500 6.3:1
+     --ink-500 on --surface-sunken 5.5:1 · --ink-400 on white 5.7:1, on sunken 4.9:1
+     Text never sits directly on --app-canvas (ink-500 there is only 4.4:1;
+     ink-700 is 8.4:1) — the gutter carries no reading content.
+     --accent-700 on white 6.6:1 · white on --accent-600 4.8:1
+     --chrome-ink on --chrome-900 15.2:1 · --chrome-ink-dim 8.3:1
+     --chrome-ink-faint on --chrome-900 6.3:1 · on --chrome-800 4.9:1
+     --chrome-900 on --accent-500 (badges) 6.6:1
+     --brand-orange on white 6.1:1 (numerals only; never status)
+     Status fg on its bg: ready 5.7 · at-risk 6.2 · blocked 6.6 · unknown 5.9
    ========================================================================= */
 :root {
-  /* ── Structural navy · the navigation rail ──────────────────────────────
-     Dark navigation against a light working canvas is the core contrast. */
-  --navy-900: #002a47;
-  --navy-850: #001b30;
-  --navy-800: #0a3a5e;
-  --navy-700: #134a72;
-  --navy-600: #1d4260;
-  --navy-500: #2a5878;
-  --navy-ink: #e8eef4;
-  --navy-ink-dim: #9fb2c4;
-  /* Carries text on three navy grounds now that the command palette exists:
-     6.21:1 on --navy-900, 5.78:1 on --navy-850, 4.52:1 on --navy-700. The
-     earlier value was tuned against navy-900 alone and failed AA on the
-     palette surface. */
-  --navy-ink-faint: #8398ae;
-  --navy-rule: #1b3145;
+  /* ── Chrome · the navigation rail, mobile bar, sign-in brand panel ─────── */
+  --chrome-950: #04131f;
+  --chrome-900: #061a2c;
+  --chrome-850: #0b2338;
+  --chrome-800: #12304a;
+  --chrome-700: #1a3d5c;
+  --chrome-rule: #1c3a55;
+  --chrome-ink: #e9eff5;
+  --chrome-ink-dim: #a3b4c5;
+  --chrome-ink-faint: #8a9db0;
+  --chrome-hover: rgb(255 255 255 / 6%);
+
+  /* Legacy names, kept working. --navy-900 is both chrome and the darkest
+     heading ink used across pages, so it follows the deeper chrome. */
+  --navy-900: var(--chrome-900);
+  --navy-850: var(--chrome-850);
+  --navy-800: var(--chrome-800);
+  --navy-700: var(--chrome-700);
+  --navy-600: #24486a;
+  --navy-500: #2f5577;
+  --navy-ink: var(--chrome-ink);
+  --navy-ink-dim: var(--chrome-ink-dim);
+  --navy-ink-faint: var(--chrome-ink-faint);
+  --navy-rule: var(--chrome-rule);
+
   /* ── Identity accent · cyan / teal ─────────────────────────────────────
-     The primary brand accent. Carries identity and interaction, never state. */
-  /* Darkened from #007489 so link text clears AA (4.8:1) on the deeper canvas. */
+     Primary actions, focus, the current navigation item. Never state. */
+  --accent-800: #00525f;
   --accent-700: #00667a;
-  /* Darkened from #00849a (4.41:1 with white text) to clear WCAG AA on the
-     primary button. The shift is imperceptible; the hue is unchanged. */
   --accent-600: #007d91;
   --accent-500: #00aec7;
   --accent-400: #22c0d6;
   --accent-200: #9fdce7;
-  --accent-100: #cceef4;
-  --accent-050: #e2f4f7;
+  --accent-100: #d9f2f6;
+  --accent-050: #ebf8fa;
+  --ink-link: var(--accent-700);
+
   /* ── Secondary brand accent · warm orange ──────────────────────────────
-     DECORATION ONLY. Restricted to the arc motif and section numerals.
-     It must never carry status meaning — see the semantic scale below. */
-  /* Darkened from #d2662b (3.70:1) to 4.67:1 on white. It is rendered as text
-     in the section numerals, so it has to clear AA. Same hue, same role. */
+     DECORATION ONLY: the arc motif and section numerals. Never status. */
   --brand-orange: #a04818;
   --brand-orange-soft: #f2ddd0;
-  /* ── Neutral working surfaces ──────────────────────────────────────────- */
-  /* Deeper blue-grey workspace (was #eaf0f3) so white work surfaces and rules
-     separate clearly. Every text token below is re-checked against it. */
-  --canvas: #dde5eb;
-  --panel: #ffffff;
   --orange-geometry: #dc6b2f;
-  --shadow-card: 0 1px 2px rgb(0 42 71 / 6%), 0 1px 1px rgb(0 42 71 / 4%);
-  --surface-subtle: #eef2f5;
-  --surface-sunken: #d3dde5;
-  --surface-inset: #cfd9e1;
-  /* Attention is a status, so it uses the AT_RISK amber family — never the brand orange (CLAUDE.md §16). */
+
+  /* ── Surfaces ───────────────────────────────────────────────────────── */
+  --app-canvas: #cfd9e2;          /* gutter only, around the white sheet */
+  --app-canvas-rule: #b9c6d1;     /* sheet edge on the gutter */
+  --surface: #ffffff;             /* the work sheet */
+  --panel: var(--surface);
+  /* Inset tone INSIDE the sheet. Components that painted "the page colour"
+     used --canvas; the page is now the white sheet, so --canvas is the
+     quiet inset that sits on it. */
+  --canvas: #f3f6f8;
+  --surface-subtle: #f3f6f8;      /* hover, quiet inset */
+  --surface-sunken: #eaeff3;      /* table headers, filter bars, key/value panels */
+  --surface-inset: #e2e9ee;
+  --surface-hover: #edf2f5;
+  --surface-selected: var(--accent-050);
+  --overlay: var(--surface);      /* menus, popovers, panels */
+  --scrim: rgb(4 19 31 / 55%);
+
+  /* ── Rules ─────────────────────────────────────────────────────────── */
+  --rule: #d5dde4;
+  --rule-strong: #b4c1cc;
+
+  /* ── Ink ───────────────────────────────────────────────────────────── */
+  --font-display: var(--font-inter, Inter), "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  --ink-900: #0a1b2a;
+  --ink-800: #1c3040;
+  --ink-700: #2e4253;
+  --ink-600: #435566;
+  --ink-500: #4f6272;
+  /* Meta text; still AA on white and on --surface-sunken. */
+  --ink-400: #56697a;
+  /* Decorative only - dashes, separators, disclosure glyphs. Never text. */
+  --ink-300: #a9b4bf;
+
+  /* ── Semantic status ───────────────────────────────────────────────────
+     Deliberately independent of the brand palette. AT_RISK is a dark
+     yellow-amber (hue ≈ 40°) far from the brand red-orange (≈ 21°).
+     Never colour alone: every usage pairs colour with text and a glyph. */
+  --state-ready-fg: #146b3f;
+  --state-ready-bg: #e3f4ea;
+  --state-ready-mark: #1f8a52;
+  --state-ready-edge: #bfe0cd;
+  --state-at-risk-fg: #7a5200;
+  --state-at-risk-bg: #fdf1d3;
+  --state-at-risk-mark: #c08a0c;
+  --state-at-risk-edge: #ecd7a5;
+  --state-blocked-fg: #a3170f;
+  --state-blocked-bg: #fce8e6;
+  --state-blocked-mark: #d03a2f;
+  --state-blocked-edge: #f0c8c4;
+  --state-unknown-fg: #4f5d6a;
+  --state-unknown-bg: #edf0f3;
+  --state-unknown-mark: #7f8e9b;
+  --state-unknown-edge: #d7dee5;
+  /* Attention is a status, so it uses the AT_RISK family — never brand orange. */
   --attention-fg: var(--state-at-risk-fg);
   --attention-bg: var(--state-at-risk-bg);
   --attention-rule: var(--state-at-risk-mark);
-  --font-display: Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-  --ink-900: #0b2133;
-  --ink-700: #34495a;
-  /* Darkened from #586c7c: 5.0:1 on the deeper canvas, 6.4:1 on white. */
-  --ink-500: #4b5e6e;
-  /* Darkened from #8493a2 (3.15:1). This token carries the micro labels,
-     timestamps and meta text, so it has to clear WCAG AA for normal text -
-     including on --surface-subtle, which is where the Next Best Action labels
-     sit. 4.85:1 on white, 4.57:1 on --surface-subtle. Kept as light as those
-     two thresholds allow, to preserve the hierarchy. */
-  --ink-400: #4b5e6e;
-  /* Decorative only - dashes, separators, disclosure glyphs. Never text that
-     has to be read; anything meaningful uses --ink-400 or darker. */
-  --ink-300: #a9b4bf;
-  --rule: #c9d4dd;
-  --rule-strong: #aab9c6;
-  /* ── Semantic status ───────────────────────────────────────────────────
-     Deliberately independent of the brand palette. AT_RISK is a dark
-     yellow-brown, chosen so it can never be confused with the brand's
-     red-orange. Status is never encoded by colour alone: every usage
-     pairs colour with a text label. */
-  --state-ready-fg: #17663f;
-  --state-ready-bg: #e6f3ec;
-  --state-ready-mark: #2e8b5b;
-  --state-ready-edge: #bfe0cd;
-  --state-at-risk-fg: #8a5800;
-  --state-at-risk-bg: #fbf0d9;
-  --state-at-risk-mark: #b8811a;
-  --state-at-risk-edge: #ecd7a5;
-  --state-blocked-fg: #a81e16;
-  --state-blocked-bg: #fbeae8;
-  --state-blocked-mark: #c6342b;
-  --state-blocked-edge: #f0c8c4;
-  --state-unknown-fg: #56626e;
-  --state-unknown-bg: #eef1f4;
-  --state-unknown-mark: #8493a2;
-  --state-unknown-edge: #dbe1e7;
-  /* ── Finding severity ──────────────────────────────────────────────────
-     A separate ramp from status, and orange-free by design. */
-  --sev-critical: #a81e16;
-  --sev-high: #a06600;
+  /* Neutral workflow chips (Open, Draft, Mitigating): NOT status. */
+  --chip-bg: #eef2f5;
+  --chip-fg: var(--ink-700);
+  --chip-border: var(--rule);
+
+  /* ── Finding severity · orange-free by design ───────────────────────── */
+  --sev-critical: #a3170f;
+  --sev-high: #8f5c00;
   --sev-medium: #4a6b86;
-  /* Darkened alongside --ink-400 for the same AA reason. */
-  --sev-low: #67737e;
-  /* ── Typography ────────────────────────────────────────────────────────
-     Inter is the reference deck's own typeface: it honours the visual DNA
-     and is simultaneously brand-neutral enterprise-standard. */
-  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+  --sev-low: #5f6c78;
+
+  /* ── Typography ────────────────────────────────────────────────────── */
+  --font-sans: var(--font-inter, Inter), -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
-  /* The deck runs 50pt display down to 6pt micro-labels. That dramatic
-     range is the hierarchy device we borrow. */
-  --t-display: 2.125rem;
-  /* 34px — initiative name */
-  --t-h1: 2rem;
-  /* 24px — page title */
-  /* 28px — the compared values in a Review conflict. Sits between h1 and
-     display because the conflict is the product signature and must dominate
-     its content area, while never competing with the initiative name that is
-     pinned in the sticky header at --t-display. */
-  --t-value: 3.5rem;
-  --t-h2: 1.0625rem;
-  /* 17px — section heading */
-  --t-h3: 0.9375rem;
-  /* 15px — row title */
-  --t-body: 0.875rem;
-  /* 14px — body */
-  --t-sm: 0.8125rem;
-  /* 13px — secondary */
-  --t-xs: 0.75rem;
-  /* 12px — meta */
-  --t-micro: 0.6875rem;
-  /* 11px — the deck's micro-label, our signature */
-  --lh-display: 1.12;
+  --t-display: 1.75rem;   /* 28px — initiative name, once per page */
+  --t-h1: 1.5rem;         /* 24px — page title */
+  --t-value: 3.5rem;      /* the compared values in a Review conflict */
+  --t-h2: 1.0625rem;      /* 17px — section heading */
+  --t-h3: 0.9375rem;      /* 15px — row title */
+  --t-body: 0.875rem;     /* 14px */
+  --t-sm: 0.8125rem;      /* 13px */
+  --t-xs: 0.75rem;        /* 12px */
+  --t-micro: 0.6875rem;   /* 11px */
+  --lh-display: 1.15;
   --lh-tight: 1.25;
-  --lh-body: 1.55;
+  --lh-body: 1.5;
   --ls-display: -0.022em;
   --ls-tight: -0.012em;
-  --ls-micro: 0.09em;
+  --ls-micro: 0.06em;
   --fw-regular: 400;
   --fw-medium: 500;
-  --fw-semibold: 700;
-  /* ── Spacing · 4px base ────────────────────────────────────────────────- */
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ── Spacing · 4px base ────────────────────────────────────────────── */
   --s-1: 0.25rem;
   --s-2: 0.5rem;
   --s-3: 0.75rem;
@@ -153,73 +175,109 @@
   --s-10: 2.5rem;
   --s-12: 3rem;
   --s-16: 4rem;
-  /* ── Radius · deliberately tight ───────────────────────────────────────
-     No giant rounded rectangles. Pills are reserved for status only. */
+
+  /* ── Controls ──────────────────────────────────────────────────────── */
+  --control-sm: 28px;
+  --control-md: 32px;
+  --control-lg: 36px;
+  --control-touch: 44px;
+  --icon-sm: 14px;
+  --icon-md: 16px;
+  --icon-lg: 20px;
+
+  /* ── Radius · tight; pills are for status only ─────────────────────── */
   --r-xs: 2px;
   --r-sm: 4px;
   --r-md: 6px;
   --r-lg: 8px;
+  --r-xl: 12px;
   --r-pill: 999px;
-  /* ── Elevation · supporting panels ───────────────────────────────────────────
-     Purposeful cards use a light shadow. The stronger
-     shadow is reserved for the one genuinely floating surface. */
-  --shadow-panel: 0 12px 32px -12px rgb(16 24 32 / 22%),
-    0 2px 6px -2px rgb(16 24 32 / 10%);
-  /* ── Motion ────────────────────────────────────────────────────────────- */
+
+  /* ── Elevation: only floating layers cast a shadow ─────────────────── */
+  --shadow-card: 0 1px 2px rgb(6 26 44 / 6%);
+  --shadow-sheet: 0 1px 2px rgb(6 26 44 / 8%), 0 0 0 1px rgb(6 26 44 / 4%);
+  --shadow-popover: 0 12px 28px -8px rgb(6 26 44 / 28%), 0 0 0 1px rgb(6 26 44 / 9%);
+  --shadow-panel: -16px 0 40px -16px rgb(6 26 44 / 30%), 0 0 0 1px rgb(6 26 44 / 8%);
+  --shadow-rail-overlay: 16px 0 40px -12px rgb(4 19 31 / 45%);
+
+  /* ── Motion ────────────────────────────────────────────────────────── */
   --dur-fast: 110ms;
   --dur: 170ms;
   --ease: cubic-bezier(0.2, 0, 0.15, 1);
-  /* ── Layout ────────────────────────────────────────────────────────────- */
-  --rail-w: 248px;
-  --rail-w-expanded: 248px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Layers ────────────────────────────────────────────────────────── */
+  --z-sticky: 30;
+  --z-topbar: 35;
+  --z-rail: 40;
+  --z-panel: 90;
+  --z-popover: 120;
+  --z-tooltip: 140;
+  --z-progress: 200;
+
+  /* ── Layout ────────────────────────────────────────────────────────── */
+  --rail-w-expanded: 232px;
+  --rail-w-collapsed: 56px;
+  --rail-w: var(--rail-w-expanded);
   --content-max: 1600px;
-  --command-h: 56px;
-  --mobile-global-h: 64px;
+  --command-h: 56px;              /* the global top bar */
+  --shell-top: 56px;              /* fixed chrome above page content */
+  --sheet-gap: 12px;              /* gutter around the white sheet */
+  --mobile-global-h: 56px;
   --mobile-ia-h: 56px;
-  --gutter: var(--s-10);
-  --header-h: 60px;
-  /* The STICKY workspace header, measured: breadcrumb + name + stage line +
-     tab strip ≈ 175px. Distinct from --header-h, which is the nav rail brand
-     block and has nothing to do with this. Anything that scrolls to an anchor
-     or sticks below the header must clear this, or it lands underneath an
-     opaque bar. Approximate by design — a long initiative name can wrap — so
-     it is rounded up rather than down. */
-  --workspace-header-h: 152px;
-  --focus-ring: 0 0 0 2px var(--panel), 0 0 0 4px #00607a;
-  --focus-ring-dark: 0 0 0 2px var(--navy-900), 0 0 0 4px #99dbe9;
-  /* Public entry: compact identity panel beside a focused form. */
-  --login-width: 70rem;
-  --login-min-height: 42rem;
-  --login-form-width: 25rem;
-  --login-wordmark-size: 2rem;
-  --login-wordmark-small: 1.5rem;
+  --gutter: var(--s-8);
+  --header-h: 56px;
+  /* The sticky initiative header (title row + tabs). WorkspaceTabs measures
+     the rendered height and overwrites this; the value here is the fallback. */
+  --workspace-header-h: 150px;
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent-600);
+  --focus-ring-dark: 0 0 0 2px var(--chrome-900), 0 0 0 4px var(--accent-400);
+
+  /* Public entry (sign in, sign up). */
+  --login-width: 72rem;
+  --login-min-height: 40rem;
+  --login-form-width: 24rem;
+  --login-wordmark-size: 1.25rem;
+  --login-wordmark-small: 1.125rem;
   --login-statement-size: 2.5rem;
-  --login-statement-small: 1.5rem;
-  --login-statement-width: 18ch;
-  --login-statement-tablet-width: 26ch;
-  --login-heading-size: 1.75rem;
-  --login-input-size: 1rem;
-  --login-control-height: 3rem;
-  --login-toggle-width: 4rem;
-  --login-password-clearance: 4.75rem;
+  --login-statement-small: 1.75rem;
+  --login-statement-width: 16ch;
+  --login-statement-tablet-width: 24ch;
+  --login-heading-size: 1.625rem;
+  --login-input-size: 0.9375rem;
+  --login-control-height: 2.5rem;
+  --login-toggle-width: 2.5rem;
+  --login-password-clearance: 2.75rem;
   --login-node-size: 0.375rem;
   --login-rule-width: 1px;
   --login-focus-width: 2px;
-  --login-disabled-opacity: 0.65;
+  --login-disabled-opacity: 0.6;
+}
+/* Remembered collapse (set before paint by the root layout). */
+:root[data-rail="collapsed"] {
+  --rail-w: var(--rail-w-collapsed);
 }
 @media (max-width: 1100px) {
   :root {
-    --rail-w: 76px;
     --gutter: var(--s-6);
   }
 }
+/* Small laptops start collapsed; an expand overlays content instead. */
+@media (min-width: 781px) and (max-width: 1023px) {
+  :root,
+  :root[data-rail="collapsed"] {
+    --rail-w: var(--rail-w-collapsed);
+  }
+}
 @media (max-width: 780px) {
-  :root {
-    /* Conservative anchor fallback until WorkspaceTabs measures the rendered
-       header; longer initiative names can make it taller than the 198px MFF. */
+  :root,
+  :root[data-rail="collapsed"] {
     --workspace-header-h: 96px;
     --rail-w: 0px;
     --gutter: var(--s-4);
-    --t-display: 1.625rem;
+    --sheet-gap: 0px;
+    --shell-top: 56px;
+    --t-display: 1.375rem;
+    --t-h1: 1.375rem;
   }
 }

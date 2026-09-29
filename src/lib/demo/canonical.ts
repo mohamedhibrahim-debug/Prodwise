@@ -10,6 +10,7 @@ import { FIXTURE_ORIGIN_LABEL } from "./presentation.ts";
 
 export const DEMO_ORGANIZATION_NAME="Prodwise Demo";
 export const DEMO_CANONICAL_VERSION="prodwise-graduation-2026-09-v1";
+export const DEMO_DATASET_LABEL="Demo dataset V3";
 export const DEMO_ENRICHED_VERSION="prodwise-graduation-2026-09-v2";
 export const DEMO_CUTOFF="2026-09-26T10:00:00.000Z";
 export const DEMO_BASELINE_WEEK="2026-W38";

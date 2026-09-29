@@ -1,4 +1,5 @@
 @import "./tokens.css";
+@import "./controls.css";
 /* ── Reset ───────────────────────────────────────────────────────────────- */
 *,
 *::before,
@@ -14,7 +15,7 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 body {
-  background: var(--canvas);
+  background: var(--app-canvas);
   color: var(--ink-900);
   font-family: var(--font-sans);
   font-size: var(--t-body);
@@ -129,7 +130,7 @@ hr {
   display: none !important;
 }
 input, select, textarea {
-  accent-color: var(--navy-900);
+  accent-color: var(--accent-600);
 }
 summary {
   cursor: pointer;
@@ -154,11 +155,11 @@ button, a, summary {
 }
 
 /* Product-wide action states. `:not(#_)` lifts specificity above module button
-   styles so a disabled or destructive action never borrows a primary look. */
-button:disabled:not(#_),button[aria-disabled="true"]:not(#_){background:transparent;color:var(--ink-500);border:1px dashed var(--rule-strong);box-shadow:none;opacity:1}
-button[data-tone="danger"]:not(#_){background:var(--panel);color:var(--state-blocked-fg);border:1px solid var(--state-blocked-edge)}
-button[data-tone="danger"]:not(#_):hover{background:var(--state-blocked-bg)}
-button[data-tone="danger"]:disabled:not(#_){color:var(--ink-500);border:1px dashed var(--rule-strong);background:transparent}
+   styles so a disabled action never borrows an active look. Faded, never dashed
+   (a dashed border reads as a drop zone, not as "unavailable"). */
+button:disabled:not(#_),button[aria-disabled="true"]:not(#_){opacity:.45;box-shadow:none;cursor:not-allowed}
+button[data-tone="danger"]:not(#_){background:var(--surface);color:var(--state-blocked-fg);border:1px solid var(--state-blocked-edge)}
+button[data-tone="danger"]:not(#_):hover:not(:disabled){background:var(--state-blocked-bg);border-color:var(--state-blocked-mark)}
 
 /* Link pending mark (see PendingHint): a thin bar under the clicked link, no layout shift. */
 a:has(> .link-pending){position:relative}
@@ -168,7 +169,7 @@ a:has(> .link-pending){position:relative}
 @media (prefers-reduced-motion:reduce){.link-pending[data-link-pending]{animation:none;transform:scaleX(1)}}
 
 /* App-wide navigation progress (see NavigationProgress). */
-.nav-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:200;pointer-events:none;background:var(--accent-500);transform:scaleX(0);transform-origin:left;opacity:0;transition:opacity var(--dur-fast) var(--ease)}
+.nav-progress{position:fixed;top:0;left:0;right:0;height:2px;z-index:var(--z-progress);pointer-events:none;background:linear-gradient(90deg,var(--accent-600),var(--accent-400));box-shadow:0 0 8px rgb(0 174 199 / 55%);transform:scaleX(0);transform-origin:left;opacity:0;transition:opacity var(--dur-fast) var(--ease)}
 .nav-progress[data-active]{opacity:1;animation:nav-progress 8s cubic-bezier(.1,.7,.2,1) forwards}
 @keyframes nav-progress{0%{transform:scaleX(0)}10%{transform:scaleX(.35)}100%{transform:scaleX(.92)}}
 @media (prefers-reduced-motion:reduce){.nav-progress[data-active]{animation:none;transform:scaleX(1);opacity:.7}}

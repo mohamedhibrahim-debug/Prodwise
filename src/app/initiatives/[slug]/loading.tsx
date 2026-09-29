@@ -1,2 +1,4 @@
-// Tab switches keep the initiative header and tabs; only the content area shows this until it is ready.
-export { WorkspaceLoading as default } from "@/components/shell/WorkspaceLoading";
+import { RouteSkeleton } from "@/components/shell/RouteSkeleton";
+
+// Tab switches keep the initiative header and tabs (the layout); only the content area shows this.
+export default function Loading() { return <RouteSkeleton scope="initiative-tab" />; }
