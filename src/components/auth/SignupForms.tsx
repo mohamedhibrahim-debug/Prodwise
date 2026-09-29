@@ -48,6 +48,7 @@ export function VerifySignup({localToken}:{localToken:string|null}){
   const found=localToken?{localToken}:hash.get('access_token')?{accessToken:hash.get('access_token')!}:query.get('token_hash')?{tokenHash:query.get('token_hash')!,type:query.get('type')??undefined}:null;
   const providerError=hash.get('error_description')??query.get('error_description');
   history.replaceState(null,'',window.location.pathname);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- reads the provider's one-time URL fragment once on mount
   if(!found){setError(providerError??'This verification link is incomplete. Start again.');return;}
   // A session returned by the provider can be read more than once; a one-time token is used only
   // when the person presses Confirm, so link scanners and previews cannot use it up.

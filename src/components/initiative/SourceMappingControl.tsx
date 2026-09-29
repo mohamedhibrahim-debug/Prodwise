@@ -14,6 +14,7 @@ export function SourceMappingControl({mapping,slug,canUnlink}:{mapping:SourceMap
  const begin=(next:'ROLE'|'UNLINK'|'RELINK')=>{setExpectedRevision(mapping.revision);setDraftRole(mapping.role);setDraftReason('');setOperation(next);};
  const [state, action, pending, keepAction] = useFormAction(reviseSourceAction,{error:null,message:null});
  const error=useRef<HTMLParagraphElement>(null);
+ // eslint-disable-next-line react-hooks/set-state-in-effect -- closes the editor after the server action reports success
  useEffect(()=>{if(state.error)error.current?.focus();else if(state.message)setOperation(null);},[state]);
  return <div>{state.message&&<p role="status">{state.message}</p>}{operation?<form action={action} onReset={event=>event.preventDefault()} className={styles.form}>
   <ScopeField/><input type="hidden" name="slug" value={slug}/><input type="hidden" name="mappingId" value={mapping.id}/><input type="hidden" name="expectedRevision" value={expectedRevision}/><input type="hidden" name="operation" value={operation}/>

@@ -22,6 +22,7 @@ export function CommitmentWorkbench({slug,initiativeId,archived,actions,events,m
  const canWrite=canBusinessWrite(ctx)&&writesEnabled&&!archived;
  const open=(row:Commitment|null)=>{setSaved(null);setSelection({row,requestId:crypto.randomUUID()});};
  useEffect(()=>{if(selection){dialog.current?.showModal();heading.current?.focus();}},[selection]);
+ // eslint-disable-next-line react-hooks/set-state-in-effect -- opens the row named by the URL selection when it changes
  useEffect(()=>{if(selectedId){const row=actions.find(a=>a.id===selectedId);if(row)setSelection({row,requestId:crypto.randomUUID()});}},[selectedId]);
  const close=()=>{dialog.current?.close();setSelection(null);add.current?.querySelector('button')?.focus();};
  const weekEnd=new Date(today+'T12:00:00Z');weekEnd.setUTCDate(weekEnd.getUTCDate()+(7-weekEnd.getUTCDay())%7);const end=weekEnd.toISOString().slice(0,10);

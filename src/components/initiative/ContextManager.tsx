@@ -9,6 +9,7 @@ type Edit={operation:'CREATE'|'SELECT'|'RENAME'|'RETIRE';context?:InitiativeCont
 export function ContextManager({slug,updatedAt,currentId,contexts,editable,legacy}:{slug:string;updatedAt:string;currentId:string|null;contexts:InitiativeContext[];editable:boolean;legacy:string|null}){
  const [edit,setEdit]=useState<Edit|null>(null),[state,action,pending,keepAction]=useFormAction(saveContextAction,{error:null,message:null});
  const error=useRef<HTMLParagraphElement>(null),title=useRef<HTMLInputElement>(null);
+ // eslint-disable-next-line react-hooks/set-state-in-effect -- closes the editor after the server action reports success
  useEffect(()=>{if(state.error)error.current?.focus();else if(state.message)setEdit(null);},[state]);
  useEffect(()=>{if(edit?.operation==='CREATE'||edit?.operation==='RENAME')title.current?.focus();},[edit]);
  const begin=(operation:Edit['operation'],context?:InitiativeContext,label?:string)=>setEdit({operation,context,expectedUpdatedAt:updatedAt,label});

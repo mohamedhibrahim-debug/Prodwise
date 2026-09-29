@@ -27,6 +27,7 @@ function refresh(force = false): Promise<void> {
 export function NotificationBell({ compact = false }: { compact?: boolean }) {
   const [unread, setUnread] = useState<number | null>(value), path = usePathname();
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- subscribes to the shared unread store and adopts the server value
     listeners.add(setUnread); setUnread(value); void refresh();
     const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
     const onChanged = () => { void refresh(true); };

@@ -54,6 +54,7 @@ export default function AppError({
         <button type="button" onClick={() => retry()} className={styles.retry}>
           Try again
         </button>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- a full document load discards the broken client state */}
         <a href="/" className={styles.home}>Go to Home</a>
       </div>
 
