@@ -172,8 +172,8 @@
   }
   .mobileBrand { display: grid; place-items: center; }
   .mobileTitle { margin: 0; min-width: 0; padding-left: var(--s-1); font-size: var(--t-body); font-weight: var(--fw-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .mobileBell :global(a[data-notifications]) { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--r-md); color: var(--chrome-ink-dim); }
-  .mobileBell :global(a[data-notifications] b) {
+  .mobileBell :global([data-notifications]) { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--r-md); color: var(--chrome-ink-dim); }
+  .mobileBell :global([data-notifications] b) {
     position: absolute; top: 4px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px;
     display: grid; place-items: center; border-radius: var(--r-pill);
     background: var(--accent-500); color: var(--chrome-900); font-size: 10px; font-weight: var(--fw-bold);

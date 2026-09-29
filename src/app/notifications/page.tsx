@@ -2,40 +2,17 @@ import Link from "next/link";
 import { requireWorkspaceAccess } from "@/lib/auth/access";
 import { workspacePresentation } from "@/lib/workspace/context";
 import { readNotifications } from "@/lib/notifications/service";
-import { KIND_LABEL, NOTIFICATION_KINDS, type NotificationKind, type NotificationType } from "@/lib/notifications/model";
+import { KIND_LABEL, NOTIFICATION_KINDS, type NotificationKind } from "@/lib/notifications/model";
 import { formatDate, formatDateTime } from "@/lib/domain/labels";
 import { MarkAllRead } from "@/components/notifications/MarkAllRead";
 import { markAllReadAction } from "./actions";
 import { Segmented } from "@/components/workspace/TabToolbar";
+import { TONE } from "@/lib/notifications/presentation";
 import styles from "./notifications.module.css";
 
 export const metadata = { title: "Notifications" };
 export const dynamic = "force-dynamic";
 
-/**
- * Semantic treatment per notification type: a status or information-type
- * tone with a glyph. Only rows that describe a state (overdue, passed,
- * blocked, a decision waiting) carry a status hue; changes and setup stay
- * quiet, so the feed as a whole does not shout.
- */
-type Tone = "overdue" | "decision" | "soon" | "change" | "setup";
-const TONE: Record<NotificationType, { tone: Tone; glyph: string; label: string }> = {
-  DECISION_NEEDED: { tone: "decision", glyph: "?", label: "Decision needed" },
-  DECISION_REOPENED: { tone: "decision", glyph: "?", label: "Decision reopened" },
-  DEPENDENCY_DATE: { tone: "overdue", glyph: "⇢", label: "Dependency late" },
-  COMMITMENT_OVERDUE: { tone: "overdue", glyph: "▲", label: "Overdue" },
-  QUESTION_OVERDUE: { tone: "overdue", glyph: "▲", label: "Overdue" },
-  TARGET_PASSED: { tone: "overdue", glyph: "▲", label: "Past target" },
-  COMMITMENT_DUE_SOON: { tone: "soon", glyph: "◆", label: "Due soon" },
-  WEEKLY_REVIEW_DUE: { tone: "soon", glyph: "▣", label: "Review due" },
-  SOURCE_CHANGED: { tone: "change", glyph: "↻", label: "Changed" },
-  TARGET_MOVED: { tone: "change", glyph: "↻", label: "Target moved" },
-  RISK_OPENED: { tone: "change", glyph: "▲", label: "Risk opened" },
-  DECISION_FROM_EVIDENCE: { tone: "change", glyph: "≡", label: "From evidence" },
-  SETUP_INCOMPLETE: { tone: "setup", glyph: "○", label: "Setup" },
-  CONNECTOR_RECONNECT: { tone: "setup", glyph: "○", label: "Reconnect" },
-  SOURCE_UNAVAILABLE: { tone: "setup", glyph: "○", label: "Unavailable" },
-};
 
 export default async function Notifications({ searchParams }: { searchParams: Promise<{ scope?: string; kind?: string; gone?: string }> }) {
   const [ctx, q, { items, read }] = await Promise.all([requireWorkspaceAccess(), searchParams, readNotifications()]);
