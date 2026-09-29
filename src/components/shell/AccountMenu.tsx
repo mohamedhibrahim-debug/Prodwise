@@ -16,12 +16,13 @@ export function AccountMenu({identity,collapsed=false}:{identity:ShellIdentity;c
  const popover=usePopover({placement:collapsed?'right-end':'top-start',kind:'menu'});
  const {access,presentation,guest}=identity;
  const name=access.actor.label;
- const role=roleShortLabel(access.role,access.platformRole);
+ // A Demo guest is not a member with a role; the identity line says what it is (m12).
+ const role=guest?'Demo access':roleShortLabel(access.role,access.platformRole);
  const canSwitch=!guest&&(identity.contexts?.length??0)>1;
  return <div className={styles.account} data-collapsed={collapsed||undefined}>
   <button type="button" className={styles.trigger} aria-label={`Account: ${name}`} data-tip={collapsed?name:undefined} data-tip-side="right" {...popover.triggerProps}>
    <span className={styles.avatar} aria-hidden="true">{initials(name)}</span>
-   <span className={styles.who}><strong>{name}</strong><small>{role}{access.isProductLead?' · Product Lead':''}</small></span>
+   <span className={styles.who}><strong>{name}</strong><small>{role}{!guest&&access.isProductLead?' · Product Lead':''}</small></span>
    <InstrumentIcon name="chevrons" className={styles.chevron}/>
   </button>
   <FloatingLayer popover={popover} role="menu" label="Account" width={288} onKeyDown={menuKeyDown(popover.close)}>
