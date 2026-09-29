@@ -177,6 +177,18 @@ export function extendWithV4(k: ScenarioKit) {
   commit("drp-test", "dispute-resolution-portal", day("2026-09-08", "10:30"), "tarek", { title: "Book the evidence format test with the scheme", assignee: "tarek", due: "2026-09-19", status: "DONE", note: "Test booked for 4 October." });
   commit("sra-workshop", "settlement-reconciliation-automation", day("2026-09-10", "10:00"), "adam", { title: "Invite Finance and Operations to the matching rules workshop", assignee: "adam", due: "2026-09-30" });
 
+  // ── Planning week (23–25 Sept): targets set or re-planned so the portfolio spans Q4 2026 to Q1 2027. ──
+  // Recorded after the W38 Final and before the W39 Draft, so they surface as this week's changes. Dependency-linked dates are left as they are.
+  dateFact("merchant-onboarding-kiosk", day("2026-09-23", "10:00"), "TARGET_LIVE", "2027-02-22", "nour", "Provisional planning date agreed with partner branches; the kiosk vendor is still to be chosen.");
+  dateFact("settlement-reconciliation-automation", day("2026-09-23", "11:00"), "TARGET_LIVE", "2026-11-23", "adam", "Target after the matching rules workshop and a four-week build.");
+  dateFact("installment-early-settlement", day("2026-09-24", "09:30"), "TARGET_LIVE", "2026-12-08", "reviewer", "Moved seven weeks: the settlement quote uses the daily repayment rule still awaiting a decision on Merchant Flex Finance.");
+  dateFact("merchant-kyc-refresh", day("2026-09-24", "10:00"), "TARGET_LIVE", "2026-12-14", "nour", "Target set once the re-verification population was sized.");
+  dateFact("agent-cash-in-network", day("2026-09-24", "11:00"), "TARGET_LIVE", "2027-03-15", "reviewer", "Provisional pilot window; to be confirmed when discovery closes.");
+  dateFact("merchant-pricing-update", day("2026-09-24", "15:00"), "TARGET_LIVE", "2026-11-09", "reviewer", "Moved four weeks: the two recorded fee rates must be settled before merchants are given notice.");
+  dateFact("partner-wallet-checkout", day("2026-09-25", "09:00"), "TARGET_LIVE", "2026-11-02", "lina", "Moved four weeks: the merchant name on receipts needs a change on the partner side.");
+  dateFact("merchant-credit-line-pilot", day("2026-09-25", "10:00"), "TARGET_LIVE", "2026-11-03", "lina", "Go-live date set after the pilot terminals passed in the test environment.");
+  dateFact("terminal-care-plan", day("2026-09-25", "14:30"), "TARGET_LIVE", "2027-01-18", "lina", "Target for the six-month coverage release, subject to Finance approving the monthly price.");
+
   // ── Open questions ──
   ask("kiosk-verify", "merchant-onboarding-kiosk", day("2026-09-03", "10:00"), "nour", { operation: "CREATE", question: "Can a merchant be identity-verified at a kiosk without an agent present?", owner: "hazem", expectedConfirmerText: "Compliance lead", dueDate: "2026-10-09" });
   ask("bpr-format", "bill-payment-refund-desk", day("2026-09-15", "11:10"), "mira", { operation: "CREATE", question: "Which reversal file format will the biller send from October?", owner: "mira", expectedConfirmerText: "Biller operations", dueDate: "2026-09-22" });

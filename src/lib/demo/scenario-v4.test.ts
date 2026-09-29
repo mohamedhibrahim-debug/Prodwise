@@ -56,11 +56,13 @@ test("every Roadmap condition in the brief is carried by a recorded fact, never 
   // Milestone next to its target (marker collision case) and a late dependency with a date impact.
   assert.equal(fact("dispute-resolution-portal", "NEXT_MILESTONE")?.value.date, "2026-10-04");
   assert.ok(row("supplier-payment-financing").attention.some(a => a.kind === "DEPENDENCY"), "late dependency counted as attention");
-  // Unknown and unrecorded dates: a meaningful minority, not the majority.
-  const unscheduled = p.rows.filter(r => !r.initiative.archivedAt && !r.target?.value.date);
-  assert.ok(unscheduled.length >= 5 && unscheduled.length <= 7, `unscheduled ${unscheduled.length}`);
-  assert.equal(fact("merchant-onboarding-kiosk", "TARGET_LIVE")?.value.unknown, true);
-  assert.equal(fact("settlement-reconciliation-automation", "TARGET_LIVE"), undefined);
+  // Every active initiative has a dated Target Live, spread across Q3 2026 to Q1 2027 rather than one month.
+  const active = p.rows.filter(r => !r.initiative.archivedAt);
+  assert.ok(active.every(r => r.target?.value.date), `unscheduled ${active.filter(r => !r.target?.value.date).map(r => r.initiative.slug)}`);
+  const months = new Map<string, number>(); for (const r of active) { const m = r.target!.value.date!.slice(0, 7); months.set(m, (months.get(m) ?? 0) + 1); }
+  assert.ok(months.size >= 8 && Math.max(...months.values()) <= active.length / 2, `target months ${[...months]}`);
+  // A once-unknown target stays in history as its earlier revision.
+  assert.ok(demo.deliveryState.events.some(e => e.initiativeId === bySlug("merchant-onboarding-kiosk").id && e.after.kind === "TARGET_LIVE" && e.before?.value.unknown && e.after.value.date === "2027-02-22"));
   // Archived records keep their history.
   assert.ok(bySlug("merchant-statement-archive").archivedAt && fact("merchant-statement-archive", "ACTUAL_LIVE"));
 });

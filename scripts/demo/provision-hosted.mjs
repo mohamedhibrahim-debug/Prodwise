@@ -102,7 +102,7 @@ function pgTimes(value){
  const m=typeof value==='string'&&/^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.(\d+))?Z$/.exec(value);
  if(!m)return value;const fraction=(m[2]??'').replace(/0+$/,'');return m[1]+(fraction?'.'+fraction:'')+'+00:00';
 }
-function fixtureFor(plan){
+export function fixtureFor(plan){
  const demo=canonicalDemoDataV4({workspaceId:plan.workspaceId,organizationId:plan.organizationId,reviewerMemberId:plan.reviewerMemberId,reviewerUserId:plan.reviewerUserId});
  // Each review is re-frozen from its OWN frozen records in the database's ordering (delivery_source orders
  // evidence, claims and claim evidence by id). Re-freezing a Final from today's records would rewrite history.
