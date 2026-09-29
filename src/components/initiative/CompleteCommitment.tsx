@@ -29,7 +29,7 @@ export function CompleteCommitment({ slug, commitment: a }: { slug: string; comm
     <input type="hidden" name="title" value={a.title} /><input type="hidden" name="assigneeMemberId" value={a.assigneeMemberId ?? ''} />
     <input type="hidden" name="dueDate" value={a.dueDate ?? ''} /><input type="hidden" name="evidenceId" value={a.evidenceId ?? ''} />
     <input type="hidden" name="blockedNote" value="" /><input type="hidden" name="status" value="DONE" /><input type="hidden" name="note" value="" />
-    <Button type="submit" variant="secondary" className={styles.button} disabled={pending} aria-label={`Complete commitment: ${a.title}`}>{pending ? 'Saving…' : 'Complete'}</Button>
+    <Button type="submit" variant="secondary" size="sm" pending={pending} aria-label={`Complete commitment: ${a.title}`}>Complete</Button>
     {state.error && <p ref={error} tabIndex={-1} role="alert" className={styles.error}>{state.error}</p>}
   </form>;
 }

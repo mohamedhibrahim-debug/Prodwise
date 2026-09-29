@@ -64,16 +64,16 @@
 .status[data-status=DONE] { color: var(--state-ready-fg); background: var(--state-ready-bg); border-color: var(--state-ready-edge); }
 .rowAction { justify-self: end; position: relative; z-index: 1; }
 /* ── Drawer (unchanged behaviour) ──────────────────────────────────────── */
-.primary { background: var(--navy-900); color: var(--navy-ink); border: 0; border-radius: var(--r-sm); padding: var(--s-3) var(--s-5); min-height: 44px; font: inherit; font-weight: var(--fw-semibold); cursor: pointer; }
-.dialog button:not(.primary) { min-height: 44px; font: inherit; padding: var(--s-2) var(--s-3); border: 1px solid var(--rule-strong); border-radius: var(--r-sm); background: var(--panel); color: var(--ink-900); cursor: pointer; }
+.primary { background: var(--navy-900); color: var(--navy-ink); border: 0; border-radius: var(--r-sm); padding: var(--s-3) var(--s-5); min-height: var(--s-10); font: inherit; font-weight: var(--fw-semibold); cursor: pointer; }
+.dialog button:not([class*=pw-btn]) { min-height: var(--s-10); font: inherit; padding: var(--s-2) var(--s-3); border: 1px solid var(--rule-strong); border-radius: var(--r-sm); background: var(--panel); color: var(--ink-900); cursor: pointer; }
 .dialog { margin: 0 0 0 auto; inset: 0; max-height: 100dvh; height: 100dvh; width: min(620px, 100vw); max-width: 100vw; overflow: auto; border: 0; border-left: 1px solid var(--rule-strong); padding: var(--s-6); background: var(--panel); color: var(--ink-900); }
 .dialog::backdrop { background: color-mix(in srgb, var(--navy-900) 60%, transparent); }
 .dialog > header { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); margin-bottom: var(--s-6); }
 .form fieldset { border: 0; padding: 0; display: grid; gap: var(--s-4); min-width: 0; }
 .form label { display: grid; gap: var(--s-2); font-weight: var(--fw-medium); }
-.form input, .form select, .form textarea { width: 100%; font: inherit; min-height: 44px; padding: var(--s-3); border: 1px solid var(--rule-strong); border-radius: var(--r-sm); background: var(--panel); color: var(--ink-900); }
+.form input, .form select, .form textarea { width: 100%; font: inherit; min-height: var(--s-10); padding: var(--s-3); border: 1px solid var(--rule-strong); border-radius: var(--r-sm); background: var(--panel); color: var(--ink-900); }
 .form p { font-size: var(--t-sm); color: var(--ink-500); }
-.form summary { min-height: 44px; padding: var(--s-3) 0; cursor: pointer; }
+.form summary { min-height: var(--s-10); padding: var(--s-3) 0; cursor: pointer; }
 .form details label { margin-top: var(--s-3); }
 .error, .conflict { padding: var(--s-4); margin-bottom: var(--s-4); border-left: 3px solid var(--state-blocked-edge); background: var(--state-blocked-bg); color: var(--state-blocked-fg); }
 .dialog section { margin-top: var(--s-8); border-top: 1px solid var(--rule); padding-top: var(--s-5); }

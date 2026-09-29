@@ -62,7 +62,7 @@
   white-space: nowrap;
 }
 .chip:hover { border-color: var(--ink-500); color: var(--ink-900); }
-.chip:focus-visible, .chipClear:focus-visible, .clear:focus-visible, .option:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.chip:focus-visible, .chipClear:focus-visible, .clear:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .chip[data-active] {
   border-color: var(--accent-600);
   background: var(--accent-050);
@@ -112,49 +112,9 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.menu {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% + 4px);
-  left: 0;
-  min-width: 220px;
-  max-height: min(360px, 60vh);
-  overflow: auto;
-  padding: var(--s-1);
-  background: var(--panel);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-panel);
-}
-.option {
-  display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--s-2);
-  width: 100%;
-  min-height: 32px;
-  padding: 0 var(--s-2);
-  border: 0;
-  border-radius: var(--r-sm);
-  background: none;
-  color: var(--ink-900);
-  font: inherit;
-  font-size: var(--t-sm);
-  text-align: left;
-  cursor: pointer;
-}
-.option:hover, .option:focus-visible { background: var(--surface-subtle); }
-.option[data-empty] { color: var(--ink-500); }
-.check { color: var(--accent-700); font-weight: var(--fw-semibold); }
-.optionLabel { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .optionCount { font-size: var(--t-xs); color: var(--ink-500); font-variant-numeric: tabular-nums; }
 @media (max-width: 780px) {
   .search { flex: 1 1 100%; }
   .search input, .chip, .chipClear, .clear { height: 40px; }
   .result { margin-left: 0; flex-basis: 100%; }
-  .option { min-height: 44px; }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .menu { animation: menuIn var(--dur-fast) var(--ease); }
-  @keyframes menuIn { from { opacity: 0; transform: translateY(-4px); } }
 }
