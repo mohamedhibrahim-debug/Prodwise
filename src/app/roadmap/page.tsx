@@ -1,35 +1,59 @@
-import { BusinessLine } from '@/components/primitives/BusinessLine';
+import Link from 'next/link';
+import type { Metadata } from "next";
 import {readManagement} from '@/lib/data/management-read';
 import {factDate} from '@/lib/delivery/display';
-import Link from 'next/link';
 import {readDelivery} from '@/lib/delivery/repository';
 import {dateValid,factFor} from '@/lib/delivery/model';
-import {displayDate,timelinePosition} from '@/lib/delivery/roadmap';
+import {displayDate} from '@/lib/delivery/roadmap';
 import {buildPortfolioProjection} from '@/lib/workspace/portfolio';
 import {BUSINESS_LINE_LABEL,businessLineText,STAGE_LABEL} from '@/lib/domain/labels';
 import {WriteNotice} from '@/components/delivery/WriteNotice';
 import {readRelationships} from '@/lib/data/relationships';
 import {relationshipsFor} from '@/lib/workspace/relationship-view';
+import {parseFilters,type RoadmapItem} from '@/lib/workspace/roadmap-layout';
+import {RoadmapView} from '@/components/roadmap/RoadmapView';
 import styles from './roadmap.module.css';
-import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Roadmap" };
-/** First day of each month strictly inside the window, for axis ticks. */
-function months(start:string,end:string):string[]{const out:string[]=[];const d=new Date(`${start.slice(0,7)}-01T00:00:00Z`);d.setUTCMonth(d.getUTCMonth()+1);while(d.toISOString().slice(0,10)<end&&out.length<24){out.push(d.toISOString().slice(0,10));d.setUTCMonth(d.getUTCMonth()+1);}return out;}
-export default async function Roadmap({searchParams}:{searchParams:Promise<{businessLine?:string;owner?:string;cutoff?:string;view?:string}>}){
- const[d,f,rel]=await Promise.all([readDelivery(),searchParams,readRelationships()]);const scenario=d.presentation.scenarioAt??new Date().toISOString();const cutoff=f.cutoff&&dateValid(f.cutoff)?f.cutoff:scenario.slice(0,10);const p=buildPortfolioProjection({source:d.source,state:d.state,workspaceId:d.ctx.workspaceId,management:await readManagement(),relationships:rel.relationships,asOf:`${cutoff}T12:00:00Z`});
- const ends=d.source.snapshots.map(x=>({id:x.initiative.id,name:x.initiative.name,slug:x.initiative.slug,archived:Boolean(x.initiative.archivedAt)}));const depFacts=d.state.facts.filter(x=>x.workspaceId===d.ctx.workspaceId);const depsOf=(id:string)=>relationshipsFor(id,rel.relationships,ends,depFacts,'ACTIVE',p.today).filter(x=>x.group==='DEPENDS_ON');
- const rows=p.rows.filter(r=>!r.initiative.archivedAt&&(!f.businessLine||r.initiative.businessLine===f.businessLine)&&(!f.owner||r.ownerId===f.owner)&&(!f.view||(f.view==='attention'?r.attention.length>0:f.view==='unknown'?!r.target?.value.date:f.view==='moved'?Boolean(r.targetMovement):f.view==='dependency'?depsOf(r.initiative.id).some(x=>x.late):true)));
- const facts=d.state.facts.filter(f=>f.workspaceId===d.ctx.workspaceId);const dates=[cutoff,...rows.flatMap(r=>[r.target?.value.date,r.actual?.value.date,factFor(facts,r.initiative.id,'DEV_STARTED')?.value.date].filter((v):v is string=>Boolean(v)))].sort();const start=dates[0]!,end=dates.at(-1)!;
- const groups=[...new Set(rows.filter(r=>r.target?.value.date).map(r=>r.initiative.businessLine))].sort();const unknown=rows.filter(r=>!r.target?.value.date);
- const row=(r:typeof rows[number])=>{const i=r.initiative;const dev=factFor(facts,i.id,'DEV_STARTED');return <article className={styles.row} key={i.id}><div className={styles.identity}><Link prefetch={false} href={`/initiatives/${i.slug}/delivery?returnTo=${encodeURIComponent('/roadmap')}`}>{i.name}</Link><span>{STAGE_LABEL[i.stage]} · {r.ownerLabel}</span><p>{factFor(facts,i.id,'SCOPE')?.value.text??'Scope not confirmed'}</p></div><div className={styles.schedule}><div className={styles.timeline} aria-hidden="true"><span className={styles.cutoffMarker} style={{left:`${timelinePosition(cutoff,start,end)}%`}}/>{dev?.value.date&&r.target?.value.date&&dev.value.date<=r.target.value.date&&<span className={styles.duration} style={{left:`${timelinePosition(dev.value.date,start,end)}%`,width:`${timelinePosition(r.target.value.date,start,end)-timelinePosition(dev.value.date,start,end)}%`}}/>}{r.target?.value.date&&<span className={styles.targetMarker} style={{left:`${timelinePosition(r.target.value.date,start,end)}%`}}/>}{r.actual?.value.date&&<span className={styles.actualMarker} style={{left:`${timelinePosition(r.actual.value.date,start,end)}%`}}/>}{depsOf(i.id).filter(x=>x.late&&x.impact&&x.impact.assessed&&x.impact.late).map(x=><span key={x.relationship.id} className={styles.dependencyMarker} style={{left:`${timelinePosition((x.impact as {providerDate:string}).providerDate,start,end)}%`}}/>)}</div><p><strong>Target {factDate(r.target)}</strong>{r.target?.contextName&&<> · <Link prefetch={false} href={`/initiatives/${i.slug}/delivery#target-history`}>{r.target.contextName}</Link></>} · Live {r.actual?.value.date?`${factDate(r.actual)} (${r.actual.value.extent==='PARTIAL'?'partial':'full'})`:'not recorded'}</p>{r.targetMovement&&<Link prefetch={false} href={`/initiatives/${i.slug}/delivery#target-history`}>Moved {r.targetMovement.days>0?'+':''}{r.targetMovement.days} d from {displayDate(r.targetMovement.from)}</Link>}<small>Development start · {factDate(dev)}</small></div><div className={styles.context}><strong>{r.milestone?.value.text??'Next milestone not recorded'}</strong><p>{r.milestone?factDate(r.milestone):'Date not recorded'}</p>{r.attention.map((a,n)=><p className={styles.attention} key={n}>{a.label} · <Link prefetch={false} href={a.href}>Inspect</Link></p>)}{depsOf(i.id).map(x=><p key={x.relationship.id} className={x.late?styles.attention:styles.dependency}>{x.late?'▲ ':''}Depends on <Link prefetch={false} href={x.other?`/initiatives/${x.other.slug}`:'#'}>{x.other?.name??'an initiative you can’t access'}</Link> · {x.late?x.impactText:x.impact?.assessed?'no date impact on recorded dates':'date impact not assessed'}</p>)}<small>{r.nextStep?.value.text?`Next step: ${r.nextStep.value.text}`:'No next step recorded.'}</small></div></article>;};
- return <div className={styles.page}><header className={styles.header}><div><p className={styles.eyebrow}>Delivery outlook · {d.presentation.organizationName}</p><h1>Roadmap</h1><p>Every date comes from a confirmed initiative fact.</p></div><Link prefetch={false} href="/weekly-review">Weekly Review →</Link></header><WriteNotice ctx={d.ctx}/>
- <p className={styles.pulse}><Link prefetch={false} href="/roadmap">{rows.length} {rows.length===1?'initiative':'initiatives'}</Link> · <Link prefetch={false} href="/roadmap?view=attention">{p.summary.attentionInitiatives} need attention</Link> · <Link prefetch={false} href="/roadmap?view=moved">{p.rows.filter(r=>r.targetMovement).length} with target changes</Link> · <Link prefetch={false} href="/roadmap?view=unknown">{p.summary.unknownTargets} without Target Live</Link></p>
- <form className={styles.filters}><label>Business line<select name="businessLine" defaultValue={f.businessLine??''}><option value="">All</option>{[...new Set(p.rows.map(r=>r.initiative.businessLine))].map(line=><option key={line} value={line}>{businessLineText(line)}</option>)}</select></label><label>Owner<select name="owner" defaultValue={f.owner??''}><option value="">All</option>{d.source.members.filter(m=>m.active).map(m=><option key={m.id} value={m.id}>{m.displayName}</option>)}</select></label><label>Review cutoff<input name="cutoff" type="date" defaultValue={cutoff}/></label><label>Show<select name="view" defaultValue={f.view??''}><option value="">All initiatives</option><option value="attention">Needs attention</option><option value="unknown">No Target Live</option><option value="moved">Target changes</option><option value="dependency">Dependency date impact</option></select></label><button>Apply filters</button></form>
- <p className={styles.note}>Current facts · cutoff {displayDate(cutoff)}{d.presentation.isDemo?` · scenario date ${displayDate(scenario.slice(0,10))}`:''}. Changing cutoff does not reconstruct historical records.</p>
- <div className={styles.axis}><span>Initiative / scope</span><div><p>{displayDate(start)} <span>Recorded schedule</span> {displayDate(end)}</p>{months(start,end).map(m=><span key={m} className={styles.monthTick} style={{left:`${timelinePosition(m,start,end)}%`}}>{new Date(`${m}T00:00:00Z`).toLocaleDateString('en-GB',{month:'short',timeZone:'UTC'})}</span>)}<span className={styles.axisCutoff} style={{left:`${timelinePosition(cutoff,start,end)}%`}}><b>Cutoff</b></span></div><span>Next milestone / attention</span></div>
- <p className={styles.legend}><span className={styles.targetKey}/> Target · planned <span className={styles.actualKey}/> Actual Live · recorded <span className={styles.dependencyKey}/> Date a dependency lands (only when it is later than needed) │ Cutoff {displayDate(cutoff)}</p>
- {groups.map(group=><section key={group}><h2 className={styles.group}><span>Business line</span> <BusinessLine code={group} detailed/></h2>{rows.filter(r=>r.target?.value.date&&r.initiative.businessLine===group).sort((a,b)=>a.target!.value.date!.localeCompare(b.target!.value.date!)).map(row)}</section>)}
- {unknown.length>0&&<section><h2 className={styles.group}>No known Target Live ({unknown.length})</h2>{unknown.map(row)}</section>}
- {!rows.length&&<section className={styles.empty}><h2>No initiatives in this view</h2><Link prefetch={false} href="/roadmap">Clear filters</Link></section>}
- <p className={styles.note}>Missing Actual Live does not mean a launch failed or has not happened. A past target requests a human update. Lines connect recorded dates; they never represent estimated progress.</p></div>;
+
+export default async function Roadmap({searchParams}:{searchParams:Promise<{businessLine?:string;owner?:string;cutoff?:string;view?:string;group?:string}>}){
+ const[d,f,rel]=await Promise.all([readDelivery(),searchParams,readRelationships()]);
+ const scenario=d.presentation.scenarioAt??new Date().toISOString();
+ const explicitCutoff=f.cutoff&&dateValid(f.cutoff)?f.cutoff:null;
+ const cutoff=explicitCutoff??scenario.slice(0,10);
+ const p=buildPortfolioProjection({source:d.source,state:d.state,workspaceId:d.ctx.workspaceId,management:await readManagement(),relationships:rel.relationships,asOf:`${cutoff}T12:00:00Z`});
+ const ends=d.source.snapshots.map(x=>({id:x.initiative.id,name:x.initiative.name,slug:x.initiative.slug,archived:Boolean(x.initiative.archivedAt)}));
+ const facts=d.state.facts.filter(x=>x.workspaceId===d.ctx.workspaceId);
+ // Every value below is a recorded fact or a projection the rest of Prodwise already shows; nothing is estimated here.
+ const items:RoadmapItem[]=p.rows.filter(r=>!r.initiative.archivedAt).map(r=>{
+  const i=r.initiative;const dev=factFor(facts,i.id,'DEV_STARTED');
+  const deps=relationshipsFor(i.id,rel.relationships,ends,facts,'ACTIVE',p.today).filter(x=>x.group==='DEPENDS_ON');
+  return {
+   id:i.id,slug:i.slug,name:i.name,stage:STAGE_LABEL[i.stage],businessLine:i.businessLine,businessLineLabel:businessLineText(i.businessLine),
+   ownerId:r.ownerId,ownerLabel:r.ownerLabel,scope:factFor(facts,i.id,'SCOPE')?.value.text??null,
+   devStart:dev?.state==='SET'?dev.value.date:null,
+   target:r.target?.state==='SET'?r.target.value.date:null,targetText:factDate(r.target),targetContext:r.target?.contextName??null,
+   actual:r.actual?.state==='SET'?r.actual.value.date:null,actualExtent:r.actual?.value.extent??null,actualText:factDate(r.actual),
+   milestone:r.milestone?{date:r.milestone.state==='SET'?r.milestone.value.date:null,dateText:factDate(r.milestone),text:r.milestone.value.text??'Next milestone'}:null,
+   nextStep:r.nextStep?.value.text??null,
+   movement:r.targetMovement?{from:r.targetMovement.from,to:r.targetMovement.to,days:r.targetMovement.days}:null,
+   attention:r.attention.map(a=>({kind:a.kind,label:a.label,detail:a.detail,href:a.href})),
+   dependencies:deps.map(x=>{const late=x.impact&&x.impact.assessed&&x.impact.late?x.impact:null;return {id:x.relationship.id,otherName:x.other?.name??'An initiative you can’t access',otherSlug:x.other?.slug??null,late:x.late,
+    text:x.late?x.impactText??'Lands after the date it is needed.':x.impact?.assessed?'No date impact on recorded dates':'Date impact not assessed',
+    neededDate:late?.neededDate??null,providerDate:late?.providerDate??null,days:late?.days??null};}),
+   pastTarget:r.timing.kind==='NEEDS_UPDATE',
+  };
+ });
+ const lines=[...new Set(p.rows.filter(r=>!r.initiative.archivedAt).map(r=>r.initiative.businessLine))].sort().map(line=>({value:line,label:businessLineText(line),short:BUSINESS_LINE_LABEL[line]}));
+ const owners=d.source.members.filter(m=>m.active).map(m=>({value:m.id,label:m.displayName}));
+ const cutoffLabel=explicitCutoff?'Cutoff':d.presentation.isDemo?'Scenario date':'Today';
+ return <div className={styles.page}>
+  <header className={styles.header}>
+   <div><p className={styles.eyebrow}>Delivery outlook · {d.presentation.organizationName}</p><h1>Roadmap</h1><p className={styles.lede}>Every mark is a confirmed initiative fact. Nothing is estimated or extended.</p></div>
+   <Link prefetch={false} className={styles.headerLink} href="/weekly-review">Weekly Review →</Link>
+  </header>
+  <WriteNotice ctx={d.ctx}/>
+  <RoadmapView items={items} lines={lines} owners={owners} initial={parseFilters(f)} cutoff={cutoff} explicitCutoff={explicitCutoff} cutoffLabel={cutoffLabel} reference={{date:scenario.slice(0,10),label:d.presentation.isDemo?'Scenario date':'Today'}}
+   note={`Current facts · ${cutoffLabel.toLowerCase()} ${displayDate(cutoff)}${d.presentation.isDemo&&explicitCutoff?` · scenario date ${displayDate(scenario.slice(0,10))}`:''}. Changing the cutoff does not reconstruct historical records.`}/>
+  <p className={styles.note}>Missing Actual Live does not mean a launch failed or has not happened. A past target requests a human update. Bars connect recorded dates; they never represent estimated progress.</p>
+ </div>;
 }
