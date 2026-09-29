@@ -102,7 +102,7 @@ function AskSurface({identity,preferences,configured}:{identity:ShellIdentity;pr
   {open&&<AskPanel
    sheet={sheet}
    contextLine={contextLine(screen,initiative)}
-   starters={startersFor(screen,preferences.language)}
+   starters={startersFor(screen,preferences.language,configured)}
    turns={turns}
    busy={busy}
    terms={terms}

@@ -56,7 +56,7 @@ export default async function Connections({ searchParams }: { searchParams: Prom
   return <div className={styles.page}>
     <nav aria-label="Breadcrumb" className={styles.crumbs}><Link prefetch={false} href="/account">My account</Link><span aria-hidden="true">/</span><span aria-current="page">Connected sources</span></nav>
     <header className={styles.head}>
-      <div><h2>Connected sources</h2>
+      <div><h1>Connected sources</h1>
         <p>Your own accounts, used to bring Jira work, email threads, Drive documents and Figma frames into an initiative as evidence. Prodwise reads only what you select, never changes anything in these tools, and nothing becomes Knowledge until someone confirms it.</p></div>
       {back && back !== "/" && <Link prefetch={false} className={styles.backLink} href={back}>Back to import</Link>}
     </header>

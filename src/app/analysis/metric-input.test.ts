@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { definitionRecord, parseDefinitionInput, parseNumber, parseObservationInput } from "../../lib/analysis/metric-input.ts";
+import { definitionRecord, parseDefinitionInput, parseNumber, parseObservationInput, wallClockToUtc } from "../../lib/analysis/metric-input.ts";
 
 const today = "2026-09-26";
 const good = { initiativeId: "i1", name: "Refund requests older than five days", definition: "Open refund requests older than five business days at month end.", unit: "requests", formula: "Count of open refund requests with age > 5 business days at period end", sourceLabel: "Refund desk register", sourceEvidenceId: "", periodGrain: "Calendar month", timezone: "Africa/Cairo" };
@@ -50,7 +50,7 @@ test("an observation carries a value or an explicit not-recorded note, within a 
   const base = { metricId: "m1", periodStart: "2026-09-14", periodEnd: "2026-09-20", capturedAt: "2026-09-21T09:00" };
   const ok = parseObservationInput({ ...base, value: "1,240" });
   assert.ok(ok.ok);
-  if (ok.ok) { assert.equal(ok.input.value, 1240); assert.equal(ok.input.note, ""); assert.equal(ok.input.capturedAt, new Date("2026-09-21T09:00").toISOString()); }
+  if (ok.ok) { assert.equal(ok.input.value, 1240); assert.equal(ok.input.note, ""); assert.equal(ok.input.capturedAt, "2026-09-21T06:00:00.000Z"); }
   const gap = parseObservationInput({ ...base, notRecorded: "yes", note: "The export failed for this week." });
   assert.ok(gap.ok && gap.input.value === null);
   const silentGap = parseObservationInput({ ...base, notRecorded: "yes" });
@@ -63,4 +63,11 @@ test("an observation carries a value or an explicit not-recorded note, within a 
   assert.ok(!reversed.ok && "periodEnd" in reversed.errors);
   const early = parseObservationInput({ ...base, value: "1", capturedAt: "2026-09-01T09:00" });
   assert.ok(!early.ok && "capturedAt" in early.errors);
+});
+
+test('a datetime-local capture time is read on the organization clock, not the server clock (Devil R2-M4)', () => {
+  assert.equal(new Date(wallClockToUtc('2026-09-29T21:54', 'Africa/Cairo')).toISOString(), '2026-09-29T18:54:00.000Z');
+  assert.equal(new Date(wallClockToUtc('2026-01-15T09:00', 'Africa/Cairo')).toISOString(), '2026-01-15T07:00:00.000Z');
+  assert.equal(new Date(wallClockToUtc('2026-09-29T21:54:00Z', 'Africa/Cairo')).toISOString(), '2026-09-29T21:54:00.000Z');
+  assert.ok(Number.isNaN(wallClockToUtc('yesterday', 'Africa/Cairo')));
 });

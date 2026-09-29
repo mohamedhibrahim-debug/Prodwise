@@ -105,8 +105,12 @@ function NotificationGlance({ label, badge, current }: { label: string; badge: R
         <button type="button" className={styles.markAll} disabled={marking || !visibleUnread.length} onClick={() => void mark(visibleUnread)}>{marking ? "Marking…" : "Mark all read"}</button>
       </header>
       <div className={styles.filters}>
-        <div className={styles.scope} role="radiogroup" aria-label="Whose notifications">
-          {(["mine", "all"] as const).map(s => <button key={s} type="button" role="radio" aria-checked={scope === s} onClick={() => setScope(s)}>
+        <div className={styles.scope} role="radiogroup" aria-label="Whose notifications" onKeyDown={e => {
+          if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+          e.preventDefault(); const next: Scope = scope === "mine" ? "all" : "mine"; setScope(next);
+          const group = e.currentTarget; requestAnimationFrame(() => group.querySelector<HTMLButtonElement>(`[data-scope="${next}"]`)?.focus());
+        }}>
+          {(["mine", "all"] as const).map(s => <button key={s} type="button" role="radio" data-scope={s} tabIndex={scope === s ? 0 : -1} aria-checked={scope === s} onClick={() => setScope(s)}>
             {s === "mine" ? "For me" : "Everything"}{data && <span>{s === "mine" ? data.unread.mine : data.unread.all}</span>}
           </button>)}
         </div>
@@ -123,7 +127,7 @@ function NotificationGlance({ label, badge, current }: { label: string; badge: R
         : data!.groups.map(g => <section key={g.key} aria-label={g.label}>
             <h3 className={styles.group}>{g.label}</h3>
             <ul className={styles.list}>{g.items.map(n => { const t = TONE[n.type]; return <li key={n.fingerprint} className={styles.item} data-unread={n.unread || undefined}>
-              <Link prefetch={false} href={`/notifications/open?n=${n.fingerprint}`} className={styles.row} onClick={() => popover.close()}>
+              <Link prefetch={false} href={`/notifications/open?n=${n.fingerprint}`} className={styles.row} onClick={() => { popover.close(); window.setTimeout(() => window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED)), 1200); }}>
                 <span className={styles.marker} data-tone={t.tone} aria-hidden="true">{t.glyph}</span>
                 <span className={styles.text}>
                   <span className={styles.meta}><span className={styles.kind} data-tone={t.tone}>{t.label}</span>{n.initiativeName && <span className={styles.initiative}>{n.initiativeName}</span>}</span>

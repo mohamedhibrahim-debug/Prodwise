@@ -1,5 +1,5 @@
 "use client";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { cloneElement, isValidElement, useId, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { DateField } from "@/components/forms/DateField";
@@ -29,12 +29,16 @@ function cairoNowLocal() {
 }
 const formRecord = (form: HTMLFormElement) => Object.fromEntries([...new FormData(form).entries()].map(([k, v]) => [k, String(v)]));
 
+/** Every control gets its label's id, its help and its error as its description (Devil R2-M5). */
 function Field({ label, help, error, children, wide = false }: { label: string; help?: string; error?: string; children: ReactNode; wide?: boolean }) {
-  const id = useId();
+  const id = useId(), describedBy = `${id}-d`;
+  const control = isValidElement<Record<string, unknown>>(children)
+    ? cloneElement(children, { id, "aria-describedby": help || error ? describedBy : undefined, "aria-invalid": error ? true : undefined })
+    : children;
   return <div className={styles.field} data-wide={wide || undefined} data-invalid={error ? "" : undefined}>
     <label htmlFor={id}>{label}</label>
-    <div className={styles.control}>{typeof children === "function" ? null : children}</div>
-    {error ? <p className={styles.fieldError} role="alert">{error}</p> : help ? <p className={styles.help}>{help}</p> : null}
+    <div className={styles.control}>{control}</div>
+    {error ? <p id={describedBy} className={styles.fieldError} role="alert">{error}</p> : help ? <p id={describedBy} className={styles.help}>{help}</p> : null}
   </div>;
 }
 

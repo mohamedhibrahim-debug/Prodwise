@@ -67,7 +67,7 @@
 .listHead[data-kind=generic],.list[data-kind=generic] .row{grid-template-columns:24px minmax(0,1fr) 140px 104px 28px}
 .listHead{padding:var(--s-2) var(--s-4);font-size:var(--t-micro);font-weight:var(--fw-semibold);letter-spacing:var(--ls-micro);text-transform:uppercase;color:var(--ink-500);border:1px solid var(--rule);border-bottom:0;border-radius:var(--r-md) var(--r-md) 0 0;background:var(--surface-subtle)}
 .selectAll{display:contents}
-.selectAll input{width:16px;height:16px;margin:0;accent-color:var(--navy-900)}
+.selectAll input{width:16px;height:16px;margin:0;accent-color:var(--accent-600)}
 .selectAll span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .list{list-style:none;margin:0;padding:0;background:var(--panel);border:1px solid var(--rule);border-radius:0 0 var(--r-md) var(--r-md);overflow:hidden}
 .row{position:relative;padding:var(--s-3) var(--s-4);border-bottom:1px solid var(--rule);cursor:pointer;transition:background-color var(--dur-fast) var(--ease)}
@@ -75,7 +75,7 @@
 .row:hover{background:var(--surface-subtle)}
 .row[data-selected]{background:var(--accent-050);box-shadow:inset 3px 0 0 var(--accent-600)}
 .row[data-disabled]{cursor:default}
-.rowCheck{width:16px;height:16px;margin:0;accent-color:var(--navy-900);cursor:pointer}
+.rowCheck{width:16px;height:16px;margin:0;accent-color:var(--accent-600);cursor:pointer}
 .rowCheck:focus-visible{outline:none;box-shadow:var(--focus-ring)}
 .groupRow{padding:var(--s-2) var(--s-4);font-size:var(--t-micro);font-weight:var(--fw-semibold);letter-spacing:var(--ls-micro);text-transform:uppercase;color:var(--ink-500);background:var(--surface-subtle);border-bottom:1px solid var(--rule)}
 .main{display:grid;gap:3px;min-width:0}

@@ -13,7 +13,7 @@ import styles from './preferences.module.css';
 type Key=keyof AssistantPreferences;
 interface Field<K extends Key>{key:K;label:string;description:string;options:{value:AssistantPreferences[K];label:string;hint?:string}[]}
 const FIELDS:[Field<'show'>,Field<'language'>,Field<'openBehaviour'>,Field<'proactive'>]=[
- {key:'show',label:'Show assistant',description:'The Ask Prodwise control at the bottom-right of every screen.',options:[{value:true,label:'On'},{value:false,label:'Off',hint:'Nothing is mounted: no control, no requests.'}]},
+ {key:'show',label:'Show assistant',description:'The Ask Prodwise control in the top bar (the mobile bar on phones).',options:[{value:true,label:'On'},{value:false,label:'Off',hint:'Nothing is mounted: no control, no requests.'}]},
  {key:'language',label:'Preferred language',description:'Auto follows the language you write in; product terms stay in English either way.',options:[{value:'auto',label:'Auto'},{value:'en',label:'English'},{value:'ar',label:'Arabic',hint:'العربية'}]},
  {key:'openBehaviour',label:'Open behaviour',description:'Whether the panel starts as you last left it in this browser.',options:[{value:'remember',label:'Remember previous state'},{value:'collapsed',label:'Always start collapsed'}]},
  {key:'proactive',label:'Proactive suggestions',description:'A single dot on the control when a recorded recommendation exists for the screen you are on. Never a push, never an auto-open.',options:[{value:false,label:'Off'},{value:true,label:'On'}]},

@@ -322,3 +322,9 @@ a.relChip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .decisionCheck a { color: var(--accent-700); font-weight: var(--fw-semibold); text-decoration: underline; text-underline-offset: 2px; }
 .decisionCheck a:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--r-xs); }
 .list li > .decisionCheck { margin: 0 0 var(--s-2); }
+
+/* Phones: the kind label and the date share one line without colliding (Devil R2-M6). */
+@media (max-width: 780px) {
+  .item .itemLabel { min-width: 0; }
+  .item .itemDate { white-space: normal; text-align: end; justify-self: end; }
+}

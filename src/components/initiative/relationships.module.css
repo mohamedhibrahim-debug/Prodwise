@@ -37,7 +37,7 @@
 .block{display:grid}
 .dates{border:0;margin:0;padding:0;display:grid;gap:var(--s-3)}
 .check{display:flex!important;align-items:center;gap:var(--s-2);min-height:var(--control-lg);grid-template-columns:none}
-.check input{width:20px;height:20px;accent-color:var(--navy-900)}
+.check input{width:20px;height:20px;accent-color:var(--accent-600)}
 .preview{font-size:var(--t-sm);padding:var(--s-3) var(--s-4);background:var(--surface-subtle);border-inline-start:3px solid var(--accent-500)}
 .buttons{display:flex;gap:var(--s-3);flex-wrap:wrap}
 .primary,.destructive{font:inherit;min-height:var(--control-lg);padding:var(--s-2) var(--s-5);border-radius:var(--r-sm);font-weight:var(--fw-semibold);cursor:pointer}

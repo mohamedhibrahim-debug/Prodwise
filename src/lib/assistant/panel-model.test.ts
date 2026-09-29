@@ -134,7 +134,7 @@ test('history is the last six turns as plain text, with hrefs and pending or fai
 
 test('each failure code decides retry, retry-after, starters and sign-in', () => {
   const f = (code: Extract<Turn, { role: 'failure' }>['code'], extra: Partial<Extract<Turn, { role: 'failure' }>> = {}) => failureView({ id: 'x', role: 'failure', question: 'q', code, language: 'en', message: code === 'SESSION_ENDED' ? 'Your session has ended.' : FAILURE_MESSAGE[code].en, ...extra });
-  assert.deepEqual([f('NOT_CONFIGURED').retry, f('TIMED_OUT').retry, f('PROVIDER_FAILED').retry, f('INVALID_RESPONSE').retry], [true, true, true, true]);
+  assert.deepEqual([f('NOT_CONFIGURED').retry, f('TIMED_OUT').retry, f('PROVIDER_FAILED').retry, f('INVALID_RESPONSE').retry], [false, true, true, true]);
   assert.equal(f('OUT_OF_SCOPE').retry, false); assert.equal(f('OUT_OF_SCOPE').showStarters, true);
   assert.equal(f('INVALID_REQUEST').retry, false);
   assert.equal(f('RATE_LIMITED', { retryAfterSeconds: 42 }).retryAfterSeconds, 42);
@@ -164,4 +164,13 @@ test('the quiet dot needs both the preference and a recorded recommendation; as-
   assert.equal(showsDot(true, null), false);
   assert.equal(displayAsOf('2026-09-26T10:00:00.000Z'), asOf);
   assert.equal(displayAsOf('scenario day'), 'scenario day');
+});
+
+test('without a provider only record-backed starters are offered, and the not-configured failure offers them instead of Retry (Devil R2-M3)', () => {
+  for (const path of ['/', '/weekly-review', '/analysis/portfolio', '/roadmap', '/initiatives/mff']) {
+    const list = startersFor(screenFromPath(path), 'en', false);
+    assert.ok(list.length >= 1, path); assert.ok(list.every(s => s.deterministic), path);
+  }
+  const v = failureView({ id: 'x', role: 'failure', question: 'q', code: 'NOT_CONFIGURED', language: 'en', message: 'm' });
+  assert.equal(v.retry, false); assert.equal(v.showStarters, true);
 });

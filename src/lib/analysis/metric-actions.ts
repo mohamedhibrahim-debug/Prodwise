@@ -1,4 +1,5 @@
 "use server";
+import { listProjectMetrics } from "./metrics";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { requireFreshWorkspaceAccess } from "@/lib/auth/access";
@@ -96,6 +97,8 @@ export async function recordMetricObservationAction(_previous: MetricActionState
     const input = parsed.input, now = new Date().toISOString();
     if (input.sourceEvidenceId && !snapshot.evidence.some(e => e.id === input.sourceEvidenceId && e.boundary !== "EXCLUDED")) return { error: "Choose evidence that belongs to this initiative.", message: null, errors: { sourceEvidenceId: "Choose evidence that belongs to this initiative." } };
     let recordedId: string; const metricName = text(form, "metricName") || "metric";
+    // The metric must belong to the initiative that was authorized, not merely to the workspace (Devil R2 minor).
+    if (!(await listProjectMetrics(initiativeId)).some(m => m.id === input.metricId)) return { error: "This metric is not part of this initiative. Reload and try again.", message: null, errors: {} };
     if (isLocalAuth()) {
       const path = localMetricsPath(process.cwd(), ctx.workspaceId);
       const observation = { id: randomUUID(), periodStart: input.periodStart, periodEnd: input.periodEnd, value: input.value, capturedAt: input.capturedAt, sourceEvidenceId: input.sourceEvidenceId, note: input.note, origin: "HUMAN_ENTRY" as const };

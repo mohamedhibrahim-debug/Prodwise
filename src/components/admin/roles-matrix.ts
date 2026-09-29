@@ -37,7 +37,7 @@ interface Capability { key: string; label: string; note: string; grant: (ctx: Wo
 
 const CAPABILITIES: Capability[] = [
   { key: "read", label: "Read initiatives, evidence, reviews and analysis", note: "Any active membership. A Platform Owner reads every organization.", grant: () => "yes" },
-  { key: "write", label: "Record product truth: evidence, Knowledge, decisions, commitments, metrics", note: "Nothing becomes truth without a person confirming it; Viewer is read-only.", grant: ctx => yesNo(canBusinessWrite(ctx)) },
+  { key: "write", label: "Record product truth: evidence, Knowledge, decisions, commitments", note: "Nothing becomes truth without a person confirming it; Viewer is read-only. Metric definitions additionally need the initiative owner, an Org Owner, Admin or Product Lead.", grant: ctx => yesNo(canBusinessWrite(ctx)) },
   {
     key: "finalize", label: "Finalize a Weekly Review", note: "Owners and Admins by role; a Member with the Product Lead flag; a Viewer cannot be made Product Lead.",
     grant: (ctx, column) => {

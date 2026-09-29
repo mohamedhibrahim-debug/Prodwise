@@ -11,6 +11,24 @@ export const COMPARATOR_LABEL: Record<MetricComparator, string> = { AT_LEAST: "A
 /** Common reporting grains; a free-text grain is also accepted. */
 export const PERIOD_GRAINS = ["Daily · calendar day", "Weekly · Monday–Sunday", "Calendar month", "Calendar quarter"] as const;
 export const DEFAULT_TIMEZONE = "Africa/Cairo";
+
+/**
+ * A datetime-local value ("2026-09-29T21:54") is a wall-clock time on the
+ * organization's clock, not on the server's: read it in that timezone. A value
+ * that already carries an offset or Z is taken as given (Devil R2-M4).
+ */
+export function wallClockToUtc(value: string, timeZone: string): number {
+  if (/(Z|[+-]\d{2}:?\d{2})$/.test(value)) return Date.parse(value);
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(value);
+  if (!m) return Number.NaN;
+  const asUtc = Date.UTC(+m[1]!, +m[2]! - 1, +m[3]!, +m[4]!, +m[5]!, +(m[6] ?? 0));
+  const offsetAt = (ms: number) => {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(new Date(ms)).map(p => [p.type, p.value]));
+    return Date.UTC(+parts.year!, +parts.month! - 1, +parts.day!, +parts.hour!, +parts.minute!, +parts.second!) - ms;
+  };
+  const first = asUtc - offsetAt(asUtc);
+  return asUtc - offsetAt(first);
+}
 const LIMITS = { name: 160, definition: 2000, unit: 40, formula: 2000, sourceLabel: 160, periodGrain: 80, timezone: 64, targetOwnerLabel: 160, targetNote: 1000, note: 2000 } as const;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -85,7 +103,7 @@ export function parseObservationInput(raw: Raw): Parsed<MetricObservationInput> 
     if (value === null) errors.value = "Enter the observed value as a number, or mark the period as not recorded.";
   }
   if (note.length > LIMITS.note) errors.note = `Keep the note under ${LIMITS.note.toLocaleString("en-GB")} characters.`;
-  const capturedMs = capturedRaw ? Date.parse(capturedRaw) : Number.NaN;
+  const capturedMs = capturedRaw ? wallClockToUtc(capturedRaw, DEFAULT_TIMEZONE) : Number.NaN;
   if (Number.isNaN(capturedMs)) errors.capturedAt = "Enter when the value was captured.";
   else if (validDate(periodStart) && capturedMs < Date.parse(`${periodStart}T00:00:00Z`)) errors.capturedAt = "A value cannot be captured before its period starts.";
   if (Object.keys(errors).length) return { ok: false, errors };

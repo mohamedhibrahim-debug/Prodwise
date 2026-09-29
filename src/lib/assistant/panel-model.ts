@@ -49,8 +49,18 @@ export function screenFromPath(pathname: string): ScreenInfo {
 }
 
 /** The starters the panel offers for a screen, in the language the preference implies (Auto reads as English until the person writes). */
-export function startersFor(screen: ScreenInfo, preference: LanguagePreference): Starter[] {
-  return starters(screen.screen, { tab: screen.tab, language: preference === 'ar' ? 'ar' : 'en' });
+/**
+ * Starters for the screen. When the model is known to be unavailable, only
+ * questions answered from the recorded state are offered, topped up with the
+ * universal ones, so the first suggestion never fails (Devil R2-M3).
+ */
+export function startersFor(screen: ScreenInfo, preference: LanguagePreference, configured: boolean | null = null): Starter[] {
+  const language = preference === 'ar' ? 'ar' : 'en';
+  const all = starters(screen.screen, { tab: screen.tab, language });
+  if (configured !== false) return all;
+  const own = all.filter(s => s.deterministic);
+  const universal = starters('home', { language }).filter(s => s.deterministic && !own.some(o => o.key === s.key));
+  return [...own, ...universal].slice(0, 4);
 }
 
 /* ── Remembered open state ──────────────────────────────────────────────── */
@@ -171,9 +181,10 @@ export function failureView(turn: Extract<Turn, { role: 'failure' }>): FailureVi
   const code = turn.code;
   return {
     message: turn.message,
-    retry: code !== 'OUT_OF_SCOPE' && code !== 'INVALID_REQUEST' && code !== 'SESSION_ENDED',
+    // Retrying cannot help when the model is not configured here; the starters that read the record can (Devil R2-M3).
+    retry: code !== 'OUT_OF_SCOPE' && code !== 'INVALID_REQUEST' && code !== 'SESSION_ENDED' && code !== 'NOT_CONFIGURED',
     retryAfterSeconds: code === 'RATE_LIMITED' ? Math.max(1, turn.retryAfterSeconds ?? 60) : null,
-    showStarters: code === 'OUT_OF_SCOPE',
+    showStarters: code === 'OUT_OF_SCOPE' || code === 'NOT_CONFIGURED',
     signIn: code === 'SESSION_ENDED',
     lang: langTag(turn.language),
     dir: directionOf(turn.message, turn.language === 'ar' ? 'rtl' : 'ltr'),

@@ -68,7 +68,7 @@ export function RegisterView({ rows, initial, options, stageLabel }: {
               <span className={table.meta}><BusinessLine code={r.businessLine as never} />{r.reference ? ` · ${r.reference}` : ''}{r.archived ? ' · Archived' : ''}{r.isDemo ? ' · Synthetic' : ''}</span></th>
             <td><span className={styles.stage}>{stageLabel[r.stage] ?? r.stage}</span></td>
             <td className={r.ownerId ? undefined : table.muted}>{r.ownerLabel}</td>
-            <td>{r.attention.length ? <span className={styles.attention} title={r.attention.map(a => a.label).join(' · ')}>
+            <td>{r.attention.length ? <span className={styles.attention} data-tone={reason(r.attention[0]!.kind).tone} title={r.attention.map(a => a.label).join(' · ')}>
               <span aria-hidden="true" className={styles.glyph}>{reason(r.attention[0]!.kind).glyph}</span>{r.attention[0]!.label}{r.attention.length > 1 && <span className={styles.more}>+{r.attention.length - 1}<span className="visually-hidden"> more: {r.attention.slice(1).map(a => a.label).join(', ')}</span></span>}
             </span> : <><span aria-hidden="true" className={table.dash}>—</span><span className="visually-hidden">No attention reasons recorded</span></>}</td>
             <td className={table.num}><span className={r.target.date ? undefined : table.muted}>{r.target.text}</span>{r.target.moved && <span className={styles.moved}>Moved {r.target.moved}</span>}</td>

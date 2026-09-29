@@ -120,7 +120,7 @@
 .line { fill: none; stroke: var(--accent-600); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .markerRing { stroke: var(--panel); stroke-width: 12; stroke-linecap: round; }
 .marker { stroke: var(--accent-600); stroke-width: 8; stroke-linecap: round; }
-.marker[data-latest] { stroke: var(--navy-900); stroke-width: 10; }
+.marker[data-latest] { stroke: var(--ink-navy); stroke-width: 10; }
 .gapLabel, .targetLabel, .liveLabel, .pointLabel {
   position: absolute;
   font-size: var(--t-micro);
