@@ -1,0 +1,95 @@
+.desktop table { table-layout: fixed; }
+.desktop tbody th, .desktop tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.desktop tbody th > a { display: block; overflow: hidden; text-overflow: ellipsis; }
+.cName { width: 24%; }
+.cStage { width: 13%; }
+.cOwner { width: 11%; }
+.cAttention { width: 17%; }
+.cTarget { width: 12%; }
+.cSetup { width: 9%; }
+.cUpdated { width: 14%; }
+.stage {
+  display: inline-block;
+  padding: 1px var(--s-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--surface-subtle);
+  color: var(--ink-700);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+.attention {
+  display: inline;
+  align-items: baseline;
+  gap: var(--s-1);
+  color: var(--attention-fg);
+  font-weight: var(--fw-medium);
+}
+.glyph { font-size: 0.7em; }
+.more {
+  margin-left: var(--s-1);
+  padding: 0 var(--s-1);
+  border-radius: var(--r-sm);
+  background: var(--attention-bg);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+}
+.moved {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-500);
+  font-size: var(--t-xs);
+}
+.setup { display: inline-flex; align-items: center; gap: var(--s-2); color: var(--ink-700); }
+.meter {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 4px;
+  flex: none;
+  border-radius: var(--r-pill);
+  background: var(--rule);
+  overflow: hidden;
+}
+.meter > span { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--ink-500); border-radius: inherit; }
+.meter > span[data-ready] { background: var(--state-ready-mark); }
+.linkButton {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent-700);
+  font: inherit;
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+.mobile { display: none; }
+.desktop tr[data-archived] th, .desktop tr[data-archived] td { opacity: 0.75; }
+@media (min-width: 781px) and (max-width: 1180px) {
+  .cUpdated, .desktop th:last-child, .desktop td:last-child { display: none; }
+  .cName { width: 30%; }
+}
+@media (max-width: 780px) {
+  .desktop { display: none; }
+  .mobile {
+    display: block;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+  }
+  .mobile > li + li { border-top: 1px solid var(--rule); }
+  .mobileLink {
+    display: grid;
+    gap: var(--s-1);
+    padding: var(--s-3) var(--s-4);
+    min-height: 64px;
+    color: var(--ink-700);
+    font-size: var(--t-sm);
+  }
+  .mobileLink:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+  .mobileName { color: var(--ink-900); font-weight: var(--fw-semibold); font-size: var(--t-body); }
+  .mobileMeta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-3); color: var(--ink-500); font-size: var(--t-xs); }
+}

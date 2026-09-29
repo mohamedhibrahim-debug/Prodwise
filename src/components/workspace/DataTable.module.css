@@ -1,0 +1,104 @@
+/* One table grammar for every list in the workspace: a single top-aligned
+   baseline, 36px header, ~48px single-line rows, tabular numerals, row hover,
+   and an optional whole-row link (the name link stretches over its row). */
+.wrap {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+}
+.table thead th {
+  position: sticky;
+  top: 0;
+  height: 36px;
+  padding: 0 var(--s-3);
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--rule-strong);
+  color: var(--ink-500);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-semibold);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.table thead th:first-child, .table td:first-child, .table tbody th:first-child { padding-left: var(--s-4); }
+.table thead th:last-child, .table td:last-child { padding-right: var(--s-4); }
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sortButton:hover { color: var(--ink-900); }
+.sortButton:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.sortButton[data-active] { color: var(--ink-900); }
+.table tbody tr {
+  position: relative;
+  border-bottom: 1px solid var(--rule);
+  transition: background-color var(--dur-fast) var(--ease);
+}
+.table tbody tr:last-child { border-bottom: 0; }
+.table tbody tr:hover { background: var(--surface-subtle); }
+.table tbody tr:focus-within { background: var(--accent-050); }
+.table tbody td, .table tbody th {
+  padding: var(--s-3);
+  vertical-align: top;
+  text-align: left;
+  font-weight: var(--fw-regular);
+  line-height: 1.45;
+  color: var(--ink-700);
+}
+/* The primary cell: entity name in ink, not link-teal; the whole row is the target. */
+.name {
+  color: var(--ink-900);
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+}
+.name:hover { color: var(--accent-700); text-decoration: underline; text-underline-offset: 3px; }
+.name:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--r-xs); }
+.rowLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+/* Secondary links inside a stretched row stay clickable above the overlay. */
+.lift { position: relative; z-index: 1; }
+.meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+}
+.inlineMeta { font-size: var(--t-xs); color: var(--ink-500); margin-left: var(--s-2); }
+.nowrap { white-space: nowrap; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ellipsis {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.muted { color: var(--ink-500); }
+.dash { color: var(--ink-300); }
+.empty {
+  padding: var(--s-8) var(--s-4);
+  text-align: left;
+  color: var(--ink-700);
+}
+.empty strong { display: block; color: var(--ink-900); margin-bottom: var(--s-1); }
