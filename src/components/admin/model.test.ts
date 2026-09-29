@@ -1,7 +1,31 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {activeOrganizationMembers,adminReturnPath,invitationStatus,assertReviewedChange} from "./model.ts";
+import {activeOrganizationMembers,adminBreadcrumb,adminReturnPath,adminTitle,invitationStatus,assertReviewedChange,legacyAdminPath,organizationStatusLabel} from "./model.ts";
 test("active owner and member counts exclude inactive global identities and other organizations",()=>{const identities=[{id:"a",active:true},{id:"b",active:false}];const members=[{id:"1",organizationId:"x",userId:"a",active:true},{id:"2",organizationId:"x",userId:"b",active:true},{id:"3",organizationId:"y",userId:"a",active:true},{id:"4",organizationId:"x",userId:"a",active:false}];assert.deepEqual(activeOrganizationMembers(members,identities,"x").map(m=>m.id),["1"]);});
 test("invitation acceptance and revocation take precedence over expiry",()=>{const invite={usedAt:null,revokedAt:null,expiresAt:"2026-09-01T00:00:00Z"};const now=Date.parse("2026-09-02T00:00:00Z");assert.equal(invitationStatus(invite,now),"Expired");assert.equal(invitationStatus({...invite,usedAt:"2026-08-31"},now),"Accepted");assert.equal(invitationStatus({...invite,revokedAt:"2026-08-31"},now),"Revoked");});
-test("administration result paths remain inside named administration scope",()=>{assert.equal(adminReturnPath("/administration/organization/users?view=invitations"),"/administration/organization/users?view=invitations");for(const value of ["//evil.test","/account","/administration-evil","/administration/../login","/administration\\platform",undefined])assert.equal(adminReturnPath(value),"/administration");});
+test("administration result paths remain inside named administration scope",()=>{assert.equal(adminReturnPath("/administration/members?view=invitations"),"/administration/members?view=invitations");assert.equal(adminReturnPath("/administration/operator/organizations/abc"),"/administration/operator/organizations/abc");for(const value of ["//evil.test","/account","/administration-evil","/administration/../login","/administration\\platform","/administration/evil",undefined])assert.equal(adminReturnPath(value),"/administration");});
 test("sensitive actions reject initial or implicit submissions before review",()=>{const form=new FormData();assert.throws(()=>assertReviewedChange(form),/Review this change/);form.set("reviewConfirmed","");assert.throws(()=>assertReviewedChange(form),/Review this change/);form.set("reviewConfirmed","true");assert.throws(()=>assertReviewedChange(form),/Review this change/);form.set("reviewConfirmed","yes");assert.doesNotThrow(()=>assertReviewedChange(form));});
+test("one term for an organization awaiting its owner, everywhere it is shown",()=>{assert.equal(organizationStatusLabel("BOOTSTRAPPING"),"Needs owner");assert.equal(organizationStatusLabel("ACTIVE"),"Active");assert.equal(organizationStatusLabel("ARCHIVED"),"Archived");});
+test("breadcrumbs and document titles come from the same route map",()=>{
+ assert.deepEqual(adminBreadcrumb("/administration"),[{label:"Administration"}]);
+ assert.deepEqual(adminBreadcrumb("/administration/members"),[{label:"Administration",href:"/administration"},{label:"Members"}]);
+ assert.deepEqual(adminBreadcrumb("/administration/members/invite").map(c=>c.label),["Administration","Members","Invite"]);
+ assert.deepEqual(adminBreadcrumb("/administration/members/abc?x=1").map(c=>c.label),["Administration","Members","Member"]);
+ assert.deepEqual(adminBreadcrumb("/administration/operator/organizations/new").map(c=>c.label),["Administration","Operator","Organizations","New organization"]);
+ assert.deepEqual(adminBreadcrumb("/administration/operator/identities/u1").map(c=>c.label),["Administration","Operator","Identities","Person"]);
+ assert.equal(adminTitle("/administration/roles"),"Roles & permissions · Administration");
+ assert.equal(adminTitle("/administration"),"Administration");
+});
+test("every pre-restructure address answers with its new one, query string kept",()=>{
+ assert.equal(legacyAdminPath("organization",["users"],{view:"invitations",invite:"i1"}),"/administration/members?view=invitations&invite=i1");
+ assert.equal(legacyAdminPath("organization",["users","invite"]),"/administration/members/invite");
+ assert.equal(legacyAdminPath("organization",["users","m1"]),"/administration/members/m1");
+ assert.equal(legacyAdminPath("organization",["settings"]),"/administration/organization");
+ assert.equal(legacyAdminPath("organization",["policy"]),"/administration/security");
+ assert.equal(legacyAdminPath("organization",[]),null);
+ assert.equal(legacyAdminPath("platform",[]),"/administration/operator");
+ assert.equal(legacyAdminPath("platform",["users","u1"]),"/administration/operator/identities/u1");
+ assert.equal(legacyAdminPath("platform",["organizations"],{status:"BOOTSTRAPPING"}),"/administration/operator/organizations?status=BOOTSTRAPPING");
+ assert.equal(legacyAdminPath("platform",["policies","o1"]),"/administration/operator/policies/o1");
+ assert.equal(legacyAdminPath("members",[]),null);
+});

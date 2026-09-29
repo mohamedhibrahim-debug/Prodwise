@@ -8,6 +8,7 @@ import {DemoContextPill} from './OrganizationControl';
 import {openHelp,openPalette,isHelpOpen,subscribeHelp} from './events';
 import {useInitiativeTitle} from './shell-title';
 import type {ShellIdentity} from './ShellIdentity';
+import {adminBreadcrumb} from '@/components/admin/model';
 import styles from './TopBar.module.css';
 
 export function sectionTitle(path:string){
@@ -22,6 +23,7 @@ function crumbs(path:string,initiativeSlug:string|null,initiativeTitle:string|nu
  if(initiativeSlug)return [{label:'Initiatives',href:'/initiatives'},{label:initiativeTitle??'Initiative',href:path===`/initiatives/${initiativeSlug}`?undefined:`/initiatives/${initiativeSlug}`}];
  if(path==='/initiatives/new')return [{label:'Initiatives',href:'/initiatives'},{label:'New initiative'}];
  if(path.startsWith('/account/connections'))return [{label:'My account',href:'/account'},{label:'Connected sources'}];
+ if(path.startsWith('/administration'))return adminBreadcrumb(path);
  if(path.startsWith('/analysis/projects/'))return [{label:'Analysis',href:'/analysis/portfolio'},{label:'Initiative'}];
  return [{label:sectionTitle(path)}];
 }

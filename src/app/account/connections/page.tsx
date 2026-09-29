@@ -3,6 +3,7 @@ import { requireWorkspaceAccess } from "@/lib/auth/access";
 import { canBusinessWrite } from "@/lib/auth/roles";
 import { safeReturnPath } from "@/lib/auth/core";
 import { connectorOverview } from "@/lib/connectors/service";
+import { connectRecovery } from "@/lib/connectors/recovery";
 import { CONNECTOR_LABEL, CONNECTOR_SLUG, connectorFromSlug, connectorMessage, type Connector, type ConnectorErrorCode } from "@/lib/connectors/types";
 import { formatDateTime } from "@/lib/domain/labels";
 import { workspacePresentation } from "@/lib/workspace/context";
@@ -63,14 +64,33 @@ export default async function Connections({ searchParams }: { searchParams: Prom
 
     {disconnected && <p role="status" className={styles.success}>{CONNECTOR_LABEL[disconnected]} disconnected. Prodwise deleted its stored access; sources you imported and their snapshots stay.</p>}
     {connected && <p role="status" className={styles.success}>{CONNECTOR_LABEL[connected]} connected. Import from an initiative’s Sources page.</p>}
-    {failed && result && <p role="alert" className={styles.alert}>{result === "NOT_CONNECTED" ? `${CONNECTOR_LABEL[failed]} wasn’t connected: access was not granted. Nothing changed.` : result === "INVALID_REQUEST" ? `The ${CONNECTOR_LABEL[failed]} sign-in expired or didn’t match this session. Start again from here; nothing changed.` : connectorMessage(result, failed)}</p>}
+    {failed && result && (() => {
+      // Recovery reads as three plain steps and ends in a retry that restarts the sign-in; the provider's row below shows its real state.
+      const r = connectRecovery(result, failed), o = overview.find(x => x.connector === failed)!, slug = CONNECTOR_SLUG[failed], label = CONNECTOR_LABEL[failed];
+      const canRetry = r.retry && o.ready && !isDemo && writer && o.status !== "CONNECTED";
+      return <section className={styles.recovery} role="alert" aria-labelledby="connect-recovery">
+        <div className={styles.recoveryHead}><span className={styles.recoveryIcon}><ProviderIcon connector={failed} size={18} /></span>
+          <div><h3 id="connect-recovery">{r.title}</h3><p className={styles.recoveryState}><span>{label} is</span><ConnectionPill ready={o.ready} status={o.status} /></p></div></div>
+        <dl className={styles.recoverySteps}>
+          <div><dt>What happened</dt><dd>{r.happened}</dd></div>
+          <div><dt>What to do now</dt><dd>{r.next}</dd></div>
+          {operator && r.operator && <div><dt>For the operator</dt><dd>{r.operator}</dd></div>}
+        </dl>
+        <div className={styles.recoveryActions}>
+          {canRetry && <ConnectorButton action={connectAction} connector={slug} returnTo={returnTo} label={`Retry ${label} sign-in`} pendingLabel="Opening sign-in…" />}
+          <Link prefetch={false} href={`#connector-${slug}`}>See {label} below</Link>
+          {back && back !== "/" && <Link prefetch={false} href={back}>Back to import without connecting</Link>}
+        </div>
+      </section>;
+    })()}
+    {!failed && result && <p role="alert" className={styles.alert}>A sign-in came back for a source Prodwise does not recognise, so nothing was stored and nothing changed. Start again from one of the sources below.</p>}
     {isDemo && <p role="status" className={styles.notice}>{connectorMessage("DEMO_ORGANIZATION", "JIRA")} Switch to your organization to connect sources.</p>}
     {!isDemo && !writer && <p role="status" className={styles.notice}>You have view-only access in this organization, so you can’t connect sources here. You can read what others imported on each initiative’s Sources page.</p>}
 
     <ul className={styles.providers}>{overview.map(o => {
       const label = CONNECTOR_LABEL[o.connector], slug = CONNECTOR_SLUG[o.connector];
       const reconnect = o.status === "NEEDS_RECONNECT";
-      return <li key={o.connector} id={`connector-${slug}`} className={styles.provider} data-focus={focus === o.connector || undefined} data-state={!o.ready ? "unavailable" : o.status}>
+      return <li key={o.connector} id={`connector-${slug}`} className={styles.provider} data-focus={focus === o.connector || failed === o.connector || undefined} data-state={!o.ready ? "unavailable" : o.status}>
         <div className={styles.providerId}><span className={styles.providerIcon}><ProviderIcon connector={o.connector} size={20} /></span>
           <div><h3>{label}</h3><ConnectionPill ready={o.ready} status={o.status} /></div></div>
         <div className={styles.providerBody}>
@@ -89,7 +109,7 @@ export default async function Connections({ searchParams }: { searchParams: Prom
           {!o.ready || isDemo ? null
           : o.status === "CONNECTED" ? <DisconnectButton action={disconnectAction} connector={slug} label={label} />
           : !writer ? null
-          : <ConnectorButton action={connectAction} connector={slug} returnTo={focus === o.connector ? returnTo : "/account/connections"} label={reconnect ? `Reconnect ${label}` : `Connect ${label}`} pendingLabel="Opening sign-in…" variant={reconnect || focus === o.connector ? "primary" : "secondary"} />}
+          : <ConnectorButton action={connectAction} connector={slug} returnTo={focus === o.connector ? returnTo : "/account/connections"} label={reconnect ? `Reconnect ${label}` : `Connect ${label}`} pendingLabel="Opening sign-in…" variant={reconnect || focus === o.connector || failed === o.connector ? "primary" : "secondary"} />}
         </div>
       </li>;
     })}</ul>

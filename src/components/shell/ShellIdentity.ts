@@ -18,6 +18,16 @@ export function organizationRoleLabel(identity:ShellIdentity) {
 export function roleShortLabel(role:string|null|undefined, platformRole?:string|null) {
   return role==='ORG_OWNER'?'Org Owner':role==='ADMIN'?'Admin':role==='MEMBER'?'Member':role==='VIEWER'?'Viewer':platformRole==='PLATFORM_OWNER'?'Platform access':'No membership';
 }
+/**
+ * The actor label on records names a Platform Owner acting outside their
+ * memberships ("Name (Platform Owner, not a member)"); that annotation is part
+ * of product history and stays there. In the shell the name and the note are
+ * shown separately, so initials and the display name never absorb it (m9).
+ */
+export const PLATFORM_ACTOR_NOTE=' (Platform Owner, not a member)';
+export function splitActorLabel(label:string):{name:string;note:string|null} {
+  return label.endsWith(PLATFORM_ACTOR_NOTE)?{name:label.slice(0,-PLATFORM_ACTOR_NOTE.length),note:'Platform Owner · not a member here'}:{name:label,note:null};
+}
 /** Up to two initials from a name, for avatars. */
 export function initials(name:string) {
   const words=name.trim().split(/\s+/).filter(Boolean);

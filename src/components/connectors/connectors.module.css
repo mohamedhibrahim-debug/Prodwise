@@ -31,7 +31,13 @@ p.fixtureTag{margin:0;width:fit-content}
 .pill[data-state=NOT_READY]{color:var(--state-unknown-fg);background:var(--state-unknown-bg);border-color:var(--state-unknown-edge)}
 
 /* ── Import page ───────────────────────────────────────────────────────── */
-.providerTabs{display:flex;gap:var(--s-1);border-bottom:1px solid var(--rule-strong);overflow-x:auto;scrollbar-width:thin}
+/* The provider strip scrolls sideways when it does not fit (tablet widths); the
+   wrapper's right-edge fade says so, and snapping keeps a tab fully in view. */
+.providerTabsWrap{position:relative;min-width:0}
+.providerTabs{display:flex;gap:var(--s-1);border-bottom:1px solid var(--rule-strong);overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.providerTabs::-webkit-scrollbar{display:none}
+.providerTabs a{scroll-snap-align:start}
+@media (max-width:900px){.providerTabsWrap::after{content:"";position:absolute;top:0;right:0;bottom:1px;width:48px;background:linear-gradient(90deg,transparent,var(--surface));pointer-events:none}}
 .providerTabs a{display:inline-flex;align-items:center;gap:var(--s-2);min-height:44px;padding:0 var(--s-4);margin-bottom:-1px;text-decoration:none;color:var(--ink-700);font-weight:var(--fw-semibold);font-size:var(--t-body);border-bottom:2px solid transparent;white-space:nowrap}
 .providerTabs svg,.accountLine svg,.tileIcon svg{flex:none}
 .providerTabs a:hover{color:var(--ink-900);background:var(--surface-subtle)}
@@ -45,6 +51,21 @@ p.fixtureTag{margin:0;width:fit-content}
 .inlineForm{display:grid;gap:var(--s-2);justify-items:start}
 
 /* ── Connected sources (account) ───────────────────────────────────────── */
+/* Failure recovery: what happened · what to do now · retry. One band, the
+   BLOCKED family because a connection attempt failed; text carries the meaning. */
+.recovery{display:grid;gap:var(--s-4);padding:var(--s-4) var(--s-5);border:1px solid var(--state-blocked-edge);border-left:3px solid var(--state-blocked-mark);border-radius:0 var(--r-md) var(--r-md) 0;background:var(--panel);color:var(--ink-900)}
+.recoveryHead{display:flex;gap:var(--s-3);align-items:flex-start}
+.recoveryHead h3{margin:0;font-size:var(--t-h2);line-height:var(--lh-tight);color:var(--state-blocked-fg)}
+.recoveryIcon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;flex:none;border:1px solid var(--state-blocked-edge);border-radius:var(--r-md);background:var(--state-blocked-bg);color:var(--state-blocked-fg)}
+.recoveryState{margin:var(--s-1) 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2);font-size:var(--t-sm);color:var(--ink-700)}
+.recoverySteps{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:var(--s-2) var(--s-5);margin:0;font-size:var(--t-sm);line-height:var(--lh-body)}
+.recoverySteps>div{display:contents}
+.recoverySteps dt{font-size:var(--t-micro);font-weight:var(--fw-semibold);letter-spacing:var(--ls-micro);text-transform:uppercase;color:var(--ink-500);padding-top:3px}
+.recoverySteps dd{margin:0;color:var(--ink-800);max-width:80ch}
+.recoveryActions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2) var(--s-4)}
+.recoveryActions a{font-size:var(--t-sm);font-weight:var(--fw-medium)}
+@media (max-width:780px){.recoverySteps{grid-template-columns:1fr}.recoverySteps dt{padding-top:var(--s-1)}}
+
 .orgLine{margin:0;font-size:var(--t-sm);color:var(--ink-700);padding-bottom:var(--s-3);border-bottom:1px solid var(--rule)}
 .providers{list-style:none;margin:0;padding:0;background:var(--panel);border:1px solid var(--rule);border-radius:var(--r-md);box-shadow:var(--shadow-card)}
 .provider{display:grid;grid-template-columns:200px minmax(0,1fr) auto;gap:var(--s-3) var(--s-6);padding:var(--s-5);border-bottom:1px solid var(--rule);scroll-margin-top:var(--s-8)}

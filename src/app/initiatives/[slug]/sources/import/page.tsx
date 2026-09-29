@@ -36,14 +36,16 @@ export default async function ImportSources({ params, searchParams }: { params: 
   return <div className={styles.page}>
     <nav aria-label="Breadcrumb" className={styles.crumbs}><Link prefetch={false} href={`/initiatives/${slug}/sources`}>Sources</Link><span aria-hidden="true">/</span><span aria-current="page">Import</span></nav>
     <header className={styles.head}>
-      <div><h2>Import from {label}</h2><p>Choose {WHAT[connector]} for {initiative.name}. Each becomes a source with a saved snapshot. Prodwise never changes anything in {label}, and nothing becomes Knowledge until someone confirms it.</p></div>
+      {/* In the Demo organization no connector can be used, so the heading promises nothing (m11): availability is stated once, here. */}
+      {isDemo ? <div><h2>Import sources</h2><p>{connectorMessage("DEMO_ORGANIZATION", connector)} Meeting notes, pasted text and references can still be added to {initiative.name} from Sources.</p></div>
+      : <div><h2>Import from {label}</h2><p>Choose {WHAT[connector]} for {initiative.name}. Each becomes a source with a saved snapshot. Prodwise never changes anything in {label}, and nothing becomes Knowledge until someone confirms it.</p></div>}
     </header>
-    <nav className={styles.providerTabs} aria-label="Import from">{CONNECTORS.map(c => { const x = overview.find(y => y.connector === c)!; return <Link prefetch={false} key={c} href={`${base}?from=${CONNECTOR_SLUG[c]}`} aria-current={c === connector ? "page" : undefined}>
+    <div className={styles.providerTabsWrap}><nav className={styles.providerTabs} aria-label="Import from">{CONNECTORS.map(c => { const x = overview.find(y => y.connector === c)!; return <Link prefetch={false} key={c} href={`${base}?from=${CONNECTOR_SLUG[c]}`} aria-current={c === connector ? "page" : undefined}>
       <ProviderIcon connector={c} size={16} /><span>{CONNECTOR_LABEL[c]}</span><ConnectionPill ready={x.ready} status={x.status} compact />
-    </Link>; })}</nav>
+    </Link>; })}</nav></div>
 
     {justConnected && <p role="status" className={styles.success}>{CONNECTOR_LABEL[justConnected]} connected. You can search it now.</p>}
-    {isDemo ? <p className={styles.notice} role="status">{connectorMessage("DEMO_ORGANIZATION", connector)}</p>
+    {isDemo ? null
     : initiative.archivedAt ? <p className={styles.notice} role="status">Archived — restore this initiative to import sources.</p>
     : !write.enabled ? <p className={styles.notice} role="status">{write.message} Importing sources changes the initiative’s evidence.</p>
     : !o.ready ? <div className={styles.notice}><p>{connectorMessage("NOT_CONFIGURED", connector)}</p><ButtonLink variant="secondary" size="sm" href={`/initiatives/${slug}/knowledge/sources/new`}>Record a reference instead</ButtonLink></div>
