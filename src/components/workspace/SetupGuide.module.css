@@ -83,6 +83,6 @@
   border-radius: var(--r-sm);
 }
 .track .stepLink {
-  min-height: 44px;
+  min-height:var(--control-lg);
   display: block;
 }

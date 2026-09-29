@@ -1,5 +1,7 @@
 import { BusinessLine } from '@/components/primitives/BusinessLine';
 import Link from 'next/link';
+import {TabToolbar} from '@/components/workspace/TabToolbar';
+import {ButtonLink} from '@/components/primitives/Button';
 import {notFound} from 'next/navigation';
 import {readDelivery} from '@/lib/delivery/repository';
 import {factFor,ownerFor} from '@/lib/delivery/model';import {cairoDay as orgDayOf} from '@/lib/delivery/model';
@@ -36,7 +38,7 @@ export default async function ManageInitiative({params,searchParams}:{params:Pro
  const relEditable=!i.archivedAt&&isDemoWriteEnabled&&canManageRelationship(d.ctx,ownerId);
  const links=sections.map(([id,label])=><Link key={id} prefetch={false} href={`${base}/manage?section=${id}#${id}`} aria-current={q.section===id?'page':undefined}>{label}</Link>);
  return <div className={styles.page}>
-  <div className={styles.heading}><div><h2>{d.ctx.role==='VIEWER'?'Initiative details':'Manage initiative'}</h2><p className={styles.muted}>Keep purpose, responsibility and delivery context current. Confirmed changes preserve history.</p></div><div className={styles.headingLinks}><Link prefetch={false} className={styles.link} href={base}>Back to Brief</Link><Link prefetch={false} className={styles.link} href={`${base}/setup?step=review`}>Review setup</Link></div></div>
+  <TabToolbar title={d.ctx.role==='VIEWER'?'Initiative details':'Manage initiative'} summary={<><strong>{d.ctx.role==='VIEWER'?'Initiative details':'Manage initiative'}</strong> · confirmed changes preserve history</>} actions={<><ButtonLink variant="ghost" href={base}>← Brief</ButtonLink><ButtonLink variant="ghost" href={`${base}/setup?step=review`}>Review setup</ButtonLink></>}/>
   <details className={styles.mobileIndex}><summary>Sections ({sections.length})</summary><nav aria-label="Management sections">{links}</nav></details>
   <div className={styles.layout}><aside className={styles.index}><nav aria-label="Management sections">{links}</nav></aside><div>
    <section id="basics" className={styles.section}><h3>Basics</h3>{q.edit==='basics'&&allowed&&isDemoWriteEnabled?<ManageBasics initiative={i}/>:<><dl><dt>Name</dt><dd>{i.name}</dd><dt>Business line</dt><dd><BusinessLine code={i.businessLine} detailed/></dd><dt>Objective / problem</dt><dd>{i.description||'Not recorded'}</dd><dt>Lifecycle stage</dt><dd>{STAGE_LABEL[i.stage]}</dd></dl>{allowed&&isDemoWriteEnabled?<Link prefetch={false} className={styles.link} href={`${base}/manage?section=basics&edit=basics#basics`}>Edit basics</Link>:<p className={styles.muted}>{!allowed?'Only the assigned PM or an organization administrator can edit these basics.':WRITE_DISABLED_MESSAGE}</p>}</>}</section>
