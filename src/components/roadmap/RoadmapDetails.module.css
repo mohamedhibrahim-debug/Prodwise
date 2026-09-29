@@ -1,0 +1,88 @@
+.list {
+  background: var(--panel);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.columns,
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 30%) minmax(0, 30%) minmax(0, 40%);
+}
+.columns {
+  padding: var(--s-2) var(--s-4);
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+.group {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  background: var(--surface-subtle);
+  border-block: 1px solid var(--rule);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-semibold);
+}
+.group > span:first-child {
+  font-weight: var(--fw-regular);
+  color: var(--ink-500);
+  font-size: var(--t-xs);
+}
+.row {
+  padding: var(--s-4);
+  border-bottom: 1px solid var(--rule);
+}
+section:last-child .row:last-child { border-bottom: 0; }
+.identity,
+.schedule,
+.context {
+  padding-right: var(--s-4);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.row a {
+  color: var(--accent-700);
+  border-radius: var(--r-xs);
+}
+.row a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.identity > a {
+  font-weight: var(--fw-semibold);
+  font-size: var(--t-sm);
+}
+.identity span,
+.identity p,
+.row small {
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+}
+.identity p { margin-top: var(--s-1); }
+.schedule p { font-size: var(--t-sm); color: var(--ink-900); }
+.schedule a { font-size: var(--t-xs); }
+.context strong { font-size: var(--t-sm); }
+.context p { font-size: var(--t-xs); color: var(--ink-700); }
+.context small { margin-top: var(--s-1); }
+.attention { color: var(--state-at-risk-fg) !important; }
+.attention[data-tone="blocked"] { color: var(--state-blocked-fg) !important; }
+.dependency { color: var(--ink-700); }
+@media (max-width: 780px) {
+  .columns { display: none; }
+  .row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .schedule {
+    padding-block: var(--s-3);
+    border-block: 1px solid var(--rule);
+  }
+}
