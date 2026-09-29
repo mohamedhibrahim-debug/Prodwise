@@ -1,0 +1,13 @@
+import {test} from "node:test";
+import assert from "node:assert/strict";
+import {computePosition,parsePlacement} from "./popover-position.ts";
+const viewport={width:1366,height:680};
+test("placement parsing defaults the alignment to centre",()=>{assert.deepEqual(parsePlacement("top"),{side:"top",align:"center"});assert.deepEqual(parsePlacement("right-end"),{side:"right",align:"end"});});
+test("a menu opens below its trigger when there is room",()=>{const r=computePosition({anchor:{top:100,left:200,width:120,height:32},floating:{width:280,height:200},viewport,placement:"bottom-start"});assert.equal(r.side,"bottom");assert.equal(r.top,138);assert.equal(r.left,200);});
+test("the rail account menu flips upward instead of being clipped at the bottom of a 680px laptop",()=>{const r=computePosition({anchor:{top:630,left:12,width:208,height:40},floating:{width:280,height:320},viewport,placement:"bottom-start"});assert.equal(r.side,"top");assert.equal(r.top,630-6-320);assert.ok(r.top>=8);});
+test("it never leaves the viewport horizontally: shifts in from the right edge",()=>{const r=computePosition({anchor:{top:10,left:1300,width:40,height:32},floating:{width:300,height:100},viewport,placement:"bottom-start"});assert.equal(r.left,1366-8-300);});
+test("end alignment lines the right edges up",()=>{const r=computePosition({anchor:{top:10,left:1000,width:100,height:32},floating:{width:300,height:100},viewport,placement:"bottom-end"});assert.equal(r.left,800);});
+test("an oversized menu is capped to the room on its side so it scrolls internally",()=>{const r=computePosition({anchor:{top:300,left:10,width:40,height:40},floating:{width:200,height:2000},viewport,placement:"bottom-start"});assert.equal(r.side,"bottom");assert.equal(r.maxHeight,680-340-6-8);assert.equal(r.top,346);});
+test("an oversized menu near the bottom flips to the larger side and is capped there",()=>{const r=computePosition({anchor:{top:500,left:10,width:40,height:40},floating:{width:200,height:2000},viewport,placement:"bottom-start"});assert.equal(r.side,"top");assert.equal(r.maxHeight,500-6-8);assert.equal(r.top,8);});
+test("side placement from a collapsed rail opens to the right and clamps vertically",()=>{const r=computePosition({anchor:{top:640,left:12,width:32,height:32},floating:{width:280,height:300},viewport,placement:"right-end"});assert.equal(r.side,"right");assert.equal(r.left,12+32+6);assert.equal(r.top,640+32-300);});
+test("a narrow phone viewport limits width to the viewport minus margins",()=>{const r=computePosition({anchor:{top:10,left:10,width:40,height:40},floating:{width:500,height:100},viewport:{width:390,height:800},placement:"bottom-start"});assert.equal(r.maxWidth,374);assert.equal(r.left,8);});

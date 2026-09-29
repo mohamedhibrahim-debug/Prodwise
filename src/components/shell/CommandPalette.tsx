@@ -4,7 +4,6 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { usePathname, useRouter } from "next/navigation";
 
 import {
-  BUSINESS_LINE_LABEL,
   businessLineText,
   STAGE_LABEL,
 } from "@/lib/domain/labels";
@@ -13,7 +12,7 @@ import type {
   BusinessLine,
   Stage,
 } from "@/lib/domain/types";
-import { OPEN_PALETTE_EVENT } from "./events";
+import { OPEN_PALETTE_EVENT, openOrganizationSwitcher } from "./events";
 import styles from "./CommandPalette.module.css";
 
 interface NavInitiative {
@@ -286,7 +285,7 @@ export function CommandPalette({administration=false,canSwitch=false}:{administr
       if (!cmd) return;
       close();
       if(cmd.href==='#switch-organization'){
-        requestAnimationFrame(()=>{const trigger=[...document.querySelectorAll<HTMLButtonElement>('button[aria-label^="Current organization:"]')].find(el=>el.getClientRects().length);trigger?.click();});return;
+        requestAnimationFrame(openOrganizationSwitcher);return;
       }
       router.push(cmd.href);
     },
@@ -411,7 +410,7 @@ export function CommandPalette({administration=false,canSwitch=false}:{administr
         </ul>
 
         <div className={styles.footer}>
-          <button type="button" onClick={close} aria-label="Close search">Close</button>
+          <button type="button" className="pw-btn" data-variant="ghost" data-size="sm" onClick={close} aria-label="Close search">Close</button>
           <span>
             <kbd className={styles.kbd}>↑</kbd>
             <kbd className={styles.kbd}>↓</kbd> navigate
