@@ -15,8 +15,8 @@ export const DEMO_ORGANIZATION_NAME="Prodwise Demo";
  * content is upgraded. It is NOT the dataset version and must never be shown as one.
  */
 export const DEMO_CANONICAL_VERSION="prodwise-graduation-2026-09-v1";
-/** User-facing dataset label. The content itself is identified by DEMO_V3_VERSION (scenario-v3.ts). */
-export const DEMO_DATASET_LABEL="Demo dataset V3";
+/** User-facing dataset label. The content itself is identified by DEMO_V4_VERSION (scenario-v4.ts). */
+export const DEMO_DATASET_LABEL="Demo dataset V4";
 export const DEMO_ENRICHED_VERSION="prodwise-graduation-2026-09-v2";
 export const DEMO_CUTOFF="2026-09-26T10:00:00.000Z";
 export const DEMO_BASELINE_WEEK="2026-W38";

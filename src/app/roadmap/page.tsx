@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import type { Metadata } from "next";
 import {readManagement} from '@/lib/data/management-read';
 import {factDate} from '@/lib/delivery/display';
@@ -12,6 +11,9 @@ import {readRelationships} from '@/lib/data/relationships';
 import {relationshipsFor} from '@/lib/workspace/relationship-view';
 import {parseFilters,type RoadmapItem} from '@/lib/workspace/roadmap-layout';
 import {RoadmapView} from '@/components/roadmap/RoadmapView';
+import {PageHeader} from '@/components/workspace/PageHeader';
+import {ButtonLink} from '@/components/primitives/Button';
+import {formatDate} from '@/lib/domain/labels';
 import styles from './roadmap.module.css';
 export const metadata: Metadata = { title: "Roadmap" };
 
@@ -47,10 +49,8 @@ export default async function Roadmap({searchParams}:{searchParams:Promise<{busi
  const owners=d.source.members.filter(m=>m.active).map(m=>({value:m.id,label:m.displayName}));
  const cutoffLabel=explicitCutoff?'Cutoff':d.presentation.isDemo?'Scenario date':'Today';
  return <div className={styles.page}>
-  <header className={styles.header}>
-   <div><p className={styles.eyebrow}>Delivery outlook · {d.presentation.organizationName}</p><h1>Roadmap</h1><p className={styles.lede}>Every mark is a confirmed initiative fact. Nothing is estimated or extended.</p></div>
-   <Link prefetch={false} className={styles.headerLink} href="/weekly-review">Weekly Review →</Link>
-  </header>
+  <PageHeader title="Roadmap" meta={<>{items.length} active {items.length === 1 ? "initiative" : "initiatives"} · {items.filter(i => i.target).length} with a Target Live · {cutoffLabel.toLowerCase()} {formatDate(cutoff)}{d.presentation.isDemo ? " · synthetic demo records" : ""}</>}
+   actions={<ButtonLink href="/weekly-review" prefetch={false} variant="secondary">Weekly Review</ButtonLink>} />
   <WriteNotice ctx={d.ctx}/>
   <RoadmapView items={items} lines={lines} owners={owners} initial={parseFilters(f)} cutoff={cutoff} explicitCutoff={explicitCutoff} cutoffLabel={cutoffLabel} reference={{date:scenario.slice(0,10),label:d.presentation.isDemo?'Scenario date':'Today'}}
    note={`Current facts · ${cutoffLabel.toLowerCase()} ${displayDate(cutoff)}${d.presentation.isDemo&&explicitCutoff?` · scenario date ${displayDate(scenario.slice(0,10))}`:''}. Changing the cutoff does not reconstruct historical records.`}/>

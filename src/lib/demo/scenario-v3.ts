@@ -15,6 +15,7 @@ import { demoPortfolioMetrics } from "./metric-fixtures.ts";
 import { canonicalDemoDataV2, demoId, DEMO_CUTOFF, DEMO_ORGANIZATION_NAME, type DemoIdentity } from "./canonical.ts";
 import { FIXTURE_ORIGIN_LABEL } from "./presentation.ts";
 import type { ActivityEntry, ClaimRecord, ClaimTrust, ClaimType, ClaimStatus, Domain, EvidenceRecord, EvidenceRelation, EvidenceSourceType, FindingState, Initiative, InitiativeSnapshot, InitiativeSource, MemoryClaim } from "../domain/types.ts";
+import type { ProjectMetric } from "../analysis/metric-types.ts";
 import type { DeliveryMember, DeliveryState, FactKind, FactValue, PortfolioSource, SectionEdit, WorkspaceAccess } from "../delivery/types.ts";
 import { createReview, editSection, finalizeReview, recordFact } from "../delivery/model.ts";
 import { reviseCommitment, type Commitment, type CommitmentEvent } from "../workspace/commitments.ts";
@@ -60,7 +61,40 @@ const PERSONAS: [string, string, string, boolean][] = [
 /** A deterministic request id per step, so replays of the generator produce identical records. */
 const hashId = (seed: string) => { const h = createHash("sha256").update(seed).digest("hex"); return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`; };
 
-export function canonicalDemoDataV3(identity: DemoIdentity) {
+/** The V3 generation exactly as shipped. Later generations extend the same dated timeline (see buildDemoScenario). */
+export function canonicalDemoDataV3(identity: DemoIdentity) { return buildDemoScenario(identity, { version: DEMO_V3_VERSION }); }
+
+/** One fictional initiative added by a later generation; the final stage is what the row says, history records how it got there. */
+export interface ScenarioInitiative { ref: string; slug: string; name: string; businessLine: Initiative["businessLine"]; stage: Initiative["stage"]; created: string; description: string; scope: string; owner: string | null }
+export interface ScenarioEvidence { key: string; slug: string; title: string; type: EvidenceSourceType; ref: string | null; boundary?: EvidenceRelation; occurred: string; summary: string; by?: string }
+export interface ScenarioClaim { key: string; slug: string; type: ClaimType; status: ClaimStatus; subject: string; attribute: string; value: string; domain: Domain; phase?: string | null; ev: string[]; at: string; by: string; verify?: { at: string; by: string } }
+/**
+ * The helpers a later generation uses to add fictional records on the same timeline the product's
+ * reducers replay in date order. Every helper is the one the V3 records themselves went through.
+ */
+export interface ScenarioKit {
+  id: (key: string) => string; day: (d: string, t?: string) => string;
+  addInitiative: (spec: ScenarioInitiative) => void;
+  archive: (slug: string, at: string, reason: string, by: string) => void;
+  move: (slug: string, when: string, from: Initiative["stage"], by: string) => void;
+  dateFact: (slug: string, when: string, kind: FactKind, date: string | null, actor: string, note: string, extra?: Partial<FactValue>) => void;
+  textFact: (slug: string, when: string, kind: FactKind, text: string | null, actor: string, note: string, extra?: Partial<FactValue>) => void;
+  addEvidence: (spec: ScenarioEvidence) => void;
+  addClaim: (spec: ScenarioClaim) => void;
+  commit: (key: string, slug: string, when: string, by: string, input: { title: string; assignee: string | null; due: string | null; status?: Commitment["status"]; blocked?: string | null; note?: string; evidence?: string | null }) => void;
+  ask: (key: string, slug: string, when: string, by: string, cmd: Omit<QuestionCommand, "requestId" | "expectedRevision" | "id"> & { owner?: string | null }) => void;
+  relate: (key: string, when: string, by: string, from: string, to: string, type: RelationshipCommand["type"], rationale: string, dates?: { provider: "TARGET_LIVE" | "NEXT_MILESTONE"; needed: "TARGET_LIVE" | "NEXT_MILESTONE" }) => void;
+  track: (key: string, claimKey: string, slug: string, steps: { at: string; by: string; cmd: Omit<RiskCommand, "requestId" | "expectedRevision" | "id" | "claimId"> }[]) => void;
+}
+export interface ScenarioOptions {
+  version: string;
+  /** Registers further dated steps before the timeline runs. */
+  extend?: (kit: ScenarioKit) => void;
+  /** Further synthetic business measures for the generation. */
+  metrics?: (workspaceId: string, initiativeIdFor: (slug: string) => string, id: (key: string) => string) => ProjectMetric[];
+}
+
+export function buildDemoScenario(identity: DemoIdentity, options: ScenarioOptions) {
   const base = canonicalDemoDataV2(identity);
   const { workspaceId, organizationId, reviewerMemberId, reviewerUserId } = identity;
   const id = (key: string) => demoId(workspaceId, `v3:${key}`);
@@ -125,15 +159,17 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
     { ref: "DEMO-600", slug: "merchant-insights-app", name: "Merchant Insights App", businessLine: "DIGITAL_TRANSFORMATION", stage: "DELIVERY", created: "2026-07-06", description: "Give merchants transaction, summary and settlement reports in the mobile app so they stop requesting statements from support." },
     { ref: "DEMO-250", slug: "cashback-campaign-rules", name: "Cashback Campaign Rules", businessLine: "FS", stage: "LIVE_VALIDATION", created: "2026-05-11", description: "Configure the rules for a limited cashback campaign. The campaign has ended; records are kept for reference.", archived: { at: "2026-09-12", reason: "Campaign ended on schedule; records kept for reference.", by: "nour" } },
   ];
-  for (const n of newInitiatives) {
+  const initiativeRow = (n: Pick<NewInitiative, "ref" | "slug" | "name" | "businessLine" | "stage" | "created" | "description">) => {
     const row = scoped({ id: id(`initiative:${n.slug}`), slug: n.slug, name: n.name, businessLine: n.businessLine, stage: n.stage, description: `Synthetic demo scenario. ${n.description}`, knownReferences: n.ref, overallState: "UNKNOWN" as const, stateSummary: null, isDemo: true, createdAt: day(n.created), updatedAt: day(n.created) }) as Scoped<Initiative>;
-    store.initiatives.push(row);
-  }
+    store.initiatives.push(row); return row;
+  };
+  for (const n of newInitiatives) initiativeRow(n);
   // Existing initiatives: creation dates follow the scenario, so History starts where the work did.
   const existingCreated: Record<string, string> = { "merchant-flex-finance": "2026-04-14", "instant-settlement-payout": "2026-02-02", "merchant-kyc-refresh": "2026-07-22", "collections-reporting-rebuild": "2026-08-11", "tap-to-pay-merchant-onboarding": "2026-05-18", "merchant-pricing-update": "2026-07-27", "agent-cash-in-network": "2026-09-08", "installment-early-settlement": "2026-08-17" };
   for (const [slug, created] of Object.entries(existingCreated)) { const i = bySlug(slug); i.createdAt = day(created); i.updatedAt = day(created); }
   for (const [slug, ref] of [["tap-to-pay-merchant-onboarding", "DEMO-150"], ["merchant-pricing-update", "DEMO-170"], ["installment-early-settlement", "DEMO-190"]] as const) bySlug(slug).knownReferences = ref;
-  for (const i of store.initiatives) at(i.createdAt, () => log(i.slug, i.createdAt, "INITIATIVE_CREATED", `Initiative recorded: ${i.name}`, "fixture", { entityType: "INITIATIVE", entityId: i.id, payload: { synthetic: true, canonicalVersion: DEMO_V3_VERSION } }));
+  const logCreated = (i: Initiative) => at(i.createdAt, () => log(i.slug, i.createdAt, "INITIATIVE_CREATED", `Initiative recorded: ${i.name}`, "fixture", { entityType: "INITIATIVE", entityId: i.id, payload: { synthetic: true, canonicalVersion: options.version } }));
+  for (const i of store.initiatives) logCreated(i);
 
   // ── Scope contexts (current scope / phase) ──
   const scopes: Record<string, string> = {
@@ -141,7 +177,8 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
     "tap-to-pay-merchant-onboarding": "Full rollout · Tap-to-Pay merchant onboarding", "merchant-pricing-update": "Phase 1 · merchant service fee update", "installment-early-settlement": "Phase 1 · installment early settlement", "agent-cash-in-network": "Discovery · agent cash-in pilot proposal",
     "service-complaint-tracker": "Release 1 · terminal complaint categories", "merchant-credit-line-pilot": "Pilot · whitelisted merchant cohort", "partner-wallet-checkout": "Phase 1 · partner wallet payments at the terminal", "partner-bank-settlement-pack": "Phase 1 · weekly settlement report", "terminal-care-plan": "Phase 1 · maintenance plan offer", "merchant-insights-app": "Release 1 · merchant reports in the app", "cashback-campaign-rules": "Campaign · limited cashback rules",
   };
-  for (const [slug, label] of Object.entries(scopes)) {
+  const setScope = (slug: string, label: string) => {
+    scopes[slug] = label;
     const i = bySlug(slug); const when = new Date(Date.parse(i.createdAt) + 3600000).toISOString();
     at(when, () => {
       const c: InitiativeContext = { id: id(`context:${slug}`), workspaceId, initiativeId: i.id, label, note: null, revision: 1, createdAt: when, updatedAt: when, retiredAt: null };
@@ -150,7 +187,8 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
       for (const claim of store.claims) if (claim.initiativeId === i.id && (claim as { contextId?: string | null }).contextId === undefined) (claim as { contextId?: string | null }).contextId = c.id;
       log(slug, when, "CONTEXT_CREATE", `Current scope set: ${label}`, "fixture", { entityType: "CONTEXT", entityId: c.id });
     });
-  }
+  };
+  for (const [slug, label] of Object.entries(scopes)) setScope(slug, label);
 
   // ── Delivery facts ──
   type FactStep = [string, string, FactKind, Partial<FactValue>, string, string];
@@ -170,7 +208,8 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
   const dateFact = (slug: string, when: string, kind: FactKind, date: string | null, actor: string, note: string, extra: Partial<FactValue> = {}) => fact([(kind === "DEV_STARTED" || kind === "ACTUAL_LIVE") && date && day(date, "16:00") > when ? day(date, "16:00") : when, slug, kind, { date, ...extra }, actor, note]);
   const textFact = (slug: string, when: string, kind: FactKind, text: string | null, actor: string, note: string, extra: Partial<FactValue> = {}) => fact([when, slug, kind, { text, ...extra }, actor, note]);
   const ownerKeys: Record<string, string> = { "merchant-flex-finance": "reviewer", "instant-settlement-payout": "lina", "merchant-kyc-refresh": "nour", "collections-reporting-rebuild": "reviewer", "tap-to-pay-merchant-onboarding": "nour", "merchant-pricing-update": "lina", "installment-early-settlement": "reviewer", "service-complaint-tracker": "nour", "merchant-credit-line-pilot": "lina", "partner-wallet-checkout": "lina", "partner-bank-settlement-pack": "nour", "terminal-care-plan": "lina", "merchant-insights-app": "adam", "cashback-campaign-rules": "nour" };
-  for (const [slug, key] of Object.entries(ownerKeys)) { const created = bySlug(slug).createdAt; const t = new Date(Date.parse(created) + 2 * 3600000).toISOString(); scope(slug, t); owner(slug, t, key); }
+  const assignAtCreation = (slug: string, key: string | null) => { ownerKeys[slug] = key ?? "reviewer"; const created = bySlug(slug).createdAt; const t = new Date(Date.parse(created) + 2 * 3600000).toISOString(); scope(slug, t); if (key) owner(slug, t, key); };
+  for (const [slug, key] of Object.entries(ownerKeys)) assignAtCreation(slug, key);
   scope("agent-cash-in-network", day("2026-09-08", "11:00")); // Discovery: scope named, owner deliberately not assigned.
   // Owner change: Collections Reporting moves from the reviewer to Operations after definition starts.
   owner("collections-reporting-rebuild", day("2026-09-16", "08:00"), "adam", "Operations owns the reporting definitions from here.");
@@ -310,7 +349,7 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
     { key: "cash-rules", slug: "cashback-campaign-rules", title: "Campaign rules summary", type: "DOCUMENT", ref: "Campaign rules", occurred: "2026-05-15", summary: "Cashback per eligible transaction with a monthly cap per merchant, for a fixed campaign window." },
   ];
   const sourceFor = new Map<string, string>();
-  for (const e of evidenceSpecs) {
+  const addEvidence = (e: Ev) => {
     const i = bySlug(e.slug); const captured = day(e.occurred, "12:00");
     at(captured, () => {
       const kindName = e.type === "JIRA" ? "Jira project" : e.type === "EMAIL" ? "Email" : e.type === "MEETING" ? "Meetings" : e.type === "DECISION_NOTE" ? "Decision notes" : "Documents";
@@ -322,13 +361,14 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
       store.evidence.push(scoped({ id: id(`evidence:${e.key}`), initiativeId: i.id, sourceId: sourceFor.get(sourceKey)!, title: e.title, sourceType: e.type, sourceReference: e.ref, sourceUrl: null, contentSummary: `Synthetic evidence. ${e.summary}`, boundary: e.boundary ?? "CURRENT_SCOPE", occurredAt: day(e.occurred, "10:00"), capturedAt: captured, lastVerifiedAt: null, createdBy: who(e.by ?? ownerKeys[e.slug] ?? "reviewer").userId, createdAt: captured, updatedAt: captured }));
       log(e.slug, captured, "EVIDENCE_ADDED", `Evidence added: ${e.title}`, e.by ?? ownerKeys[e.slug] ?? "reviewer", { entityType: "EVIDENCE", entityId: id(`evidence:${e.key}`) });
     });
-  }
+  };
+  for (const e of evidenceSpecs) addEvidence(e);
   // Existing v1/v2 evidence is re-dated to when it was captured in the scenario.
   for (const e of base.productStore.evidence) { const slug = store.initiatives.find(i => i.id === e.initiativeId)!.slug; const created = Date.parse(bySlug(slug).createdAt); const t = new Date(Math.max(created + 3 * 86400000, Math.min(Date.parse(e.capturedAt), Date.parse(DEMO_CUTOFF) - 86400000))).toISOString(); e.capturedAt = t; e.createdAt = t; e.updatedAt = t; }
   for (const s of base.productStore.sources) { const i = store.initiatives.find(x => x.id === s.initiativeId)!; const t = new Date(Date.parse(i.createdAt) + 3 * 86400000).toISOString(); s.createdAt = t; s.updatedAt = t; }
 
   // Source library references (Manage › Sources): each initiative maps its references.
-  for (const i of store.initiatives) {
+  const mapSources = (i: Initiative) => {
     const when = new Date(Date.parse(i.createdAt) + 4 * 86400000).toISOString();
     at(when, () => {
       const refs = store.evidence.filter(e => e.initiativeId === i.id && e.sourceReference && Date.parse(e.capturedAt) <= Date.parse(when) + 400 * 86400000);
@@ -355,7 +395,8 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
         for (const m of store.sourceMappings.filter(x => x.initiativeId === i.id && x.linkedAt === when)) log(i.slug, when, "SOURCE_MAPPED", "Source item mapped to initiative", "reviewer", { entityType: "SOURCE_MAPPING", entityId: m.id, payload: { before: null, after: m } });
       }
     });
-  }
+  };
+  for (const i of store.initiatives) mapSources(i);
 
   // ── Knowledge ──
   type Cl = { key: string; slug: string; type: ClaimType; status: ClaimStatus; subject: string; attribute: string; value: string; domain: Domain; phase?: string | null; ev: string[]; at: string; by: string; verify?: { at: string; by: string }; supersedes?: string };
@@ -406,7 +447,7 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
     // Merchant Flex Finance extra (verified entries so setup completes)
     { key: "mff-pilot-size", slug: "merchant-flex-finance", type: "DECISION", status: "ACTIVE", subject: "Pilot scope", attribute: "Merchant cap", value: "Limited to 40 merchants in the first month", domain: "PRODUCT", ev: ["mff-finance-memo"], at: "2026-09-25", by: "reviewer", verify: { at: "2026-09-25", by: "reviewer" } },
   ];
-  for (const c of claimSpecs) {
+  const addClaim = (c: Cl) => {
     const when = day(c.at, "13:00");
     at(when, () => {
       const i = bySlug(c.slug);
@@ -422,7 +463,8 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
         log(c.slug, v, "CLAIM_VERIFIED", `${c.subject} verified`, c.verify!.by, { entityType: "CLAIM", entityId: row.id, payload: { subject: `${c.subject} · ${c.attribute}` } });
       });
     }
-  }
+  };
+  for (const c of claimSpecs) addClaim(c);
   // Existing v1/v2 claims: created with their initiative's evidence; ACTIVE legacy claims keep "verification history not recorded".
   for (const c of base.productStore.claims) { const i = store.initiatives.find(x => x.id === c.initiativeId)!; let t = new Date(Math.min(Date.parse(i.createdAt) + 10 * 86400000, Date.parse(DEMO_CUTOFF) - 2 * 86400000)).toISOString();
     // A Knowledge entry cannot be recorded before every dated document it cites existed: place it the day after the earliest one.
@@ -732,8 +774,10 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
     ["merchant-credit-line-pilot", "2026-09-15", "DELIVERY", "RELEASE_PREPARATION", "lina"],
     ["tap-to-pay-merchant-onboarding", "2026-09-11", "RELEASE_PREPARATION", "LIVE_VALIDATION", "nour"],
   ];
-  for (const [slug, when, from] of moves) { const to = finalStage(slug); bySlug(slug).stage = from; stage(slug, day(when, "17:00"), to, moves.find(m => m[0] === slug)![4]); }
-  for (const n of newInitiatives) if (n.archived) at(day(n.archived.at, "12:00"), () => { const i = bySlug(n.slug); const t = day(n.archived!.at, "12:00"); Object.assign(i, { archivedAt: t, archivedBy: who(n.archived!.by).userId, archiveReason: n.archived!.reason, updatedAt: t }); log(n.slug, t, "INITIATIVE_ARCHIVED", "Initiative archived; records and history preserved", n.archived!.by, { entityType: "INITIATIVE", entityId: i.id, payload: { reason: n.archived!.reason } }); });
+  const move = (slug: string, when: string, from: Initiative["stage"], by: string) => { const to = finalStage(slug); bySlug(slug).stage = from; stage(slug, day(when, "17:00"), to, by); };
+  for (const [slug, when, from, , by] of moves) move(slug, when, from, by);
+  const archive = (slug: string, archivedAt: string, reason: string, by: string) => at(day(archivedAt, "12:00"), () => { const i = bySlug(slug); const t = day(archivedAt, "12:00"); Object.assign(i, { archivedAt: t, archivedBy: who(by).userId, archiveReason: reason, updatedAt: t }); log(slug, t, "INITIATIVE_ARCHIVED", "Initiative archived; records and history preserved", by, { entityType: "INITIATIVE", entityId: i.id, payload: { reason } }); });
+  for (const n of newInitiatives) if (n.archived) archive(n.slug, n.archived.at, n.archived.reason, n.archived.by);
 
   // ── Weekly reviews: W37 and W38 Finals, W39 Draft with two sections reviewed ──
   function review(week: string, created: string, finalAt: string | null, reviewedSlugs?: string[]) {
@@ -754,6 +798,12 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
   review("2026-W38", day("2026-09-20", "14:00"), day("2026-09-20", "14:00"));
   review("2026-W39", DEMO_CUTOFF, null, ["merchant-flex-finance", "service-complaint-tracker"]);
 
+  // ── Later generations add their records here, on the same timeline ──
+  options.extend?.({
+    id, day, dateFact, textFact, addEvidence, addClaim, commit, ask, relate, track, archive, move,
+    addInitiative: spec => { const row = initiativeRow(spec); logCreated(row); setScope(spec.slug, spec.scope); assignAtCreation(spec.slug, spec.owner); mapSources(row); },
+  });
+
   // ── Run the timeline ──
   for (const step of steps.sort((a, b) => a.at.localeCompare(b.at) || a.n - b.n)) {
     if (step.at > DEMO_CUTOFF) throw new Error(`Demo step after the scenario cutoff: ${step.at}`);
@@ -762,11 +812,12 @@ export function canonicalDemoDataV3(identity: DemoIdentity) {
   for (const r of state.reviews) if (r.status === "FINAL") r.preparedAsFixture = true;
   for (const c of store.claims) if ((c as { contextId?: string | null }).contextId === undefined) (c as { contextId?: string | null }).contextId = null;
 
+  const initiativeIdFor = (slug: string) => bySlug(slug).id;
   return {
-    version: DEMO_V3_VERSION, organization: { id: organizationId, name: DEMO_ORGANIZATION_NAME }, workspaceId,
+    version: options.version, organization: { id: organizationId, name: DEMO_ORGANIZATION_NAME }, workspaceId,
     productStore: store, deliveryState: state, source: source(), members, personas,
     reviewer: { userId: reviewerUserId, memberId: reviewerMemberId, role: "ORG_OWNER" as const, platformRole: null },
     // Synthetic business measures: the V2 onboarding pair plus the V3 portfolio set. Records, never display defaults.
-    metrics: [...base.metrics, ...demoPortfolioMetrics(workspaceId, slug => bySlug(slug).id, id)], cutoff: DEMO_V3_CUTOFF,
+    metrics: [...base.metrics, ...demoPortfolioMetrics(workspaceId, initiativeIdFor, id), ...(options.metrics?.(workspaceId, initiativeIdFor, id) ?? [])], cutoff: DEMO_V3_CUTOFF,
   };
 }

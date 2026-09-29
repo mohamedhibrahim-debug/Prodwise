@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { chartGeometry, compactNumber, datePosition, formatMetricValue, metricCoverage, metricView, niceTicks, periodLabel, periodTick, targetStatus } from "../../lib/analysis/metric-view.ts";
+import { chartGeometry, chartLabelPlan, compactNumber, datePosition, formatMetricValue, isStale, metricCoverage, metricView, niceTicks, periodLabel, periodTick, targetStatus } from "../../lib/analysis/metric-view.ts";
 import type { MetricObservation, ProjectMetric } from "../../lib/analysis/metric-types.ts";
 
 const obs = (id: string, periodStart: string, periodEnd: string, value: number | null): MetricObservation => ({ id, periodStart, periodEnd, value, capturedAt: periodEnd + "T09:00:00.000Z", sourceEvidenceId: null, note: value === null ? "Not recorded." : "", origin: "SYNTHETIC_DEMO" });
@@ -87,4 +87,23 @@ test("coverage counts statuses without inventing any", () => {
   const c = metricCoverage([metric, { ...metric, id: "n", targetValue: null, targetComparator: null }, { ...metric, id: "o", observations: [] }]);
   assert.deepEqual({ ...c, lastCaptured: null }, { configured: 3, met: 0, notMet: 1, notAssessed: 1, noTarget: 1, lastCaptured: null, synthetic: true });
   assert.equal(metricCoverage([]).lastCaptured, null);
+});
+
+test("chart labels: the target label moves left when the latest point's label would collide with it (E-4)", () => {
+  // Latest point at the right edge, a few units under the target line: "571 merchants" would run into "Target ≥ 600".
+  assert.deepEqual(chartLabelPlan({ x: 560, y: 40 }, 20, 600), { targetSide: "left", pointBelow: false });
+  // Same point, target far below: no collision.
+  assert.deepEqual(chartLabelPlan({ x: 560, y: 40 }, 150, 600), { targetSide: "right", pointBelow: false });
+  // A latest point in the middle of the chart never displaces the target label.
+  assert.equal(chartLabelPlan({ x: 300, y: 40 }, 30, 600).targetSide, "right");
+  // A point at the very top gets its label below, so it stays inside the plot.
+  assert.equal(chartLabelPlan({ x: 300, y: 4 }, null, 600).pointBelow, true);
+  assert.deepEqual(chartLabelPlan(null, 20, 600), { targetSide: "right", pointBelow: false });
+});
+
+test("a metric is stale after six weeks without a capture; no capture is not stale, it is unknown", () => {
+  assert.equal(isStale("2026-07-05T09:00:00.000Z", "2026-09-26T10:00:00.000Z"), true);
+  assert.equal(isStale("2026-09-21T09:00:00.000Z", "2026-09-26T10:00:00.000Z"), false);
+  assert.equal(isStale("2026-08-15T10:00:00.000Z", "2026-09-26T10:00:00.000Z"), false);
+  assert.equal(isStale(null, "2026-09-26T10:00:00.000Z"), false);
 });

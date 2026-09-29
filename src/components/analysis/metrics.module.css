@@ -8,13 +8,18 @@
   gap: 1px;
   padding: 1px;
 }
-.tile { min-width: 0; background: var(--panel); outline: 1px solid var(--rule); }
+/* Tiles follow the stat-strip grammar: a tone rule on top says the status; the label and glyph say it in words. */
+.tile { --tile-rule: var(--state-unknown-mark); min-width: 0; background: var(--panel); outline: 1px solid var(--rule); }
+.tile[data-kind="MET"] { --tile-rule: var(--state-ready-mark); }
+.tile[data-kind="NOT_MET"] { --tile-rule: var(--state-at-risk-mark); }
+.tile[data-kind="NO_TARGET"] { --tile-rule: var(--ink-300); }
 .tileLink {
   display: flex;
   flex-direction: column;
   gap: var(--s-1);
   height: 100%;
-  padding: var(--s-4) var(--s-5) var(--s-3);
+  padding: var(--s-3) var(--s-5) var(--s-3);
+  border-top: 3px solid var(--tile-rule);
   color: var(--ink-900);
   text-decoration: none;
   transition: background var(--dur-fast) var(--ease);
@@ -22,13 +27,28 @@
 .tileLink:hover { background: var(--surface-subtle); }
 .tileLink:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent-700); }
 .tileName {
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
   font-weight: var(--fw-semibold);
-  color: var(--ink-700);
+  color: var(--ink-800);
   line-height: var(--lh-tight);
-  min-height: calc(var(--t-xs) * 2.5);
 }
 .tilePeriod { font-size: var(--t-xs); color: var(--ink-500); }
+.staleMark, .staleWord { color: var(--stale-fg); font-weight: var(--fw-semibold); }
+.tile[data-stale] .tilePeriod { color: var(--stale-fg); }
+/* Freshness: meta text until it is old enough to matter. */
+.freshness { font-size: var(--t-xs); color: var(--fresh-fg); white-space: nowrap; }
+.freshness[data-stale] { color: var(--stale-fg); background: var(--stale-bg); padding: 1px var(--s-2); border-radius: var(--r-sm); font-weight: var(--fw-medium); }
+.freshness[data-unknown] { color: var(--ink-500); }
+.staleGlyph { margin-right: var(--s-1); }
+/* Coverage mini-bar: one segment per status, counts in words beside it. */
+.coverage { display: grid; gap: var(--s-1); min-width: 7rem; }
+.coverageBar { display: flex; height: var(--s-2); gap: 1px; border-radius: var(--r-xs); overflow: hidden; background: var(--surface-sunken); }
+.coverageBar i { display: block; min-width: var(--s-1); background: var(--state-unknown-mark); }
+.coverageBar i[data-kind="MET"] { background: var(--state-ready-mark); }
+.coverageBar i[data-kind="NOT_MET"] { background: var(--state-at-risk-mark); }
+.coverageBar i[data-kind="NO_TARGET"] { background: var(--ink-300); }
+.coverageText { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-3); }
+.coverageText .status { font-weight: var(--fw-medium); white-space: nowrap; }
 .tileFallback { font-size: var(--t-xs); color: var(--ink-500); }
 .tileTarget { font-size: var(--t-xs); color: var(--ink-500); font-variant-numeric: tabular-nums; }
 
@@ -95,8 +115,8 @@
 .grid { stroke: var(--rule); stroke-width: 1; }
 .hatchLine { stroke: var(--state-unknown-mark); stroke-width: 2; }
 .gap { stroke: var(--state-unknown-edge); stroke-width: 1; }
-.target { stroke: var(--ink-700); stroke-width: 1.5; stroke-dasharray: 6 4; }
-.live { stroke: var(--navy-700); stroke-width: 1; stroke-dasharray: 2 3; }
+.target { stroke: var(--kind-target); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.live { stroke: var(--kind-actual); stroke-width: 1.5; stroke-dasharray: 2 3; }
 .line { fill: none; stroke: var(--accent-600); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .markerRing { stroke: var(--panel); stroke-width: 12; stroke-linecap: round; }
 .marker { stroke: var(--accent-600); stroke-width: 8; stroke-linecap: round; }
@@ -116,9 +136,11 @@
   background: var(--panel);
   padding: 0 var(--s-1);
 }
-.targetLabel { right: 0; transform: translateY(-120%); color: var(--ink-700); font-weight: var(--fw-semibold); background: var(--panel); padding: 0 var(--s-1); }
+.targetLabel { right: 0; transform: translateY(-120%); color: var(--kind-target); font-weight: var(--fw-semibold); background: var(--panel); padding: 0 var(--s-1); }
+/* E-4: when the latest value's label would run into it, the target label moves to the left edge. */
+.targetLabel[data-side="left"] { right: auto; left: 0; }
 .liveLabel[data-side="left"] { transform: translateX(calc(-100% - var(--s-1))); }
-.liveLabel { top: var(--s-1); transform: translateX(var(--s-1)); color: var(--navy-700); background: var(--panel); padding: 0 var(--s-1); }
+.liveLabel { top: var(--s-1); transform: translateX(var(--s-1)); color: var(--kind-actual); font-weight: var(--fw-semibold); background: var(--panel); padding: 0 var(--s-1); }
 .pointLabel {
   transform: translate(-50%, calc(-100% - var(--s-3)));
   font-variant-numeric: tabular-nums;
@@ -129,6 +151,8 @@
   padding: 0 var(--s-1);
 }
 .pointLabel[data-side="left"] { transform: translate(calc(-100% + var(--s-2)), calc(-100% - var(--s-3))); }
+.pointLabel[data-below] { transform: translate(-50%, var(--s-3)); }
+.pointLabel[data-side="left"][data-below] { transform: translate(calc(-100% + var(--s-2)), var(--s-3)); }
 .axisX {
   list-style: none;
   margin: 0 0 0 var(--axis-w);
@@ -142,7 +166,7 @@
 .legendLine { height: 2px; background: var(--accent-600); }
 .legendTarget { height: 0; border-top: 2px dashed var(--ink-700); }
 .legendGap { height: var(--s-3); border: 1px solid var(--state-unknown-mark); background: repeating-linear-gradient(135deg, var(--state-unknown-mark) 0 1px, var(--state-unknown-bg) 1px var(--s-1)); }
-.legendLive { height: var(--s-3); width: 0 !important; border-left: 1px dashed var(--navy-700); }
+.legendLive { height: var(--s-3); width: 0 !important; border-left: 2px dashed var(--kind-actual); }
 .chartEmpty {
   padding: var(--s-6);
   font-size: var(--t-sm);
@@ -175,21 +199,39 @@
 .table td:last-child { color: var(--ink-700); min-width: 16rem; }
 .table tr[data-missing] td:nth-child(2) { color: var(--state-unknown-fg); font-family: var(--font-sans); font-weight: var(--fw-semibold); }
 
-/* ── Contract ────────────────────────────────────────────────────────── */
-.contract { background: var(--surface-subtle); padding: var(--s-5); align-self: start; border-top: 2px solid var(--navy-900); }
-.contract h3 { margin: 0 0 var(--s-3); font-size: var(--t-micro); text-transform: uppercase; letter-spacing: var(--ls-micro); color: var(--ink-500); }
-.contract dl { margin: 0; }
+/* ── Contract: collapsed under the chart; the summary line carries source, target and origin ── */
+.contract { margin-top: var(--s-4); border-top: 1px solid var(--rule); min-width: 0; }
+.contract summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--ink-900);
+  list-style: none;
+}
+.contract summary::-webkit-details-marker { display: none; }
+.contract summary > span:last-child { font-weight: var(--fw-regular); color: var(--ink-500); font-size: var(--t-xs); }
+.contractChevron { display: inline-block; color: var(--ink-500); transition: transform var(--dur-fast) var(--ease); }
+.contract[open] .contractChevron { transform: rotate(90deg); }
+.contract dl { margin: 0 0 var(--s-3); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s-8); }
 .contract dl > div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: var(--s-3); padding: var(--s-3) 0; border-top: 1px solid var(--rule); font-size: var(--t-xs); line-height: var(--lh-body); }
 .contract dt { font-weight: var(--fw-semibold); color: var(--ink-700); }
 .contract dd { margin: 0; color: var(--ink-900); overflow-wrap: anywhere; }
 .contract dd span { display: block; color: var(--ink-500); margin-top: var(--s-1); }
 .contract a { color: var(--accent-700); font-weight: var(--fw-semibold); }
-.contract a:focus-visible, .table summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.contract a:focus-visible, .table summary:focus-visible, .contract summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
+@media (prefers-reduced-motion: reduce) { .contractChevron { transition: none; } }
 @media (max-width: 780px) {
   .chart { --chart-h: calc(var(--s-16) * 2.5); --axis-w: var(--s-12); }
   .chart[data-dense] .axisX li:nth-child(even) { visibility: hidden; }
+  .contract dl { grid-template-columns: 1fr; }
   .contract dl > div { grid-template-columns: 1fr; gap: var(--s-1); }
+  .coverage { min-width: 0; }
   .tileLink { padding: var(--s-3) var(--s-4); }
   .targetLabel { transform: translateY(-110%); }
 }

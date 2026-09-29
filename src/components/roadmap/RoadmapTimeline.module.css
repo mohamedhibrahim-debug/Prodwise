@@ -16,7 +16,13 @@
 .scroller {
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  border-radius: var(--r-md) var(--r-md) 0 0;
+}
+/* The month header: a sticky strip under the global bar that mirrors the body's horizontal scroll (E-3). */
+.headScroller {
+  position: sticky;
+  top: var(--shell-top);
+  z-index: 5;
+  overflow: hidden;
 }
 .canvas {
   min-width: calc(var(--rm-name-w) + var(--rm-months, 6) * var(--rm-month-min));
@@ -29,6 +35,7 @@
   grid-template-columns: var(--rm-name-w) minmax(0, 1fr);
   background: var(--navy-900);
   color: var(--navy-ink);
+  box-shadow: 0 1px 0 var(--navy-rule);
 }
 .corner {
   position: sticky;
@@ -183,9 +190,11 @@
   font-weight: var(--fw-semibold);
   line-height: var(--lh-tight);
   text-decoration: none;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   border-radius: var(--r-xs);
 }
 .nameLink:hover { color: var(--accent-700); text-decoration: underline; }
@@ -306,6 +315,8 @@
   border-radius: var(--r-xs);
   white-space: nowrap;
 }
+/* When the target label or a nudged milestone is raised above the bar, the movement label moves below it so nothing overlaps. */
+.moveLabel[data-below] { top: calc(var(--rm-center) + var(--rm-mark) / 2 + var(--s-1)); }
 .live {
   border-radius: 50%;
   background: var(--state-ready-mark);
@@ -325,6 +336,11 @@
   border: 2px solid var(--ink-700);
   z-index: 1;
 }
+.milestone[data-nudged] {
+  top: calc(var(--rm-center) - var(--rm-mark) - var(--s-1));
+  z-index: 2;
+  box-shadow: 0 0 0 2px var(--panel);
+}
 .label {
   top: calc(var(--rm-center) - 0.75em);
   background: var(--panel);
@@ -341,6 +357,10 @@
 .label[data-side="left"] {
   margin-left: 0;
   transform: translateX(calc(-100% - var(--rm-mark) / 2 - var(--s-1)));
+}
+.label[data-raised] {
+  top: calc(var(--rm-center) - var(--rm-mark) - 1.3em);
+  margin-left: calc(var(--rm-mark) / -2);
 }
 .label[data-past] { color: var(--state-at-risk-fg); }
 .liveLabel { color: var(--state-ready-fg); }
@@ -365,17 +385,23 @@
   border-left: 2px solid var(--state-at-risk-mark);
 }
 .depLabel {
-  top: calc(var(--rm-dep) + var(--s-1));
+  top: calc(var(--rm-dep) - 0.8em);
+  margin-left: var(--s-2);
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
+  line-height: 1.6;
   color: var(--state-at-risk-fg);
   background: var(--panel);
   padding: 0 var(--s-1);
+  border-radius: var(--r-xs);
   white-space: nowrap;
+  z-index: 1;
 }
 .depLabel[data-side="left"] {
-  transform: translateX(-100%);
+  margin-left: 0;
+  transform: translateX(calc(-100% - var(--s-2)));
 }
+.depShort { display: none; }
 .hit {
   position: absolute;
   top: var(--s-2);
@@ -533,11 +559,16 @@
 
 @media (max-width: 780px) {
   .frame {
-    --rm-name-w: calc(var(--s-16) * 2.5);
+    --rm-name-w: calc(var(--s-16) * 2.875);
     --rm-month-min: calc(var(--s-16) * 1.5);
   }
   .name { padding: var(--s-2) var(--s-3); }
+  /* The global 44px link floor would stretch the clamped name past its two lines; the row itself is the tap target. */
+  .nameLink { min-height: 0; }
   .corner { padding-inline: var(--s-3); }
+  /* Narrow screens keep the dependency mark readable; the full sentence is in the popover and Details. */
+  .depLong { display: none; }
+  .depShort { display: inline; }
   .legend { gap: var(--s-2) var(--s-4); }
 }
 @media (prefers-reduced-motion: reduce) {

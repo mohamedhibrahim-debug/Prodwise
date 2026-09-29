@@ -11,7 +11,7 @@ import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { canonicalDemoData,DEMO_CANONICAL_VERSION,DEMO_CUTOFF,DEMO_ORGANIZATION_NAME } from '../../src/lib/demo/canonical.ts';
 import { freezeInput,sectionDigest,canonical } from '../../src/lib/delivery/model.ts';
-import { canonicalDemoDataV3,DEMO_V3_VERSION } from '../../src/lib/demo/scenario-v3.ts';
+import { canonicalDemoDataV4,DEMO_V4_VERSION } from '../../src/lib/demo/scenario-v4.ts';
 
 const EMAIL='reviewer@prodwise.demo';
 const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -103,7 +103,7 @@ function pgTimes(value){
  if(!m)return value;const fraction=(m[2]??'').replace(/0+$/,'');return m[1]+(fraction?'.'+fraction:'')+'+00:00';
 }
 function fixtureFor(plan){
- const demo=canonicalDemoDataV3({workspaceId:plan.workspaceId,organizationId:plan.organizationId,reviewerMemberId:plan.reviewerMemberId,reviewerUserId:plan.reviewerUserId});
+ const demo=canonicalDemoDataV4({workspaceId:plan.workspaceId,organizationId:plan.organizationId,reviewerMemberId:plan.reviewerMemberId,reviewerUserId:plan.reviewerUserId});
  // Each review is re-frozen from its OWN frozen records in the database's ordering (delivery_source orders
  // evidence, claims and claim evidence by id). Re-freezing a Final from today's records would rewrite history.
  const dbOrder=snapshots=>{for(const snap of snapshots){snap.initiative={archivedAt:null,archivedBy:null,archiveReason:null,...snap.initiative,createdBy:plan.reviewerUserId};snap.evidence.sort((a,b)=>a.id.localeCompare(b.id));snap.claims.sort((a,b)=>a.id.localeCompare(b.id));for(const claim of snap.claims){claim.evidence.sort((a,b)=>a.id.localeCompare(b.id));claim.anchors?.sort((a,b)=>a.evidenceId.localeCompare(b.evidenceId));}}return snapshots;};
@@ -187,7 +187,7 @@ update public.workspace_sessions set expires_at=least(expires_at,clock_timestamp
 select public.platform_audit(${literal(p.actorId)}::uuid,${literal(p.prior.organizationId)}::uuid,${literal(p.prior.workspaceId)}::uuid,${literal(p.prior.workspaceId)},'DEMO_GENERATION_ARCHIVED',null,${json({replacedByWorkspaceId:p.workspaceId})},'Operator reset retained all prior synthetic business records and Final reviews; only old Demo access was retired.',false);
 `;
  }
- sql+=`select public.platform_audit(${literal(p.actorId)}::uuid,${literal(p.organizationId)}::uuid,${literal(p.workspaceId)}::uuid,${literal(p.reviewerUserId)},'DEMO_GENERATION_PREPARED',null,${json({version:p.version,dataset:DEMO_V3_VERSION,scenarioAt:p.scenarioAt,role:'ORG_OWNER',platformRole:null,priorWorkspaceId:p.prior?.workspaceId??null})},'Explicit operator preparation of isolated synthetic graduation reviewer scenario.',false);
+ sql+=`select public.platform_audit(${literal(p.actorId)}::uuid,${literal(p.organizationId)}::uuid,${literal(p.workspaceId)}::uuid,${literal(p.reviewerUserId)},'DEMO_GENERATION_PREPARED',null,${json({version:p.version,dataset:DEMO_V4_VERSION,scenarioAt:p.scenarioAt,role:'ORG_OWNER',platformRole:null,priorWorkspaceId:p.prior?.workspaceId??null})},'Explicit operator preparation of isolated synthetic graduation reviewer scenario.',false);
 set constraints all immediate;
 commit;
 `;

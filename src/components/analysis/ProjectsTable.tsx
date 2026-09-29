@@ -5,6 +5,7 @@ import { DataTable } from "@/components/admin/AdminUI";
 import { FilterBar, type FilterFacet } from "@/components/workspace/FilterBar";
 import { useListState } from "@/components/workspace/useListState";
 import { applyListFilters, facetCounts, serializeListState, type FacetAccessors, type ListFilterState } from "@/lib/workspace/list-filter";
+import styles from "./analysis.module.css";
 
 export interface ProjectRow {
   id: string; slug: string; name: string;
@@ -41,7 +42,7 @@ export function ProjectsTable({ rows, initial, lines, stages }: {
     <FilterBar state={state} onChange={setState} facets={facets} searchLabel="Filter initiative analysis" searchPlaceholder="Search initiative"
       result={`${visible.length} of ${rows.length} ${rows.length === 1 ? "initiative" : "initiatives"}`} />
     <DataTable caption="Initiative measurement coverage" columns={["Initiative", "Business line", "Stage", "Metrics", "Latest vs target", "Last captured"]}
-      rows={visible.map(r => ({ key: r.id, cells: [<Link prefetch={false} key="open" href={"/analysis/projects/" + r.slug + "?back=" + encodeURIComponent(back)}>{r.name}</Link>, ...r.cells] }))}
+      rows={visible.map(r => ({ key: r.id, cells: [<Link prefetch={false} key="open" href={"/analysis/projects/" + r.slug + "?back=" + encodeURIComponent(back)} className={styles.wrapName}>{r.name}</Link>, ...r.cells] }))}
       empty="No initiatives match these filters. Change or clear the filters." />
   </>;
 }

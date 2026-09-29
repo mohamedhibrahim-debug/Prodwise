@@ -104,14 +104,31 @@ export interface RowMarks {
   delivered: { x: number; width: number } | null;
   target: { x: number; past: boolean } | null;
   live: { x: number; partial: boolean } | null;
-  milestone: { x: number } | null;
+  /** Every point mark on the row (target, live, milestone), for label collision checks. */
+  markXs: number[];
+  /** `nudged` lifts the milestone dot above the bar when it would sit under the target or live marker. */
+  milestone: { x: number; nudged: boolean } | null;
   ghost: { x: number; toX: number; days: number } | null;
-  dependencies: { id: string; fromX: number; toX: number; days: number | null; name: string }[];
+  /** `labelSide` keeps the dependency label inside the window: after the arrow, or before its start near the right edge. */
+  dependencies: { id: string; fromX: number; toX: number; days: number | null; name: string; labelSide: 'left' | 'right' }[];
   /** The interactive extent: every drawn mark sits inside it. */
   hit: { x: number; width: number };
   /** Put the target label left of the diamond when it would run off the right edge. */
   labelSide: 'left' | 'right';
 }
+/** Window percentage within which two marks are considered to collide (about a marker's width at 1440px). */
+export const NEAR = 1.6;
+/** Roughly how much of the window a right-hand label of `chars` characters covers (capped). */
+export function labelRoom(chars: number): number { return Math.min(14, Math.round(chars * 0.7 * 10) / 10); }
+/**
+ * True when another point mark falls under a right-hand label of the given room, so the
+ * label is raised above the bar instead of painting over "Live 28 Aug"'s target three days later.
+ */
+export function crowded(x: number, others: number[], room: number): boolean {
+  return others.some(o => o > x && o <= x + room);
+}
+/** A dependency label reads after the arrow unless that would leave the window. */
+export function depLabelSide(toX: number): 'left' | 'right' { return toX > 72 ? 'left' : 'right'; }
 export function rowMarks(item: RoadmapItem, w: RoadmapWindow): RowMarks | null {
   if (!item.target) return null;
   const t = xOf(item.target, w);
@@ -121,15 +138,17 @@ export function rowMarks(item: RoadmapItem, w: RoadmapWindow): RowMarks | null {
   const ghost = item.movement && item.movement.to === item.target ? { x: xOf(item.movement.from, w), toX: t, days: item.movement.days } : null;
   const dependencies = item.dependencies.filter(d => d.late && d.neededDate && d.providerDate)
     .map(d => ({ id: d.id, fromX: xOf(d.neededDate!, w), toX: xOf(d.providerDate!, w), days: d.days, name: d.otherName }));
-  const xs = [t, planned?.x, delivered?.x, item.actual ? xOf(item.actual, w) : undefined, item.milestone?.date ? xOf(item.milestone.date, w) : undefined, ghost?.x, ...dependencies.flatMap(d => [d.fromX, d.toX])]
+  const liveX = item.actual ? xOf(item.actual, w) : null, milestoneX = item.milestone?.date ? xOf(item.milestone.date, w) : null;
+  const xs = [t, planned?.x, delivered?.x, liveX ?? undefined, milestoneX ?? undefined, ghost?.x, ...dependencies.flatMap(d => [d.fromX, d.toX])]
     .filter((v): v is number => typeof v === 'number');
   const lo = Math.min(...xs), hi = Math.max(...xs);
+  const markXs = [t, liveX, milestoneX].filter((v): v is number => v !== null);
   return {
-    planned, delivered,
+    planned, delivered, markXs,
     target: { x: t, past: item.pastTarget },
-    live: item.actual ? { x: xOf(item.actual, w), partial: item.actualExtent === 'PARTIAL' } : null,
-    milestone: item.milestone?.date ? { x: xOf(item.milestone.date, w) } : null,
-    ghost, dependencies,
+    live: liveX !== null ? { x: liveX, partial: item.actualExtent === 'PARTIAL' } : null,
+    milestone: milestoneX !== null ? { x: milestoneX, nudged: Math.abs(milestoneX - t) < NEAR || (liveX !== null && Math.abs(milestoneX - liveX) < NEAR) } : null,
+    ghost, dependencies: dependencies.map(d => ({ ...d, labelSide: depLabelSide(d.toX) })),
     hit: { x: lo, width: hi - lo },
     labelSide: t > 86 ? 'left' : 'right',
   };

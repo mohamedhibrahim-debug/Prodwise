@@ -116,6 +116,23 @@
   font-size: var(--t-sm);
   color: var(--ink-500);
 }
+/* Details are a secondary, collapsed view: the timeline already shows every mark (E-3). */
+.details { min-width: 0; margin-top: var(--s-2); border-top: 1px solid var(--rule); }
+.detailsSummary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 52px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--r-xs);
+}
+.detailsSummary::-webkit-details-marker { display: none; }
+.detailsSummary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.detailsSummary .sectionHead { margin-top: 0; }
+.detailsChevron { flex: none; width: var(--icon-lg); height: var(--icon-lg); color: var(--ink-500); transition: transform var(--dur-fast) var(--ease); }
+.details[open] .detailsChevron { transform: rotate(180deg); }
+.details > :not(summary) { margin-top: var(--s-3); margin-bottom: var(--s-4); }
 .empty {
   display: grid;
   justify-items: start;
@@ -139,5 +156,5 @@
   .segment button { flex: 1; white-space: nowrap; padding: 0 var(--s-2); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .view, .section { transition: none; }
+  .view, .section, .detailsChevron { transition: none; }
 }
