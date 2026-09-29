@@ -1,0 +1,94 @@
+/* The top bar sits on the canvas tier, above the white sheet. It is opaque so
+   content scrolling underneath never shows through. */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-topbar);
+  height: var(--command-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: 0 calc(var(--sheet-gap) + var(--s-2)) 0 calc(var(--sheet-gap) + var(--s-3));
+  background: var(--app-canvas);
+}
+.crumbs { min-width: 0; }
+.crumbs ol { display: flex; align-items: center; gap: var(--s-2); min-width: 0; font-size: var(--t-body); }
+.crumbs li { min-width: 0; white-space: nowrap; }
+.crumbs li:last-child { overflow: hidden; text-overflow: ellipsis; }
+.crumbs a { color: var(--ink-700); font-weight: var(--fw-medium); border-radius: var(--r-sm); }
+.crumbs a:hover { color: var(--ink-900); text-decoration: underline; text-underline-offset: 3px; }
+.crumbs li[aria-current="page"] > * { color: var(--ink-900); font-weight: var(--fw-semibold); }
+.crumbs .sep { color: var(--ink-600); }
+
+.actions { display: flex; align-items: center; gap: var(--s-2); flex: none; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-800);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 240px;
+  height: var(--control-md);
+  padding: 0 6px 0 10px;
+  border: 1px solid var(--app-canvas-rule);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink-600);
+  font-size: var(--t-sm);
+  cursor: text;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.search:not(#_) { min-height: 0; }
+.search:hover { border-color: var(--ink-300); background: var(--surface); }
+.search svg { width: 16px; height: 16px; flex: none; }
+.search span { flex: 1; text-align: left; }
+.search kbd + kbd { margin-left: -4px; }
+
+.bell :global(a[data-notifications]) {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--control-md);
+  height: var(--control-md);
+  border-radius: var(--r-md);
+  color: var(--ink-700);
+  transition: background-color var(--dur-fast) var(--ease);
+}
+.bell :global(a[data-notifications]:hover) { background: rgb(255 255 255 / 55%); color: var(--ink-900); }
+.bell :global(a[data-notifications][aria-current="page"]) { background: var(--surface); color: var(--ink-900); }
+.bell :global(a[data-notifications] svg) { width: 18px; height: 18px; }
+.bell :global(a[data-notifications] b) {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--accent-500);
+  color: var(--chrome-900);
+  box-shadow: 0 0 0 2px var(--app-canvas);
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  line-height: 1;
+}
+.actions :global(.pw-btn[data-variant="ghost"]:hover) { background: rgb(255 255 255 / 55%); }
+
+@media (max-width: 1100px) {
+  .search { width: auto; }
+  .search span, .search kbd { display: none; }
+}
+@media (max-width: 780px) { .bar { display: none; } }

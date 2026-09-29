@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: false,
+  // Keep the dev-only indicator off the rail footer (account menu).
+  devIndicators: { position: "bottom-right" },
   async redirects() {
     return [
       { source: "/initiatives/:slug/memory", destination: "/initiatives/:slug/knowledge", permanent: true },

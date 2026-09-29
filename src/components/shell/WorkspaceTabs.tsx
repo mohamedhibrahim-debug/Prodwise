@@ -56,14 +56,15 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
     if (!header) return;
     const root = document.documentElement;
     const measureHeader = () => {
-      const mobileGlobal = window.matchMedia("(max-width: 780px)").matches
-        ? Number.parseFloat(
-            getComputedStyle(root).getPropertyValue("--mobile-global-h"),
-          )
-        : 0;
+      // The header sticks below the global bar (top bar on desktop, mobile bar on phones).
+      const shellTop = Number.parseFloat(
+        getComputedStyle(root).getPropertyValue(
+          window.matchMedia("(max-width: 780px)").matches ? "--mobile-global-h" : "--command-h",
+        ),
+      ) || 0;
       root.style.setProperty(
         "--workspace-header-h",
-        `${header.getBoundingClientRect().height + mobileGlobal}px`,
+        `${header.getBoundingClientRect().height + shellTop}px`,
       );
     };
     measureHeader();

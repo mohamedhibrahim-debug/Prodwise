@@ -4,30 +4,37 @@ import { revalidatePath } from "next/cache";
 import { getRepository } from "@/lib/data";
 import { assertFormWorkspace } from "@/lib/auth/scope";
 import { freshContextForRequest } from "@/lib/auth/service";
-import { importSelection, refreshSource, type ImportOutcome } from "@/lib/connectors/service";
+import { figmaOutline, jiraProjects, refreshSource, searchConnector } from "@/lib/connectors/service";
 import { ConnectorError, connectorFromSlug, connectorMessage } from "@/lib/connectors/types";
-import { SOURCE_ROLES, type SourceRole } from "@/lib/workspace/source-mapping";
+import type { ImportRow } from "@/lib/connectors/import-view";
 
-export interface ImportState { error: string | null; outcomes: ImportOutcome[] }
-const refresh = (slug: string) => { for (const p of [`/initiatives/${slug}/sources`, `/initiatives/${slug}/evidence`, `/initiatives/${slug}/history`, `/initiatives/${slug}`]) revalidatePath(p); };
+const refresh = (slug: string) => { for (const p of [`/initiatives/${slug}/sources`, `/initiatives/${slug}/knowledge/sources`, `/initiatives/${slug}/evidence`, `/initiatives/${slug}/history`, `/initiatives/${slug}`]) revalidatePath(p); };
 
-/** Imports the selected items as Source + Evidence snapshots. Nothing here confirms a fact. */
-export async function importAction(_previous: ImportState, form: FormData): Promise<ImportState> {
-  const slug = String(form.get("slug") ?? ""), connector = connectorFromSlug(String(form.get("connector") ?? ""));
-  if (!connector) return { error: "Choose a supported source.", outcomes: [] };
-  const references = form.getAll("ref").map(String).filter(Boolean), role = String(form.get("role") ?? "GENERAL") as SourceRole;
-  if (!references.length) return { error: "Select at least one item to import.", outcomes: [] };
-  if (references.length > 10) return { error: "Import up to 10 items at a time so each can be reviewed.", outcomes: [] };
-  if (!SOURCE_ROLES.includes(role)) return { error: "Choose what this source is for.", outcomes: [] };
+/** Read-only: the result of one search in the person's own account. Nothing is saved. */
+export interface SearchState { rows: ImportRow[]; omitted: number; more?: boolean; error: string | null; code: string | null; fileName?: string | null }
+export interface SearchRequest { from: string; q?: string; project?: string; site?: string; type?: string; status?: string; link?: string }
+
+export async function searchAction(input: SearchRequest): Promise<SearchState> {
+  const connector = connectorFromSlug(String(input.from ?? ""));
+  if (!connector) return { rows: [], omitted: 0, error: "Choose a supported source.", code: "INVALID_REQUEST" };
   try {
-    assertFormWorkspace(form, await freshContextForRequest());
-    const i = await getRepository().getInitiativeBySlug(slug); if (!i) return { error: "This initiative is unavailable in your organization.", outcomes: [] };
-    const outcomes = await importSelection({ initiativeId: i.id, connector, references, role, site: String(form.get("site") ?? "") || null, includeComments: form.get("includeComments") === "on" });
-    refresh(slug);
-    return { error: null, outcomes: outcomes.map(o => ({ ...o, message: o.ok ? o.message : /^[A-Z_]+$/.test(o.message ?? "") ? connectorMessage(o.message as never, connector) : o.message })) };
+    if (connector === "FIGMA") {
+      const outline = await figmaOutline(String(input.link ?? ""));
+      const rows: ImportRow[] = outline.pages.flatMap(p => p.frames.map(f => ({ reference: `${outline.fileKey}#${f.id}`, name: f.name, kind: f.type, url: `https://www.figma.com/design/${outline.fileKey}/?node-id=${f.id.replace(":", "-")}`, detail: `${outline.name} · ${p.name}`, updatedAt: outline.lastModified, group: p.name })));
+      if (outline.selectedNodeId && !rows.some(r => r.reference.endsWith(`#${outline.selectedNodeId}`))) rows.unshift({ reference: `${outline.fileKey}#${outline.selectedNodeId}`, name: "Frame from your link", kind: "FRAME", url: String(input.link), detail: outline.name, updatedAt: null, group: "From your link" });
+      return { rows, omitted: 0, error: null, code: null, fileName: outline.name };
+    }
+    const r = await searchConnector(connector, { query: String(input.q ?? ""), project: input.project || null, site: input.site || null, type: input.type || null, status: input.status || null });
+    return { rows: r.results, omitted: r.omitted, more: r.more, error: null, code: null };
   } catch (e) {
-    return { error: e instanceof ConnectorError ? connectorMessage(e.code, connector) : safeMessage(e, "The import failed. Nothing was saved."), outcomes: [] };
+    if (e instanceof ConnectorError) return { rows: [], omitted: 0, error: connectorMessage(e.code, connector), code: e.code };
+    return { rows: [], omitted: 0, error: safeMessage(e, "The search could not be completed. Nothing was saved."), code: null };
   }
+}
+
+/** Jira projects the person can see, for the Project filter. A failure only empties the list. */
+export async function jiraProjectsAction(site: string | null): Promise<{ key: string; name: string }[]> {
+  try { return await jiraProjects(site || null); } catch { return []; }
 }
 
 export interface RefreshState { error: string | null; message: string | null }

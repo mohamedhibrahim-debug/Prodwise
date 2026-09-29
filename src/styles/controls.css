@@ -1,0 +1,150 @@
+/* ============================================================================
+   CONTROLS — the global button system and the base for raw <button>s.
+
+   Class API (usable from server components and raw markup, no import needed):
+     <button class="pw-btn" data-variant="primary|secondary|ghost|subtle|destructive|danger|chrome"
+             data-size="sm|md|lg" [data-icon-only] [aria-busy="true"]>
+   The React primitive (components/primitives/Button.tsx) renders exactly this.
+
+   Sizes: sm 28 · md 32 · lg 36 on desktop. At ≤780px every button is at
+   least 40px tall so touch targets stay usable (one media query, here).
+   One primary per view. Navy fills are chrome, not actions.
+   ========================================================================= */
+
+/* ── Base for un-migrated raw buttons ─────────────────────────────────────
+   Zero specificity (:where) so every module style still wins; it only fills
+   the gaps a browser default would otherwise show (grey bevel, serif-ish
+   system font, no focus ring). */
+:where(button) {
+  font: inherit;
+  font-size: var(--t-sm);
+  line-height: 1.2;
+  color: var(--ink-900);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-md);
+  padding: 0 var(--s-3);
+  min-height: var(--control-md);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+:where(button):where(:hover:not(:disabled)) {
+  background: var(--surface-hover);
+}
+
+/* Desktop density: older module styles hard-coded 44px touch heights on
+   every control. On a pointer-sized screen that reads boxy, so the floor is
+   removed and padding sets the height. Explicit `height`s are untouched. */
+@media (min-width: 781px) {
+  button:not(#_):not([data-keep-size]) {
+    min-height: 0;
+  }
+}
+/* Touch: never smaller than 40px. */
+@media (max-width: 780px) {
+  button:not(#_):not([data-keep-size]) {
+    min-height: 40px;
+  }
+}
+
+/* ── pw-btn ─────────────────────────────────────────────────────────────── */
+.pw-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--control-md);
+  padding: 0 var(--s-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  letter-spacing: -0.003em;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.pw-btn:not(#_) { min-height: 0; }
+.pw-btn[data-size="sm"] { height: var(--control-sm); padding: 0 10px; font-size: var(--t-xs); gap: 5px; }
+.pw-btn[data-size="lg"] { height: var(--control-lg); padding: 0 var(--s-4); font-size: var(--t-body); gap: var(--s-2); }
+.pw-btn[data-icon-only] { width: var(--control-md); padding: 0; }
+.pw-btn[data-icon-only][data-size="sm"] { width: var(--control-sm); }
+.pw-btn[data-icon-only][data-size="lg"] { width: var(--control-lg); }
+.pw-btn > svg { flex: none; width: var(--icon-md); height: var(--icon-md); }
+.pw-btn[data-size="sm"] > svg { width: var(--icon-sm); height: var(--icon-sm); }
+.pw-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.pw-btn:hover { text-decoration: none; }
+
+/* Primary: the one main action in a view. */
+.pw-btn[data-variant="primary"] { background: var(--accent-600); color: var(--surface); font-weight: var(--fw-semibold); }
+.pw-btn[data-variant="primary"]:hover:not(:disabled,[aria-disabled="true"]) { background: var(--accent-700); }
+.pw-btn[data-variant="primary"]:active:not(:disabled,[aria-disabled="true"]) { background: var(--accent-800); }
+
+.pw-btn[data-variant="secondary"] { background: var(--surface); color: var(--ink-900); border-color: var(--rule-strong); box-shadow: 0 1px 0 rgb(6 26 44 / 4%); }
+.pw-btn[data-variant="secondary"]:hover:not(:disabled,[aria-disabled="true"]) { background: var(--surface-hover); border-color: var(--ink-300); }
+.pw-btn[data-variant="secondary"]:active:not(:disabled,[aria-disabled="true"]) { background: var(--surface-inset); }
+
+.pw-btn[data-variant="ghost"] { background: transparent; color: var(--ink-700); }
+.pw-btn[data-variant="ghost"]:not([data-icon-only]) { padding-inline: var(--s-2); }
+.pw-btn[data-variant="ghost"]:hover:not(:disabled,[aria-disabled="true"]) { background: var(--surface-hover); color: var(--ink-900); }
+.pw-btn[data-variant="ghost"]:active:not(:disabled,[aria-disabled="true"]),
+.pw-btn[data-variant="ghost"][aria-expanded="true"] { background: var(--surface-inset); color: var(--ink-900); }
+
+.pw-btn[data-variant="subtle"] { background: var(--surface-sunken); color: var(--ink-800); }
+.pw-btn[data-variant="subtle"]:hover:not(:disabled,[aria-disabled="true"]) { background: var(--surface-inset); color: var(--ink-900); }
+
+.pw-btn[data-variant="destructive"] { background: var(--surface); color: var(--state-blocked-fg); border-color: var(--state-blocked-edge); }
+.pw-btn[data-variant="destructive"]:hover:not(:disabled,[aria-disabled="true"]) { background: var(--state-blocked-bg); border-color: var(--state-blocked-mark); }
+/* The confirm step of a destructive action. */
+.pw-btn[data-variant="danger"] { background: var(--state-blocked-fg); color: var(--surface); font-weight: var(--fw-semibold); }
+.pw-btn[data-variant="danger"]:hover:not(:disabled,[aria-disabled="true"]) { background: var(--sev-critical); filter: brightness(0.92); }
+
+/* On the navy chrome (rail, mobile bar). */
+.pw-btn[data-variant="chrome"] { background: transparent; color: var(--chrome-ink-dim); }
+.pw-btn[data-variant="chrome"]:hover:not(:disabled,[aria-disabled="true"]) { background: var(--chrome-hover); color: var(--chrome-ink); }
+.pw-btn[data-variant="chrome"][aria-expanded="true"] { background: var(--chrome-800); color: var(--chrome-ink); }
+.pw-btn[data-variant="chrome"]:focus-visible { box-shadow: var(--focus-ring-dark); }
+
+/* Disabled: faded, never dashed. The reason belongs in a tooltip or .disabled-reason. */
+.pw-btn:disabled:not(#_),
+.pw-btn[aria-disabled="true"]:not(#_) { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+/* Pending: label stays, spinner leads, width does not jump. */
+.pw-btn[aria-busy="true"]:not(#_) { cursor: progress; opacity: 1; }
+.pw-spinner {
+  flex: none;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  opacity: 0.85;
+  animation: pw-spin 0.7s linear infinite;
+}
+@keyframes pw-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 780px) {
+  .pw-btn:not(#_) { min-height: 40px; }
+  .pw-btn[data-icon-only]:not(#_) { min-width: 40px; }
+}
+
+/* ── Keyboard key cap ─────────────────────────────────────────────────── */
+.pw-kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--rule);
+  border-bottom-width: 2px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink-600);
+  font: var(--fw-medium) var(--t-micro) / 1 var(--font-sans);
+}

@@ -1,21 +1,33 @@
+/* The canvas tier: the gutter around the white work sheet. */
 .canvas {
   margin-inline-start: var(--rail-w);
   min-height: 100vh;
-  background: var(--canvas);
+  background: var(--app-canvas);
+  transition: margin-inline-start var(--dur) var(--ease);
 }
 
+/* The work sheet: every page renders on white, never on the gutter. */
 .main {
-  min-height: 100vh;
+  min-height: calc(100vh - var(--command-h) - var(--sheet-gap));
+  margin: 0 var(--sheet-gap) var(--sheet-gap);
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sheet);
+  outline: none;
 }
+.main:focus-visible { box-shadow: var(--shadow-sheet), var(--focus-ring); }
 
 @media (max-width: 780px) {
   .canvas {
     margin-inline-start: 0;
     min-height: auto;
+    background: var(--surface);
   }
   .main {
-    min-height: auto;
+    min-height: calc(100dvh - var(--mobile-global-h));
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
     padding-bottom: var(--s-16);
   }
 }
-@media (max-width:1100px){.main{padding-bottom:var(--mobile-ia-h)}}

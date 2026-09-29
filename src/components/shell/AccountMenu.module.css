@@ -1,0 +1,49 @@
+.account { min-width: 0; }
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px var(--s-2);
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--chrome-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+.trigger:not(#_) { min-height: 44px; }
+.trigger:hover { background: var(--chrome-hover); }
+.trigger[aria-expanded="true"] { background: var(--chrome-800); }
+.trigger:focus-visible { box-shadow: var(--focus-ring-dark); outline: none; }
+.avatar, .avatarLarge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-600);
+  color: var(--surface);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+}
+.avatar { width: 28px; height: 28px; font-size: var(--t-micro); }
+.avatarLarge { width: 36px; height: 36px; font-size: var(--t-sm); }
+.who { display: grid; min-width: 0; flex: 1; gap: 1px; }
+.who strong { font-size: var(--t-sm); font-weight: var(--fw-semibold); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who small { font-size: var(--t-xs); color: var(--chrome-ink-dim); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chevron { flex: none; width: 16px; height: 16px; color: var(--chrome-ink-dim); }
+@container rail (max-width: 120px) {
+  .trigger { justify-content: center; padding-inline: 0; }
+  .who, .chevron { display: none; }
+}
+
+.identity { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
+.identity > span:last-child { display: grid; min-width: 0; }
+.identity strong { font-size: var(--t-body); font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.identity small { font-size: var(--t-xs); color: var(--ink-500); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.context { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: var(--s-3); font-size: var(--t-xs); color: var(--ink-700); }
+.context > span:first-child { font-weight: var(--fw-semibold); color: var(--ink-900); }
+.role, .demo { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: var(--r-sm); background: var(--chip-bg); color: var(--chip-fg); font-weight: var(--fw-medium); }
+.demo { background: transparent; border: 1px dashed var(--ink-400); }
+.platform { margin-top: var(--s-2); font-size: var(--t-xs); color: var(--ink-600); }

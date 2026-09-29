@@ -45,6 +45,9 @@ test("OAuth: configuration is required, https callbacks only, read-only scopes, 
   assert.equal(gmail.searchParams.get("code_challenge_method"), "S256");
   const figma = new URL(authorizeUrl("FIGMA", { clientId: "c", clientSecret: "s" }, redirectUri(origin, "FIGMA"), "st", "ch"));
   assert.ok(!figma.searchParams.get("scope")!.includes("write"));
+  // Only what the connector calls: /v1/me, /v1/files/*, /v1/files/*/comments. An extra scope the
+  // Figma app has not enabled makes the provider refuse with "Invalid scopes for app".
+  assert.equal(figma.searchParams.get("scope"), "current_user:read file_content:read file_comments:read");
   assert.equal(connectorFromSlug("google-drive"), "GOOGLE_DRIVE");
   assert.equal(connectorFromSlug("slack"), null);
 });

@@ -105,7 +105,7 @@ const expect = (cond, message) => { if (!cond) throw new Error(message); };
   await check("archived", "archived initiatives are read-only and absent from Home, Notifications and Roadmap", async () => {
     for (const p of ["/", "/notifications?scope=all", "/roadmap"]) { await go(page, p); expect(!(await text(page)).includes("Cashback Campaign Rules"), p); }
     await go(page, "/initiatives/cashback-campaign-rules"); expect((await page.locator("body").innerText()).includes("Archived · read-only"), "no read-only notice");
-    expect(await page.locator("summary:has-text('Add evidence')").count() === 0, "write control shown");
+    expect(await page.locator(":is(summary,button):has-text('Add evidence')").count() === 0, "write control shown");
     await go(page, "/initiatives/cashback-campaign-rules/knowledge/new"); expect((await text(page)).includes("archived and read-only"), "form offered");
   });
   await check("connectors", "connectors are off in the Demo organization", async () => {
@@ -140,7 +140,7 @@ const expect = (cond, message) => { if (!cond) throw new Error(message); };
   await check("rbac", "Viewer cannot reach create or edit pages", async () => { await go(viewer, "/initiatives/new"); expect(viewer.url().includes("/account?restricted=viewer"), viewer.url()); });
   await check("rbac", "Viewer sees no write controls on an initiative", async () => {
     const first = await (async () => { await go(viewer, "/initiatives"); return viewer.locator("main a[href^='/initiatives/']").first().getAttribute("href"); })();
-    await go(viewer, first); expect(await viewer.locator("summary:has-text('Add evidence')").count() === 0, "Add evidence shown");
+    await go(viewer, first); expect(await viewer.locator(":is(summary,button):has-text('Add evidence')").count() === 0, "Add evidence shown");
   });
   await check("rbac", "Viewer is offered no Connect button", async () => { await go(viewer, "/account/connections"); expect(await viewer.locator("button:has-text('Connect ')").count() === 0, "connect shown"); });
   await viewer.context().close();

@@ -33,7 +33,8 @@ if(!owner) throw new Error('A persisted active Platform Owner is required.');
 const actor=contextForMember(owner,configuredWorkspaceId);
 const originalIdentityHashes=new Map(initial.identities.map(identity=>[identity.id,identity.passwordHash]));
 function product(){return JSON.parse(readFileSync(productPath,'utf8'));}
-function foreignRows(data,workspaceId){return Object.fromEntries(Object.entries(data).map(([key,rows])=>[key,rows.filter(row=>row.workspaceId!==workspaceId)]));}
+// Empty collections are omitted: a reset may add a collection the store never had, which changes no foreign row.
+function foreignRows(data,workspaceId){return Object.fromEntries(Object.entries(data).map(([key,rows])=>[key,rows.filter(row=>row.workspaceId!==workspaceId)]).filter(([,rows])=>rows.length));}
 function privateWrite(path,value){const temp=path+'.'+randomUUID()+'.tmp';try{writeFileSync(temp,JSON.stringify(value,null,2),{flag:'wx',mode:0o600});renameSync(temp,path);}finally{if(existsSync(temp))rmSync(temp);}}
 function guard(access,allowLegacyPolicy=false){
  const state=store.read(),organization=state.organizations.find(org=>org.id===access.organizationId),workspace=state.workspaces.find(w=>w.id===access.workspaceId),identity=state.identities.find(user=>user.id===access.reviewerUserId),membership=state.memberships.find(member=>member.id===access.reviewerMemberId);
@@ -68,10 +69,12 @@ function writePersonas(access,personas){
  }
  privateWrite(authPath,raw);
 }
+/** Read-only project metrics for the Demo workspace (src/lib/analysis/metrics.ts reads this file locally). */
+const metricsPathFor=workspaceId=>join(privateRoot,`metrics-${workspaceId}.json`);
 function createBackup(label,access){
  const dir=join(privateRoot,'demo-backups',new Date().toISOString().replaceAll(':','-')+'-'+randomUUID());
  mkdirSync(dir,{recursive:true});
- for(const [name,path] of [['auth.json',authPath],['prodwise.json',productPath],['demo-access.json',accessPath],['legacy-delivery.json',legacyDeliveryPath],['demo-delivery.json',access?join(privateRoot,'delivery',access.workspaceId+'.json'):null]]) if(path&&existsSync(path))writeFileSync(join(dir,name),readFileSync(path),{flag:'wx',mode:0o600});
+ for(const [name,path] of [['auth.json',authPath],['prodwise.json',productPath],['demo-access.json',accessPath],['legacy-delivery.json',legacyDeliveryPath],['demo-delivery.json',access?join(privateRoot,'delivery',access.workspaceId+'.json'):null],['demo-metrics.json',access?metricsPathFor(access.workspaceId):null]]) if(path&&existsSync(path))writeFileSync(join(dir,name),readFileSync(path),{flag:'wx',mode:0o600});
  privateWrite(join(dir,'manifest.json'),{label,at:new Date().toISOString(),actorId:actor.actor.id,organizationId:access?.organizationId ?? null,workspaceId:access?.workspaceId ?? null,fixtureVersion:DEMO_CANONICAL_VERSION});
  return dir;
 }
@@ -99,6 +102,10 @@ async function restore(access,label){
  }
  assert.equal(canonical(foreignRows(product(),access.workspaceId)),foreignBefore,'Other workspace product rows changed.');
  preserveExisting();
+ // Synthetic metrics are replaced wholesale for this workspace only; every row is scoped to it.
+ if(demo.metrics.some(m=>m.workspaceId!==access.workspaceId||m.origin!=='SYNTHETIC_DEMO'))throw new Error('Demo metrics must be synthetic and scoped to the Demo workspace.');
+ privateWrite(metricsPathFor(access.workspaceId),demo.metrics);
+ assert.equal(canonical(JSON.parse(readFileSync(metricsPathFor(access.workspaceId),'utf8'))),canonical(demo.metrics),'Demo metrics did not restore canonically.');
  const actualDelivery=JSON.parse(readFileSync(deliveryPath,'utf8'));
  assert.equal(canonical(actualDelivery),canonical(demo.deliveryState),'Demo delivery did not restore canonically.');
  const actualRows=Object.fromEntries(Object.keys(demo.productStore).map(key=>[key,(product()[key]??[]).filter(row=>row.workspaceId===access.workspaceId)]));

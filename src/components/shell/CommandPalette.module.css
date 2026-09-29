@@ -1,157 +1,106 @@
-/* The palette is the one genuinely floating surface in the product, so it is
-   the one place --shadow-panel is spent. It is built from the navy ramp the nav
-   rail already uses — a dark, fast, keyboard-first surface that reads as a tool,
-   and could never be mistaken for the chat rail that was removed. */
-
+/* Search / command palette: a light overlay like every other floating layer,
+   sized to its results (never a fixed-height empty slab). */
 .layer {
   position: fixed;
   inset: 0;
-  z-index: 90;
-  display: flex;
-  justify-content: center;
-  /* High, not centred: the list grows downward and the eye should not have to
-     re-find the input as results change. */
+  z-index: var(--z-popover);
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  border: 0;
   padding: 12vh var(--s-4) var(--s-4);
+  background: transparent;
 }
-
-.scrim {
-  position: fixed;
-  inset: 0;
-  background: rgb(8 20 31 / 44%);
-}
+.layer:not([open]) { display: none; }
+.layer[open] { display: flex; justify-content: center; align-items: flex-start; }
+.layer::backdrop { background: transparent; }
+.scrim { position: fixed; inset: 0; background: var(--scrim); animation: fade 140ms var(--ease); }
+@keyframes fade { from { opacity: 0; } }
 
 .dialog {
   position: relative;
-  width: min(560px, 100%);
-  max-height: 60vh;
+  width: min(600px, 100%);
+  max-height: min(560px, 76vh);
   display: flex;
   flex-direction: column;
-  background: var(--navy-850);
-  border: 1px solid var(--navy-rule);
-  border-top: 2px solid var(--accent-500);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-panel);
+  background: var(--overlay);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-popover);
   overflow: hidden;
-  animation: paletteIn var(--dur-fast) var(--ease);
+  animation: paletteIn 140ms var(--ease-out);
 }
-
-@keyframes paletteIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
+@keyframes paletteIn { from { opacity: 0; transform: translateY(-6px) scale(0.99); } }
 
 .input {
   flex: none;
   width: 100%;
-  padding: var(--s-5);
-  background: transparent;
+  height: 52px;
+  padding: 0 var(--s-5) 0 44px;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%234f6272' stroke-width='1.5' stroke-linecap='round'%3E%3Ccircle cx='8.75' cy='8.75' r='5'/%3E%3Cpath d='m12.5 12.5 4 4'/%3E%3C/svg%3E") no-repeat 16px center / 18px;
   border: 0;
-  border-bottom: 1px solid var(--navy-rule);
-  color: var(--navy-ink);
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-900);
   font-size: var(--t-body);
-  letter-spacing: var(--ls-tight);
 }
+.input::placeholder { color: var(--ink-500); }
+.input:focus { outline: none; box-shadow: none; }
 
-.input::placeholder {
-  color: var(--navy-ink-faint);
-}
-
-.input:focus {
-  outline: none;
-}
-
-.list {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--s-2) 0;
-  list-style: none;
-}
-
+.list { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--s-2); list-style: none; }
 .group {
-  padding: var(--s-3) var(--s-5) var(--s-1);
+  padding: var(--s-3) var(--s-3) var(--s-1);
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-micro);
   text-transform: uppercase;
-  color: var(--navy-ink-faint);
+  color: var(--ink-500);
 }
-
 .item {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--s-3);
-  padding: 7px var(--s-5);
+  min-height: 36px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-md);
   cursor: pointer;
-  color: var(--navy-ink-dim);
+  color: var(--ink-800);
 }
-
-/* Selection is shown by fill AND a leading accent edge, never by colour alone. */
-.itemActive {
-  background: var(--navy-700);
-  color: var(--navy-ink);
-  box-shadow: inset 2px 0 0 var(--accent-400);
-}
-
-.itemActive .itemHint {
-  color: var(--navy-ink-dim);
-}
-
-.itemLabel {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--t-sm);
-  font-weight: var(--fw-medium);
-}
-
-.itemHint {
-  flex: none;
-  font-size: var(--t-xs);
-  color: var(--navy-ink-faint);
-}
-
-.status {
-  padding: var(--s-5);
-  font-size: var(--t-sm);
-  color: var(--navy-ink-dim);
-}
+/* Selection: fill AND a leading accent edge, never colour alone. */
+.itemActive { background: var(--surface-selected); color: var(--ink-900); box-shadow: inset 2px 0 0 var(--accent-600); }
+.itemLabel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t-sm); font-weight: var(--fw-medium); }
+.itemHint { flex: none; font-size: var(--t-xs); color: var(--ink-500); }
+.status { padding: var(--s-4) var(--s-3); font-size: var(--t-sm); color: var(--ink-600); }
 
 .footer {
   flex: none;
   display: flex;
+  align-items: center;
   gap: var(--s-4);
-  padding: var(--s-3) var(--s-5);
-  border-top: 1px solid var(--navy-rule);
+  padding: var(--s-2) var(--s-3) var(--s-2) var(--s-4);
+  border-top: 1px solid var(--rule);
+  background: var(--surface-subtle);
   font-size: var(--t-xs);
-  color: var(--navy-ink-faint);
+  color: var(--ink-600);
 }
-
+.footer > span { display: inline-flex; align-items: center; gap: 4px; }
+.footer button { order: 10; margin-left: auto; }
 .kbd {
-  font-family: var(--font-mono);
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--rule);
+  border-bottom-width: 2px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink-700);
   font-size: var(--t-micro);
-  padding: 1px 5px;
-  margin-right: 3px;
-  border: 1px solid var(--navy-rule);
-  border-radius: var(--r-xs);
-  color: var(--navy-ink-dim);
+  font-family: var(--font-sans);
 }
-
 @media (max-width: 780px) {
-  .layer {
-    padding-top: var(--s-8);
-  }
-
-  .dialog {
-    max-height: 72vh;
-  }
+  .layer { padding: var(--s-3); }
+  .dialog { max-height: 80dvh; }
+  .footer > span { display: none; }
 }
-
-.dialog{height:auto}
-.list{flex:0 1 auto;max-height:60vh}
-.footer button{margin-left:auto;border:1px solid var(--navy-ink-faint);background:transparent;color:var(--navy-ink);border-radius:var(--r-sm);padding:var(--s-2) var(--s-3);min-height:var(--s-10);cursor:pointer}
-.layer{border:0;padding:0;margin:0;max-width:none;max-height:none;width:100vw;height:100dvh;background:transparent}.layer:not([open]){display:none}.layer::backdrop{background:transparent}
-.layer{padding:12vh var(--s-4) var(--s-4)}

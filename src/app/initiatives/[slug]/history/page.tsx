@@ -10,6 +10,7 @@ import {readRisks} from '@/lib/data/risks';
 import {readEvidence} from '@/lib/evidence/service';
 import {buildInitiativeHistory,pageHistory,weekOf,HISTORY_CATEGORIES,CATEGORY_LABEL,type HistoryCategory,type HistoryEvent} from '@/lib/workspace/history';
 import styles from './history.module.css';
+import { cairoDay } from "@/lib/delivery/model";
 export const metadata={title:'History'};export const dynamic='force-dynamic';
 const time=(at:string)=>new Date(at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Cairo'});
 const GLYPH:Record<HistoryCategory,string>={DELIVERY:'◷',DECISIONS:'⚖',KNOWLEDGE:'≡',COMMITMENTS:'✓',RISKS_QUESTIONS:'?',SOURCES:'❏',RELATIONSHIPS:'⇄',LIFECYCLE:'◆'};
@@ -18,7 +19,7 @@ export default async function History({params,searchParams}:{params:Promise<{slu
  const snap=d.source.snapshots.find(s=>s.initiative.slug===slug);if(!snap)notFound();const i=snap.initiative;const base=`/initiatives/${slug}`;
  const [activity,ev]=await Promise.all([getRepository().listActivity(i.id,1000),readEvidence(i.id)]);
  const all=buildInitiativeHistory({initiativeId:i.id,slug,names:Object.fromEntries(d.source.snapshots.map(s=>[s.initiative.id,s.initiative.name])),members:d.source.members,activity,deliveryEvents:d.state.events.filter(e=>e.workspaceId===d.ctx.workspaceId),commitmentEvents:cs.events,questionEvents:qs.events,relationshipEvents:rel.events,riskEvents:rs.events,reviews:d.state.reviews.filter(r=>r.workspaceId===d.ctx.workspaceId),
-  evidence:ev.submissions.map(s=>({evidenceId:s.evidenceId,submissionId:s.id,title:ev.meetings?.find(m=>m.submissionId===s.id)?.title??s.title,date:ev.meetings?.find(m=>m.submissionId===s.id)?.meetingDate??s.createdAt.slice(0,10)}))});
+  evidence:ev.submissions.map(s=>({evidenceId:s.evidenceId,submissionId:s.id,title:ev.meetings?.find(m=>m.submissionId===s.id)?.title??s.title,date:ev.meetings?.find(m=>m.submissionId===s.id)?.meetingDate??cairoDay(s.createdAt)}))});
  const selected=(f.c??'').split(',').filter((c):c is HistoryCategory=>HISTORY_CATEGORIES.includes(c as HistoryCategory));const text=(f.q??'').slice(0,100);
  const page=pageHistory(all,{categories:selected,text},f.before??null);
  const counts=Object.fromEntries(HISTORY_CATEGORIES.map(c=>[c,all.filter(e=>e.category===c).length]));

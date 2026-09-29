@@ -1,0 +1,8 @@
+import {test} from "node:test";
+import assert from "node:assert/strict";
+import {readRailExpanded,writeRailExpanded,railLayout,RAIL_STORAGE_KEY,RAIL_BOOT_SCRIPT} from "./rail-preference.ts";
+function memory(){const m=new Map<string,string>();return{getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>{m.set(k,v);},m};}
+test("the rail defaults to expanded and remembers a collapse",()=>{const s=memory();assert.equal(readRailExpanded(s),true);assert.equal(writeRailExpanded(s,false),true);assert.equal(s.m.get(RAIL_STORAGE_KEY),"false");assert.equal(readRailExpanded(s),false);writeRailExpanded(s,true);assert.equal(readRailExpanded(s),true);});
+test("blocked or missing storage falls back to expanded without throwing",()=>{const throwing={getItem():string|null{throw new Error("blocked");},setItem(){throw new Error("blocked");}};assert.equal(readRailExpanded(throwing),true);assert.equal(writeRailExpanded(throwing,false),false);assert.equal(readRailExpanded(null),true);});
+test("layout mode follows the viewport: drawer, overlay, pinned",()=>{assert.deepEqual(railLayout(390,false),{mode:"drawer",contentOffset:0,showsLabels:true});assert.deepEqual(railLayout(900,true),{mode:"overlay",contentOffset:56,showsLabels:false});assert.deepEqual(railLayout(900,true,true),{mode:"overlay",contentOffset:56,showsLabels:true});assert.deepEqual(railLayout(1440,true),{mode:"pinned",contentOffset:232,showsLabels:true});assert.deepEqual(railLayout(1440,false),{mode:"pinned",contentOffset:56,showsLabels:false});});
+test("the pre-paint script reads the same key and never throws",()=>{assert.ok(RAIL_BOOT_SCRIPT.includes(RAIL_STORAGE_KEY));assert.ok(RAIL_BOOT_SCRIPT.startsWith("try{"));});

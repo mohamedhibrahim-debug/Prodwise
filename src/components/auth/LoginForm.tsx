@@ -4,6 +4,8 @@ import {useFormAction} from '@/components/forms/useFormAction';
 import { useId, useState } from 'react';
 import { demoLoginAction, loginAction } from '@/app/login/actions';
 import type { AuthFormState } from './AuthForm';
+import { Spinner } from '@/components/primitives/Button';
+import { EyeIcon } from './EyeIcon';
 import styles from './login.module.css';
 
 const initialState: AuthFormState = { error: null };
@@ -28,7 +30,7 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
         <label htmlFor={emailId}>Email</label>
         <input id={emailId} name="email" type="email" autoComplete="username" autoCapitalize="none" spellCheck={false}
           value={email} onChange={event => setEmail(event.target.value)} required disabled={pending}
-          aria-describedby={loginState.error ? loginErrorId : undefined} />
+          aria-describedby={loginState.error ? loginErrorId : undefined} aria-invalid={loginState.error ? true : undefined} />
       </div>
       <div className={styles.field}>
         <label htmlFor={passwordId}>Password</label>
@@ -38,25 +40,26 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
             aria-describedby={loginState.error ? loginErrorId : undefined} />
           <button type="button" className={styles.visibilityButton} disabled={pending} aria-controls={passwordId}
             aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(value => !value)}>
-            {showPassword ? 'Hide' : 'Show'}
+            <EyeIcon open={!showPassword} />
           </button>
         </div>
       </div>
       {loginState.error && <p id={loginErrorId} className={styles.error} role="alert">{loginState.error}</p>}
       {loginState.message && <p className={styles.notice} role="status">{loginState.message}</p>}
-      <button className={styles.primaryButton} type="submit" disabled={pending}>
-        {signingIn ? 'Signing in…' : 'Sign in'}
+      <button className={styles.primaryButton} type="submit" disabled={pending} aria-busy={signingIn || undefined}>
+        {signingIn && <Spinner />}{signingIn ? 'Signing in…' : 'Sign in'}
       </button>
     </form>
 
+    <p className={styles.divider}>or</p>
     <form action={exploreDemo} onReset={keepExploreDemo} className={styles.demoForm} aria-label="Explore Demo" aria-busy={openingDemo}>
       {demoState.error && <p id={demoErrorId} className={styles.error} role="alert">{demoState.error}</p>}
       {demoState.message && <p className={styles.notice} role="status">{demoState.message}</p>}
       <button className={styles.demoButton} type="submit" disabled={pending}
-        aria-describedby={[demoNoteId, demoState.error ? demoErrorId : ''].filter(Boolean).join(' ')}>
-        {openingDemo ? 'Opening demo…' : 'Explore Demo'}
+        aria-describedby={[demoNoteId, demoState.error ? demoErrorId : ''].filter(Boolean).join(' ')} aria-busy={openingDemo || undefined}>
+        {openingDemo && <Spinner />}{openingDemo ? 'Opening demo…' : 'Explore Demo'}
       </button>
-      <p id={demoNoteId} className={styles.demoNote}>Uses synthetic demo data. Changes stay inside the demo workspace.</p>
+      <p id={demoNoteId} className={styles.demoNote}>Synthetic demo data. Changes stay inside the shared demo workspace.</p>
     </form>
     <p className="visually-hidden" role="status" aria-live="polite">
       {signingIn ? 'Signing in…' : openingDemo ? 'Opening demo…' : ''}
