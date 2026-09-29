@@ -150,3 +150,10 @@ Wave 3 — Ask Prodwise UI integration. Wave 4 — brand, responsive, accessibil
 - D13 The "Proactive suggestions" preference is exposed in Wave 3 and controls the quiet badge on the collapsed control (one dot when `recommend()` has at least one item for the current screen). No push, no auto-open.
 - D14 Preference writes are not gated by `DEMO_WRITE_ENABLED` (a personal setting, same precedent as notification read marks); Demo guests keep in-memory defaults.
 - D15 Rate limiting stays per instance for the MVP; a DB-backed counter is a hosted follow-up behind the same interface.
+
+### Wave 3 ownership (Agent E, base c49f339)
+New `src/components/assistant/**`; one mount line in `src/components/shell/ApplicationShell.tsx`; one "Ask Prodwise" section in `src/app/account/page.tsx`; one link line in Administration → Preferences. Nothing else.
+
+### Merge log
+- `e673451` Wave 1 foundation (lead) · `88f9582` recommendation engine (lead) · `496539c` Wave 4 batch (lead)
+- `b3d9403` Agent E Wave 2 backend · `54ba297` Agent B core surfaces · `c49f339` Agent D administration/integrations (conflict in AccountMenu resolved: m9 + m12 both kept)
