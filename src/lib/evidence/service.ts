@@ -13,7 +13,7 @@ import {reviseCommitment} from '../workspace/commitments';
 import {canManageInitiative} from '../workspace/management-policy';
 import {mapSourceItems} from '../workspace/source-mapping';
 import {normalizeSubmission,sha256Utf8,verifyAnchor,hasLoneSurrogate} from './anchor';
-import {extractEvidence,EVIDENCE_PROMPT_VERSION} from './extract';
+import {extractEvidence,EVIDENCE_PROMPT_VERSION,readingDiagnostic} from './extract';
 import {cosmeticPayload,SUPERSEDABLE,type ReadableClaim} from './filter';
 import {reviseQuestion} from '../workspace/questions';
 import {relationshipCandidates} from '../workspace/relationships';
@@ -48,7 +48,7 @@ export async function readWithAI(submissionId:string,requestId:string):Promise<v
  else{const started=await rpc('start_evidence_attempt',{p_submission_id:submissionId,p_request_id:requestId});if(started.replay)return;submission=started.submission;attemptId=started.attemptId;}
  const d=await readDeliveryFresh();
  const offered:ReadableClaim[]=(d.source.snapshots.find(x=>x.initiative.id===submission.initiativeId)?.claims??[]).filter(c=>SUPERSEDABLE.includes(c.status)&&['REQUIREMENT','BUSINESS_RULE','DECISION','ASSUMPTION','DEPENDENCY'].includes(c.type)).slice(0,40).map((c,n)=>({ref:`K${n+1}`,id:c.id,updatedAt:c.updatedAt,type:c.type,status:c.status,subject:c.subject,attribute:c.attribute,value:c.value,domain:c.domain,phase:c.phase}));
- let output:Awaited<ReturnType<typeof extractEvidence>>|null=null,errorCode:string|null=null;try{output=await extractEvidence(submission.text,fetch,{kind:submission.kind,claims:offered});}catch(e){errorCode=e instanceof Error&&e.name==='TimeoutError'?'TIMED_OUT':e instanceof Error&&e.message==='NOT_CONFIGURED'?'NOT_CONFIGURED':'READING_FAILED';}
+ let output:Awaited<ReturnType<typeof extractEvidence>>|null=null,errorCode:string|null=null;try{output=await extractEvidence(submission.text,fetch,{kind:submission.kind,claims:offered});}catch(e){const detail=readingDiagnostic(e);errorCode=e instanceof Error&&e.name==='TimeoutError'?'TIMED_OUT':e instanceof Error&&e.message==='NOT_CONFIGURED'?'NOT_CONFIGURED':`READING_FAILED${detail?`:${detail}`:''}`;if(errorCode.startsWith('READING_FAILED'))console.warn(`[evidence-reading] ${errorCode}`);/* TEMPORARY diagnostic: content-free, see extract.ts */}
  const completionCtx=await requireBusinessWriteAccess();if(completionCtx.workspaceId!==ctx.workspaceId)throw Error('Organization context changed while reading. Your evidence remains saved.');
  const accepted=output?[...output.accepted,...relationshipCandidates(output.accepted,d.source.snapshots.filter(x=>!x.initiative.archivedAt).map(x=>x.initiative),submission.initiativeId)]:[];
  const candidates=accepted.map(c=>({...c,baseRevision:c.type==='DELIVERY'?factFor(d.state.facts,submission.initiativeId,c.payload.factKind!)?.revision??0:0}));
