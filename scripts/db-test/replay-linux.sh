@@ -31,6 +31,8 @@ if [ ${#TESTS[@]} -eq 0 ] || [ -z "${1:-}" ]; then
   "${PSQL[@]}" -d "$PDB" -f supabase/seed.sql >/dev/null
   for f in $(ls supabase/migrations | grep -vE '^000[0-9]_' | sort); do "${PSQL[@]}" -d "$PDB" -f "supabase/migrations/$f" >/dev/null 2>&1; done
   if node --experimental-transform-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --import ./scripts/db-test/test-alias.mjs scripts/db-test/hosted-plan-local-proof.mjs "$PDB"; then :; else echo "FAIL: hosted operator plan proof"; FAILED=1; fi
+  # The additive hosted Demo metrics script, against the generations that proof just created.
+  if node --experimental-transform-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --import ./scripts/db-test/test-alias.mjs scripts/db-test/demo-metrics-additive-proof.mjs "$PDB"; then :; else echo "FAIL: additive Demo metrics proof"; FAILED=1; fi
 fi
 echo "DB=$DB"
 exit ${FAILED:-0}

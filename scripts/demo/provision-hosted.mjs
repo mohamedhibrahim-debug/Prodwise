@@ -80,6 +80,15 @@ function renderP1Rows(demo,p,part){
  sql+=insertRows('evidence_confirmations',['proposal_id','workspace_id','initiative_id','data'],s.evidenceConfirmations.map(c=>({proposal_id:c.proposalId,workspace_id:ws,initiative_id:c.initiativeId,data:c})));
  return sql;
 }
+/** metric_definitions / metric_observations exactly as migration 0017 defines them; created_at keeps its default. */
+export const METRIC_DEFINITION_COLUMNS=['id','organization_id','workspace_id','initiative_id','name','definition','unit','formula','source_label','source_evidence_id','period_grain','timezone','target_value','target_comparator','target_owner_label','target_approved_at','target_note','origin','revision','updated_at'];
+export const METRIC_OBSERVATION_COLUMNS=['id','metric_id','workspace_id','period_start','period_end','value','captured_at','source_evidence_id','note','origin'];
+function renderMetricRows(metrics,p){
+ if(metrics.some(m=>m.workspaceId!==p.workspaceId||m.origin!=='SYNTHETIC_DEMO'))throw new Error('Demo metrics must be synthetic and scoped to the new generation.');
+ const definitions=metrics.map(({observations:_observations,...rest})=>({...snake(rest),organization_id:p.organizationId}));
+ const observations=metrics.flatMap(m=>m.observations.map(o=>({...snake(o),metric_id:m.id,workspace_id:p.workspaceId})));
+ return insertRows('metric_definitions',METRIC_DEFINITION_COLUMNS,definitions)+insertRows('metric_observations',METRIC_OBSERVATION_COLUMNS,observations);
+}
 function replacementsFirst(claims){const byId=new Map(claims.map(c=>[c.id,c])),done=new Set(),out=[];const visit=c=>{if(done.has(c.id))return;done.add(c.id);const next=byId.get(c.supersededByClaimId);if(next)visit(next);out.push(c);};claims.forEach(visit);return out;}
 function snake(row){return Object.fromEntries(Object.entries(row).map(([key,value])=>[key.replace(/[A-Z]/g,c=>'_'+c.toLowerCase()),value]));}
 function insertRows(table,columns,rows){
@@ -166,6 +175,8 @@ do $$begin if not exists(select 1 from public.users where id=${literal(x.userId)
  sql+=insertRows('delivery_facts',['id','workspace_id','initiative_id','kind','revision','value_date','value_text','owner_member_id','data'],demo.deliveryState.facts.map(f=>({id:f.id,workspace_id:p.workspaceId,initiative_id:f.initiativeId,kind:f.kind,revision:f.revision,value_date:f.value.date,value_text:f.value.text,owner_member_id:f.value.memberId,data:f})));
  sql+=insertRows('weekly_reviews',['id','workspace_id','iso_week','status','revision','data'],demo.deliveryState.reviews.map(r=>({id:r.id,workspace_id:p.workspaceId,iso_week:r.week,status:r.status,revision:r.revision,data:r})));
  sql+=renderP1Rows(demo,p,'AFTER_CLAIMS');
+ // Synthetic business metrics (read-only in the product). demo_scenarios is registered above, so the scope guard accepts them.
+ sql+=renderMetricRows(demo.metrics,p);
  // Archiving is the last write: archived initiatives refuse further product rows. Pinned to this generation's workspace.
  sql+=store.initiatives.filter(i=>i.archivedAt).map(i=>`update public.initiatives set archived_at=${literal(i.archivedAt)}::timestamptz,archived_by=${literal(i.archivedBy)}::uuid,archive_reason=${literal(i.archiveReason)} where id=${literal(i.id)}::uuid and workspace_id=${literal(p.workspaceId)}::uuid;\n`).join('');
  if(p.prior){
@@ -205,7 +216,7 @@ function selfTest(){
  assert.throws(()=>validateHostedTarget({projectRef:ref,supabaseUrl:'https://'+ref+'.supabase.co',databaseUrl:'postgresql://postgres:private@db.other.supabase.co/postgres'},true));
  assert.throws(()=>validateHostedTarget({projectRef:ref,supabaseUrl:'https://'+ref+'.supabase.co',databaseUrl:'postgresql://postgres.wrong:private@aws-0-x.pooler.supabase.com/postgres'},true));
  const initial=makeHostedPlan({projectRef:ref,actorId}),initialSql=renderHostedTransaction(initial);
- assert.ok(initialSql.includes('insert into public.demo_scenarios'));assert.ok(initialSql.includes('"preparedAsFixture":true'));assert.ok(!/\b(delete|truncate)\b/i.test(initialSql));assert.ok(!initialSql.includes("set status='ARCHIVED'"));
+ assert.ok(initialSql.includes('insert into public.demo_scenarios'));assert.ok(initialSql.indexOf('insert into public.metric_definitions')>initialSql.indexOf('insert into public.demo_scenarios'));assert.ok(initialSql.indexOf('insert into public.metric_observations')>initialSql.indexOf('insert into public.metric_definitions'));assert.ok(initialSql.includes('"preparedAsFixture":true'));assert.ok(!/\b(delete|truncate)\b/i.test(initialSql));assert.ok(!initialSql.includes("set status='ARCHIVED'"));
  const prior={...initial,version:DEMO_CANONICAL_VERSION};
  const reset=makeHostedPlan({projectRef:ref,actorId,prior}),sql=renderHostedTransaction(reset);
  assert.equal(reset.reviewerUserId,initial.reviewerUserId);assert.equal(reset.authUserId,initial.authUserId);assert.notEqual(reset.organizationId,initial.organizationId);assert.notEqual(reset.workspaceId,initial.workspaceId);
