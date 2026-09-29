@@ -108,18 +108,22 @@ Create Initiative
 2. Evidence Management
 3. Jira Evidence
 4. Google Drive Evidence
-5. Initiative Boundary / Evidence Classification
-6. Structured Product Memory
-7. Product Review Engine
-8. Current State
-9. Readiness Engine
-10. Next Best Action
-11. Human Override / Resolution
-12. Secondary AI Consultant
+5. Gmail Evidence — read-only; only threads a person searches for and selects; attachments listed, never read
+6. Figma Evidence — read-only; linked files/frames and their comments; a design change is never treated as approval
+7. Initiative Boundary / Evidence Classification
+8. Structured Product Memory
+9. Product Review Engine
+10. Current State
+11. Readiness Engine
+12. Next Best Action
+13. Human Override / Resolution
+14. Secondary AI Consultant
+
+Gmail and Figma were approved into scope by the user once implemented. Like every connector they produce evidence only: nothing they import becomes Product Memory until a person confirms it.
 
 ### Strictly out of scope — do not add without explicit approval
 
-Figma integration · GitHub semantic implementation analysis · Gmail · Slack · Microsoft Teams · meeting recording · meeting transcription · production monitoring integration · BI integrations · Jira automatic write-back · autonomous multi-agent conversations · portfolio analytics · complex workflow automation · graph database · microservices · Kafka or complex event infrastructure.
+GitHub semantic implementation analysis · Slack · Microsoft Teams · meeting recording · meeting transcription · production monitoring integration · BI integrations · Jira automatic write-back · autonomous multi-agent conversations · portfolio analytics · complex workflow automation · graph database · microservices · Kafka or complex event infrastructure.
 
 > **Do not silently add features because they seem useful.** If something feels missing, say so and ask. Scaling scope up is the user's call, not yours.
 
