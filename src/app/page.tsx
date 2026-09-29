@@ -41,6 +41,9 @@ export default async function Home({searchParams}:{searchParams:Promise<{organiz
  const dueSoon=mine.filter(a=>a.dueDate&&dayDifference(p.today,a.dueDate)>3&&dayDifference(p.today,a.dueDate)<=28);
  const coming=[...p.upcoming.map(u=>({key:`${u.initiativeId}:${u.kind}`,date:u.date,title:u.label,name:u.name,href:`/initiatives/${u.slug}/delivery`,kind:u.kind==='TARGET_LIVE'?'Target Live':'Milestone'})),
   ...dueSoon.map(a=>({key:a.id,date:a.dueDate!,title:a.title.charAt(0).toUpperCase()+a.title.slice(1),name:live.get(a.initiativeId)!.name,href:`/initiatives/${live.get(a.initiativeId)!.slug}/actions?action=${a.id}`,kind:'Commitment'}))].sort((a,b)=>a.date.localeCompare(b.date)||a.name.localeCompare(b.name));
+ // The Demo's opening line states what is open now, never a canned story: once the difference is decided it says so.
+ const mffRow=p.rows.find(r=>r.initiative.slug==='merchant-flex-finance'&&!r.initiative.archivedAt);const mffDecision=mffRow?.attention.find(a=>a.kind==='DECISION');
+ const demoLead=mffDecision?`Merchant Flex Finance has a difference waiting for a decision: ${mffDecision.detail}.`:mffRow?'Merchant Flex Finance shows how a difference between sources is recorded, decided and traced.':null;
  const yourWork=waiting.length+urgent.length;
  const reviewLabel=review?.status==='FINAL'?'Final':review?'Draft':'Not prepared';
  const reviewCta=review?.status==='FINAL'&&writer&&next&&!nextAvailable&&!nextExists
@@ -48,7 +51,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{organiz
   :{href:`/weekly-review?week=${review?.status==='FINAL'&&writer&&next?next.week:week}`,label:review?.status==='DRAFT'?(writer?'Continue review':'Read review'):review?.status==='FINAL'?writer&&next?`${nextExists?'Open':'Prepare'} ${shortWeek(next.week)} review`:'Read Final review':writer?`Prepare ${shortWeek(week)} review`:'Read weekly review'};
  return <div className={styles.page}>
  {query.organizationChanged&&<p role="status" className={styles.notice}>You are now working in {d.presentation.organizationName}.</p>}
- <FirstRunOrientation identity={{access:d.ctx,presentation:d.presentation,guest}}/>
+ <FirstRunOrientation identity={{access:d.ctx,presentation:d.presentation,guest}} demoLead={demoLead}/>
  <header className={styles.header}>
   <div><h1 tabIndex={query.organizationChanged?-1:undefined}>{d.presentation.organizationName}</h1>
    <p className={styles.meta}>{p.summary.total} active {p.summary.total===1?'initiative':'initiatives'} · {d.presentation.isDemo?'dated to the Demo scenario day shown above':<>As of <time dateTime={p.today}>{displayDate(p.today)}</time></>}</p></div>

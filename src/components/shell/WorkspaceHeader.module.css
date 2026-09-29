@@ -56,7 +56,8 @@
 .signal:hover { border-color: var(--ink-400); }
 .signal[data-tone="attention"] { color: var(--attention-fg); border-color: var(--state-at-risk-edge); background: var(--attention-bg); }
 .signal[data-tone="attention"] > span { font-size: 9px; }
-.signal[data-tone="ok"] { color: var(--state-ready-fg); border-color: var(--state-ready-edge); }
+/* Nothing found by the checks that exist is not READY (only CONFLICT/SUPERSEDED are checked): neutral, never green. */
+.signal[data-tone="neutral"] { color: var(--state-unknown-fg); border-color: var(--state-unknown-edge); }
 
 /* Tabs */
 .tabsViewport { position: relative; min-width: 0; margin-top: var(--s-3); }
