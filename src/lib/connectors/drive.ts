@@ -1,5 +1,5 @@
 import { capText, clip, type ProviderCall } from "./http.ts";
-import { ConnectorError, type ProviderResult, type ProviderSnapshot } from "./types.ts";
+import { ConnectorError, type ProviderResult, type ProviderSnapshot, type SearchOutcome } from "./types.ts";
 
 /**
  * Google Drive / Docs, read-only (drive.readonly). Search, then explicit selection.
@@ -24,9 +24,14 @@ export function driveQuery(query: string): string {
 }
 
 export async function searchFiles(call: ProviderCall, query: string): Promise<ProviderResult[]> {
-  const body = await call(`${API}/files?pageSize=20&orderBy=modifiedTime desc&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=${encodeURIComponent(`files(${FIELDS})`)}&q=${encodeURIComponent(driveQuery(query))}`) as { files?: DriveFile[] };
-  return (body.files ?? []).flatMap(f => typeof f.id === "string" && FILE_ID.test(f.id) ? [{ reference: f.id, name: clip(f.name ?? "Untitled", 200), kind: clip(KIND[f.mimeType ?? ""] ?? f.mimeType ?? "File", 50), url: f.webViewLink ?? null, updatedAt: f.modifiedTime ?? null,
+  return (await searchFilesPage(call, query)).results;
+}
+/** The 20 most recently modified matches; `more` is Drive's own next-page signal. */
+export async function searchFilesPage(call: ProviderCall, query: string): Promise<SearchOutcome> {
+  const body = await call(`${API}/files?pageSize=20&orderBy=modifiedTime desc&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=${encodeURIComponent(`nextPageToken,files(${FIELDS})`)}&q=${encodeURIComponent(driveQuery(query))}`) as { files?: DriveFile[]; nextPageToken?: string };
+  const results = (body.files ?? []).flatMap(f => typeof f.id === "string" && FILE_ID.test(f.id) ? [{ reference: f.id, name: clip(f.name ?? "Untitled", 200), kind: clip(KIND[f.mimeType ?? ""] ?? f.mimeType ?? "File", 50), url: f.webViewLink ?? null, updatedAt: f.modifiedTime ?? null,
     detail: [readable(f.mimeType) ? null : "Link and details only", f.lastModifyingUser?.displayName ? `Last edited by ${f.lastModifyingUser.displayName}` : null, f.owners?.[0]?.displayName ? `Owner ${f.owners[0].displayName}` : null].filter(Boolean).join(" · ") }] : []);
+  return { results, omitted: 0, more: typeof body.nextPageToken === "string" };
 }
 export const readable = (mime?: string) => Boolean(mime && (EXPORT[mime] || TEXT_TYPES.test(mime)));
 

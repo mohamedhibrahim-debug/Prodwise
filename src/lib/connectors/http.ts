@@ -1,7 +1,7 @@
 import { ConnectorError } from "./types.ts";
 
 /** An authorized JSON/text call to one provider. The token never appears in errors. */
-export type ProviderCall = (url: string, init?: RequestInit & { as?: "json" | "text" }) => Promise<unknown>;
+export type ProviderCall = (url: string, init?: RequestInit & { as?: "json" | "text"; timeoutMs?: number }) => Promise<unknown>;
 
 export function classifyStatus(status: number): ConnectorError | null {
   if (status >= 200 && status < 300) return null;
@@ -15,14 +15,33 @@ export function classifyStatus(status: number): ConnectorError | null {
 
 export function bearerCall(f: typeof fetch, token: string): ProviderCall {
   return async (url, init = {}) => {
-    const { as = "json", ...rest } = init;
+    const { as = "json", timeoutMs = 20000, ...rest } = init;
     let res: Response;
     try {
-      res = await f(url, { ...rest, headers: { accept: as === "json" ? "application/json" : "text/plain", ...(rest.headers ?? {}), authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(20000) });
+      res = await f(url, { ...rest, headers: { accept: as === "json" ? "application/json" : "text/plain", ...(rest.headers ?? {}), authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(timeoutMs) });
     } catch { throw new ConnectorError("PROVIDER_UNAVAILABLE"); }
     const error = classifyStatus(res.status); if (error) throw error;
-    return as === "json" ? res.json() : res.text();
+    // The same deadline covers the body: a stalled or cut-off body is "didn't respond", not a crash.
+    try { return as === "json" ? await res.json() : await res.text(); } catch { throw new ConnectorError("PROVIDER_UNAVAILABLE"); }
   };
+}
+
+/**
+ * Runs fn over items with at most `limit` requests in flight and keeps each item's
+ * outcome. A burst of parallel calls is what makes providers answer 429 and a
+ * search look stuck; one slow or refused item must not sink the rest.
+ */
+export async function settleLimited<T, R>(items: readonly T[], limit: number, fn: (item: T) => Promise<R>): Promise<PromiseSettledResult<R>[]> {
+  const out: PromiseSettledResult<R>[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      try { out[i] = { status: "fulfilled", value: await fn(items[i]!) }; } catch (reason) { out[i] = { status: "rejected", reason }; }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, worker));
+  return out;
 }
 
 /** Evidence snapshots are capped at the evidence limit; the cut is stated in the text. */

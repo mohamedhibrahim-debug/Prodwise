@@ -100,4 +100,14 @@ export async function refreshTokens(f: Fetch, connector: Connector, creds: Clien
   return readTokenResponse(await f(url, { ...init, signal: AbortSignal.timeout(15000) }), tokens.refreshToken, now);
 }
 
+/**
+ * Maps a provider's redirect error to a safe code. Only the standard error keyword is
+ * read; the provider's description is matched, never shown.
+ */
+export function callbackErrorCode(error: string, description: string | null): "SCOPE_REFUSED" | "NOT_CONNECTED" {
+  // Figma answers an app without an enabled scope with "Invalid scopes for app".
+  if (error === "invalid_scope" || (error !== "access_denied" && /\binvalid scopes?\b/i.test(description ?? ""))) return "SCOPE_REFUSED";
+  return "NOT_CONNECTED";
+}
+
 export const needsRefresh = (t: ProviderTokens, now = Date.now()) => t.expiresAt !== null && t.expiresAt - now < 60_000;
