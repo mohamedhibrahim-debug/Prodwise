@@ -1,4 +1,4 @@
-.page { color:var(--ink-900); font-size:var(--t-body); display:grid; gap:var(--s-6); max-width:var(--content-max); margin:auto; padding:var(--s-8) var(--gutter) var(--s-16); min-width:0; }
+.page { color:var(--ink-900); font-size:var(--t-body); display:grid; gap:var(--s-6); max-width:var(--content-max); margin:auto; padding:0 var(--gutter) var(--s-16); min-width:0; }
 .header { display:flex; justify-content:space-between; gap:var(--s-6); align-items:flex-start; border-bottom:1px solid var(--rule-strong); padding-bottom:var(--s-5); }
 .header h1 { font-size:var(--t-h1); font-weight:var(--fw-semibold); letter-spacing:var(--ls-tight); margin:0 0 var(--s-2); }
 .header h2 { font-size:var(--t-h2); font-weight:var(--fw-semibold); margin:0 0 var(--s-2); }

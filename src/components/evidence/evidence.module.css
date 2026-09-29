@@ -15,9 +15,9 @@
 .page input,.page select,.page textarea{font:inherit;width:100%;min-width:0;min-height:44px;padding:var(--s-2) var(--s-3);border:1px solid var(--rule-strong);background:var(--panel);color:var(--ink-900);border-radius:var(--r-sm)}
 .page textarea{line-height:1.6}
 .page input:focus-visible,.page select:focus-visible,.page textarea:focus-visible,.page button:focus-visible,.page a:focus-visible,.page summary:focus-visible{outline:none;box-shadow:var(--focus-ring)}
-.page button{font:inherit;min-height:44px;padding:var(--s-2) var(--s-4);border:1px solid var(--rule-strong);background:var(--panel);border-radius:var(--r-sm);cursor:pointer;color:var(--ink-900)}
+.page button:not(:global(.pw-btn)){font:inherit;min-height:44px;padding:var(--s-2) var(--s-4);border:1px solid var(--rule-strong);background:var(--panel);border-radius:var(--r-sm);cursor:pointer;color:var(--ink-900)}
 .page .primary{background:var(--navy-900);color:var(--navy-ink);border-color:var(--navy-900);font-weight:var(--fw-medium)}
-.page button:disabled{opacity:.55;cursor:default}
+.page button:not(:global(.pw-btn)):disabled{opacity:.55;cursor:default}
 .control{display:inline-flex;min-height:44px;align-items:center;padding:var(--s-2) var(--s-3);border:1px solid var(--rule-strong);border-radius:var(--r-sm);background:var(--panel)}
 .linkButton{border:0!important;background:none!important;padding:0!important;min-height:44px;color:var(--accent-700)!important;font-size:var(--t-sm)!important;text-decoration:underline;text-underline-offset:3px}
 .buttons{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-3);margin-top:var(--s-4)}
@@ -155,3 +155,9 @@
 .duplicate a{color:inherit;font-weight:var(--fw-semibold)}
 .select span[aria-hidden]{font-size:var(--t-sm);color:var(--ink-700)}
 .origin{font-size:var(--t-sm);color:var(--ink-700);margin-top:var(--s-2);max-width:72ch}
+
+/* Tab toolbar frame and button system */
+.page{padding-top:0}
+.page .primary{background:var(--accent-600);color:var(--surface);border-color:var(--accent-600);font-weight:var(--fw-semibold)}
+.page .primary:hover:not(:disabled){background:var(--accent-700);border-color:var(--accent-700)}
+@media(min-width:781px){.page button,.page input,.page select{min-height:var(--control-md)}}

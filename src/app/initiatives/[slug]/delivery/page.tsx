@@ -1,5 +1,4 @@
 import {factDate} from '@/lib/delivery/display';
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { readDelivery } from "@/lib/delivery/repository";
 import { factFor } from "@/lib/delivery/model";
@@ -8,6 +7,8 @@ import { FactEditor } from "@/components/delivery/FactEditor";
 import { WriteNotice } from "@/components/delivery/WriteNotice";
 import { safeUserLabel } from "@/lib/demo/presentation";
 import {safeReturnPath} from "@/lib/auth/core";
+import {TabToolbar} from '@/components/workspace/TabToolbar';
+import {ButtonLink} from '@/components/primitives/Button';
 import styles from "@/components/delivery/delivery.module.css";
 import factsStyles from "@/components/delivery/facts.module.css";
 import type { Metadata } from "next";
@@ -15,7 +16,7 @@ export const metadata: Metadata = { title: "Delivery facts" };
 export default async function InitiativeDelivery({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{returnTo?:string}>}) {
   const {slug}=await params;const query=await searchParams,requested=safeReturnPath(query.returnTo),returnTo=["/roadmap","/weekly-review",`/initiatives/${slug}`].some(prefix=>requested===prefix||requested.startsWith(prefix+"?")||requested.startsWith(prefix+"/"))?requested:`/initiatives/${slug}`; const {ctx,source,state}=await readDelivery(); const snapshot=source.snapshots.find(s=>s.initiative.slug===slug);
   if (!snapshot) notFound(); const initiative=snapshot.initiative,facts=state.facts.filter(f=>f.workspaceId===ctx.workspaceId),history=targetHistory(state.events,ctx.workspaceId,initiative.id);
-  return <div className={`${styles.page} ${factsStyles.deliveryPage}`}><header className={styles.header}><div><span className={styles.eyebrow}>{initiative.name} · Brief / Delivery</span><h2>Delivery facts</h2><p>Human-confirmed dates and commitments for this initiative. The delivery record extends its Brief and feeds the portfolio Roadmap.</p></div><nav className={styles.links} aria-label="Initiative delivery navigation"><Link prefetch={false} href={returnTo}>Return to {returnTo.startsWith("/weekly-review")?"Weekly Review":returnTo.startsWith("/roadmap")?"Roadmap":"Initiative Brief"}</Link><Link prefetch={false} href={`/initiatives/${slug}`}>Initiative Brief</Link><Link prefetch={false} href="/roadmap">Roadmap</Link><Link prefetch={false} href={`/weekly-review?initiative=${slug}`}>Weekly Review</Link></nav></header>
+  return <div className={`${styles.page} ${factsStyles.deliveryPage}`}><TabToolbar title="Delivery facts" summary={<><strong>Delivery facts</strong> · human-confirmed dates that feed the Brief and the Roadmap</>} actions={<><ButtonLink variant="ghost" href={returnTo}>← {returnTo.startsWith("/weekly-review")?"Weekly Review":returnTo.startsWith("/roadmap")?"Roadmap":"Brief"}</ButtonLink><ButtonLink variant="ghost" href="/roadmap">Roadmap</ButtonLink><ButtonLink variant="ghost" href={`/weekly-review?initiative=${slug}`}>Weekly Review</ButtonLink></>}/>
     <WriteNotice ctx={ctx}/>
     <div className={styles.reviewOverview}><div className={styles.reviewSummary}><span className={styles.eyebrow}>Recorded scope</span><h2>{factFor(facts,initiative.id,"SCOPE")?.value.text ?? "Not confirmed"}</h2><p className={styles.meta}>Confirm scope first. The Roadmap reads these facts automatically.</p></div><div className={styles.reviewBaseline}><strong>Target Live · planned</strong><p>{displayDate(factFor(facts,initiative.id,"TARGET_LIVE")?.value.date)}</p><p className={styles.meta}>Actual Live: {factFor(facts,initiative.id,"ACTUAL_LIVE")?.value.date ? displayDate(factFor(facts,initiative.id,"ACTUAL_LIVE")?.value.date) : "Not recorded"}</p></div></div>
     <FactEditor initiativeId={initiative.id} facts={facts} source={source} ctx={ctx}/>

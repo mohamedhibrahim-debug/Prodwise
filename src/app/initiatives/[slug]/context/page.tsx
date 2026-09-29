@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {readDelivery} from '@/lib/delivery/repository';
 import {ownerFor} from '@/lib/delivery/model';

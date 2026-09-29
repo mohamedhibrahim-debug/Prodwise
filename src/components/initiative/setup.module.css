@@ -3,3 +3,7 @@
 
 .rail>a{display:block;margin-top:var(--s-3);text-decoration:underline}.checklist a{text-decoration:underline;text-underline-offset:3px}.missing{display:inline-block;background:var(--state-unknown-bg);color:var(--ink-900);border:1px solid var(--rule-strong);padding:var(--s-2);border-radius:var(--r-pill)}.recorded{color:var(--ink-500);font-size:var(--t-sm)}
 .needsScope{margin:var(--s-3) 0;padding:var(--s-3) var(--s-4);border-inline-start:3px solid var(--navy-900);background:var(--surface-subtle);font-size:var(--t-sm);line-height:var(--lh-body)}
+
+/* Tab toolbar frame */
+.page{padding-top:0;max-width:var(--content-max)}
+.created{margin:var(--s-3) 0 0;padding:var(--s-2) var(--s-3);background:var(--accent-050);border-left:3px solid var(--accent-600);font-size:var(--t-sm)}
