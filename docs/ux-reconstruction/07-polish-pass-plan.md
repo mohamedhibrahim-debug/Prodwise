@@ -142,3 +142,11 @@ Shared-file rule: a workstream that needs a new token or a change to a shared pr
 Merge order: B → C → D → E, each merged by the lead after its gates, with a rendered check in both themes.
 
 Wave 3 — Ask Prodwise UI integration. Wave 4 — brand, responsive, accessibility sweep across all surfaces (lead + A). Wave 5 — final integrated acceptance.
+
+### Wave 3 decisions for the Ask Prodwise panel (answers to the Wave 2 report)
+- D10 The panel sends `preferredLanguage` explicitly on every call (it holds the preference; saves a read).
+- D11 When the panel sent an `initiativeSlug` and the answer's `basedOn.initiative` is null, it shows "This initiative isn't available to you in this organization; the answer covers your portfolio." — the same non-disclosing wording as the 404.
+- D12 Term isolation is client-side: the panel passes initiative and metric names from the context header to `segments()`; the route returns no term list.
+- D13 The "Proactive suggestions" preference is exposed in Wave 3 and controls the quiet badge on the collapsed control (one dot when `recommend()` has at least one item for the current screen). No push, no auto-open.
+- D14 Preference writes are not gated by `DEMO_WRITE_ENABLED` (a personal setting, same precedent as notification read marks); Demo guests keep in-memory defaults.
+- D15 Rate limiting stays per instance for the MVP; a DB-backed counter is a hosted follow-up behind the same interface.
