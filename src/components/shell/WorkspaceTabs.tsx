@@ -44,6 +44,12 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [base, router]);
 
+  // One active indicator at a time: while a tab switch is pending, the tab that
+  // was clicked carries the indicator and the previous one gives it up (m4).
+  // Keyed to the path it was clicked from, so it expires by itself once the route changes.
+  const [pending, setPending] = useState<{ segment: string; from: string } | null>(null);
+  const pendingSegment = pending && pending.from === pathname ? pending.segment : null;
+
   const scroller = useRef<HTMLElement>(null);
   // Edge fades are driven by measurement, not by breakpoint, so the cue only
   // appears when the tab strip genuinely has more to reveal.
@@ -118,7 +124,7 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
   const rest = pathname.startsWith(base) ? pathname.slice(base.length) : "";
   const currentSegment = rest.replace(/^\//, "").split("/")[0] ?? "";
   const activeSegment =
-    rest.startsWith('/knowledge/sources') ? 'sources' : TABS.find((t) => t.segment && t.segment === currentSegment)?.segment ?? (currentSegment ? null : "");
+    rest.startsWith('/knowledge/sources') || currentSegment === 'evidence' ? 'sources' : TABS.find((t) => t.segment && t.segment === currentSegment)?.segment ?? (currentSegment ? null : "");
 
   return (
     <div
@@ -134,13 +140,14 @@ export function WorkspaceTabs({ slug }: { slug: string }) {
       >
         {TABS.map(({ segment, label }) => {
           const href = segment ? `${base}/${segment}` : base;
-          const active = segment === activeSegment;
+          const active = pendingSegment !== null ? segment === pendingSegment : segment === activeSegment;
           return (
             <Link
               key={label}
               href={href}
               className={`${styles.tab} ${active ? styles.tabActive : ""}`}
-              aria-current={active ? "page" : undefined}
+              aria-current={segment === activeSegment ? "page" : undefined}
+              onClick={(event) => { if (!event.defaultPrevented && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) setPending({ segment, from: pathname }); }}
             >
               {label}
               <PendingHint />

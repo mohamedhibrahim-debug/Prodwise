@@ -13,7 +13,8 @@ import styles from "./FindingRow.module.css";
 const EMPTY: DecisionFormState = { error: null };
 
 export function DecideConflictForm({ finding, slug }: { finding: ReviewFinding; slug: string }) {
-  const [state, action, pending, keepAction] = useFormAction(decideAction, EMPTY);
+  const [state, action, pending] = useFormAction(decideAction, EMPTY);
+  const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState("existing");
   const [chosen, setChosen] = useState("");
   const [corrected, setCorrected] = useState("");
@@ -23,9 +24,10 @@ export function DecideConflictForm({ finding, slug }: { finding: ReviewFinding; 
   const values = [...new Map(finding.claims.map((c) => [normalise(c.value), c])).values()];
   const domains = [...new Set(finding.claims.map((c) => c.domain))];
   const duplicate = choice === "corrected" && values.some((c) => normalise(c.value) === normalise(corrected));
-  return <details className={styles.decisionForm}>
-    <summary className={`${styles.resolveTrigger} ${styles.primaryDecision}`}>Make a decision</summary>
-    <form action={action}
+  // A real button, not a <summary>: the primary action keeps its fill whether the panel is open or closed (m1).
+  return <div className={styles.decisionForm}>
+    <button type="button" className="pw-btn" data-variant="primary" data-size="lg" aria-expanded={open} aria-controls={`${id}-panel`} onClick={() => setOpen(o => !o)}>{open ? "Close decision panel" : "Make a decision"}</button>
+    <form id={`${id}-panel`} hidden={!open} action={action}
       // React resets action forms even when the action returns a refusal.
       // Cancel the native reset so selects/radios retain their controlled values
       // alongside text inputs. Successful decisions disappear via revalidation.
@@ -67,17 +69,17 @@ export function DecideConflictForm({ finding, slug }: { finding: ReviewFinding; 
         <textarea id={`${id}-rationale`} name="rationale" rows={3} required value={rationale}
           onChange={(event) => setRationale(event.target.value)} className={styles.resolveInput} />
         {duplicate ? <p role="alert" className={styles.error}>{CHOOSE_EXISTING_MESSAGE}{" "}
-          <button type="button" className={styles.resolveTrigger} onClick={() => {
+          <button type="button" className="pw-btn" data-variant="secondary" data-size="sm" onClick={() => {
             setChosen(values.find((c) => normalise(c.value) === normalise(corrected))!.claimId);
             setChoice("existing");
           }}>Choose existing value instead</button></p> : null}
         {state.error ? <p role="alert" className={styles.error}>{state.error}</p> : null}
-        <button className={`${styles.submit} ${styles.primarySubmit}`} type="submit" disabled={pending || duplicate}>
+        <button className="pw-btn" data-variant="primary" data-size="lg" type="submit" disabled={pending || duplicate} aria-busy={pending || undefined}>
           {pending ? "Saving…" : "Save decision"}
         </button>
       </fieldset>
     </form>
-  </details>;
+  </div>;
 }
 
 export function ConfirmerForm({ finding, slug }: { finding: ReviewFinding; slug: string }) {

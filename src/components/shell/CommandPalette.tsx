@@ -134,6 +134,24 @@ export function CommandPalette({administration=false,canSwitch=false}:{administr
     return () => window.removeEventListener(OPEN_PALETTE_EVENT, onRequest);
   }, []);
 
+  // Warm the index once the page is idle, so the first open has a list to show
+  // instead of "Loading initiatives…" (m14). The open-time re-read below still
+  // refreshes it; a failed warm-up is silent because the open path reports.
+  useEffect(() => {
+    let cancelled = false;
+    const warm = async () => {
+      try {
+        const res = await fetch("/api/nav");
+        if (!res.ok) return;
+        const data = (await res.json()) as { initiatives: NavInitiative[] };
+        if (!cancelled) setInitiatives(current => current ?? data.initiatives);
+      } catch { /* reported on open */ }
+    };
+    const idle = "requestIdleCallback" in window;
+    const handle = idle ? window.requestIdleCallback(() => { void warm(); }, { timeout: 4000 }) : window.setTimeout(() => { void warm(); }, 1500);
+    return () => { cancelled = true; if (idle) window.cancelIdleCallback(handle); else window.clearTimeout(handle); };
+  }, []);
+
   // Re-read on every open: the list is small, and a list held for the whole
   // session went stale — new initiatives were missing and, because this shell
   // survives client navigation, a switched organization still showed the

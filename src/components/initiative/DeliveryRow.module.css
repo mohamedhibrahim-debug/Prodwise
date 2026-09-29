@@ -1,0 +1,163 @@
+/* The Brief's delivery row: the Roadmap's mark vocabulary at row scale.
+   Geometry derives from spacing tokens; hues from schedule/status tokens. */
+.row {
+  --dr-row-h: calc(var(--s-16) + var(--s-2));
+  --dr-bar-h: var(--s-3);
+  --dr-mark: calc(var(--s-3) + 2px);
+  --dr-center: 58%;
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+}
+.frame {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--panel);
+  overflow: hidden;
+}
+.axis {
+  position: relative;
+  height: var(--s-6);
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--rule);
+}
+.axis span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding-left: var(--s-2);
+  border-left: 1px solid var(--rule);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-500);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.axis span:first-child { border-left: 0; }
+.axis small { font-size: inherit; font-weight: var(--fw-regular); color: var(--ink-400); margin-left: 2px; }
+.track { position: relative; height: var(--dr-row-h); }
+.track > span { position: absolute; }
+.monthLine { top: 0; bottom: 0; width: 0; border-left: 1px solid var(--surface-subtle); }
+.planned, .delivered {
+  top: calc(var(--dr-center) - var(--dr-bar-h) / 2);
+  height: var(--dr-bar-h);
+  border-radius: var(--r-sm);
+}
+.planned { background: var(--accent-050); border: 1.5px solid var(--kind-schedule); box-sizing: border-box; }
+.delivered { background: var(--kind-schedule); }
+.target, .ghost, .live {
+  top: calc(var(--dr-center) - var(--dr-mark) / 2);
+  width: var(--dr-mark);
+  height: var(--dr-mark);
+  transform: translateX(-50%);
+  box-sizing: border-box;
+}
+.target, .ghost { transform: translateX(-50%) rotate(45deg); border-radius: var(--r-xs); }
+.target { background: var(--panel); border: 2px solid var(--kind-target); z-index: 2; }
+.targetPast { background: var(--state-at-risk-bg); border-color: var(--state-at-risk-mark); }
+.ghost { background: var(--panel); border: 1.5px dashed var(--ink-400); }
+.ghostLine { top: calc(var(--dr-center) - 1px); height: 0; border-top: 2px dotted var(--ink-400); }
+.moveLabel {
+  top: var(--s-1);
+  transform: translateX(-50%);
+  padding: 0 var(--s-1);
+  border-radius: var(--r-xs);
+  background: var(--panel);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  color: var(--ink-700);
+  white-space: nowrap;
+}
+.live { border-radius: 50%; background: var(--state-ready-mark); border: 2px solid var(--panel); box-shadow: 0 0 0 1px var(--state-ready-mark); z-index: 3; }
+.partial { background: linear-gradient(90deg, var(--state-ready-mark) 50%, var(--panel) 50%); }
+.milestone {
+  width: var(--s-2);
+  height: var(--s-2);
+  top: calc(var(--dr-center) - var(--s-2) / 2);
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: var(--panel);
+  border: 2px solid var(--ink-700);
+  box-sizing: border-box;
+  z-index: 1;
+}
+.today { top: 0; bottom: 0; width: 0; border-left: 2px solid var(--ink-navy); z-index: 1; }
+.todayFlag {
+  position: absolute;
+  bottom: var(--s-1);
+  left: var(--s-1);
+  padding: 0 var(--s-1);
+  border-radius: var(--r-xs);
+  background: var(--ink-navy);
+  color: var(--panel);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}
+.label {
+  top: calc(var(--dr-center) - 0.75em);
+  margin-left: calc(var(--dr-mark) / 2 + var(--s-1));
+  padding: 0 var(--s-1);
+  border-radius: var(--r-xs);
+  background: var(--panel);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--ink-900);
+  line-height: 1.5;
+  white-space: nowrap;
+  z-index: 2;
+}
+.label[data-side="left"] { margin-left: 0; transform: translateX(calc(-100% - var(--dr-mark) / 2 - var(--s-1))); }
+.label[data-past] { color: var(--state-at-risk-fg); }
+.liveLabel { color: var(--state-ready-fg); }
+
+/* ── Facts under the row: each recorded date once, with its mark ─────────── */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-5);
+  margin: 0;
+  font-size: var(--t-xs);
+  color: var(--ink-700);
+}
+.facts > div { display: inline-flex; align-items: center; gap: var(--s-1); min-width: 0; }
+.facts dt { color: var(--ink-500); }
+.facts dt::after { content: ' ·'; }
+.facts dd { margin: 0; font-weight: var(--fw-semibold); color: var(--ink-900); font-variant-numeric: tabular-nums; }
+.factsLink { margin-left: auto; }
+.factsLink a { color: var(--accent-700); font-weight: var(--fw-medium); }
+.key { display: inline-block; width: var(--s-3); height: var(--s-3); margin-right: 2px; box-sizing: border-box; flex: none; }
+.keyPlanned { width: var(--s-5); height: var(--s-2); border-radius: var(--r-xs); background: var(--accent-050); border: 1.5px solid var(--kind-schedule); }
+.keyTarget { transform: rotate(45deg) scale(0.85); border-radius: var(--r-xs); background: var(--panel); border: 2px solid var(--kind-target); }
+.keyTarget[data-past] { background: var(--state-at-risk-bg); border-color: var(--state-at-risk-mark); }
+.keyMilestone { width: var(--s-2); height: var(--s-2); border-radius: 50%; background: var(--panel); border: 2px solid var(--ink-700); }
+.keyLive { border-radius: 50%; background: var(--state-ready-mark); }
+.keyLive[data-partial] { background: linear-gradient(90deg, var(--state-ready-mark) 50%, var(--panel) 50%); box-shadow: inset 0 0 0 1.5px var(--state-ready-mark); }
+.keyNone { border-radius: 50%; border: 1.5px dashed var(--ink-300); }
+
+/* ── Nothing recorded ──────────────────────────────────────────────────── */
+.none {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--r-md);
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+}
+.none strong { color: var(--ink-900); }
+.quiet { font-size: var(--t-xs); color: var(--ink-500); }
+@media (max-width: 780px) {
+  .row { --dr-row-h: var(--s-16); }
+  .facts { gap: var(--s-1) var(--s-4); }
+  .factsLink { margin-left: 0; flex-basis: 100%; }
+}

@@ -8,7 +8,7 @@ import type {InitiativeContext} from "@/lib/workspace/readiness";
 
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
-import {useState} from 'react';
+import {useState,type ReactNode} from 'react';
 import {ScopeField} from '@/components/auth/WorkspaceScope';
 import {evidenceAction,batchEvidenceAction} from '@/app/initiatives/[slug]/evidence/actions';
 import {relationshipAction} from '@/app/initiatives/[slug]/manage/relationship-actions';
@@ -20,14 +20,16 @@ const ORIGIN_LABEL={JIRA:'Jira',GMAIL:'Gmail',GOOGLE_DRIVE:'Google Drive',FIGMA:
 
 export interface WorkbenchClaim {id:string;subject:string;attribute:string;value:string;status:string;}
 export interface WorkbenchRelationTarget {id:string;name:string;}
-type Group={key:string;glyph:string;types:ProposalType[];meeting:string;evidence:string;lands:string};
+type Group={key:string;glyph:ReactNode;types:ProposalType[];meeting:string;evidence:string;lands:string};
+/** The clock glyph as an SVG: the ◷ character is missing from the UI font and rendered as a plain dot. */
+const CLOCK=<svg aria-hidden="true" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/></svg>;
 /** Meeting order. Each group says where a confirmation lands, in plain words. */
 const GROUPS:Group[]=[
  {key:'decided',glyph:'⚖',types:['DECISION'],meeting:'Decisions',evidence:'Decisions',lands:'Accepting adds the decision to Knowledge as not yet confirmed. Confirm it in Knowledge.'},
  {key:'commitments',glyph:'✓',types:['ACTION'],meeting:'Commitments',evidence:'Commitments',lands:'Accepting creates a commitment on this initiative. No owner or due date is inferred — choose them, or leave them unknown.'},
  {key:'risks',glyph:'▲',types:['RISK'],meeting:'Risks',evidence:'Risks',lands:'Accepting adds the risk to Knowledge as not yet confirmed. Once confirmed it can be tracked in Risks & questions.'},
  {key:'changed',glyph:'↻',types:['CHANGED_REQUIREMENT'],meeting:'Changed requirements',evidence:'Changed requirements',lands:'Accepting supersedes the current Knowledge entry. The earlier entry stays in history.'},
- {key:'dates',glyph:'◷',types:['DELIVERY'],meeting:'Date changes',evidence:'Delivery dates',lands:'Accepting updates delivery facts. Only the initiative owner or an administrator can confirm dates.'},
+ {key:'dates',glyph:CLOCK,types:['DELIVERY'],meeting:'Date changes',evidence:'Delivery dates',lands:'Accepting updates delivery facts. Only the initiative owner or an administrator can confirm dates.'},
  {key:'questions',glyph:'?',types:['OPEN_QUESTION'],meeting:'Open questions',evidence:'Open questions',lands:'Accepting opens a tracked question. A question is never recorded as a fact.'},
  {key:'related',glyph:'⇄',types:['RELATIONSHIP'],meeting:'Related initiatives',evidence:'Related initiatives',lands:'Accepting records a relationship between initiatives once you choose its type and say why.'},
  {key:'knowledge',glyph:'≡',types:['REQUIREMENT','BUSINESS_RULE','ASSUMPTION','DEPENDENCY'],meeting:'Requirements & rules',evidence:'Requirements & rules',lands:'Accepting adds it to Knowledge as not yet confirmed. Confirming is a separate step.'},
@@ -56,7 +58,8 @@ function Statement({p,claims,targets,current,selfName}:{p:Proposal;claims:Workbe
 function ProposalCard({p,quote,slug,allowed,members,show,selected,toggle,duplicate,contexts,currentContextId,claims,targets,denied,canRelate,selfName,recorded,current,compact}:{recorded?:AlreadyRecorded;current?:string|null;compact:boolean;canRelate:boolean;selfName:string;p:Proposal;quote:string;slug:string;allowed:boolean;members:DeliveryMember[];show:()=>void;selected:boolean;toggle:()=>void;duplicate?:Proposal;contexts:InitiativeContext[];currentContextId:string|null;claims:WorkbenchClaim[];targets:WorkbenchRelationTarget[];denied:string|null}){
  const [requestId]=useState(()=>crypto.randomUUID());const [state, action, pending, keepAction] = useFormAction(evidenceAction,{error:null});const [reason,setReason]=useState('');const [draftValue,setDraftValue]=useState(p.payload.value);
  const open=p.status==='PENDING';const done=state.result||state.message&&!state.error;
- const statusText=p.status==='CONFIRMED'?'✓ Accepted':p.status==='REJECTED'?'✕ Rejected':p.status==='SUPERSEDED_BY_HUMAN_ENTRY'?'✎ Replaced by your own entry':p.status==='OUTDATED'?'! Outdated':'○ Needs your decision';
+ // The card label agrees with the tally: an already-recorded pending proposal is not counted as waiting, an outdated one is.
+ const statusText=p.status==='CONFIRMED'?'✓ Accepted':p.status==='REJECTED'?'✕ Rejected':p.status==='SUPERSEDED_BY_HUMAN_ENTRY'?'✎ Replaced by your own entry':p.status==='OUTDATED'?'! Outdated · needs your decision':recorded?'○ Already recorded · not counted':'○ Needs your decision';
  const people=members.filter(m=>m.active&&m.role!=='VIEWER');
  return <article className={styles.card} data-status={p.status.toLowerCase()} tabIndex={-1} id={`proposal-${p.id}`} aria-labelledby={`proposal-${p.id}-kind`}>
   <header><span id={`proposal-${p.id}-kind`} className={styles.kind}>{KIND[p.type]??p.type}</span><span className={styles.state}>{statusText}</span>{allowed&&open&&p.type!=='RELATIONSHIP'&&!recorded&&<label className={styles.select}><input type="checkbox" checked={selected} onChange={toggle}/><span aria-hidden="true">Select</span><span className={styles.srOnly}>Select this {KIND[p.type]?.toLowerCase()} for batch confirmation</span></label>}</header>

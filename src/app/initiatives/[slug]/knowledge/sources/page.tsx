@@ -5,7 +5,7 @@ import { getRepository } from "@/lib/data";
 import { EVIDENCE_RELATIONS } from "@/lib/domain/types";
 import { EVIDENCE_RELATION_LABEL, EVIDENCE_SOURCE_TYPE_LABEL, formatDate, displaySourceReference } from "@/lib/domain/labels";
 import { businessWritePresentation } from "@/lib/auth/presentation";
-import { AddEvidenceMenu } from "@/components/evidence/AddEvidenceMenu";
+import { TabToolbar } from "@/components/workspace/TabToolbar";
 import styles from "../knowledge.module.css";
 import { connectorOverview, readSyncs } from "@/lib/connectors/service";
 import { ImportFromStrip } from "@/components/connectors/ImportFromStrip";
@@ -27,13 +27,14 @@ export default async function KnowledgeSourcesPage({ params }: { params: Promise
   // Same title on the same day is flagged, never merged: people decide whether it is a duplicate.
   const sameKey = (e: (typeof evidence)[number]) => `${e.title.trim().toLowerCase()}|${e.occurredAt?.slice(0, 10) ?? ''}`;
   const keyCount = new Map<string, number>(); for (const e of evidence) keyCount.set(sameKey(e), (keyCount.get(sameKey(e)) ?? 0) + 1);
+  // The persistent initiative header already carries the one primary action (Add evidence); this tab never repeats it (E-1).
   return <div className={styles.page}>
-    <header className={styles.head}><div><p className={styles.eyebrow}>{initiative.name}</p><h2>Sources</h2><p>Where this initiative’s evidence comes from, and the Knowledge it supports.</p></div>{writesEnabled ? <AddEvidenceMenu slug={slug} connectors={!isDemo}/> : <Link prefetch={false} className={styles.quietAction} href={`/initiatives/${slug}/evidence`}>Saved notes and pasted text</Link>}</header>
+    <TabToolbar title="Sources" summary={<><strong>{evidence.length}</strong> recorded {evidence.length === 1 ? "source" : "sources"} · grouped by relationship to the initiative</>}
+      actions={<Link prefetch={false} className="pw-btn" data-variant="secondary" data-size="md" href={`/initiatives/${slug}/evidence`}>Saved notes and pasted text</Link>} />
 
     <ImportFromStrip slug={slug} overview={overview} isDemo={isDemo} canWrite={writesEnabled && !initiative.archivedAt} />
     <ConnectedSourceList slug={slug} syncs={syncs} canWrite={writesEnabled} />
 
-    <div className={styles.librarySummary}><strong>{evidence.length} recorded sources</strong><span>Grouped by relationship to the initiative</span></div>
     {evidence.length ? <div className={styles.sourceTableWrap}><table className={styles.sourceTable}><caption className="visually-hidden">Sources grouped by relationship to this initiative</caption><thead><tr><th scope="col">Source</th><th scope="col">Reference</th><th scope="col">Type</th><th scope="col">Source date</th><th scope="col">Linked entries</th></tr></thead>{EVIDENCE_RELATIONS.map(boundary => {
       const items = evidence.filter(source => source.boundary === boundary);
       if (!items.length) return null;
