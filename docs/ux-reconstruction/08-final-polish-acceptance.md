@@ -70,3 +70,13 @@ Also owner-dependent: Figma app scopes and one live connection; Nourhan Nahnoush
 - Home stat strip leaves an empty cell at 1024.
 - Ask Prodwise rate limit is per server instance (documented, D15).
 - Brand mark can still read as a spinner at 16px next to a real spinner.
+
+## Release log — 29 Sept 2026
+
+| Step | State |
+|---|---|
+| 1–2 Migrations | **Applied to hosted** (`qhtlbjtbjidflsquvbbg`): `0045_metric_setup`, `0046_user_preferences`. Verified: hosted list ends 0043 · 0044 · 0045 · 0046 (no drift against the repository); three functions present; execute granted to `service_role` only (not `anon`/`authenticated`); RLS on; `users.preferences` defaults to `{}`. Security advisors: nothing new (deny-all RLS by design; the pre-existing "leaked password protection disabled" Auth setting remains an owner setting). Proven first on a fresh local replay of all 46 migrations and 18 SQL proof suites. Production (`0541fef`) kept serving normally after the change. |
+| 3 Demo V4 reset | **Waiting on the owner.** The approved operator flow (`scripts/demo/provision-hosted.mjs --dry-run --reset`, then `--apply --reset`) needs the private operator configuration and the private registration of the active hosted Demo, which are on the owner's machine. The V4 reset path is proven on a fresh local database (26 isolated initiatives per generation, reviewer identity reused, prior generation archived, no deletes). |
+| 4–11 | Pending on step 3 and promotion. |
+
+The hosted operator proof now expects V4 (26 initiatives per generation). The V3-only additive metrics path is retired from the replay: a V4 generation carries its own metrics through the reset.

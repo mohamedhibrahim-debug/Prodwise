@@ -36,7 +36,7 @@ select public.bootstrap_platform_owner(${sqlLiteral(actorId)}::uuid) where not e
 sql(renderHostedTransaction(plan));
 const read=()=>jsonSql(`select public.delivery_read_workspace(${sqlLiteral(plan.workspaceId)}::uuid,${sqlLiteral(plan.reviewerMemberId)}::uuid);`);
 const initial=read();
-assert.equal(initial.source.snapshots.length,15);
+assert.equal(initial.source.snapshots.length,26);
 assert.deepEqual(initial.state.reviews.map(r=>r.week+':'+r.status).sort(),['2026-W37:FINAL','2026-W38:FINAL','2026-W39:DRAFT']);
 let digestFailure=null;
 // As the app reads it: the RPC projection plus the workspace's scopes.
@@ -52,7 +52,7 @@ sql(renderHostedTransaction(reset));
 const retained=jsonSql(`select public.delivery_state(${sqlLiteral(plan.workspaceId)}::uuid);`);
 assert.equal(canonical(retained),canonical(initial.state),'reset must preserve all old delivery facts, events, original AI and Final review snapshots');
 const fresh=jsonSql(`select public.delivery_read_workspace(${sqlLiteral(reset.workspaceId)}::uuid,${sqlLiteral(reset.reviewerMemberId)}::uuid);`);
-assert.equal(fresh.source.snapshots.length,15);
+assert.equal(fresh.source.snapshots.length,26);
 assert.equal(Number(sql(`select count(*) from public.organization_memberships m join public.users u on u.id=m.user_id where m.organization_id=${sqlLiteral(reset.organizationId)}::uuid and u.email like '%@example.demo' and m.active`)),7,'personas rejoin the fresh generation');
 assert.ok(fresh.source.snapshots.every(snapshot=>snapshot.initiative.workspace_id===reset.workspaceId));
 assert.ok(fresh.state.reviews.every(review=>review.workspaceId===reset.workspaceId));
@@ -61,6 +61,6 @@ sql(`do $$ begin
  begin perform public.delivery_read_workspace(${sqlLiteral(plan.workspaceId)}::uuid,${sqlLiteral(plan.reviewerMemberId)}::uuid);raise exception 'OLD_GENERATION_ACCESS_NOT_REFUSED';
  exception when others then if sqlerrm<>'ACCESS_DENIED' then raise;end if;end;
 end $$;`);
-console.log('PASS: actual generated initial/reset SQL applies, reused reviewer identity, fifteen isolated initiatives per generation, personas reused, old state retained and old business access refused.');
+console.log('PASS: actual generated initial/reset SQL applies, reused reviewer identity, twenty-six isolated initiatives per generation (Demo dataset V4: 24 active, 2 archived), personas reused, old state retained and old business access refused.');
 if(digestFailure)throw new Error('GENERATED_INPUT_DIGEST_MISMATCH: first differing path '+digestFailure+'; SQL execution/reset passed but initial reviewer refresh/finalization is not equivalent to persisted source.');
 console.log('PASS: the Draft matches the live database projection and each Final matches its own frozen records.');
