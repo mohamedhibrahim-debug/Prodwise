@@ -62,6 +62,11 @@ test("OAuth: token exchange, rotating refresh, and expired grants ask for reconn
   await assert.rejects(refreshTokens(denied.f, "GMAIL", { clientId: "c", clientSecret: "s" }, { accessToken: "a", refreshToken: "r", expiresAt: 0 }), (e: unknown) => e instanceof ConnectorError && e.code === "NEEDS_RECONNECT" && !e.message.includes("expired"));
   const figma = fakeFetch([["api.figma.com/v1/oauth/token", init => { assert.match(String((init!.headers as Record<string, string>).authorization), /^Basic /); assert.ok(String(init!.body).includes("code_verifier=v")); return json({ access_token: "f", refresh_token: "fr", expires_in: 7776000 }); }]]);
   await exchangeCode(figma.f, "FIGMA", { clientId: "c", clientSecret: "s" }, "code", "https://x/cb", "v");
+  // Figma refreshes at its own endpoint; its token endpoint accepts authorization codes only.
+  const figmaRefresh = fakeFetch([["api.figma.com/v1/oauth/refresh", init => { assert.match(String((init!.headers as Record<string, string>).authorization), /^Basic /); assert.ok(String(init!.body).includes("refresh_token=fr")); return json({ access_token: "f2", expires_in: 7776000 }); }]]);
+  const refreshed = await refreshTokens(figmaRefresh.f, "FIGMA", { clientId: "c", clientSecret: "s" }, { accessToken: "f", refreshToken: "fr", expiresAt: 0 }, 0);
+  assert.deepEqual(refreshed, { accessToken: "f2", refreshToken: "fr", expiresAt: 7_776_000_000 });
+  assert.ok(figmaRefresh.calls.every(c => !c.url.includes("/v1/oauth/token")), "refresh never goes to the code endpoint");
 });
 
 test("provider HTTP status maps to a plain next step, never a provider body", async () => {

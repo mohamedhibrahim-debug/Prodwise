@@ -23,7 +23,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   } catch (e) {
     if (e instanceof AccessError && e.code === "UNAUTHENTICATED") return back("/login?returnTo=%2Faccount%2Fconnections");
     const code = e instanceof ConnectorError ? e.code : e instanceof AccessError ? "VIEW_ONLY" : "PROVIDER_UNAVAILABLE";
-    if (!(e instanceof ConnectorError) && !(e instanceof AccessError)) console.error("connector_callback_failed", { connector, kind: e instanceof Error ? e.name : "unknown" });
+    // Result code and failing step only: never provider text, codes, tokens or cookies.
+    const step = (e as { step?: string } | null)?.step ?? null;
+    if (!(e instanceof AccessError)) console.error("connector_callback_failed", { connector, code, step, kind: e instanceof Error ? e.name : "unknown" });
     // The failed provider's row is focused so the person lands on the recovery, not the top of the page.
     return back(`/account/connections?connector=${CONNECTOR_SLUG[connector]}&result=${code}#connector-${CONNECTOR_SLUG[connector]}`);
   }

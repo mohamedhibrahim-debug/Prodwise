@@ -123,8 +123,11 @@ export type ConnectorErrorCode =
   /** The provider refused the requested scopes during sign-in (OAuth error=invalid_scope). */
   | "SCOPE_REFUSED";
 
+export type OAuthStep = "state" | "provider_error" | "code" | "token_exchange" | "identity" | "storage";
 export class ConnectorError extends Error {
   readonly code: ConnectorErrorCode;
+  /** Which OAuth step failed (state, provider_error, code, token_exchange, identity, storage). Safe to log; never provider text. */
+  step?: OAuthStep;
   constructor(code: ConnectorErrorCode, message?: string) { super(message ?? code); this.name = "ConnectorError"; this.code = code; }
 }
 
