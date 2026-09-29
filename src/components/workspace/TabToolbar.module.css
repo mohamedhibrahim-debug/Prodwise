@@ -1,0 +1,101 @@
+/* The tab toolbar: one line directly under the tab strip. Summary · view
+   controls · actions. Content starts right below it. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-4);
+  min-height: 52px;
+  padding: var(--s-3) 0;
+  margin-bottom: var(--s-4);
+  border-bottom: 1px solid var(--rule);
+}
+.summary {
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+  font-variant-numeric: tabular-nums;
+}
+.summary strong { color: var(--ink-900); font-weight: var(--fw-semibold); }
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  margin-left: auto;
+}
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--surface-subtle);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.segmented::-webkit-scrollbar { display: none; }
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: 28px;
+  padding: 0 var(--s-3);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink-700);
+  font: inherit;
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+}
+.segment:hover { color: var(--ink-900); background: var(--panel); }
+.segment:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.segment[aria-current=page], .segment[aria-pressed=true] {
+  background: var(--panel);
+  color: var(--ink-900);
+  font-weight: var(--fw-semibold);
+  box-shadow: 0 0 0 1px var(--rule-strong);
+}
+.segmentCount {
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+  font-variant-numeric: tabular-nums;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: 28px;
+  padding: 0 var(--s-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  background: var(--panel);
+  color: var(--ink-700);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.chip[data-tone=attention] {
+  border-color: var(--state-at-risk-edge);
+  background: var(--attention-bg);
+  color: var(--attention-fg);
+}
+a.chip:hover { text-decoration: underline; text-underline-offset: 2px; }
+a.chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+@media (max-width: 780px) {
+  .toolbar { gap: var(--s-2); }
+  .actions { margin-left: 0; width: 100%; }
+  .segment { height: 36px; }
+}

@@ -13,5 +13,5 @@ export async function createInitiativeAction(_previous:CreateInitiativeState,for
  const value=(key:string)=>String(form.get(key)??'').trim();
  slug=await createManagedInitiative({requestId:value('clientRequestId'),name:value('name'),businessLine:value('businessLine') as BusinessLine,stage:value('stage') as Stage,ownerMemberId:value('ownerMemberId'),description:value('description'),contextLabel:value('contextLabel')},ctx.workspaceId);
  }catch(error){return {error:safeMessage(error, 'The initiative could not be created.')};}
- revalidatePath('/initiatives');revalidatePath('/');redirect(`/initiatives/${slug}/setup?step=delivery&created=1`);
+ revalidatePath('/initiatives');revalidatePath('/');redirect(`/initiatives/${slug}?created=1`);
 }
