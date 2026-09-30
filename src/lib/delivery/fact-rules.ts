@@ -42,10 +42,6 @@ export function factValueFromForm(data: FormData, prefix = ""): FactValue {
     ...(data.get(prefix + "unknown") === "yes" ? { unknown: true as const } : {}), ...(data.get(prefix + "dateUnknown") === "yes" ? { dateUnknown: true as const } : {}) };
 }
 
-/** Delivery facts other than Scope and Owner need a confirmed Scope first (the server's SCOPE_REQUIRED rule). */
-export const SCOPE_PREREQUISITE = "Confirm the delivery phase or scope before recording delivery facts.";
-export const needsScopeFirst = (kind: FactKind, scopeConfirmed: boolean) => kind !== "SCOPE" && kind !== "OWNER" && !scopeConfirmed;
-
 /** The confirmation / change reason is optional. A blank one is stored as this literal, never an invented reason. */
 export const NO_REASON_NOTE = "No change reason recorded.";
 export const confirmationNote = (note: string) => note.trim() || NO_REASON_NOTE;

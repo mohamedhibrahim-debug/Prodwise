@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { EMPTY_STATE, FACT_KINDS, type DeliveryState, type FactKind, type FactValue, type PortfolioSource, type WorkspaceAccess } from "./types.ts";
 import { recordFact, type RecordFactInput } from "./model.ts";
-import { confirmationNote, factValueFromForm, factValueProblem, needsScopeFirst, NO_REASON_NOTE, SCOPE_PREREQUISITE } from "./fact-rules.ts";
+import { confirmationNote, factValueFromForm, factValueProblem, NO_REASON_NOTE } from "./fact-rules.ts";
 
 const admin: WorkspaceAccess = { workspaceId: "w1", organizationId: "org1", platformRole: null, memberId: "admin", actor: { id: "admin-user", label: "ADMIN" }, role: "ADMIN", isProductLead: false };
 const now = "2026-09-26T12:00:00Z", today = "2026-09-26";
@@ -40,16 +40,14 @@ test("browser and server apply the same value rule for every kind and shape", ()
   }
 });
 
-test("stale prerequisite: once the scope is confirmed, the blocking message is gone and the same entry saves", () => {
-  const entry = input("NEXT_STEP", { text: "Agree the divisor with Finance" });
-  assert.equal(needsScopeFirst("NEXT_STEP", false), true);
-  assert.equal(failCode(() => recordFact(EMPTY_STATE, source(), admin, entry, now)), "SCOPE_REQUIRED");
-  const state = withScope();
-  const scopeConfirmed = state.facts.some(f => f.kind === "SCOPE" && f.state === "SET");
-  assert.equal(needsScopeFirst("NEXT_STEP", scopeConfirmed), false, "re-evaluated from the record, not from the earlier error");
-  const saved = recordFact(state, source(), admin, { ...entry, expectedRevision: 0 }, now);
-  assert.equal(saved.facts.find(f => f.kind === "NEXT_STEP")?.value.text, "Agree the divisor with Finance");
-  assert.equal(SCOPE_PREREQUISITE, "Confirm the delivery phase or scope before recording delivery facts.");
+test("no scope prerequisite: a delivery fact saves before any scope, and a scope can be added afterwards", () => {
+  const target = recordFact(EMPTY_STATE, source(), admin, input("TARGET_LIVE", { date: "2027-07-30" }), now);
+  assert.equal(target.facts.find(f => f.kind === "TARGET_LIVE")?.value.date, "2027-07-30");
+  const step = recordFact(target, source(), admin, input("NEXT_STEP", { text: "Agree the divisor with Finance" }), now);
+  const scoped = recordFact(step, source(), admin, input("SCOPE", { text: "Phase 2" }), now);
+  assert.equal(scoped.facts.find(f => f.kind === "SCOPE")?.value.text, "Phase 2");
+  const renamed = recordFact(scoped, source(), admin, input("SCOPE", { text: "Phase 2 · reports" }, {}, scoped), now);
+  assert.equal(renamed.facts.find(f => f.kind === "SCOPE")?.value.text, "Phase 2 · reports");
 });
 
 test("the confirmation / change reason is optional and a blank one is stored as a literal, never invented", () => {

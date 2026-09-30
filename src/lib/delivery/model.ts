@@ -6,7 +6,7 @@ import { runReview } from "../review/engine.ts";
 import { applyFindingStates } from "../review/merge.ts";
 import type { MemoryClaim } from "../domain/types.ts";
 import { CLAIM_STATUS_LABEL } from "../domain/labels.ts";
-import { confirmationNote, dateValid, factValueProblem, needsScopeFirst, SCOPE_PREREQUISITE } from "./fact-rules.ts";
+import { confirmationNote, dateValid, factValueProblem } from "./fact-rules.ts";
 import { FACT_KINDS, type AiDraft, type Change, type DeliveryFact, type DeliveryState, type FactKind, type FactValue, type PortfolioInput, type PortfolioSource, type Reference, type ReviewSection, type SectionEdit, type WeeklyReview, type WorkspaceAccess } from "./types.ts";
 
 export class DeliveryError extends Error { readonly code:string; constructor(code: string, message: string) { super(message); this.code=code; } }
@@ -83,8 +83,6 @@ export function recordFact(state: DeliveryState, source: PortfolioSource, ctx: W
   if (!input.retract) {
     const v = input.value;
     const problem = factValueProblem(input.kind, v, cairoDay(now)); if (problem) fail(problem.code, problem.message);
-    if (needsScopeFirst(input.kind, Boolean(factFor(state.facts,input.initiativeId,"SCOPE")))) fail("SCOPE_REQUIRED", SCOPE_PREREQUISITE);
-    if (input.kind === "SCOPE" && old?.value.text !== v.text && state.facts.some(f => f.initiativeId === input.initiativeId && f.state === "SET" && !["SCOPE","OWNER"].includes(f.kind))) fail("SCOPE_HAS_FACTS", "Retract dates and delivery facts from the earlier scope before changing the scope label.");
   } else if (input.kind === "SCOPE" && state.facts.some(f => f.initiativeId === input.initiativeId && f.state === "SET" && !["SCOPE","OWNER"].includes(f.kind))) fail("SCOPE_HAS_FACTS", "Retract the scoped delivery facts before withdrawing their scope.");
   const applies=validateApplicability({contextId:input.contextId===undefined?old?.contextId:input.contextId,effectiveDate:input.effectiveDate===undefined?old?.effectiveDate:input.effectiveDate},source.contexts??[],ctx.workspaceId,input.initiativeId,old);
   const fact: DeliveryFact = {...applies, id:old?.id ?? randomUUID(), workspaceId:ctx.workspaceId, initiativeId:input.initiativeId, kind:input.kind, revision:(old?.revision ?? 0)+1,
