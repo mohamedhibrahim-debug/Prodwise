@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { BrandMark } from '@/components/primitives/BrandMark';
 import styles from './login.module.css';
 
@@ -32,7 +33,7 @@ export function AuthFrame({ titleId, children }: { titleId: string; children: Re
       <PanelArc />
     </aside>
     <div className={styles.entry}>
-      <div className={styles.entryContent}>{children}</div>
+      <div className={styles.entryContent}>{children}<p className={styles.legalLink}><Link href="/privacy">Privacy policy</Link></p></div>
     </div>
   </section>;
 }
