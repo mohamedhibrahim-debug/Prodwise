@@ -6,7 +6,7 @@ import { missingRecord } from './lib/data/route-existence';
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  if (/^\/(login|invite|signup)(\/|$)/.test(pathname) || pathname.startsWith('/_next/')
+  if (/^\/(login|invite|signup|privacy)(\/|$)/.test(pathname) || pathname.startsWith('/_next/')
       || pathname.startsWith('/assets/') || /^\/(favicon.ico|icon.png|apple-icon.png)$/.test(pathname)) return NextResponse.next();
   try {
     const ctx=await contextForCookie(request.cookies.get(SESSION_COOKIE)?.value);

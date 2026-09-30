@@ -1,0 +1,53 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--s-12) var(--gutter) var(--s-16);
+}
+
+.label {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.title {
+  margin-top: var(--s-3);
+  font-size: var(--t-h1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-display);
+}
+
+.meta {
+  margin-top: var(--s-2);
+  color: var(--ink-500);
+  font-size: var(--t-sm);
+}
+
+.section {
+  margin-top: var(--s-8);
+  padding-top: var(--s-6);
+  border-top: 1px solid var(--rule);
+}
+
+.section h2 {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-semibold);
+}
+
+.section p,
+.section li {
+  margin-top: var(--s-3);
+  color: var(--ink-700);
+  line-height: var(--lh-body);
+}
+
+.section ul {
+  padding-left: var(--s-5);
+  list-style: disc;
+}
+
+.section a {
+  color: var(--ink-link);
+}
