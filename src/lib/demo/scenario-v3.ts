@@ -85,6 +85,8 @@ export interface ScenarioKit {
   ask: (key: string, slug: string, when: string, by: string, cmd: Omit<QuestionCommand, "requestId" | "expectedRevision" | "id"> & { owner?: string | null }) => void;
   relate: (key: string, when: string, by: string, from: string, to: string, type: RelationshipCommand["type"], rationale: string, dates?: { provider: "TARGET_LIVE" | "NEXT_MILESTONE"; needed: "TARGET_LIVE" | "NEXT_MILESTONE" }) => void;
   track: (key: string, claimKey: string, slug: string, steps: { at: string; by: string; cmd: Omit<RiskCommand, "requestId" | "expectedRevision" | "id" | "claimId"> }[]) => void;
+  /** Marks an ACTIVE entry SUPERSEDED by an existing entry of the same initiative (the product's supersession rule). */
+  supersede: (oldKey: string, newKey: string, slug: string, when: string, by: string) => void;
 }
 export interface ScenarioOptions {
   version: string;
@@ -801,6 +803,12 @@ export function buildDemoScenario(identity: DemoIdentity, options: ScenarioOptio
   // ── Later generations add their records here, on the same timeline ──
   options.extend?.({
     id, day, dateFact, textFact, addEvidence, addClaim, commit, ask, relate, track, archive, move,
+    supersede: (oldKey, newKey, slug, when, by) => at(when, () => {
+      const oldClaim = store.claims.find(c => c.id === id(`claim:${oldKey}`)); const next = store.claims.find(c => c.id === id(`claim:${newKey}`));
+      if (!oldClaim || !next || oldClaim.initiativeId !== next.initiativeId || oldClaim.initiativeId !== bySlug(slug).id || oldClaim.status !== "ACTIVE") throw new Error(`Demo supersession ${oldKey} → ${newKey} is not valid`);
+      Object.assign(oldClaim, { status: "SUPERSEDED", supersededByClaimId: next.id, updatedAt: when });
+      log(slug, when, "CLAIM_SUPERSEDED", `${oldClaim.subject} · ${oldClaim.attribute}: "${oldClaim.value}" replaced by "${next.value}"`, by, { entityType: "CLAIM", entityId: oldClaim.id });
+    }),
     addInitiative: spec => { const row = initiativeRow(spec); logCreated(row); setScope(spec.slug, spec.scope); assignAtCreation(spec.slug, spec.owner); mapSources(row); },
   });
 

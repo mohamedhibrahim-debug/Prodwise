@@ -129,3 +129,23 @@ test("privacy: the V4 corpus carries no real organisation, people, keys or addre
   for (const m of demo.metrics) { assert.match(m.sourceLabel, /^Synthetic /); if (m.targetOwnerLabel !== null) assert.match(m.targetOwnerLabel, /^Synthetic /); }
   for (const i of s.initiatives) assert.match(i.description ?? "", /^Synthetic demo scenario\./);
 });
+
+test("showcase: Merchant Flex Finance carries a coherent week across every initiative tab, dated between the W38 Final and the Draft", () => {
+  const mff = bySlug("merchant-flex-finance"); const mine = <T extends { initiativeId: string }>(rows: T[]) => rows.filter(r => r.initiativeId === mff.id);
+  const w38 = demo.deliveryState.reviews.find(r => r.week === "2026-W38")!;
+  const added = mine(s.claims).filter(c => c.createdAt > w38.finalizedAt!);
+  assert.ok(added.length >= 9 && added.every(c => c.createdAt <= DEMO_V4_CUTOFF), "new Knowledge lands after the last Final and before the cutoff");
+  // One decision replaced another: kept as history with its replacement recorded, never deleted.
+  const cap25 = mine(s.claims).find(c => c.value === "Limited to 25 merchants in the first month")!;
+  const cap40 = mine(s.claims).find(c => c.value === "Limited to 40 merchants in the first month")!;
+  assert.equal(cap25.status, "SUPERSEDED"); assert.equal(cap25.supersededByClaimId, cap40.id); assert.equal(cap40.status, "ACTIVE");
+  assert.equal(runReview(mff.id, demo.source.snapshots.find(x => x.initiative.id === mff.id)!.claims).filter(f => f.type === "CONFLICT").length, 1, "only the 27-vs-30 divisor conflict; the cap change is a supersession");
+  const risks = mine(s.riskTracking); assert.equal(risks.length, 3); assert.ok(risks.every(r => r.ownerMemberId && r.mitigationText));
+  assert.ok(risks.filter(r => r.mitigationActionId).every(r => s.commitments.some(a => a.id === r.mitigationActionId && a.initiativeId === mff.id && a.dueDate)));
+  const questions = mine(s.openQuestions).filter(q => q.status === "OPEN"); assert.equal(questions.length, 4); assert.equal(questions.filter(q => q.ownerMemberId && q.dueDate).length, 3);
+  const actions = mine(s.commitments); assert.equal(actions.length, 5); assert.ok(actions.some(a => a.status === "DONE") && actions.some(a => a.status === "IN_PROGRESS") && actions.some(a => a.status === "OPEN"));
+  const metrics = demo.metrics.filter(m => m.initiativeId === mff.id); assert.equal(metrics.length, 2);
+  assert.ok(metrics.every(m => m.origin === "SYNTHETIC_DEMO" && m.observations.every(o => o.note.startsWith("Synthetic observation.") && o.capturedAt <= DEMO_V4_CUTOFF)));
+  assert.ok(mine(s.evidence).filter(e => e.capturedAt > w38.finalizedAt!).every(e => /^Synthetic /.test(e.contentSummary ?? "")), "every new source is labelled synthetic");
+  assert.ok(mine(s.activity).length + mine(demo.deliveryState.events).length >= 80, "History has enough recorded events to show provenance");
+});
