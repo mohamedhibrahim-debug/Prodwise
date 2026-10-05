@@ -8,7 +8,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   // This exact route authenticates its machine caller itself; no browser session is used.
   if (pathname === '/api/internal/jira-sync') return NextResponse.next();
-  if (/^\/(login|invite|signup)(\/|$)/.test(pathname) || pathname.startsWith('/_next/')
+  if (/^\/(login|invite|signup|privacy)(\/|$)/.test(pathname) || pathname.startsWith('/_next/')
       || pathname.startsWith('/assets/') || /^\/(favicon.ico|icon.png|apple-icon.png)$/.test(pathname)) return NextResponse.next();
   try {
     const ctx=await contextForCookie(request.cookies.get(SESSION_COOKIE)?.value);

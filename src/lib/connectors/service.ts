@@ -20,7 +20,7 @@ import { searchThreads, threadSnapshot } from "./gmail";
 import { fileSnapshot, searchFilesPage } from "./drive";
 import { fileOutline, frameSnapshot, parseFigmaLink, type FigmaOutline } from "./figma";
 import { applyConnectorSnapshot, applySourceCheck } from "./local-import";
-import { CONNECTOR_SLUG, ConnectorError, CONNECTORS, type Connection, type ConnectorErrorCode, type Connector, type ProviderSnapshot, type ProviderTokens, type SearchOutcome, type SourceItemSync } from "./types";
+import { CONNECTOR_SLUG, ConnectorError, CONNECTORS, type Connection, type ConnectorErrorCode, type Connector, type ProviderSnapshot, type ProviderTokens, type SearchOutcome, type SourceItemSync, type OAuthStep } from "./types";
 
 /** Connectors never run inside the Demo organization: its sources are synthetic. */
 async function guard(ctx: WorkspaceAccess): Promise<void> {
@@ -82,19 +82,31 @@ async function identity(connector: Connector, call: ProviderCall): Promise<Pick<
 /** Completes the redirect. The state cookie must match the person, organization, provider and nonce, within ten minutes. */
 export async function finishConnect(connector: Connector, params: URLSearchParams, cookie: string | undefined): Promise<string> {
   const ctx = await requireBusinessWriteAccess(); await guard(ctx); ready(connector);
-  let state: OAuthState;
-  try { state = open<OAuthState>(connectorKey(), cookie ?? "", "oauth-state"); } catch { throw new ConnectorError("INVALID_REQUEST"); }
-  if (state.p !== connector || state.o !== ctx.organizationId || state.u !== ctx.actor.id || state.n !== params.get("state") || Date.now() - state.t > 600_000) throw new ConnectorError("INVALID_REQUEST");
-  const refused = params.get("error"); if (refused) throw new ConnectorError(callbackErrorCode(refused, params.get("error_description")));
-  const code = params.get("code"); if (!code || code.length > 2048) throw new ConnectorError("INVALID_REQUEST");
-  const creds = credentialsFor(connector, process.env)!, origin = publicOrigin(process.env.PRODWISE_PUBLIC_URL)!;
-  const tokens = await exchangeCode(fetch, connector, creds, code, redirectUri(origin, connector), state.v);
-  const who = await identity(connector, bearerCall(fetch, tokens.accessToken));
-  const existing = await getConnection(ctx.organizationId, ctx.actor.id, connector), now = new Date().toISOString();
-  const c: Connection = { id: existing?.id ?? randomUUID(), organizationId: ctx.organizationId, userId: ctx.actor.id, provider: connector, status: "CONNECTED", ...who, scopes: PROVIDERS[connector].scopes.join(" "), sealedTokens: null, connectedAt: now, updatedAt: now, disconnectedAt: null, lastErrorCode: null };
-  c.sealedTokens = seal(connectorKey(), tokens, tokenBinding(c));
-  await saveConnection(c);
-  return state.r;
+  let step: OAuthStep = "state";
+  try {
+    let state: OAuthState;
+    try { state = open<OAuthState>(connectorKey(), cookie ?? "", "oauth-state"); } catch { throw new ConnectorError("INVALID_REQUEST"); }
+    if (state.p !== connector || state.o !== ctx.organizationId || state.u !== ctx.actor.id || state.n !== params.get("state") || Date.now() - state.t > 600_000) throw new ConnectorError("INVALID_REQUEST");
+    step = "provider_error";
+    const refused = params.get("error"); if (refused) throw new ConnectorError(callbackErrorCode(refused, params.get("error_description")));
+    step = "code";
+    const code = params.get("code"); if (!code || code.length > 2048) throw new ConnectorError("INVALID_REQUEST");
+    step = "token_exchange";
+    const creds = credentialsFor(connector, process.env)!, origin = publicOrigin(process.env.PRODWISE_PUBLIC_URL)!;
+    const tokens = await exchangeCode(fetch, connector, creds, code, redirectUri(origin, connector), state.v);
+    step = "identity";
+    const who = await identity(connector, bearerCall(fetch, tokens.accessToken));
+    step = "storage";
+    const existing = await getConnection(ctx.organizationId, ctx.actor.id, connector), now = new Date().toISOString();
+    const c: Connection = { id: existing?.id ?? randomUUID(), organizationId: ctx.organizationId, userId: ctx.actor.id, provider: connector, status: "CONNECTED", ...who, scopes: PROVIDERS[connector].scopes.join(" "), sealedTokens: null, connectedAt: now, updatedAt: now, disconnectedAt: null, lastErrorCode: null };
+    c.sealedTokens = seal(connectorKey(), tokens, tokenBinding(c));
+    await saveConnection(c);
+    return state.r;
+  } catch (e) {
+    // The failing step travels with the error so the callback can log where the flow stopped.
+    if (e instanceof ConnectorError) { e.step ??= step; throw e; }
+    const wrapped = e instanceof Error ? e : new Error("unknown"); (wrapped as Error & { step?: OAuthStep }).step = step; throw wrapped;
+  }
 }
 
 export async function disconnect(connector: Connector): Promise<void> {

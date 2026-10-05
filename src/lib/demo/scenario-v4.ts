@@ -177,6 +177,18 @@ export function extendWithV4(k: ScenarioKit) {
   commit("drp-test", "dispute-resolution-portal", day("2026-09-08", "10:30"), "tarek", { title: "Book the evidence format test with the scheme", assignee: "tarek", due: "2026-09-19", status: "DONE", note: "Test booked for 4 October." });
   commit("sra-workshop", "settlement-reconciliation-automation", day("2026-09-10", "10:00"), "adam", { title: "Invite Finance and Operations to the matching rules workshop", assignee: "adam", due: "2026-09-30" });
 
+  // ── Planning week (23–25 Sept): targets set or re-planned so the portfolio spans Q4 2026 to Q1 2027. ──
+  // Recorded after the W38 Final and before the W39 Draft, so they surface as this week's changes. Dependency-linked dates are left as they are.
+  dateFact("merchant-onboarding-kiosk", day("2026-09-23", "10:00"), "TARGET_LIVE", "2027-02-22", "nour", "Provisional planning date agreed with partner branches; the kiosk vendor is still to be chosen.");
+  dateFact("settlement-reconciliation-automation", day("2026-09-23", "11:00"), "TARGET_LIVE", "2026-11-23", "adam", "Target after the matching rules workshop and a four-week build.");
+  dateFact("installment-early-settlement", day("2026-09-24", "09:30"), "TARGET_LIVE", "2026-12-08", "reviewer", "Moved seven weeks: the settlement quote uses the daily repayment rule still awaiting a decision on Merchant Flex Finance.");
+  dateFact("merchant-kyc-refresh", day("2026-09-24", "10:00"), "TARGET_LIVE", "2026-12-14", "nour", "Target set once the re-verification population was sized.");
+  dateFact("agent-cash-in-network", day("2026-09-24", "11:00"), "TARGET_LIVE", "2027-03-15", "reviewer", "Provisional pilot window; to be confirmed when discovery closes.");
+  dateFact("merchant-pricing-update", day("2026-09-24", "15:00"), "TARGET_LIVE", "2026-11-09", "reviewer", "Moved four weeks: the two recorded fee rates must be settled before merchants are given notice.");
+  dateFact("partner-wallet-checkout", day("2026-09-25", "09:00"), "TARGET_LIVE", "2026-11-02", "lina", "Moved four weeks: the merchant name on receipts needs a change on the partner side.");
+  dateFact("merchant-credit-line-pilot", day("2026-09-25", "10:00"), "TARGET_LIVE", "2026-11-03", "lina", "Go-live date set after the pilot terminals passed in the test environment.");
+  dateFact("terminal-care-plan", day("2026-09-25", "14:30"), "TARGET_LIVE", "2027-01-18", "lina", "Target for the six-month coverage release, subject to Finance approving the monthly price.");
+
   // ── Open questions ──
   ask("kiosk-verify", "merchant-onboarding-kiosk", day("2026-09-03", "10:00"), "nour", { operation: "CREATE", question: "Can a merchant be identity-verified at a kiosk without an agent present?", owner: "hazem", expectedConfirmerText: "Compliance lead", dueDate: "2026-10-09" });
   ask("bpr-format", "bill-payment-refund-desk", day("2026-09-15", "11:10"), "mira", { operation: "CREATE", question: "Which reversal file format will the biller send from October?", owner: "mira", expectedConfirmerText: "Biller operations", dueDate: "2026-09-22" });
@@ -197,6 +209,52 @@ export function extendWithV4(k: ScenarioKit) {
   track("bpr-format", "bpr-risk", "bill-payment-refund-desk", [{ at: day("2026-09-15", "16:00"), by: "mira", cmd: { operation: "START", ownerMemberId: "mira", mitigationText: "Post refunds by hand until the biller confirms the format." } }]);
   track("cpf-declines", "cpf-risk", "card-present-fraud-rule-tuning", [{ at: day("2026-09-15", "16:00"), by: "hazem", cmd: { operation: "START", ownerMemberId: "hazem", mitigationText: "Review the merchant categories driving genuine declines before enforcement." } }]);
   track("drp-scheme", "drp-risk", "dispute-resolution-portal", [{ at: day("2026-09-08", "16:00"), by: "tarek", cmd: { operation: "START", ownerMemberId: "tarek", mitigationText: "Keep the evidence package mapping configurable." } }]);
+
+  showcaseMerchantFlexFinance(k);
+}
+
+/**
+ * Showcase week for Merchant Flex Finance (21–25 September): the deduction run is designed, the
+ * merchant journey reviewed, ledger posting tested and the pilot contract sent to the Shariah board.
+ * Dated after the W38 Final and before the W39 Draft, so the Finals are untouched and the Draft
+ * shows these as this week's changes. Every record is fictional.
+ */
+function showcaseMerchantFlexFinance(k: ScenarioKit) {
+  const { id, day, addEvidence, addClaim, commit, ask, track, supersede } = k;
+  const slug = "merchant-flex-finance";
+  addEvidence({ key: "mff-deduction-run", slug, title: "Daily deduction run — design", type: "DOCUMENT", ref: "Runbook v1", occurred: "2026-09-21", by: "adam", summary: "The deduction run starts at 06:00 Cairo on the previous day's settled amount. A day's deduction is capped at 25% of that day's settlement; any shortfall carries to the next run. A failed deduction is retried once, then passed to Collections." });
+  addEvidence({ key: "mff-journey-review", slug, title: "Merchant repayment journey review", type: "MEETING", ref: null, occurred: "2026-09-22", by: "nour", summary: "Design and Product agreed the merchant sees each daily deduction as its own statement line and the remaining balance in the app. The pilot starts with 25 merchants in the first month." });
+  addEvidence({ key: "mff-ledger-test", slug, title: "Finance ledger posting test", type: "JIRA", ref: "DEMO-126", occurred: "2026-09-23", by: "tarek", summary: "Deduction postings reach the finance ledger with the contract reference. Reversal postings are not built yet." });
+  addEvidence({ key: "mff-shariah-review", slug, title: "Shariah board review — pilot contract", type: "EMAIL", ref: "Email · Shariah board", occurred: "2026-09-23", by: "hazem", summary: "The board reviewed the murabaha contract template for the pilot. The approval letter is expected by 5 October, after one wording change." });
+
+  addClaim({ key: "mff-run-time", slug, type: "REQUIREMENT", status: "ACTIVE", subject: "Deduction run", attribute: "Schedule", value: "Daily at 06:00 Cairo, on the previous day's settled amount", domain: "OPERATIONS", ev: ["mff-deduction-run"], at: "2026-09-21", by: "adam", verify: { at: "2026-09-22", by: "salma" } });
+  addClaim({ key: "mff-deduction-cap", slug, type: "BUSINESS_RULE", status: "ACTIVE", subject: "Daily deduction", attribute: "Maximum share of settlement", value: "25% of the day's settled amount; any shortfall carries to the next run", domain: "FINANCE", ev: ["mff-deduction-run"], at: "2026-09-21", by: "reviewer", verify: { at: "2026-09-22", by: "salma" } });
+  addClaim({ key: "mff-failed-retry", slug, type: "DECISION", status: "ACTIVE", subject: "Failed deduction", attribute: "Handling", value: "Retried once on the next run, then passed to Collections", domain: "OPERATIONS", ev: ["mff-deduction-run"], at: "2026-09-22", by: "adam", verify: { at: "2026-09-22", by: "salma" } });
+  addClaim({ key: "mff-cap-25", slug, type: "DECISION", status: "ACTIVE", subject: "Pilot scope", attribute: "Merchant cap", value: "Limited to 25 merchants in the first month", domain: "PRODUCT", ev: ["mff-journey-review"], at: "2026-09-22", by: "reviewer", verify: { at: "2026-09-22", by: "reviewer" } });
+  addClaim({ key: "mff-statement-line", slug, type: "REQUIREMENT", status: "ACTIVE", subject: "Merchant statement", attribute: "Deduction display", value: "Each daily deduction shown as its own line, with the remaining balance in the app", domain: "PRODUCT", ev: ["mff-journey-review"], at: "2026-09-22", by: "nour", verify: { at: "2026-09-23", by: "reviewer" } });
+  addClaim({ key: "mff-ledger-ref", slug, type: "REQUIREMENT", status: "ACTIVE", subject: "Finance ledger posting", attribute: "Contract reference", value: "Every deduction posts to the finance ledger with its contract reference", domain: "TECHNICAL", ev: ["mff-ledger-test"], at: "2026-09-23", by: "tarek", verify: { at: "2026-09-23", by: "salma" } });
+  addClaim({ key: "mff-reversal-risk", slug, type: "RISK", status: "ACTIVE", subject: "Deduction reversals", attribute: "Ledger correction", value: "Reversal postings are not built yet, so a wrong deduction would need a manual ledger correction", domain: "TECHNICAL", ev: ["mff-ledger-test"], at: "2026-09-23", by: "tarek", verify: { at: "2026-09-24", by: "salma" } });
+  addClaim({ key: "mff-shariah-dep", slug, type: "DEPENDENCY", status: "ACTIVE", subject: "Pilot contract", attribute: "Shariah approval", value: "Shariah board approval letter for the murabaha contract before the first disbursement", domain: "COMPLIANCE", ev: ["mff-shariah-review"], at: "2026-09-23", by: "hazem", verify: { at: "2026-09-24", by: "hazem" } });
+  addClaim({ key: "mff-shariah-risk", slug, type: "RISK", status: "ACTIVE", subject: "Shariah approval letter", attribute: "Timing", value: "The approval letter may arrive after the 15 October pilot target", domain: "COMPLIANCE", ev: ["mff-shariah-review"], at: "2026-09-24", by: "reviewer", verify: { at: "2026-09-24", by: "hazem" } });
+  // The steering sync raises the pilot cap to 40 (recorded in V3); the earlier 25-merchant decision is kept as history.
+  supersede("mff-cap-25", "mff-pilot-size", slug, day("2026-09-25", "15:00"), "reviewer");
+
+  ask("mff-divisor", slug, day("2026-09-21", "10:00"), "reviewer", { operation: "CREATE", question: "Which divisor does Finance confirm for the daily repayment: 27 settlement days or 30 calendar days? The repayment engine and every pilot contract depend on it.", owner: "salma", expectedConfirmerText: "Finance lead", dueDate: "2026-09-29" });
+  ask("mff-shortfall", slug, day("2026-09-22", "11:00"), "reviewer", { operation: "CREATE", question: "Does a carried-over shortfall count toward the next day's 25% cap? Operations needs the answer to configure the deduction run.", owner: "adam", expectedConfirmerText: "Finance lead", dueDate: "2026-10-02" });
+  ask("mff-shariah", slug, day("2026-09-23", "16:20"), "reviewer", { operation: "CREATE", question: "Will the Shariah board's approval letter arrive before the 15 October pilot target? No disbursement can happen without it.", owner: "hazem", expectedConfirmerText: "Shariah board secretary", dueDate: "2026-10-05" });
+
+  commit("mff-journey-signoff", slug, day("2026-09-22", "16:00"), "reviewer", { title: "Approve the deduction statement line and balance card with Design", assignee: "nour", due: "2026-09-24", evidence: "mff-journey-review" });
+  commit("mff-journey-signoff", slug, day("2026-09-24", "14:00"), "nour", { title: "Approve the deduction statement line and balance card with Design", assignee: "nour", due: "2026-09-24", status: "DONE", note: "Statement line and balance card approved for the pilot.", evidence: "mff-journey-review" });
+  commit("mff-shariah-letter", slug, day("2026-09-23", "16:10"), "reviewer", { title: "Obtain the Shariah board's approval letter for the pilot contract", assignee: "hazem", due: "2026-10-05", evidence: "mff-shariah-review" });
+  commit("mff-reversal-build", slug, day("2026-09-24", "10:30"), "reviewer", { title: "Build reversal postings before the first live deduction", assignee: "tarek", due: "2026-10-08", status: "IN_PROGRESS", evidence: "mff-ledger-test" });
+
+  track("mff-reversal", "mff-reversal-risk", slug, [
+    { at: day("2026-09-24", "16:30"), by: "reviewer", cmd: { operation: "START", ownerMemberId: "tarek", mitigationText: "Build reversal postings before the first live deduction; until then Finance corrects the ledger by hand.", mitigationActionId: id("commitment:mff-reversal-build") } },
+    { at: day("2026-09-25", "16:00"), by: "tarek", cmd: { operation: "STATUS", status: "MITIGATING", reason: "Reversal posting story is in the current sprint." } },
+  ]);
+  track("mff-shariah", "mff-shariah-risk", slug, [
+    { at: day("2026-09-24", "16:00"), by: "reviewer", cmd: { operation: "START", ownerMemberId: "hazem", mitigationText: "Ask the board for a conditional approval covering the 40-merchant pilot.", mitigationActionId: id("commitment:mff-shariah-letter") } },
+  ]);
 }
 
 /** The V4 generation: V3 plus the records above and the V4 synthetic measures. */

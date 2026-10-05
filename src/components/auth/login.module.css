@@ -147,6 +147,8 @@
 .entryContent > .notice, .entryContent > .error { margin-block-end: var(--s-5); }
 
 .switchLink { margin-block-start: var(--s-8); padding-top: var(--s-5); border-top: 1px solid var(--rule); font-size: var(--t-sm); color: var(--ink-700); }
+.legalLink { margin-block-start: var(--s-6); font-size: var(--t-xs); color: var(--ink-500); }
+.legalLink a { color: var(--ink-500); text-decoration: underline; text-underline-offset: 3px; }
 .switchLink a, .invitationNote a { color: var(--ink-link); font-weight: var(--fw-semibold); text-decoration: underline; text-underline-offset: 3px; }
 .forms > a.primaryButton { margin-block-start: var(--s-4); }
 

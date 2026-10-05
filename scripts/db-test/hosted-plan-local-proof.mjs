@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
-import { makeHostedPlan, renderHostedTransaction } from '../demo/provision-hosted.mjs';
+import { makeHostedPlan, preflightSql, renderHostedTransaction } from '../demo/provision-hosted.mjs';
 import { canonical, freezeInput } from '../../src/lib/delivery/model.ts';
 
 const database=process.argv[2];
@@ -48,7 +48,18 @@ for(const review of initial.state.reviews){
  if(actual.digest!==review.input.digest)digestFailure=review.week+' '+(firstDifferentPath(review.input.snapshots,actual.snapshots,'snapshots')??firstDifferentPath(review.input.members,actual.members,'members')??'digest');
 }
 const reset=makeHostedPlan({projectRef:plan.projectRef,actorId,prior:plan});
+// Explore Demo is enabled on the generation being replaced, exactly as on the hosted project.
+sql(`insert into public.demo_entry_config(singleton,workspace_id,user_id,enabled) values(true,${sqlLiteral(plan.workspaceId)}::uuid,${sqlLiteral(plan.reviewerUserId)}::uuid,true);`);
 sql(renderHostedTransaction(reset));
+// Regression: a reset must never leave Explore Demo on an archived generation.
+assert.equal(sql(`select workspace_id from public.demo_entry_config;`),reset.workspaceId,'entry pointer moved to the new generation');
+assert.equal(sql(`select public.require_demo_entry()->>'workspaceId';`),reset.workspaceId,'Explore Demo resolves to the new generation');
+// A pointer that targets anything but the registered prior generation refuses the next reset before any write.
+const next=makeHostedPlan({projectRef:plan.projectRef,actorId,prior:reset});
+assert.throws(()=>sql(`begin;update public.demo_entry_config set workspace_id=${sqlLiteral(plan.workspaceId)}::uuid;${preflightSql(next,true)}\nrollback;`),/DEMO_ENTRY_TARGET_CHANGED/);
+sql(`begin;${preflightSql(next,true)}\nrollback;`);
+assert.equal(sql(`select workspace_id from public.demo_entry_config;`),reset.workspaceId,'refused preflight changed nothing');
+console.log('PASS: reset moves Explore Demo to the new generation; a stale entry pointer refuses the next reset.');
 const retained=jsonSql(`select public.delivery_state(${sqlLiteral(plan.workspaceId)}::uuid);`);
 assert.equal(canonical(retained),canonical(initial.state),'reset must preserve all old delivery facts, events, original AI and Final review snapshots');
 const fresh=jsonSql(`select public.delivery_read_workspace(${sqlLiteral(reset.workspaceId)}::uuid,${sqlLiteral(reset.reviewerMemberId)}::uuid);`);

@@ -45,6 +45,7 @@ export function AccountMenu({identity,collapsed=false}:{identity:ShellIdentity;c
     <MenuSeparator/>
     <MenuButton icon={<InstrumentIcon name="keyboard"/>} trailing={<kbd className="pw-kbd">?</kbd>} onSelect={()=>openHelp('shortcuts')}>Keyboard shortcuts</MenuButton>
     <MenuButton icon={<InstrumentIcon name="help"/>} onSelect={()=>openHelp()}>Help</MenuButton>
+    <MenuLink href="/privacy" icon={<InstrumentIcon name="book"/>}>Privacy policy</MenuLink>
     <MenuSeparator/>
     <form action={logoutAction}>
      <input type="hidden" name="scopeWorkspaceId" value={access.workspaceId}/>

@@ -102,7 +102,7 @@ function pgTimes(value){
  const m=typeof value==='string'&&/^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.(\d+))?Z$/.exec(value);
  if(!m)return value;const fraction=(m[2]??'').replace(/0+$/,'');return m[1]+(fraction?'.'+fraction:'')+'+00:00';
 }
-function fixtureFor(plan){
+export function fixtureFor(plan){
  const demo=canonicalDemoDataV4({workspaceId:plan.workspaceId,organizationId:plan.organizationId,reviewerMemberId:plan.reviewerMemberId,reviewerUserId:plan.reviewerUserId});
  // Each review is re-frozen from its OWN frozen records in the database's ordering (delivery_source orders
  // evidence, claims and claim evidence by id). Re-freezing a Final from today's records would rewrite history.
@@ -140,6 +140,8 @@ export function preflightSql(plan,providerMustExist=false,allowPendingProvider=f
  if exists(select 1 from public.workspaces where organization_id=${literal(prior.organizationId)}::uuid and id<>${literal(prior.workspaceId)}::uuid) then raise exception 'UNEXPECTED_DEMO_WORKSPACE';end if;
  if exists(select 1 from public.organization_memberships m join public.users u on u.id=m.user_id where m.organization_id=${literal(prior.organizationId)}::uuid and (u.platform_role is not null or (m.user_id<>${literal(p.reviewerUserId)}::uuid and not (u.auth_user_id is null and lower(u.email) like '%@example.demo')))) then raise exception 'UNEXPECTED_DEMO_MEMBER';end if;
  if exists(select 1 from public.organization_memberships m join public.organizations o on o.id=m.organization_id where m.user_id=${literal(p.reviewerUserId)}::uuid and m.organization_id<>${literal(prior.organizationId)}::uuid and (m.active or o.status<>'ARCHIVED' or not exists(select 1 from public.demo_scenarios d where d.organization_id=o.id))) then raise exception 'FOREIGN_REVIEWER_MEMBERSHIP';end if;
+ perform 1 from public.demo_entry_config for update;
+ if exists(select 1 from public.demo_entry_config where workspace_id<>${literal(prior.workspaceId)}::uuid or user_id<>${literal(p.reviewerUserId)}::uuid) then raise exception 'DEMO_ENTRY_TARGET_CHANGED';end if;
  `}
  end $guard$;`;
 }
@@ -184,6 +186,11 @@ do $$begin if not exists(select 1 from public.users where id=${literal(x.userId)
 update public.workspaces set status='ARCHIVED' where id=${literal(p.prior.workspaceId)}::uuid and organization_id=${literal(p.prior.organizationId)}::uuid;
 update public.organization_memberships set active=false where id=${literal(p.prior.reviewerMemberId)}::uuid and organization_id=${literal(p.prior.organizationId)}::uuid and user_id=${literal(p.reviewerUserId)}::uuid;
 update public.workspace_sessions set expires_at=least(expires_at,clock_timestamp()) where workspace_id=${literal(p.prior.workspaceId)}::uuid and organization_id=${literal(p.prior.organizationId)}::uuid and user_id=${literal(p.reviewerUserId)}::uuid;
+-- Explore Demo follows the generation: the operator-only entry pointer moves from the archived workspace to the new one
+-- (checked in the preflight to point at exactly the prior generation and reviewer). An enabled entry must then resolve.
+update public.demo_entry_config set workspace_id=${literal(p.workspaceId)}::uuid where singleton and workspace_id=${literal(p.prior.workspaceId)}::uuid and user_id=${literal(p.reviewerUserId)}::uuid;
+do $entry$begin if exists(select 1 from public.demo_entry_config where workspace_id<>${literal(p.workspaceId)}::uuid) then raise exception 'DEMO_ENTRY_NOT_MOVED';end if;
+ if exists(select 1 from public.demo_entry_config where enabled) and (public.require_demo_entry()->>'workspaceId')::uuid<>${literal(p.workspaceId)}::uuid then raise exception 'DEMO_ENTRY_NOT_RESOLVED';end if;end$entry$;
 select public.platform_audit(${literal(p.actorId)}::uuid,${literal(p.prior.organizationId)}::uuid,${literal(p.prior.workspaceId)}::uuid,${literal(p.prior.workspaceId)},'DEMO_GENERATION_ARCHIVED',null,${json({replacedByWorkspaceId:p.workspaceId})},'Operator reset retained all prior synthetic business records and Final reviews; only old Demo access was retired.',false);
 `;
  }
@@ -220,7 +227,11 @@ function selfTest(){
  const prior={...initial,version:DEMO_CANONICAL_VERSION};
  const reset=makeHostedPlan({projectRef:ref,actorId,prior}),sql=renderHostedTransaction(reset);
  assert.equal(reset.reviewerUserId,initial.reviewerUserId);assert.equal(reset.authUserId,initial.authUserId);assert.notEqual(reset.organizationId,initial.organizationId);assert.notEqual(reset.workspaceId,initial.workspaceId);
- assert.ok(sql.includes("set status='ARCHIVED'"));assert.ok(sql.includes('workspace_sessions set expires_at'));assert.ok(!/\b(delete|truncate)\b/i.test(sql));for(const statement of sql.match(/update public\.(weekly_reviews|delivery_facts|claims|evidence|initiatives)\b[^\n]*\n/gi)??[])assert.ok(statement.includes(`workspace_id='${reset.workspaceId}'::uuid`),'business updates must be pinned to the new generation');
+ assert.ok(sql.includes("set status='ARCHIVED'"));assert.ok(sql.includes('workspace_sessions set expires_at'));
+ assert.ok(sql.includes(`update public.demo_entry_config set workspace_id='${reset.workspaceId}'::uuid where singleton and workspace_id='${prior.workspaceId}'::uuid`),'reset moves Explore Demo to the new generation');
+ assert.ok(sql.indexOf('update public.demo_entry_config')>sql.indexOf("update public.workspaces set status='ARCHIVED'"),'entry moves after the prior generation is archived');
+ assert.ok(sql.includes('DEMO_ENTRY_TARGET_CHANGED')&&sql.includes('DEMO_ENTRY_NOT_RESOLVED'),'entry pointer is guarded before and verified after');
+ assert.ok(!initialSql.includes('update public.demo_entry_config'),'an initial generation never enables public entry');assert.ok(!/\b(delete|truncate)\b/i.test(sql));for(const statement of sql.match(/update public\.(weekly_reviews|delivery_facts|claims|evidence|initiatives)\b[^\n]*\n/gi)??[])assert.ok(statement.includes(`workspace_id='${reset.workspaceId}'::uuid`),'business updates must be pinned to the new generation');
  assert.throws(()=>makeHostedPlan({projectRef:ref,actorId,prior:{...prior,platformRole:'PLATFORM_OWNER'}}));assert.throws(()=>makeHostedPlan({projectRef:ref,actorId,prior:{...prior,projectRef:'otherprojectabcdefgh'}}));
  assert.throws(()=>makeHostedPlan({projectRef:ref,actorId,prior,ids:{workspaceId:prior.workspaceId}}));
  validatePlan(reset,{projectRef:ref,actorId});assert.throws(()=>validatePlan({...reset,role:'ADMIN'},{projectRef:ref,actorId}));

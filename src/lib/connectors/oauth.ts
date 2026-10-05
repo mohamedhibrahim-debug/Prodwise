@@ -9,6 +9,8 @@ import { ConnectorError, CONNECTOR_SLUG, type Connector, type ProviderTokens } f
 export interface ProviderConfig {
   authorizeUrl: string;
   tokenUrl: string;
+  /** Where refresh_token grants go when the provider uses a separate endpoint (Figma). */
+  refreshUrl?: string;
   scopes: string[];
   extraAuthorizeParams: Record<string, string>;
   /** How the client authenticates to the token endpoint. */
@@ -30,7 +32,7 @@ export const PROVIDERS: Record<Connector, ProviderConfig> = {
   GMAIL: { ...GOOGLE, scopes: ["openid", "email", "https://www.googleapis.com/auth/gmail.readonly"] },
   GOOGLE_DRIVE: { ...GOOGLE, scopes: ["openid", "email", "https://www.googleapis.com/auth/drive.readonly"] },
   FIGMA: {
-    authorizeUrl: "https://www.figma.com/oauth", tokenUrl: "https://api.figma.com/v1/oauth/token",
+    authorizeUrl: "https://www.figma.com/oauth", tokenUrl: "https://api.figma.com/v1/oauth/token", refreshUrl: "https://api.figma.com/v1/oauth/refresh",
     // Exactly the endpoints called: /v1/me, /v1/files/* (incl. /nodes) and /v1/files/*/comments.
     scopes: ["current_user:read", "file_content:read", "file_comments:read"],
     extraAuthorizeParams: {}, clientAuth: "basic", pkce: true, revokeUrl: null, env: { id: "FIGMA_OAUTH_CLIENT_ID", secret: "FIGMA_OAUTH_CLIENT_SECRET" },
@@ -67,12 +69,14 @@ export function authorizeUrl(connector: Connector, creds: ClientCredentials, red
 type Fetch = typeof fetch;
 function tokenRequest(connector: Connector, creds: ClientCredentials, body: Record<string, string>): { url: string; init: RequestInit } {
   const p = PROVIDERS[connector];
-  if (p.clientAuth === "json_body") return { url: p.tokenUrl, init: { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify({ ...body, client_id: creds.clientId, client_secret: creds.clientSecret }) } };
+  // Figma refreshes at its own endpoint; its token endpoint only accepts authorization codes.
+  const url = body.grant_type === "refresh_token" && p.refreshUrl ? p.refreshUrl : p.tokenUrl;
+  if (p.clientAuth === "json_body") return { url, init: { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify({ ...body, client_id: creds.clientId, client_secret: creds.clientSecret }) } };
   const headers: Record<string, string> = { "content-type": "application/x-www-form-urlencoded", accept: "application/json" };
   const form = new URLSearchParams(body);
   if (p.clientAuth === "basic") headers.authorization = `Basic ${Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString("base64")}`;
   else { form.set("client_id", creds.clientId); form.set("client_secret", creds.clientSecret); }
-  return { url: p.tokenUrl, init: { method: "POST", headers, body: form.toString() } };
+  return { url, init: { method: "POST", headers, body: form.toString() } };
 }
 
 /** Parses a token response. Provider error bodies are never surfaced; only a code is kept. */
