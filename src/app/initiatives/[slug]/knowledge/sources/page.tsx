@@ -10,6 +10,7 @@ import styles from "../knowledge.module.css";
 import { connectorOverview, readSyncs } from "@/lib/connectors/service";
 import { ImportFromStrip } from "@/components/connectors/ImportFromStrip";
 import { ConnectedSourceList } from "@/components/connectors/ConnectedSourceList";
+import { readAutoSync } from '@/lib/connectors/auto-sync';
 
 export const metadata: Metadata = { title: "Sources" };
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export default async function KnowledgeSourcesPage({ params }: { params: Promise
   const snapshot = await repo.getInitiativeSnapshot(initiative.id);
   if (!snapshot) notFound();
   const { evidence, claims } = snapshot;
-  const [syncs, { overview, isDemo }] = await Promise.all([readSyncs(initiative.id), connectorOverview()]);
+  const [syncs, { overview, isDemo }, autoSync] = await Promise.all([readSyncs(initiative.id), connectorOverview(), readAutoSync(initiative.id)]);
   const base = `/initiatives/${slug}/knowledge`;
   // Same title on the same day is flagged, never merged: people decide whether it is a duplicate.
   const sameKey = (e: (typeof evidence)[number]) => `${e.title.trim().toLowerCase()}|${e.occurredAt?.slice(0, 10) ?? ''}`;
@@ -33,7 +34,7 @@ export default async function KnowledgeSourcesPage({ params }: { params: Promise
       actions={<Link prefetch={false} className="pw-btn" data-variant="secondary" data-size="md" href={`/initiatives/${slug}/evidence`}>Saved notes and pasted text</Link>} />
 
     <ImportFromStrip slug={slug} overview={overview} isDemo={isDemo} canWrite={writesEnabled && !initiative.archivedAt} />
-    <ConnectedSourceList slug={slug} syncs={syncs} canWrite={writesEnabled} />
+    <ConnectedSourceList slug={slug} syncs={syncs} autoSync={autoSync} canWrite={writesEnabled && !initiative.archivedAt && !isDemo} />
 
     {evidence.length ? <div className={styles.sourceTableWrap}><table className={styles.sourceTable}><caption className="visually-hidden">Sources grouped by relationship to this initiative</caption><thead><tr><th scope="col">Source</th><th scope="col">Reference</th><th scope="col">Type</th><th scope="col">Source date</th><th scope="col">Linked entries</th></tr></thead>{EVIDENCE_RELATIONS.map(boundary => {
       const items = evidence.filter(source => source.boundary === boundary);

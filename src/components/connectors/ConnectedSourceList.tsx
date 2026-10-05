@@ -6,6 +6,8 @@ import { refreshAction } from "@/app/initiatives/[slug]/sources/import/actions";
 import { RefreshButton } from "./RefreshButton";
 import { Glyph, ProviderIcon } from "./icons";
 import styles from "./connectors.module.css";
+import { AutoSyncControl } from './AutoSyncControl';
+import type { AutoSyncView } from '@/lib/connectors/auto-sync';
 
 /** What the last check found. Always glyph + text; the last saved snapshot is kept in every case. */
 const FRESHNESS: Record<SyncStatus, { label: string; detail: string | null; glyph: "check" | "warning" | "cross" }> = {
@@ -15,7 +17,7 @@ const FRESHNESS: Record<SyncStatus, { label: string; detail: string | null; glyp
   FAILED: { label: "Last check failed", detail: "The provider didn’t answer. Try Refresh again; the last snapshot is kept.", glyph: "cross" },
 };
 
-export function ConnectedSourceList({ slug, syncs, canWrite }: { slug: string; syncs: SyncView[]; canWrite: boolean }) {
+export function ConnectedSourceList({ slug, syncs, canWrite, autoSync }: { slug: string; syncs: SyncView[]; canWrite: boolean; autoSync: { available: boolean; jobs: AutoSyncView[] } }) {
   if (!syncs.length) return null;
   return <section className={styles.synced} aria-labelledby="connected-sources">
     <div className={styles.syncedHead}><h3 id="connected-sources">Imported from connected accounts <span className={styles.count}>{syncs.length}</span></h3>
@@ -35,6 +37,7 @@ export function ConnectedSourceList({ slug, syncs, canWrite }: { slug: string; s
           {f.detail && <p className={styles.syncDetail} data-status={x.status}>{f.detail}</p>}
           {x.latestTitle && x.latestTitle !== x.itemName && !x.latestTitle.includes(x.itemName) && <p className={styles.syncMeta}>First imported as “{x.itemName}”.</p>}
           <p className={styles.syncLinks}><Link prefetch={false} href={`/initiatives/${slug}/evidence/${x.lastSubmissionId}`}>Review latest snapshot</Link>{x.itemUrl && <a href={x.itemUrl} target="_blank" rel="noreferrer">Open in {label}<Glyph name="external" size={12} /></a>}</p>
+          {x.connector === 'JIRA' && <AutoSyncControl slug={slug} itemId={x.itemId} job={autoSync.jobs.find(j => j.itemId === x.itemId)} available={autoSync.available} canWrite={canWrite} />}
         </div>
         {canWrite && <RefreshButton action={refreshAction} slug={slug} itemId={x.itemId} connector={CONNECTOR_SLUG[x.connector]} label={x.itemName} providerLabel={label} />}
       </li>;

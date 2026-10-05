@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: false,
+  // Reporting uploads enforce their own 25 MB limit after authentication.
+  experimental: { proxyClientMaxBodySize: "26mb" },
   // Keep the dev-only indicator off the rail footer (account menu).
   devIndicators: { position: "bottom-right" },
   async redirects() {

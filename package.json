@@ -2,8 +2,9 @@
   "name": "prodwise",
   "version": "0.1.0",
   "private": true,
-  "description": "Prodwise \u00e2\u20ac\u201d Product Intelligence, from evidence to action.",
+  "description": "Prodwise â€” Product Intelligence, from evidence to action.",
   "scripts": {
+    "test:executive": "node --experimental-transform-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --conditions=react-server --import ./scripts/db-test/test-alias.mjs --test src/lib/executive/*.test.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -19,7 +20,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "2.58.0",
-    "next": "^16.3.4",
+    "csv-parse": "7.0.3",
+    "exceljs": "4.4.0",
+    "next": "16.3.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "server-only": "^0.0.1"

@@ -75,6 +75,7 @@ export interface StoreShape {
   sourceItems?: SourceItem[];
   sourceMappings?: SourceMapping[];
   sourceItemSyncs?: import('../connectors/types').SourceItemSync[];
+  jiraSyncJobs?: import('../connectors/auto-sync-model').JiraSyncJob[];
   initiatives: Initiative[];
   activity: ActivityEntry[];
   evidence: EvidenceRecord[];
@@ -168,6 +169,7 @@ function load(): StoreShape {
         sourceItems: parsed.sourceItems ?? [],
         sourceMappings: parsed.sourceMappings ?? [],
         sourceItemSyncs: parsed.sourceItemSyncs ?? [],
+        jiraSyncJobs: parsed.jiraSyncJobs ?? [],
       }));
       return cache;
     } catch {

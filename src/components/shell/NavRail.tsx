@@ -31,7 +31,7 @@ const LINKS:NavLink[]=[
  {href:'/initiatives',label:'Initiatives',icon:'initiatives',keys:'G I',match:p=>p.startsWith('/initiatives')},
  {href:'/roadmap',label:'Roadmap',icon:'roadmap',keys:'G R',match:p=>p.startsWith('/roadmap')},
  {href:'/weekly-review',label:'Weekly Review',icon:'weekly',keys:'G W',match:p=>p.startsWith('/weekly-review')},
- {href:'/analysis/portfolio',label:'Analysis',icon:'analysis',keys:'G A',match:p=>p.startsWith('/analysis')},
+ {href:'/analysis/business',label:'Analysis',icon:'analysis',keys:'G A',match:p=>p.startsWith('/analysis')},
 ];
 
 /**

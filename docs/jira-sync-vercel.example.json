@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/internal/jira-sync", "schedule": "* * * * *" }
+  ]
+}

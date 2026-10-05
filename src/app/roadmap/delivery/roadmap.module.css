@@ -1,0 +1,12 @@
+.page {
+  padding: var(--s-6) var(--gutter) var(--s-12);
+  max-width: var(--content-max);
+  margin: auto;
+  min-width: 0;
+  display: grid;
+  gap: var(--s-4);
+}
+.note {
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+}

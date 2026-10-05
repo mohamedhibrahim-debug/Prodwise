@@ -262,7 +262,7 @@ export function CommandPalette({administration=false,canSwitch=false}:{administr
       },
       {
         id: "go-analysis", label: "Analysis", keywords: "outcomes results metrics",
-        group: "Go to", href: "/analysis/portfolio",
+        group: "Go to", href: "/analysis/business",
       },
       {
         id: "go-weekly", label: "Weekly Review", keywords: "weekly meeting review",

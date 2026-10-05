@@ -185,6 +185,8 @@ export class LocalAuthStore {
         return { workspaceId, organizationId: org.id, memberId: member?.active ? member.id : null, actor: { id: userId, label: platformActorLabel(identity.displayName, 'PLATFORM_OWNER', Boolean(member?.active)) }, platformRole: 'PLATFORM_OWNER', role: member?.active ? member.role : null, isProductLead: member?.active ? member.isProductLead : false }; if (!member)
         throw new AccessError('ACCESS_DENIED', 'Organization access is unavailable.'); if (!member.policyOverride)
         assertAllowedEmail(identity.email, org.emailPolicy); return contextForMember(member, workspaceId); }
+    /** Only a persisted, explicitly enabled background grant supplies this identity. */
+    contextForBackground(userId: string): WorkspaceAccess { return this.context(this.raw(), userId); }
     private fresh(state: AuthState, ctx: WorkspaceAccess, recovery = false) { if (ctx.workspaceId !== this.workspaceId)
         throw new AccessError('ACCESS_DENIED', 'Workspace configuration does not match.'); return this.context(state, ctx.actor.id, this.workspaceId, recovery); }
     async mutate<T>(fn: (state: AuthState) => T, bootstrapOnly = false): Promise<T> { const lock = `${this.path}.lock`; mkdirSync(dirname(this.path), { recursive: true }); let acquired = false; for (let retry = 0; retry < 100; retry++) {

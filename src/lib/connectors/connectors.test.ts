@@ -88,7 +88,7 @@ test("Jira: issue snapshot keeps status as evidence, links, children and ADF tex
     fixVersions: [{ name: "R1", releaseDate: "2026-10-15" }], issuelinks: [{ type: { outward: "blocks", inward: "is blocked by" }, inwardIssue: { key: "OPS-3", fields: { summary: "Partner cut-off", status: { name: "To Do" } } } }],
     description: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Fee is " }, { type: "text", text: "1.5%" }] }, { type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "cap applies" }] }] }] }] },
     comment: { comments: [{ created: "2026-09-19T08:00:00.000+0000", author: { displayName: "Synthetic Person" }, body: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Finance to confirm" }] }] } }] } } };
-  const { f, calls } = fakeFetch([["/issue/PAY-7", () => json(issue)], ["/search/jql", () => json({ issues: [{ fields: { status: { statusCategory: { name: "Done" } } } }, { fields: { status: { statusCategory: { name: "To Do" } } } }], isLast: true })]]);
+  const { f, calls } = fakeFetch([["/issue/PAY-7", () => json(issue)], ["/search/jql", () => json({ issues: [{ key:'PAY-8', fields: { status: { statusCategory: { name: "Done" } } } }, { key:'PAY-9', fields: { status: { statusCategory: { name: "To Do" } } } }], isLast: true })]]);
   const snap = await issueSnapshot(bearerCall(f, "t"), site, "PAY-7");
   assert.equal(snap.providerWorkspace, "synthetic.atlassian.example");
   assert.equal(snap.item.url, "https://synthetic.atlassian.example/browse/PAY-7");

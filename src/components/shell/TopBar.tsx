@@ -24,7 +24,7 @@ function crumbs(path:string,initiativeSlug:string|null,initiativeTitle:string|nu
  if(path==='/initiatives/new')return [{label:'Initiatives',href:'/initiatives'},{label:'New initiative'}];
  if(path.startsWith('/account/connections'))return [{label:'My account',href:'/account'},{label:'Connected sources'}];
  if(path.startsWith('/administration'))return adminBreadcrumb(path);
- if(path.startsWith('/analysis/projects/'))return [{label:'Analysis',href:'/analysis/portfolio'},{label:'Initiative'}];
+ if(path.startsWith('/analysis/projects/'))return [{label:'Analysis',href:'/analysis/business'},{label:'Initiative'}];
  return [{label:sectionTitle(path)}];
 }
 

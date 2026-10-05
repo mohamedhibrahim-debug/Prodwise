@@ -21,6 +21,11 @@ export const tokenBinding = (c: Pick<Connection, "organizationId" | "userId" | "
 
 const localPath = () => join(process.cwd(), ".data", "connections.json");
 function readLocal(): Connection[] { return existsSync(localPath()) ? (JSON.parse(readFileSync(localPath(), "utf8")) as { connections: Connection[] }).connections : []; }
+/** Synchronous grant check inside the local evidence commit; no await/revocation gap. */
+export function localConnectionMatches(organizationId: string, userId: string, id: string, connectedAt: string | null): boolean {
+  if (!isLocalAuth()) return false;
+  return readLocal().some(c => c.organizationId === organizationId && c.userId === userId && c.provider === 'JIRA' && c.id === id && c.status === 'CONNECTED' && c.connectedAt === connectedAt);
+}
 function writeLocal(all: Connection[]) { mkdirSync(join(process.cwd(), ".data"), { recursive: true }); const tmp = `${localPath()}.${randomUUID()}.tmp`; writeFileSync(tmp, JSON.stringify({ connections: all }, null, 2), { mode: 0o600 }); renameSync(tmp, localPath()); }
 
 type Row = { id: string; organization_id: string; user_id: string; provider: Connector; status: Connection["status"]; account_label: string | null; external_account_id: string | null; sites: Connection["sites"]; scopes: string; sealed_tokens: string | null; connected_at: string | null; updated_at: string; disconnected_at: string | null; last_error_code: string | null };
@@ -41,4 +46,20 @@ export async function saveConnection(c: Connection): Promise<void> {
   if (isLocalAuth()) { const all = readLocal().filter(x => !(x.organizationId === c.organizationId && x.userId === c.userId && x.provider === c.provider)); writeLocal([...all, c]); return; }
   const { error } = await adminClient().from("connector_connections").upsert(toRow(c), { onConflict: "organization_id,user_id,provider" });
   if (error) throw new Error("The connection could not be saved. Nothing was imported.");
+}
+
+/** Compare-and-set: a token refresh cannot resurrect a disconnect or replace a newer grant. */
+export async function updateConnectionTokens(c: Connection, expectedSealed: string, sealed: string | null): Promise<boolean> {
+  const patch = { sealedTokens: sealed, status: sealed ? 'CONNECTED' as const : 'NEEDS_RECONNECT' as const, updatedAt: new Date().toISOString(), lastErrorCode: sealed ? null : 'NEEDS_RECONNECT' };
+  if (isLocalAuth()) {
+    const all = readLocal(), current = all.find(x => x.id === c.id && x.organizationId === c.organizationId && x.userId === c.userId && x.provider === c.provider);
+    if (!current || current.status !== 'CONNECTED' || current.connectedAt !== c.connectedAt || current.sealedTokens !== expectedSealed) return false;
+    Object.assign(current, patch); writeLocal(all); return true;
+  }
+  let query = adminClient().from('connector_connections').update({ sealed_tokens: sealed, status: patch.status, updated_at: patch.updatedAt, last_error_code: patch.lastErrorCode })
+    .eq('id', c.id).eq('organization_id', c.organizationId).eq('user_id', c.userId).eq('provider', c.provider).eq('status', 'CONNECTED').eq('sealed_tokens', expectedSealed);
+  query = c.connectedAt ? query.eq('connected_at', c.connectedAt) : query.is('connected_at', null);
+  const { data, error } = await query.select('id').abortSignal(AbortSignal.timeout(10_000));
+  if (error) throw new Error('Connection update unavailable.');
+  return (data?.length ?? 0) === 1;
 }

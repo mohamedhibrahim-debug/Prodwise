@@ -1,4 +1,5 @@
 import { capText, clip, type ProviderCall } from "./http.ts";
+import { createHash } from 'node:crypto';
 import { ConnectorError, type ConnectorSite, type JiraStatusCategory, type ProviderResult, type ProviderSnapshot, type SearchOutcome } from "./types.ts";
 
 /**
@@ -117,6 +118,43 @@ export function adfToText(node: unknown): string {
 
 const ISSUE_FIELDS = ["summary", "status", "issuetype", "priority", "assignee", "duedate", "updated", "created", "labels", "fixVersions", "parent", "issuelinks", "description", "comment", "project"];
 
+export async function childWorkSnapshot(call: ProviderCall, site: ConnectorSite, key: string): Promise<string> {
+  if (!ISSUE_KEY.test(key)) throw new ConnectorError('INVALID_REQUEST');
+  const children = new Map<string, Issue>();
+  const tokens = new Set<string>();
+  let nextPageToken: string | undefined;
+  for (let page = 0; page < 10; page++) {
+    const body = await call(`${base(site)}/search/jql`, {
+      method:'POST', headers:{'content-type':'application/json'},
+      body:JSON.stringify({jql:`parent = "${key}" ORDER BY key ASC`,maxResults:100,
+        fields:[...SEARCH_FIELDS,'fixVersions'], ...(nextPageToken?{nextPageToken}:{})}),
+    }) as {issues?:Issue[];isLast?:boolean;nextPageToken?:string};
+    if (!Array.isArray(body.issues)) throw new ConnectorError('PROVIDER_UNAVAILABLE');
+    for (const issue of body.issues) {
+      if (!issue.key || !ISSUE_KEY.test(issue.key) || !issue.fields) throw new ConnectorError('PROVIDER_UNAVAILABLE');
+      children.set(issue.key,issue);
+    }
+    const more = body.isLast === false || !!body.nextPageToken;
+    if (!more) {
+      const ordered = [...children.values()].sort((a,b)=>a.key!.localeCompare(b.key!));
+      const categories = new Map<string,number>();
+      const lines = ordered.map(issue=>{
+        const f=issue.fields!;
+        const statusCategory=f.status?.statusCategory?.name??'Unknown';
+        categories.set(statusCategory,(categories.get(statusCategory)??0)+1);
+        return `${issue.key}: ${clip(f.summary??'Untitled',160)} | Type: ${clip(f.issuetype?.name??'Unknown',50)} | Status: ${clip(f.status?.name??'Unknown',60)} | Category: ${clip(statusCategory,60)} | Assignee: ${clip(f.assignee?.displayName??'Unassigned',80)} | Due: ${f.duedate??'Not set'} | Updated: ${f.updated??'Unknown'} | Releases: ${(f.fixVersions??[]).map(v=>`${clip(v.name??'Unnamed',80)} / ${v.releaseDate??'Not set'} / ${v.released?'released':'unreleased'}`).sort().join('; ')||'Not set'}`;
+      });
+      // This digest precedes the detail so changes beyond the evidence text cap are still detected.
+      const digest=createHash('sha256').update(JSON.stringify(lines)).digest('hex');
+      return `${ordered.length} child work items (${[...categories].sort(([a],[b])=>a.localeCompare(b)).map(([name,count])=>`${name} ${count}`).join(' · ')||'none returned'})\nDirect children visible to the connected Jira account; not confirmed release scope.\nChild snapshot SHA-256: ${digest}\n${lines.join('\n')}`;
+    }
+    if (!body.nextPageToken || tokens.has(body.nextPageToken)) throw new ConnectorError('PROVIDER_UNAVAILABLE');
+    tokens.add(body.nextPageToken); nextPageToken=body.nextPageToken;
+  }
+  // A partial read must never replace a previously complete source snapshot.
+  throw new ConnectorError('PROVIDER_UNAVAILABLE');
+}
+
 export async function issueSnapshot(call: ProviderCall, site: ConnectorSite, key: string): Promise<ProviderSnapshot> {
   if (!ISSUE_KEY.test(key)) throw new ConnectorError("INVALID_REQUEST");
   const issue = await call(`${base(site)}/issue/${encodeURIComponent(key)}?fields=${ISSUE_FIELDS.join(",")}`) as Issue;
@@ -124,14 +162,7 @@ export async function issueSnapshot(call: ProviderCall, site: ConnectorSite, key
   let children: string | null = null;
   // Epics and parents: a factual count of child work by status category — not progress, not readiness.
   if (/epic/i.test(f.issuetype?.name ?? "") || !f.parent) {
-    try {
-      const kids = await call(`${base(site)}/search/jql`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jql: `parent = "${key}"`, maxResults: 100, fields: ["status"] }) }) as { issues?: Issue[]; isLast?: boolean };
-      const list = kids.issues ?? [];
-      if (list.length) {
-        const byCategory = new Map<string, number>(); for (const k of list) { const c = k.fields?.status?.statusCategory?.name ?? "Unknown"; byCategory.set(c, (byCategory.get(c) ?? 0) + 1); }
-        children = `${list.length}${kids.isLast === false ? "+" : ""} child work items (${[...byCategory].map(([c, n]) => `${c} ${n}`).join(" · ")})`;
-      }
-    } catch (e) { if (!(e instanceof ConnectorError) || e.code === "NEEDS_RECONNECT") throw e; }
+    children = await childWorkSnapshot(call, site, key);
   }
   return { connector: "JIRA", provider: "JIRA", providerWorkspace: new URL(site.url).host, containerReference: f.project?.key ?? key.split("-")[0]!, containerName: clip(f.project?.name ?? key.split("-")[0]!, 200),
     item: { reference: key, name: clip(f.summary ?? key, 200), kind: clip(f.issuetype?.name ?? "Issue", 50), url: `${site.url}/browse/${key}` },

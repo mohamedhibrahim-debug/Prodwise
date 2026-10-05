@@ -45,11 +45,11 @@ export function RoadmapView({ items, lines, owners, initial, cutoff, explicitCut
   const update = (next: Partial<RoadmapFilters>) => {
     const merged = { ...filters, ...next };
     setFilters(merged);
-    try { window.history.replaceState(null, "", `/roadmap${filtersToQuery(merged, explicitCutoff)}`); } catch { /* URL sync is a convenience */ }
+    try { window.history.replaceState(null, "", `/roadmap/delivery${filtersToQuery(merged, explicitCutoff)}`); } catch { /* URL sync is a convenience */ }
   };
   const changeCutoff = (value: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value) && value !== "") return;
-    startTransition(() => router.replace(`/roadmap${filtersToQuery(filters, value || null)}`, { scroll: false }));
+    startTransition(() => router.replace(`/roadmap/delivery${filtersToQuery(filters, value || null)}`, { scroll: false }));
   };
 
   const scoped = useMemo(() => applyFilters(items, { ...filters, view: "" }), [items, filters]);

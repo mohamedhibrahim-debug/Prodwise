@@ -9,7 +9,7 @@ import { readStore, writeStoreAtomic } from "@/lib/data/store";
 import { readManagement } from "@/lib/data/management-read";
 import { workspacePresentation } from "@/lib/workspace/context";
 import type { SourceRole } from "@/lib/workspace/source-mapping";
-import { connectorKey, connectorSetup, getConnection, listConnections, saveConnection, tokenBinding } from "./connections";
+import { connectorKey, connectorSetup, getConnection, listConnections, saveConnection, tokenBinding, updateConnectionTokens } from "./connections";
 import { open, seal } from "./crypto";
 import { bearerCall, type ProviderCall } from "./http";
 import { withTokens } from "./token-lifecycle";
@@ -119,12 +119,13 @@ async function withConnection<T>(ctx: WorkspaceAccess, connector: Connector, fn:
   if (!c || c.status === "DISCONNECTED" || !c.sealedTokens) throw new ConnectorError("NOT_CONNECTED");
   if (c.status === "NEEDS_RECONNECT") throw new ConnectorError("NEEDS_RECONNECT");
   const creds = credentialsFor(connector, process.env)!, key = connectorKey();
+  let expectedSealed = c.sealedTokens;
   return withTokens({
-    current: async () => { const now = await getConnection(ctx.organizationId, ctx.actor.id, connector); return { connected: now?.status === "CONNECTED", sealed: now?.sealedTokens ?? null }; },
+    current: async () => { const now = await getConnection(ctx.organizationId, ctx.actor.id, connector); const sameGrant = now?.status === "CONNECTED" && now.connectedAt === c.connectedAt; return { connected: sameGrant, sealed: sameGrant ? now.sealedTokens : null }; },
     open: sealed => open<ProviderTokens>(key, sealed, tokenBinding(c)),
     seal: t => seal(key, t, tokenBinding(c)),
-    save: async sealed => { const now = await getConnection(ctx.organizationId, ctx.actor.id, connector); if (now?.status !== "CONNECTED") throw new ConnectorError("NOT_CONNECTED"); await saveConnection({ ...now, sealedTokens: sealed, updatedAt: new Date().toISOString(), lastErrorCode: null }); },
-    expire: async () => { const now = await getConnection(ctx.organizationId, ctx.actor.id, connector); if (now?.status === "CONNECTED") await saveConnection({ ...now, status: "NEEDS_RECONNECT", sealedTokens: null, updatedAt: new Date().toISOString(), lastErrorCode: "NEEDS_RECONNECT" }); },
+    save: async sealed => { if (!(await updateConnectionTokens(c, expectedSealed, sealed))) throw new ConnectorError("PROVIDER_UNAVAILABLE"); expectedSealed = sealed; },
+    expire: async () => { await updateConnectionTokens(c, expectedSealed, null); },
     refresh: t => refreshTokens(fetch, connector, creds, t),
   }, c.sealedTokens, access => fn(bearerCall(fetch, access), c));
 }
@@ -161,6 +162,12 @@ async function snapshotFor(connector: Connector, call: ProviderCall, c: Connecti
   if (connector === "GOOGLE_DRIVE") return fileSnapshot(call, reference);
   const [fileKey, nodeId] = reference.split("#"); if (!fileKey || !nodeId) throw new ConnectorError("INVALID_REQUEST");
   return frameSnapshot(call, fileKey, nodeId, opts.includeComments ?? false);
+}
+
+/** Internal worker read only. Authorization and atomic publication belong to the job runner. */
+export async function backgroundJiraSnapshot(ctx: WorkspaceAccess, reference: string, providerWorkspace: string): Promise<ProviderSnapshot> {
+  await guard(ctx);
+  return withConnection(ctx, "JIRA", (call, c) => snapshotFor("JIRA", call, c, reference, { providerWorkspace }));
 }
 
 // ── Import and refresh: Source / Evidence only ──────────────────────────────

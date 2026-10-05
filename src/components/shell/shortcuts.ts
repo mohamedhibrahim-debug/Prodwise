@@ -17,7 +17,7 @@ export const GO_TO: Record<string, { href: string; label: string }> = {
   i: { href: "/initiatives", label: "Initiatives" },
   r: { href: "/roadmap", label: "Roadmap" },
   w: { href: "/weekly-review", label: "Weekly Review" },
-  a: { href: "/analysis/portfolio", label: "Analysis" },
+  a: { href: "/analysis/business", label: "Analysis" },
   n: { href: "/notifications", label: "Notifications" },
 };
 

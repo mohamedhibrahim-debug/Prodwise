@@ -76,6 +76,24 @@ async function hostedContext(authUserId: string, providerEmail: string | undefin
     if (error) throw new AccessError('ACCESS_DENIED', 'Organization access is unavailable.');
     return { workspaceId, organizationId: orgId, memberId: mid, actor: { id: user.id, label: platformActorLabel(user.display_name, user.platform_role ?? null, Boolean(mid)) }, platformRole: user.platform_role ?? null, role: mid ? normalizeLegacyRole(member.data!.role as string) : null, isProductLead: mid ? member.data!.is_product_lead as boolean : false };
 }
+/** Internal scheduler only: ids must come from a persisted opt-in job, never request input. */
+export async function backgroundWorkspaceAccess(workspaceId: string, userId: string): Promise<WorkspaceAccess> {
+    if (isLocalAuth()) return localAuthStore(workspaceId).contextForBackground(userId);
+    const db = adminClient();
+    const { data: row, error } = await db.from('users').select('auth_user_id').eq('id', userId).eq('active', true).maybeSingle();
+    if (error) throw new Error('Identity verification unavailable.');
+    if (!row?.auth_user_id) throw new AccessError('ACCESS_DENIED', 'Background grant is no longer authorized.');
+    const identity = await db.auth.admin.getUserById(row.auth_user_id);
+    if (identity.error) {
+        if (identity.error.status === 404) throw new AccessError('ACCESS_DENIED', 'Background grant is no longer authorized.');
+        throw new Error('Identity provider unavailable.');
+    }
+    const user = identity.data.user as (typeof identity.data.user & { banned_until?: string; deleted_at?: string });
+    if (!user || user.id !== row.auth_user_id || user.is_anonymous || user.deleted_at || (user.banned_until && Date.parse(user.banned_until) > Date.now())) throw new AccessError('ACCESS_DENIED', 'Background grant is no longer authorized.');
+    const ctx = await hostedContext(user.id, user.email, workspaceId);
+    if (ctx.actor.id !== userId) throw new AccessError('ACCESS_DENIED', 'Background identity mismatch.');
+    return ctx;
+}
 async function selectHostedContext(authUserId: string, providerEmail: string | undefined, preferredWorkspaceId: string): Promise<WorkspaceAccess> {
     const user = await verifiedHostedUser(authUserId, providerEmail), db = adminClient();
     const [workspaces, memberships] = await Promise.all([db.from('workspaces').select('id,organization_id'), db.from('organization_memberships').select('organization_id,user_id,active').eq('user_id', user.id)]);
