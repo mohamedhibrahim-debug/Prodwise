@@ -26,11 +26,13 @@ try {
   Sql "create role anon; create role authenticated; create role service_role bypassrls;" 'postgres'
   Sql "create database $dbName;" 'postgres'
   Sql 'create schema auth; create table auth.users(id uuid primary key,email text not null,email_confirmed_at timestamptz); grant usage on schema auth,public to service_role;'
+  Sql 'create schema storage; create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);'
   $migrations = Get-ChildItem -LiteralPath 'supabase/migrations' -File | Sort-Object Name
   $migrations | Where-Object Name -match '^000\d_' | ForEach-Object { File $_.FullName }
   File 'supabase/seed.sql'
   $migrations | Where-Object Name -notmatch '^000\d_' | ForEach-Object { File $_.FullName }
   File 'supabase/tests/jira-sync.sql'
+  File 'supabase/tests/executive-reporting.sql'
   Write-Output "PASS: all $($migrations.Count) migrations plus Jira sync SQL assertions. Database: $dbName"
 } finally {
   if ($started) { & (Join-Path $pgBin 'pg_ctl.exe') -D $cluster -m fast -w stop; if ($LASTEXITCODE) { throw "Could not stop owned test cluster: $cluster" } }

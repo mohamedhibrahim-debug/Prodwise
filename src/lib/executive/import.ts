@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import ExcelJS from 'exceljs';
+import { excelRecords } from './excel-reader.ts';
 import { parse } from 'csv-parse/sync';
 import { money, rowKey, validDay } from './model.ts';
 import type { BusinessUnit, PerformanceRow, Product } from './types.ts';
@@ -64,40 +64,7 @@ export function parseCsv(text: string): Record<string,string>[] {
 export async function parseExcelImport(bytes: Uint8Array, product: Product, unit: BusinessUnit): Promise<ParsedImport> {
   if (product !== 'PGW') throw Error('Excel imports currently support the PGW transaction report only.');
   if (bytes.byteLength > 25_000_000) throw Error('Upload a file smaller than 25 MB.');
-  const required = ['Transaction Reference','Transaction Date','Transaction Type','Transaction Status','Amount'];
-  const records: Record<string,string>[] = [];
-  let matched = false;
-  // Normalize only reporting columns; customer fields never enter persisted reporting data.
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(Uint8Array.from(bytes).buffer);
-  for (const sheet of workbook.worksheets) {
-    if (sheet.rowCount > 150_001) throw Error('Import at most 150,000 rows at a time.');
-    let columns: number[] | null = null;
-    for (let number = 1; number <= sheet.rowCount; number++) {
-      const row = sheet.getRow(number);
-      if (row.number === 1) {
-        const headers: string[] = [];
-        row.eachCell({includeEmpty:true}, cell => { headers.push(cell.text.trim()); });
-        if (!required.every(name => headers.includes(name))) break;
-        if (matched) throw Error('Multiple PGW transaction sheets found. Import one report at a time.');
-        if (required.some(name => headers.filter(value => value === name).length !== 1)) throw Error('Excel has duplicate reporting columns.');
-        matched = true;
-        columns = required.map(name => headers.indexOf(name)+1);
-        continue;
-      }
-      if (!columns || !row.hasValues) continue;
-      if (records.length >= 150_000) throw Error('Import at most 150,000 rows at a time.');
-      const values = columns.map(column => {
-        const value = row.getCell(column).value;
-        if (value == null) return '';
-        if (value instanceof Date) return value.toISOString().slice(0,10);
-        if (typeof value === 'string' || typeof value === 'number') return String(value);
-        throw Error('Reporting columns must contain plain values, not formulas or linked cells.');
-      });
-      records.push(Object.fromEntries(required.map((name,index) => [name,values[index]!] )));
-    }
-  }
-  if (!matched) throw Error('No PGW transaction sheet with the required columns was found.');
+  const records = await excelRecords(bytes);
   return { ...normalizeRows(records,product,unit), digest:createHash('sha256').update(bytes).digest('hex') };
 }
 export function parseCsvImport(text: string, product: Product, unit: BusinessUnit): ParsedImport {

@@ -31,3 +31,10 @@ test('non-PGW and invalid workbook uploads fail closed',async()=>{
   await assert.rejects(()=>parseExcelImport(new Uint8Array(),'WALLET','UNASSIGNED'),/PGW/);
   await assert.rejects(()=>parseExcelImport(new Uint8Array([1,2,3]),'PGW','UNASSIGNED'));
 });
+test('Excel archive expansion metadata is bounded before parsing',async()=>{
+  const bytes=Buffer.from(await report());
+  const central=bytes.indexOf(Buffer.from([0x50,0x4b,0x01,0x02]));
+  assert.ok(central>=0);
+  bytes.writeUInt32LE(300_000_001,central+24);
+  await assert.rejects(()=>parseExcelImport(bytes,'PGW','UNASSIGNED'),/expanded-size/);
+});

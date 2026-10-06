@@ -7,7 +7,7 @@ import { missingRecord } from './lib/data/route-existence';
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   // This exact route authenticates its machine caller itself; no browser session is used.
-  if (pathname === '/api/internal/jira-sync') return NextResponse.next();
+  if (pathname === '/api/internal/jira-sync' || pathname === '/api/internal/reporting-cleanup') return NextResponse.next();
   if (/^\/(login|invite|signup|privacy)(\/|$)/.test(pathname) || pathname.startsWith('/_next/')
       || pathname.startsWith('/assets/') || /^\/(favicon.ico|icon.png|apple-icon.png)$/.test(pathname)) return NextResponse.next();
   try {

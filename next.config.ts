@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: false,
+  serverExternalPackages: ['exceljs', 'unzipper'],
+  outputFileTracingIncludes: {
+    '/api/executive/import': ['./scripts/reporting/xlsx-worker.cjs','./node_modules/exceljs/**/*','./node_modules/unzipper/**/*'],
+  },
   // Reporting uploads enforce their own 25 MB limit after authentication.
   experimental: { proxyClientMaxBodySize: "26mb" },
   // Keep the dev-only indicator off the rail footer (account menu).

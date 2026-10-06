@@ -7,8 +7,10 @@ import type { BusinessUnit } from '@/lib/executive/types';
 import { revalidatePath } from 'next/cache';
 import { assertPerformanceApproval } from '@/lib/executive/access';
 import { createHash } from 'node:crypto';
+import { stagedFiles, closeUpload } from '@/lib/executive/uploads';
+import { isLocalAuth } from '@/lib/auth/service';
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 export async function POST(request: Request) {
   if (request.headers.get('origin') !== new URL(request.url).origin) return Response.json({ error:'Origin not allowed.' }, {status:403});
   try {
@@ -16,8 +18,11 @@ export async function POST(request: Request) {
     assertPerformanceApproval(ctx);
     if ((await workspacePresentation(ctx)).isDemo) throw Error('Real business files cannot be imported into the shared synthetic demo. Switch to your organization.');
     if (Number(request.headers.get('content-length')) > 26_000_000) throw Error('Upload a file smaller than 25 MB.');
-    const form = await request.formData(), files = form.getAll('file');
+    const form = await request.formData();
     if (form.get('workspaceId') !== ctx.workspaceId) throw Error('Your workspace changed. Reload before importing.');
+    const uploadId = String(form.get('uploadId') ?? '');
+    if (!isLocalAuth() && !uploadId) throw Error('Prepare a private upload before importing.');
+    const files = uploadId ? await stagedFiles(ctx,uploadId) : form.getAll('file');
     if (!files.length || files.length > 12 || files.some(file => !(file instanceof File) || !file.size)) throw Error('Select 1 to 12 non-empty source files.');
     const uploads = files as File[];
     if (uploads.reduce((sum,file)=>sum+file.size,0) > 25_000_000) throw Error('Selected files must total less than 25 MB.');
@@ -74,6 +79,7 @@ export async function POST(request: Request) {
       }
       return next;
     });
+    if(uploadId) await closeUpload(ctx,uploadId).catch(()=>undefined);
     revalidatePath('/analysis/business'); return Response.json({ ...summary,published:true });
   } catch (e) { return Response.json({ error:e instanceof Error ? e.message : 'Import failed. Nothing was published.' }, {status:400}); }
 }
