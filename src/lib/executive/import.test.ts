@@ -38,3 +38,15 @@ test('Excel archive expansion metadata is bounded before parsing',async()=>{
   bytes.writeUInt32LE(300_000_001,central+24);
   await assert.rejects(()=>parseExcelImport(bytes,'PGW','UNASSIGNED'),/expanded-size/);
 });
+
+test('Excel worker transfer preserves caller bytes and respects sliced input',async()=>{
+  const original=await report();
+  const padded=new Uint8Array(original.length+16);
+  padded.set(original,8);
+  const view=padded.subarray(8,8+original.length);
+  const first=await parseExcelImport(view,'PGW','UNASSIGNED');
+  assert.equal(view.byteLength,original.byteLength);
+  assert.deepEqual(view,original);
+  const second=await parseExcelImport(view,'PGW','UNASSIGNED');
+  assert.deepEqual(second,first);
+});

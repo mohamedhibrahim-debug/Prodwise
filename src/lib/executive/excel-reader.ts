@@ -8,8 +8,10 @@ export function excelRecords(bytes:Uint8Array):Promise<Record<string,string>[]> 
   active=true;
   return new Promise((resolve,reject)=>{
     let worker:Worker;
+    // Transfer an owned binary buffer without enumerating millions of byte properties.
+    const input=Uint8Array.from(bytes).buffer;
     try {worker=new Worker(join(process.cwd(),'scripts/reporting/xlsx-worker.cjs'),{
-      workerData:bytes,execArgv:[],resourceLimits:{maxOldGenerationSizeMb:512,maxYoungGenerationSizeMb:64},
+      workerData:input,transferList:[input],execArgv:[],resourceLimits:{maxOldGenerationSizeMb:512,maxYoungGenerationSizeMb:64},
     });} catch(e){active=false;reject(e);return;}
     let settled=false;
     const timer=setTimeout(async()=>{settled=true;await worker.terminate();reject(Error('Excel processing exceeded two minutes. Export a smaller period.'));},120_000);

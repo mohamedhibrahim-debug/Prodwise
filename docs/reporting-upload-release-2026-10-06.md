@@ -2,7 +2,8 @@
 
 The user explicitly approved publication, then required large-file import to be fixed
 before publication. The user approved direct unzipper 0.10.14 (already used by ExcelJS).
-No production deployment, push, migration, raw-data upload or scheduler change has occurred.
+Current state: backup verified, branch pushed, hosted migrations applied, Preview Ready.
+Production alias is unchanged; scheduler jobs are inactive and hosted upload tests pending.
 
 ## Integrated Candidate
 
@@ -70,7 +71,11 @@ and secret-authenticated machine route were preserved.
   authenticated table SELECT denied; reporting-imports bucket private, 25 MB cap.
   Existing initiative/claim counts remain 65/211.
 - Approved pg_cron and pg_net enabled under prodwise_scheduler_extensions.
-  net schema usage/function execution revoked from PUBLIC, anon, authenticated.
+  After explicit approval, pg_net was atomically recreated in extensions with
+  empty queues and inactive jobs. REVOKE statements did not remove the managed
+  supabase_admin grants. Verified supported protection is API schema isolation
+  plus NOLOGIN roles and no callable public RPC bridge, not revoked net grants.
+  See scheduler-security-checkpoint-2026-10-06.md for actual API probe results.
 - Two 15-minute jobs created but INACTIVE: prodwise-reporting-cleanup and
   prodwise-jira-sync. Each calls its fixed prodwise-flax.vercel.app internal URL
   using prodwise_cron_secret from Vault (no inline secret), timeout 120 seconds.
