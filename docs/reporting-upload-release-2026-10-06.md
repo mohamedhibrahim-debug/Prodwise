@@ -53,6 +53,39 @@ and secret-authenticated machine route were preserved.
 
 ### Latest continuation on 2026-10-06
 
+### Hosted preparation after verified backup
+
+- User explicitly authorized local backup and publication. Database password reset
+  was performed by the user; no password was entered into chat or persisted by us.
+- Original network timed out; after moving to the user's mobile hotspot, pg_dump
+  succeeded over verify-full TLS using PostgreSQL 17 and the session pooler.
+- Encrypted archive: private-backups/prodwise-20261006-135935.dump.dpapi in the
+  Codex project workspace (not this Git repository), Windows DPAPI CurrentUser.
+  SHA256: 342393E1062E657447B4A3BE3CD3FF23A2479DC771D4C3D205ABD3ED91885CC6.
+  Archive integrity passed (1019 entries). Isolated PostgreSQL 17 UTF-8 restore
+  of public and auth passed: 65 initiatives, 211 claims, 46 public tables, 6 auth
+  users. Test instance stopped and its data directory removed. Archive excludes
+  role passwords and Storage object bytes; DPAPI requires this Windows account.
+- Hosted migrations 0047, 0048, 0049 applied successfully. RLS enabled, anon and
+  authenticated table SELECT denied; reporting-imports bucket private, 25 MB cap.
+  Existing initiative/claim counts remain 65/211.
+- Approved pg_cron and pg_net enabled under prodwise_scheduler_extensions.
+  net schema usage/function execution revoked from PUBLIC, anon, authenticated.
+- Two 15-minute jobs created but INACTIVE: prodwise-reporting-cleanup and
+  prodwise-jira-sync. Each calls its fixed prodwise-flax.vercel.app internal URL
+  using prodwise_cron_secret from Vault (no inline secret), timeout 120 seconds.
+- Hosted upload/runtime and scheduler HTTP response tests remain outstanding.
+  Vercel Production tracks main; the working branch is a Preview branch.
+
+- Subsequent secret handoff completed: user confirmed Vercel CRON_SECRET saved,
+  then saved prodwise_cron_secret in Supabase Vault. A metadata-only query on
+  vault.secrets verified that exact name (created 2026-10-06 10:21:05 UTC).
+  Secret contents were not read; equality/authentication is still unverified.
+- Supabase Backups page confirms the E-Payment organization is Free and project
+  backups are not included. No hosted recovery point is available in that UI.
+  User was asked whether a recent restorable backup exists or to approve an
+  encrypted local backup first. No new hosted DDL or scheduler activation yet.
+
 - User resumed the main release work after receiving light-mode screenshots.
 - User explicitly approved Supabase Cron and pg_net on the existing project at a
   15-minute cadence, without purchasing a plan. No extension or job is enabled yet.
