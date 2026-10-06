@@ -51,6 +51,26 @@ and secret-authenticated machine route were preserved.
 
 ## External Blockers
 
+### Latest continuation on 2026-10-06
+
+- User resumed the main release work after receiving light-mode screenshots.
+- User explicitly approved Supabase Cron and pg_net on the existing project at a
+  15-minute cadence, without purchasing a plan. No extension or job is enabled yet.
+- Supabase access is restored: exact project identity/status, migrations through
+  0046, and extension metadata were read successfully. pg_cron and pg_net are
+  available but not installed; supabase_vault is installed.
+- User confirmed CRON_SECRET is not saved. Vercel's Add Environment Variable form
+  is open with CRON_SECRET, Secret type, Production environment, and no entered
+  value. User must enter and save it, then retain the same value for Vault.
+- Current UI refinement passed optimized webpack build, TypeScript, focused
+  ESLint and all 29 executive tests. The roadmap now shows row-level dates/owner
+  and independently counts recorded delays even when a plan is on hold.
+- The older connection and scheduler-approval blockers below are historical;
+  backup/recovery verification, secret provisioning, hosted migrations, candidate
+  deployment, real hosted upload tests and cleanup proof remain outstanding.
+
+### Previous checkpoint
+
 - Vercel project e-payments/prodwise is Hobby. Native cron cannot supply the requested
   15-minute Jira cadence. Approval was requested for Supabase Cron and pg_net, without
   purchasing a plan. No extension or schedule has been enabled.

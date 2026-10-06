@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { InstrumentIcon } from '@/components/shell/InstrumentIcon';
-import { bounds, planDateLabel, planVariance, type TimelineItem } from '@/lib/executive/roadmap-view';
+import { bounds, planDateLabel, planVariance, planVarianceDays, type TimelineItem } from '@/lib/executive/roadmap-view';
 import type { PlanEvent, RoadmapPlan } from '@/lib/executive/types';
 import { PlanEditor } from './PlanEditor';
 import styles from './Executive.module.css';
@@ -30,20 +30,21 @@ export function AnnualRoadmap({ items, workspaceId, canWrite, today, events }: {
       {canWrite && <button className={styles.button} data-primary="true" onClick={() => setEditor(null)}><InstrumentIcon name="plus" />Add plan</button>}
     </div>
     <div className={styles.stats}>
-      {[[scheduled.length, 'In the year plan'], [scheduled.filter(i => i.actual).length, 'With a recorded launch'], [scheduled.filter(i => planVariance(i).tone === 'attention').length, 'With recorded delay'], [undated.length, 'Awaiting target dates']].map(([value, label]) => <div className={styles.stat} key={label}><span>{label}</span><strong>{value}</strong></div>)}
+      {[[scheduled.length, 'In the year plan'], [scheduled.filter(i => i.actual).length, 'With a recorded launch'], [scheduled.filter(i => (planVarianceDays(i) ?? 0) > 0).length, 'With recorded delay'], [undated.length, 'Awaiting target dates']].map(([value, label]) => <div className={styles.stat} key={label}><span>{label}</span><strong>{value}</strong></div>)}
     </div>
     <section aria-label={`${year} roadmap`}>
       <div className={styles.sectionHead}><h2>{year} delivery plan</h2><span className={styles.meta}>Solution start to Target Live</span></div>
       {!scheduled.length ? <div className={styles.empty}><h2>No dated plans for {year}</h2><p>{matches.length ? 'Existing records may belong to another year or need a target date.' : 'No plans match this view.'}</p>{canWrite && <button className={styles.button} onClick={() => setEditor(null)}>Add planning initiative</button>}</div> :
         <div className={styles.scroll} tabIndex={0} aria-label="Scrollable annual timeline"><div className={styles.board}>
-          <div className={styles.header}><span>Initiative / workstream</span><span>Accountable owner</span><div><div className={styles.quarters}>{[1,2,3,4].map(q => <span key={q}>Q{q} {year}</span>)}</div>{zoom === 'month' && <div className={styles.axis}>{months.map(m => <span key={m}>{m}</span>)}</div>}</div></div>
+          <div className={styles.header}><span>Initiative / accountable owner</span><div><div className={styles.quarters}>{[1,2,3,4].map(q => <span key={q}>Q{q} {year}</span>)}</div>{zoom === 'month' && <div className={styles.axis}>{months.map(m => <span key={m}>{m}</span>)}</div>}</div></div>
           {groups.map(group => <section key={group.name} aria-label={group.name}><h3 className={styles.groupTitle}>{group.name}<span>{group.items.length} initiatives</span></h3>{group.items.map(item => {
             const targetEnd = bounds(item.target!)[1], begin = item.start ? bounds(item.start)[0] : null;
             const x = position(begin ?? bounds(item.target!)[0]), end = position(targetEnd);
             const status = planVariance(item);
+            const varianceDays = planVarianceDays(item);
             return <div className={styles.row} key={item.id} data-selected={selectedId === item.id}>
               <button className={styles.name} onClick={() => setSelectedId(item.id)} aria-pressed={selectedId === item.id}>{item.name}<small>{item.workstream || 'Workstream unassigned'}{item.carryover ? ' / Carryover' : ''}</small><span className={styles.badge} data-tone={status.tone}>{!item.actual && item.target && targetEnd < today && item.status === 'COMMITTED' ? 'Past target / update needed' : status.label}</span></button>
-              <div className={styles.owner}>{item.owner || 'Unassigned'}</div>
+              <div className={styles.owner}>{item.owner || 'Owner unassigned'}</div>
               <div className={styles.track}><div className={styles.gridlines} aria-hidden="true">{months.map(m => <i key={m} />)}</div>
                 {today >= startYear && today <= endYear && <span className={styles.today} style={{ left: `${position(today)}%` }} />}
                 {begin && <button className={styles.bar} data-proposed={item.status === 'PROPOSED'} data-held={item.status === 'ON_HOLD'} style={{ left: `${x}%`, width: `${Math.max(.5,end-x)}%` }} onClick={() => setSelectedId(item.id)} aria-label={`${item.name}: Solution ${planDateLabel(item.start)} to target ${planDateLabel(item.target)}`} title={`${planDateLabel(item.start)} to ${planDateLabel(item.target)}`}>{item.name}</button>}
@@ -53,6 +54,13 @@ export function AnnualRoadmap({ items, workspaceId, canWrite, today, events }: {
                 {item.actual && item.actual >= startYear && item.actual <= endYear && <span className={styles.mark} data-actual="true" style={{left:`${position(item.actual)}%`}} title={`Actual: ${item.actual}`} />}
                 {item.forecast && item.forecast >= startYear && item.forecast <= endYear && <span className={styles.mark} data-forecast="true" style={{left:`${position(item.forecast)}%`}} title={`Forecast: ${item.forecast}`} />}
               </div>
+              <dl className={styles.rowFacts}>
+                <div><dt>Solution start</dt><dd>{planDateLabel(item.start)}</dd></div>
+                <div><dt>Target Live</dt><dd>{planDateLabel(item.target)}</dd></div>
+                <div><dt>{item.actual ? 'Actual Live' : 'Forecast Live'}</dt><dd>{item.actual ? `${planDateLabel({value:item.actual,precision:'DAY'})}${item.actualPartial?' / partial':''}` : item.forecast ? planDateLabel({value:item.forecast,precision:'DAY'}) : 'Not recorded'}</dd></div>
+                <div><dt>Delay vs target</dt><dd>{varianceDays === null ? item.target?.precision !== 'DAY' ? 'Exact days not assessed' : 'No forecast recorded' : varianceDays > 0 ? `${varianceDays} days late` : varianceDays < 0 ? `${-varianceDays} days early` : 'On time'}</dd></div>
+                {item.delayReason && <div className={styles.rowReason}><dt>Delay reason</dt><dd>{item.delayReason}</dd></div>}
+              </dl>
             </div>;
           })}</section>)}
         </div></div>}
@@ -68,7 +76,7 @@ export function AnnualRoadmap({ items, workspaceId, canWrite, today, events }: {
       {selected.originalTarget?.precision === 'DAY' && selected.actual && <p className={styles.meta}>Actual vs original commitment: {Math.round((Date.parse(selected.actual)-Date.parse(selected.originalTarget.value))/86400000)} days.</p>}
       {events.some(e => e.planId === selected.id) && <details><summary>Plan history</summary><ul>{events.filter(e => e.planId === selected.id).slice().reverse().map(e => <li key={e.id}>{e.at.slice(0,10)} / {e.actor}: {planDateLabel(e.before?.target ?? null)} to {planDateLabel(e.after.target)} / {e.after.status.toLowerCase().replace('_',' ')}</li>)}</ul></details>}
     </section>}
-    {!!undated.length && <section><div className={styles.sectionHead}><h2>Awaiting target dates</h2><span className={styles.meta}>Across the portfolio</span></div><div className={styles.scroll}><table className={styles.table}><thead><tr><th>Initiative</th><th>Squad</th><th>Owner</th><th>Commitment</th></tr></thead><tbody>{undated.map(item => <tr key={item.id}><td><button onClick={() => setSelectedId(item.id)}>{item.name}</button></td><td>{item.squad || 'Unassigned'}</td><td>{item.owner || 'Unassigned'}</td><td>{item.status.toLowerCase().replace('_',' ')}</td></tr>)}</tbody></table></div></section>}
+    {!!undated.length && <details><summary>Awaiting target dates / {undated.length} initiatives</summary><div className={styles.scroll}><table className={styles.table}><thead><tr><th>Initiative</th><th>Squad</th><th>Owner</th><th>Commitment</th></tr></thead><tbody>{undated.map(item => <tr key={item.id}><td><button onClick={() => setSelectedId(item.id)}>{item.name}</button></td><td>{item.squad || 'Unassigned'}</td><td>{item.owner || 'Unassigned'}</td><td>{item.status.toLowerCase().replace('_',' ')}</td></tr>)}</tbody></table></div></details>}
     {editor !== undefined && <PlanEditor plan={editor} workspaceId={workspaceId} close={() => setEditor(undefined)} />}
   </>;
 }
