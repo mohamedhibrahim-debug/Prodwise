@@ -4,7 +4,8 @@ const ExcelJS = require('exceljs');
 const unzipper = require('unzipper');
 const LIMIT = 300_000_000;
 async function read() {
-  const bytes = Buffer.from(workerData);
+  if(typeof workerData!=='string'||workerData.length>Math.ceil(25_000_000/3)*4)throw Error('Excel worker input exceeds the safe file-size limit or is invalid.');
+  const bytes = Buffer.from(workerData,'base64');
   const archive = await unzipper.Open.buffer(bytes);
   if (archive.files.length > 256 || new Set(archive.files.map(file=>file.path)).size!==archive.files.length) throw Error('Excel archive has too many or duplicate entries.');
   let declared=0, expanded=0;
