@@ -55,6 +55,8 @@ export async function closeUpload(ctx:WorkspaceAccess,id:string) {
 export async function cleanupUploads() {
   if (isLocalAuth()) return {removed:0};
   const db = adminClient();
+  const expiredParts=await db.from('reporting_save_parts').delete().lt('expires_at',new Date().toISOString());
+  if(expiredParts.error)throw Error('Reporting save cleanup unavailable.');
   const {data,error} = await db.from('reporting_uploads').select('id,files').lt('expires_at',new Date().toISOString()).limit(100);
   if (error) throw Error('Upload cleanup unavailable.');
   let removed=0;

@@ -6,6 +6,7 @@ import { requireWorkspaceAccess, requireBusinessWriteAccess } from '@/lib/auth/a
 import { adminClient, isLocalAuth } from '@/lib/auth/service';
 import type { WorkspaceAccess } from '@/lib/auth/core';
 import { emptyExecutiveState, type ExecutiveState } from './types';
+import { reportingParts } from './save-parts';
 
 function pathFor(ctx: WorkspaceAccess) {
   if (!/^[a-zA-Z0-9-]+$/.test(ctx.workspaceId)) throw Error('Invalid workspace.');
@@ -47,7 +48,23 @@ export async function mutateExecutive(workspaceId: string, change: (state: Execu
   const next = { ...change(state, ctx), revision: state.revision + 1 };
   const fresh = await requireBusinessWriteAccess();
   if (fresh.workspaceId !== ctx.workspaceId) throw Error('Your workspace changed. Reload before saving.');
-  const { error } = await adminClient().rpc('commit_executive_workspace', { p_workspace_id: ctx.workspaceId, p_member_id: fresh.memberId ?? fresh.actor.id, p_expected_revision: state.revision, p_data: next });
-  if (error) throw Error(error.message.includes('STALE') ? 'Reporting changed while saving. Review and retry; nothing was overwritten.' : 'The reporting change was refused. Check your access and database setup.');
+  const db=adminClient(), batch=randomUUID(), member=fresh.memberId??fresh.actor.id;
+  let count=0;
+  try {
+    for(const rows of reportingParts(next.rows)) {
+      if(count>=512)throw Error('Reporting data exceeds the supported save size.');
+      const {error}=await db.from('reporting_save_parts').insert({batch_id:batch,part:count,workspace_id:ctx.workspaceId,member_id:member,expected_revision:state.revision,rows});
+      if(error)throw Error('Could not stage reporting data. Existing figures were not changed; retry shortly.');
+      count++;
+    }
+    const finalAccess=await requireBusinessWriteAccess();
+    if(finalAccess.workspaceId!==ctx.workspaceId||finalAccess.organizationId!==ctx.organizationId||(finalAccess.memberId??finalAccess.actor.id)!==member)
+      throw Error('Your workspace changed. Reload before saving.');
+    const {error}=await db.rpc('commit_executive_parts',{p_workspace_id:ctx.workspaceId,p_member_id:member,p_expected_revision:state.revision,p_batch_id:batch,p_part_count:count,p_data:{...next,rows:[]}});
+    if(error)throw Error(error.message.includes('STALE')?'Reporting changed while saving. Review and retry; nothing was overwritten.':'Reporting publication could not be confirmed. Reload to check the figures before retrying.');
+  } finally {
+    // Expiry cleanup also handles interrupted requests and failed network cleanup.
+    await db.from('reporting_save_parts').delete().eq('batch_id',batch).eq('workspace_id',ctx.workspaceId).eq('member_id',member).then(()=>undefined,()=>undefined);
+  }
   return next;
 }
