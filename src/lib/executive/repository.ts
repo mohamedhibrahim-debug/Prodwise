@@ -7,6 +7,7 @@ import { adminClient, isLocalAuth } from '@/lib/auth/service';
 import type { WorkspaceAccess } from '@/lib/auth/core';
 import { emptyExecutiveState, type ExecutiveState } from './types';
 import { reportingParts } from './save-parts';
+import { readReportingParts } from './read-parts';
 
 function pathFor(ctx: WorkspaceAccess) {
   if (!/^[a-zA-Z0-9-]+$/.test(ctx.workspaceId)) throw Error('Invalid workspace.');
@@ -18,10 +19,18 @@ async function readFor(ctx: WorkspaceAccess): Promise<{ state: ExecutiveState; a
     try { return { state: JSON.parse(await readFile(pathFor(ctx), 'utf8')) as ExecutiveState, available: true }; }
     catch (e) { if ((e as NodeJS.ErrnoException).code === 'ENOENT') return { state: emptyExecutiveState(), available: true }; throw e; }
   }
-  const { data, error } = await adminClient().from('executive_workspaces').select('data').eq('workspace_id', ctx.workspaceId).eq('organization_id', ctx.organizationId).maybeSingle();
-  if (error?.code === 'PGRST205' || error?.code === '42P01') return { state: emptyExecutiveState(), available: false };
+  const db = adminClient();
+  const args = { p_workspace_id: ctx.workspaceId, p_organization_id: ctx.organizationId, p_member_id: ctx.memberId ?? ctx.actor.id };
+  const { data, error } = await db.rpc('read_executive_part', { ...args, p_offset: -1, p_revision: null });
+  if (error?.code === 'PGRST202' || error?.code === '42P01') return { state: emptyExecutiveState(), available: false };
   if (error) throw Error('Business reporting is unavailable. Please retry.');
-  return { state: data?.data as ExecutiveState ?? emptyExecutiveState(), available: true };
+  if (!data) return { state: emptyExecutiveState(), available: true };
+  const state = await readReportingParts(data, async (offset, revision) => {
+    const result = await db.rpc('read_executive_part', { ...args, p_offset: offset, p_revision: revision });
+    if (result.error || !result.data) throw Error('Business reporting could not be loaded consistently. Please reload.');
+    return result.data;
+  });
+  return { state, available: true };
 }
 export async function readExecutive() { const ctx = await requireWorkspaceAccess(); return { ctx, ...await readFor(ctx) }; }
 export async function mutateExecutive(workspaceId: string, change: (state: ExecutiveState, ctx: WorkspaceAccess) => ExecutiveState): Promise<ExecutiveState> {
