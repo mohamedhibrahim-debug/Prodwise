@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { readExecutive } from '@/lib/executive/repository';
+import { readExecutiveView } from '@/lib/executive/repository';
 import { readDelivery } from '@/lib/delivery/repository';
 import { factFor } from '@/lib/delivery/model';
 import { canBusinessWrite } from '@/lib/auth/roles';
@@ -11,7 +11,7 @@ import styles from '@/components/executive/Executive.module.css';
 
 export const metadata = { title: 'Roadmap' };
 export default async function Roadmap() {
-  const [{ ctx, state, available }, delivery] = await Promise.all([readExecutive(), readDelivery()]);
+  const [{ ctx, state, available }, delivery] = await Promise.all([readExecutiveView(), readDelivery()]);
   const legacy: TimelineItem[] = delivery.source.snapshots.filter(s => !s.initiative.archivedAt).map(({ initiative: i }) => {
     const facts = delivery.state.facts.filter(f => f.workspaceId === ctx.workspaceId && f.state === 'SET');
     const target = factFor(facts, i.id, 'TARGET_LIVE'), actual = factFor(facts, i.id, 'ACTUAL_LIVE'), owner = factFor(facts, i.id, 'OWNER');

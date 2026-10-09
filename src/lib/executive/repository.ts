@@ -5,7 +5,8 @@ import { randomUUID } from 'node:crypto';
 import { requireWorkspaceAccess, requireBusinessWriteAccess } from '@/lib/auth/access';
 import { adminClient, isLocalAuth } from '@/lib/auth/service';
 import type { WorkspaceAccess } from '@/lib/auth/core';
-import { emptyExecutiveState, type ExecutiveState } from './types';
+import { emptyExecutiveState, type ExecutiveState, type Product } from './types';
+import { projectPerformance, type MonthlyPerformance } from './projection';
 import { reportingParts } from './save-parts';
 import { readReportingParts } from './read-parts';
 
@@ -33,6 +34,23 @@ async function readFor(ctx: WorkspaceAccess): Promise<{ state: ExecutiveState; a
   return { state, available: true };
 }
 export async function readExecutive() { const ctx = await requireWorkspaceAccess(); return { ctx, ...await readFor(ctx) }; }
+// Display routes never transfer transaction rows; imports still use the full snapshot.
+export async function readExecutiveView(product: Product | null = null) {
+  const ctx = await requireWorkspaceAccess();
+  if (isLocalAuth()) {
+    const { state, available } = await readFor(ctx);
+    return { ctx, state: { ...state, rows: [] }, available, series: product ? projectPerformance(state, product) : [] };
+  }
+  const { data, error } = await adminClient().rpc('read_executive_view', {
+    p_workspace_id: ctx.workspaceId, p_organization_id: ctx.organizationId,
+    p_member_id: ctx.memberId ?? ctx.actor.id, p_product: product,
+  });
+  if (error?.code === 'PGRST202' || error?.code === '42P01')
+    return { ctx, state: emptyExecutiveState(), series: [] as MonthlyPerformance[], available: false };
+  if (error) throw Error('Business reporting is unavailable. Please retry.');
+  return { ctx, state: (data?.state ?? emptyExecutiveState()) as ExecutiveState,
+    series: (data?.series ?? []) as MonthlyPerformance[], available: true };
+}
 export async function mutateExecutive(workspaceId: string, change: (state: ExecutiveState, ctx: WorkspaceAccess) => ExecutiveState): Promise<ExecutiveState> {
   const ctx = await requireBusinessWriteAccess();
   if (ctx.workspaceId !== workspaceId) throw Error('Your workspace changed. Reload before saving.');
