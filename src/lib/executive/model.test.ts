@@ -28,6 +28,14 @@ test('wallet unknown types and missing transaction IDs fail closed',()=>{assert.
 test('cash-in and payments do not imply BP or FS',()=>{const result=normalizeRows([{transaction_id:'1',transaction_timestamp:'2026-08-03 10:00:00',transaction_type:'payment',amount:'5',supplier_id:'s',runner_id:'r',terminal_id:'t'}],'CASH_COLLECTION');assert.equal(result.rows[0]!.kind,'PAYMENT');assert.equal(result.rows[0]!.businessUnit,'UNASSIGNED');});
 test('PGW filters failed attempts without calling them success',()=>{const result=normalizeRows([{'Transaction Reference':'1','Transaction Date':'2026-08-01','Transaction Type':'SALE','Transaction Status':'SUCCESS',Amount:'10'},{'Transaction Reference':'2','Transaction Date':'2026-08-01','Transaction Type':'SALE','Transaction Status':'FAILED',Amount:'10'}],'PGW');assert.equal(result.rows.length,1);assert.equal(result.excluded,1);});
 test('transaction overlap is deduplicated, conflicting content rejected atomically',()=>{assert.equal(mergeRows([row],[row,row]).duplicates,2);assert.equal(mergeRows([],[row,row]).added.length,1);assert.throws(()=>mergeRows([row],[{...row,amount:2}]));});
+
+test('persisted transaction field order does not create a false conflict',()=>{
+  const persisted=Object.fromEntries(Object.entries(row).reverse()) as unknown as PerformanceRow;
+  assert.deepEqual(mergeRows([persisted],[row]),{added:[],duplicates:1});
+  for(const changed of [{amount:2},{businessUnit:'BP'},{date:'2026-08-04'},{kind:'PAYMENT'},{terminal:null}]){
+    assert.throws(()=>mergeRows([persisted],[{...row,...changed} as PerformanceRow]),/different values/);
+  }
+});
 test('duplicate file publication is refused',()=>{const meta={fileName:'a.csv',digest:'abc',product:'CASH_COLLECTION' as const,source:'source',periodStart:'2026-08-01',periodEnd:'2026-08-31',coverage:'COMPLETE' as const,recordedAt:'2026-10-04',recordedBy:'Owner',rowCount:1,excluded:0,note:''};const state=publishImport(emptyExecutiveState(),[row],meta);assert.throws(()=>publishImport(state,[row],meta));assert.equal(state.rows.length,1);});
 test('month and quarter precision never manufacture exact dates',()=>{assert.deepEqual(readPlanDate('2027-Q2','QUARTER'),{value:'2027-Q2',precision:'QUARTER'});assert.deepEqual(dateBounds({value:'2027-Q2',precision:'QUARTER'}),['2027-04-01','2027-06-30']);assert.equal(delayDays({value:'2027-03',precision:'MONTH'},'2027-04-01'),null);assert.throws(()=>readPlanDate('2027-02-30','DAY'));});
 test('the first committed target survives revisions and audit history is kept',()=>{const initial=savePlan(emptyExecutiveState(),plan,'Owner','2026-10-04T12:00:00Z');const first=initial.plans[0]!;const next=savePlan(initial,{...first,target:{value:'2027-04',precision:'MONTH'},delayReason:'External dependency'},'Owner','2026-10-04T13:00:00Z');assert.deepEqual(next.plans[0]!.originalTarget,plan.target);assert.equal(next.planEvents.length,2);assert.deepEqual(next.planEvents[1]!.before?.target,plan.target);});

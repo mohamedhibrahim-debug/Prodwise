@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { PRODUCTS, type ExecutiveState, type PerformanceRow, type PerformanceImport, type PlanDate, type RoadmapPlan, type Product } from './types.ts';
 
 export function validDay(value: string): boolean {
@@ -29,7 +30,7 @@ export function mergeRows(current: PerformanceRow[], incoming: PerformanceRow[])
   for (const row of incoming) {
     const old = seen.get(row.key);
     if (old) {
-      if (fingerprint(old) !== fingerprint(row)) throw Error('A transaction already exists with different values. Nothing was imported; reconcile the source before retrying.');
+      if (!isDeepStrictEqual(old, row)) throw Error('A transaction already exists with different values. Nothing was imported; reconcile the source before retrying.');
       duplicates++;
     } else { seen.set(row.key, row); added.push(row); }
   }
