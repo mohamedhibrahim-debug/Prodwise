@@ -11,7 +11,7 @@ export function excelRecords(bytes:Uint8Array):Promise<Record<string,string>[]> 
     // A string survives hosted worker instrumentation that serializes binary objects.
     const input=Buffer.from(bytes).toString('base64');
     try {worker=new Worker(join(process.cwd(),'scripts/reporting/xlsx-worker.cjs'),{
-      workerData:input,execArgv:[],resourceLimits:{maxOldGenerationSizeMb:512,maxYoungGenerationSizeMb:64},
+      workerData:{reportBase64:input},execArgv:[],resourceLimits:{maxOldGenerationSizeMb:512,maxYoungGenerationSizeMb:64},
     });} catch(e){active=false;reject(e);return;}
     let settled=false;
     const timer=setTimeout(async()=>{settled=true;await worker.terminate();reject(Error('Excel processing exceeded two minutes. Export a smaller period.'));},120_000);
