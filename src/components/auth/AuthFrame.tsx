@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { BrandMark } from '@/components/primitives/BrandMark';
 import styles from './login.module.css';
+import { EmbeddedGate } from './EmbeddedGate';
 
 const PRINCIPLES = [
   { title: 'Evidence before truth', text: 'Sources stay evidence until a person confirms what they mean.' },
@@ -33,7 +34,7 @@ export function AuthFrame({ titleId, children }: { titleId: string; children: Re
       <PanelArc />
     </aside>
     <div className={styles.entry}>
-      <div className={styles.entryContent}>{children}<p className={styles.legalLink}><Link href="/privacy">Privacy policy</Link></p></div>
+      <div className={styles.entryContent}><EmbeddedGate titleId={titleId}>{children}</EmbeddedGate><p className={styles.legalLink}><Link href="/privacy">Privacy policy</Link></p></div>
     </div>
   </section>;
 }
