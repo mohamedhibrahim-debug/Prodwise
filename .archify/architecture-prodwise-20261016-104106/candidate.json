@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Prodwise — Evidence, Memory and Review Architecture",
+    "output": ".archify/architecture-prodwise-20261016-104106/prodwise.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "https://github.com/mohamedhibrahim-debug/Prodwise",
+      "provider": "github",
+      "revision": "2596b72094ef6edcaf9ffd5f895d87b6043f479f"
+    }
+  },
+  "components": [
+    { "id": "pm", "type": "external", "label": "Product Manager", "sublabel": "browser", "pos": [40, 260], "size": [110, 60] },
+    { "id": "pages", "type": "frontend", "label": "Workspace pages", "sublabel": "Brief · Decisions · Knowledge", "tag": "Next.js RSC", "pos": [210, 254], "size": [180, 72],
+      "sources": [
+        { "path": "src/app/initiatives/[slug]/page.tsx", "line": 15, "end_line": 28, "label": "Brief page" },
+        { "path": "src/components/shell/WorkspaceTabs.tsx", "line": 8, "end_line": 12, "label": "tabs" }
+      ] },
+    { "id": "loaders", "type": "backend", "label": "Read loaders", "sublabel": "snapshot → findings", "pos": [490, 180], "size": [180, 64],
+      "sources": [
+        { "path": "src/lib/workspace/instrument.ts", "line": 12, "end_line": 29 },
+        { "path": "src/lib/workspace/decisions.ts", "line": 16, "end_line": 32 }
+      ] },
+    { "id": "engine", "type": "backend", "label": "Review engine", "sublabel": "pure · CONFLICT + SUPERSEDED", "tag": "no I/O", "pos": [490, 50], "size": [180, 64],
+      "sources": [
+        { "path": "src/lib/review/engine.ts", "line": 23, "end_line": 35, "label": "runReview" },
+        { "path": "src/lib/review/merge.ts", "line": 15, "end_line": 71, "label": "human overlay" }
+      ] },
+    { "id": "actions", "type": "backend", "label": "Server actions", "sublabel": "create · verify · decide", "pos": [490, 340], "size": [180, 64],
+      "sources": [
+        { "path": "src/app/initiatives/[slug]/memory/new/actions.ts", "line": 36, "end_line": 61, "label": "create claim" },
+        { "path": "src/app/initiatives/[slug]/sources/new/actions.ts", "line": 43, "end_line": 83, "label": "create evidence" },
+        { "path": "src/app/initiatives/[slug]/decisions/actions.ts", "line": 16, "end_line": 117, "label": "decide / resolve" }
+      ] },
+    { "id": "guard", "type": "security", "label": "Write + ownership guards", "sublabel": "DEMO_WRITE_ENABLED · access.ts", "pos": [790, 340], "size": [190, 64],
+      "sources": [
+        { "path": "src/lib/env.ts", "line": 29, "end_line": 48, "label": "write gate" },
+        { "path": "src/lib/data/access.ts", "line": 57, "end_line": 118, "label": "evidence/claim ownership" },
+        { "path": "src/lib/data/access.ts", "line": 202, "end_line": 220, "label": "finding re-derive" }
+      ] },
+    { "id": "repo", "type": "backend", "label": "Repository", "sublabel": "getRepository()", "pos": [1060, 190], "size": [140, 190],
+      "sources": [
+        { "path": "src/lib/data/index.ts", "line": 15, "end_line": 17, "label": "selector" },
+        { "path": "src/lib/data/repository.ts", "line": 24, "end_line": 30, "label": "one interface" },
+        { "path": "src/lib/env.ts", "line": 11, "end_line": 17, "label": "Supabase configured?" }
+      ] },
+    { "id": "local", "type": "database", "label": "Local JSON store", "sublabel": ".data/prodwise.json", "tag": "demo only", "pos": [810, 500], "size": [170, 64],
+      "sources": [
+        { "path": "src/lib/data/store.ts", "line": 59, "end_line": 59, "label": "file path" },
+        { "path": "src/lib/data/store.ts", "line": 143, "end_line": 170, "label": "read / atomic write" },
+        { "path": "src/lib/data/local-repository.ts", "line": 565, "end_line": 585, "label": "resolveConflict" }
+      ] },
+    { "id": "supa", "type": "database", "label": "Supabase Postgres", "sublabel": "RLS on · RPC", "tag": "service role", "pos": [1060, 500], "size": [140, 64],
+      "sources": [
+        { "path": "src/lib/data/supabase-repository.ts", "line": 162, "end_line": 171, "label": "client" },
+        { "path": "src/lib/data/supabase-repository.ts", "line": 866, "end_line": 891, "label": "RPC writes" },
+        { "path": "supabase/migrations/0009_stage2_2_decision_truth.sql", "line": 135, "end_line": 348, "label": "resolve_conflict" }
+      ] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Server side — no Supabase client ships to the browser", "wraps": ["engine", "loaders", "actions", "guard", "repo"] }
+  ],
+  "connections": [
+    { "id": "pm-uses-pages", "from": "pm", "to": "pages", "label": "uses", "variant": "emphasis" },
+    { "id": "pages-render", "from": "pages", "to": "loaders", "label": "render" },
+    { "id": "loaders-derive", "from": "loaders", "to": "engine", "label": "runReview + merge" },
+    { "id": "loaders-read", "from": "loaders", "to": "repo", "label": "claims · finding states" },
+    { "id": "pages-submit", "from": "pages", "to": "actions", "label": "form submit", "variant": "emphasis" },
+    { "id": "actions-guard", "from": "actions", "to": "guard", "label": "gated write", "variant": "security" },
+    { "id": "guard-repo", "from": "guard", "to": "repo", "label": "mutate", "variant": "emphasis" },
+    { "id": "repo-supa", "from": "repo", "to": "supa", "label": "if env set" },
+    { "id": "repo-local", "from": "repo", "to": "local", "label": "fallback", "fromSide": "bottom", "toSide": "right" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Read path", "items": [
+      "Findings are derived from claims on every read and never stored",
+      "Only the human decision persists, in finding_states, keyed by fingerprint",
+      "Brief, Decisions, Reporting and the Initiatives list share the same derive-and-merge path"
+    ] },
+    { "dot": "rose", "title": "Write path", "items": [
+      "Every repository mutation calls assertWriteAllowed(); writes are off unless DEMO_WRITE_ENABLED=true outside Vercel previews",
+      "Ownership is proven server-side; a finding fingerprint is re-derived by re-running the engine, never looked up",
+      "Conflict decisions commit atomically: resolve_conflict RPC or writeStoreAtomic"
+    ] },
+    { "dot": "slate", "title": "Not in this revision", "items": [
+      "No authentication, no AI extraction, no Jira or Drive integration",
+      "GAP, UNKNOWN and RISK findings are not detected",
+      "Pages also call getRepository() directly for initiative lookups"
+    ] }
+  ]
+}
